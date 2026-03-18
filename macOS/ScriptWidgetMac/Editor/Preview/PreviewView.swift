@@ -128,12 +128,14 @@ class ScriptCodeRunnerDataObject : ObservableObject {
     }
     
     func layoutElements() {
-        if !self.runScript() {
-            self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Failed#"])
+        Task {
+            if await !self.runScript() {
+                self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Failed#"])
+            }
         }
     }
     
-    func runScript() -> Bool {
+    func runScript() async -> Bool {
         sharedRunningState = ScriptWidgetRunningState(package: self.package)
         self.clearLogs()
         
@@ -160,35 +162,35 @@ class ScriptCodeRunnerDataObject : ObservableObject {
             "widget-param": self.scriptParameter,
         ])
         
-        let result = runtime.executeJSXSyncForWidget(JSX)
-        
-        if let element = result.0 {
+        do {
+            let element = try await runtime.executeJSXAsyncForWidget(JSX)
             // succeed
             self.rootElement = element
             self.runtime = runtime
             returnValue = true
-        } else {
-            // error
+        } catch let error as ScriptWidgetError {
             self.runtime = nil
             returnValue = false
-            if let error = result.1 {
-                switch error {
-                case .undefinedRender(let msg):
-                    self.systemLog(msg)
-                case .internalError(let msg):
-                    self.systemLog(msg)
-                case .scriptError(let msg):
-                    self.systemLog(msg)
-                case .scriptException(let msg):
-                    self.systemLog(msg)
-                case .transformError(let msg):
-                    self.systemLog(msg)
-                }
+            switch error {
+            case .undefinedRender(let msg):
+                self.systemLog(msg)
+            case .internalError(let msg):
+                self.systemLog(msg)
+            case .scriptError(let msg):
+                self.systemLog(msg)
+            case .scriptException(let msg):
+                self.systemLog(msg)
+            case .transformError(let msg):
+                self.systemLog(msg)
             }
+        } catch {
+            self.runtime = nil
+            returnValue = false
+            print("unhandled error : \(error)")
         }
-        DispatchQueue.main.asyncAfter(deadline: .now()+0.5) {
-            self.loadScriptConsoleLogs()
-            self.systemLog("FINISH")
+        DispatchQueue.main.asyncAfter(deadline: .now()+0.5) { [weak self] in
+            self?.loadScriptConsoleLogs()
+            self?.systemLog("FINISH")
         }
         
         return returnValue
@@ -232,6 +234,7 @@ struct PreviewView: View {
     
     let scriptModel: ScriptModel
     @ObservedObject var data: ScriptCodeRunnerDataObject
+    @ObservedObject var console: ScriptCodePreviewConsoleDataObject
     
     @State var widgetSizeType = 0
     @State var isDebugMode = false
@@ -242,6 +245,7 @@ struct PreviewView: View {
     init(scriptModel: ScriptModel) {
         self.scriptModel = scriptModel
         self.data = ScriptCodeRunnerDataObject(file: self.scriptModel.package, widgetSizeType: 0, scriptParameter: "")
+        self.console = ScriptCodePreviewConsoleDataObject()
     }
     
     var body: some View {
@@ -356,7 +360,7 @@ struct PreviewView: View {
             .padding(.leading)
             .padding(.trailing)
             
-            ScriptCodePreviewConsoleView()
+            ScriptCodePreviewConsoleView(data: self.console)
         }
     }
 }

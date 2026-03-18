@@ -128,7 +128,7 @@ class ScriptWidgetDataObject : ObservableObject {
         return ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
     }
     
-    func runScriptSync() {
+    func runScript() async {
         if self.scriptName.count == 0 {
             self.rootElement = createTextElement(info: "No script selected")
             return
@@ -154,30 +154,26 @@ class ScriptWidgetDataObject : ObservableObject {
             "widget-param": self.scriptParameter,
         ])
         
-        let result = runtime.executeJSXSyncForWidget(JSX)
-        
-        if let element = result.0 {
-            // succeed
+        do {
+            let element = try await runtime.executeJSXAsyncForWidget(JSX)
             self.runtime = runtime
             self.rootElement = element
-        } else {
-            // error
+        } catch let error as ScriptWidgetError {
             self.runtime = nil
-            
-            if let error = result.1 {
-                switch error {
-                case .undefinedRender(let msg):
-                    self.systemLog(msg)
-                case .internalError(let msg):
-                    self.systemLog(msg)
-                case .scriptError(let msg):
-                    self.systemLog(msg)
-                case .scriptException(let msg):
-                    self.systemLog(msg)
-                case .transformError(let msg):
-                    self.systemLog(msg)
-                }
+            switch error {
+            case let .undefinedRender(msg):
+                self.systemLog(msg)
+            case let .internalError(msg):
+                self.systemLog(msg)
+            case let .scriptError(msg):
+                self.systemLog(msg)
+            case let .scriptException(msg):
+                self.systemLog(msg)
+            case let .transformError(msg):
+                self.systemLog(msg)
             }
+        } catch {
+            self.runtime = nil
         }
         
         self.systemLog("[FINISH]")
@@ -194,12 +190,15 @@ struct ScriptWidgetWidgetElementRootView: View {
 
     init(widgetFamily: WidgetFamily, entry: ScriptWidgetTimelineEntry) {
         self.widgetFamily = widgetFamily
-        self.data = ScriptWidgetDataObject(
+        let data = ScriptWidgetDataObject(
             scriptName: entry.configuration.Script ?? "",
             scriptParameter: entry.configuration.Parameter ?? "",
             widgetFamily: self.widgetFamily
         )
-        self.data.runScriptSync()
+        self.data = data
+        Task {
+            await data.runScript()
+        }
     }
     
     @ViewBuilder

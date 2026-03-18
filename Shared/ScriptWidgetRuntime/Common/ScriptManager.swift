@@ -92,14 +92,14 @@ class ScriptManager {
     }
     
     static func getSandboxRootDirectoryURL() -> URL? {
-        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget") {
+        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.zhufucdev.scriptwidget") {
             return url.appendingPathComponent("Documents")
         }
         return nil
     }
     
     static func getSandboxBuildDirectoryURL() -> URL? {
-        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget") {
+        if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.zhufucdev.scriptwidget") {
             return url.appendingPathComponent("__Build")
         }
         return nil

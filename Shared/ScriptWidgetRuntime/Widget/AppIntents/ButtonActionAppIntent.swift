@@ -45,7 +45,7 @@ struct ButtonActionAppIntent: AppIntent {
         guard let JSX = JSX else {
             return .result()
         }
-        _ = runtime.executeJSXSyncForFunction(JSX, functionName)
+        _ = try? await runtime.executeJSXAsyncForFunction(JSX, functionName)
         
         WidgetCenter.shared.reloadTimelines(ofKind: "ScriptWidget")
         
