@@ -49,6 +49,10 @@ class ScriptWidgetFetchManager {
                     request.httpBody = bodyData
                 }
             }
+            
+            if let timeoutInterval = params["timeoutInterval"] as? Double {
+                request.timeoutInterval = timeoutInterval
+            }
         }
         
         session.dataTask(with: request, completionHandler: completionHandler)
