@@ -81,10 +81,11 @@
 - [x] **`os.Logger` 日志封装**：新增 `SWLog`（debug/info/error 分级，`.public` 不脱敏），已接入运行时异常路径与各 `systemLog`。剩余的 verbose 调试 `print` 为机械式后续迁移。
 
 ### 阶段二 · 代码健康与测试（1–2 周）
-- [ ] 新建 `ScriptWidgetRuntimeTests` XCTest target，覆盖 JSX→元素树、prop 类型解析、fetch/storage。
-- [ ] Timeline Provider 重复分支表驱动化；合并 iOS/macOS 重复桥接代码。
-- [ ] 拆分 `ScriptWidgetRuntime.swift`（运行时初始化 / API 注入 / 渲染分离）。
-- [ ] README 与真实结构对齐。
+- [x] Timeline Provider 重复分支表驱动化：8 个雷同分支收敛为 `AppConfigFrequency.refreshOffset`（iOS + macOS 各一处）。
+- [x] README 与真实结构对齐：项目结构、构建路径、示例脚本（`$render` + JSX）、API 表全部改为真实内容。
+- [ ] 新建 `ScriptWidgetRuntimeTests` XCTest target，覆盖 JSX→元素树、prop 类型解析、fetch/storage。（需在 Xcode 内创建 target，无法离线完成）
+- [ ] 合并 iOS/macOS 重复桥接代码到 `Shared`。（需改两个 .xcodeproj，建议在 Xcode 内做）
+- [ ] 拆分 `ScriptWidgetRuntime.swift`（运行时初始化 / API 注入 / 渲染分离）。（需改 .xcodeproj 引入新文件）
 
 ### 阶段三 · 体验与生态（2–4 周）
 - [ ] 文档站 + 内置模板/示例库。

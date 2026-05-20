@@ -56,14 +56,19 @@ cd ScriptWidget
 ### 2. Open in Xcode
 
 ```bash
-open ScriptWidget/ScriptWidget.xcodeproj
+# iOS app + widget + share extension
+open iOS/ScriptWidget.xcodeproj
+
+# macOS app + widget
+open macOS/ScriptWidgetMac.xcodeproj
 ```
 
 ### 3. Run & Explore
 
-1. Select your target (iOS Simulator or macOS)
-2. Press `Cmd + R` to build and run
-3. Explore the example widgets in `Examples/`
+1. Select a scheme (`ScriptWidget` / `ScriptWidgetWidget` for iOS, `ScriptWidgetMac` for macOS)
+2. Enable the `iCloud.ScriptWidget` container and `group.everettjf.scriptwidget` app group so script storage works
+3. Press `Cmd + R` to build and run
+4. Browse the bundled example scripts under `Shared/ScriptWidgetRuntime/Resource/Script.bundle/` (`api/`, `component/`, `template/`)
 
 ---
 
@@ -71,18 +76,22 @@ open ScriptWidget/ScriptWidget.xcodeproj
 
 ```
 ScriptWidget/
-├── ScriptWidget/          # Main app source
-│   ├── App/               # App entry point
-│   ├── Script/            # JavaScript runtime
-│   ├── Views/             # SwiftUI views
-│   └── Resources/         # Assets and templates
-├── Examples/              # Example widgets
-│   ├── HelloWorld/        # Simple widget
-│   ├── Weather/           # Weather widget
-│   ├── Calendar/          # Calendar widget
-│   └── ...                # More examples
-├── Templates/             # Widget templates
-├── Docs/                  # Documentation
+├── Shared/
+│   └── ScriptWidgetRuntime/   # Core runtime: JavaScriptCore host, JSX→SwiftUI
+│       ├── Common/            # Script storage & package management
+│       ├── Widget/Runtime/    # JS engine setup, Babel transform, execution
+│       ├── Widget/API/        # JS APIs ($device, $file, $storage, ...)
+│       ├── Widget/Component/  # Element → SwiftUI view mapping
+│       └── Resource/          # Babel bundle + bundled example scripts
+├── iOS/
+│   ├── ScriptWidget/          # iOS app (editor, settings)
+│   ├── ScriptWidgetWidget/    # Widget, Live Activity, Control Widget
+│   └── ScriptWidgetShare/     # Share extension
+├── macOS/
+│   ├── ScriptWidgetMac/       # macOS app
+│   └── ScriptWidgetMacWidget/ # macOS widget
+├── Editor/editorfe/           # React + CodeMirror editor frontend
+├── Resource/                  # Marketing assets, screenshots
 └── README.md
 ```
 
@@ -90,57 +99,44 @@ ScriptWidget/
 
 ## 💻 Example Widgets
 
+A script's entry point is the `$render(...)` call, which takes a JSX tree built from
+runtime tags (`vstack`, `hstack`, `zstack`, `text`, `image`, `gauge`, `chart`, ...).
+
 ### Hello World
 
-```javascript
-// A simple widget
-function render() {
-  return (
-    <widget type="medium">
-      <text style={{ fontSize: 24, color: '#333' }}>
-        Hello, ScriptWidget! 👋
-      </text>
-    </widget>
-  );
-}
+```jsx
+$render(
+  <vstack frame="max">
+    <text font="title">Hello, ScriptWidget! 👋</text>
+  </vstack>
+);
 ```
 
-### Weather Widget
+### Fetch remote data
 
-```javascript
-function WeatherWidget({ location }) {
-  const [weather] = useWeather(location);
-  
-  return (
-    <widget type="large">
-      <view style={{ padding: 16 }}>
-        <text style={{ fontSize: 32 }}>
-          {weather.temperature}°C
-        </text>
-        <text style={{ fontSize: 16 }}>
-          {weather.condition}
-        </text>
-      </view>
-    </widget>
-  );
-}
+```jsx
+const result = await fetch("https://jsonplaceholder.typicode.com/todos/1");
+const model = JSON.parse(result);
+
+$render(
+  <vstack>
+    <text font="title">{model.title}</text>
+  </vstack>
+);
 ```
 
-### Todo List
+### Persist values with `$storage`
 
-```javascript
-function TodoList({ todos }) {
-  return (
-    <widget type="medium">
-      <list data={todos} render={(item) => (
-        <row>
-          <checkbox checked={item.done} />
-          <text>{item.title}</text>
-        </row>
-      )} />
-    </widget>
-  );
-}
+```jsx
+$storage.setString("greeting", "Hello ScriptWidget");
+const greeting = $storage.getString("greeting");
+
+$render(
+  <vstack frame="max" background="#0f172a">
+    <text font="caption" color="#94a3b8">Storage</text>
+    <text font="title3" color="#e2e8f0">{greeting}</text>
+  </vstack>
+);
 ```
 
 ---
@@ -160,24 +156,30 @@ function TodoList({ todos }) {
 git clone https://github.com/everettjf/ScriptWidget.git
 cd ScriptWidget
 
-# Open in Xcode
-open ScriptWidget/ScriptWidget.xcodeproj
+# Open in Xcode (pick the platform you want)
+open iOS/ScriptWidget.xcodeproj      # iOS
+open macOS/ScriptWidgetMac.xcodeproj # macOS
 
 # Build and run (Cmd + R)
 ```
 
-### Create Your Own Widget
+The editor frontend (React + CodeMirror) lives in `Editor/editorfe`:
 
 ```bash
-# 1. Duplicate an example
-cp -r Examples/HelloWorld Examples/MyWidget
-
-# 2. Edit the JavaScript file
-cd Examples/MyWidget
-vim script.js  # Write your widget code
-
-# 3. Run and preview in the app
+cd Editor/editorfe
+npm install
+npm start   # dev server at http://localhost:3000
+npm run build
 ```
+
+### Create Your Own Widget
+
+1. Run the app and create a new script from the in-app editor
+2. Write your widget in `main.jsx` and call `$render(...)` with a JSX tree
+3. Use the live preview to iterate, then add the widget from the Home Screen
+
+Each script is a package stored under `Scripts/<PackageName>/` (synced via iCloud /
+the app group), with `main.jsx` as the entry point and an optional `image/` folder.
 
 ---
 
@@ -185,22 +187,25 @@ vim script.js  # Write your widget code
 
 ### Core Concepts
 
-- **Widget Types** - small, medium, large, accessory
-- **Components** - text, image, list, grid, etc.
-- **Styling** - CSS-like inline styles
-- **Data Sources** - weather, calendar, reminders, etc.
-- **Interactions** - tap, swipe, long press
+- **Entry point** - call `$render(<tree/>)` to draw the widget
+- **Components** - `vstack`, `hstack`, `zstack`, `text`, `image`, `gauge`, `chart`, shapes, ...
+- **Styling** - element attributes such as `font`, `color`, `background`, `frame`, `padding`
+- **Widget sizes** - read `$getenv("widget-size")` (small / medium / large / accessory…)
+- **Interactions** - buttons and links via App Intents
 
 ### APIs
 
 | API | Description |
 |-----|-------------|
-| `useWeather()` | Get weather data |
-| `useCalendar()` | Access calendar events |
-| `useReminders()` | Fetch reminder lists |
-| `useLocation()` | Get device location |
-| `useHealth()` | HealthKit data |
-| `useNetwork()` | Network requests |
+| `fetch()` | HTTP requests (`fetch`/`$fetch`) |
+| `$storage` | Persisted key/value store (string & JSON) |
+| `$file` | Read/write files in the script package |
+| `$device` | Device info (model, battery, screen, dark mode, …) |
+| `$location` | Location & geocoding |
+| `$health` | HealthKit data (steps, heart rate, …) |
+| `$system` | System info (timezone, app version, …) |
+| `$import` | Import another file from the package |
+| `console` | Logging (`console.log` / `console.error`) |
 
 ---
 
