@@ -9,14 +9,38 @@ import Foundation
 import JavaScriptCore
 import Combine
 import CryptoKit
+import os
+
+/// Leveled logging for the runtime and widget targets, replacing scattered
+/// `print` calls. Interpolations are marked `.public` so messages are not
+/// redacted in release builds (these are app-authored diagnostics, not PII).
+enum SWLog {
+    private static let logger = Logger(subsystem: "everettjf.scriptwidget", category: "runtime")
+    static func debug(_ message: String) { logger.debug("\(message, privacy: .public)") }
+    static func info(_ message: String) { logger.info("\(message, privacy: .public)") }
+    static func error(_ message: String) { logger.error("\(message, privacy: .public)") }
+}
 
 enum ScriptWidgetError: Error {
     case undefinedRender(String)
-    
+
     case internalError(String)
     case transformError(String)
     case scriptError(String)
     case scriptException(String)
+
+    /// The underlying message, used both for logging and for surfacing the
+    /// failure to the user in the widget/preview instead of a blank view.
+    var displayMessage: String {
+        switch self {
+        case .undefinedRender(let msg),
+             .internalError(let msg),
+             .transformError(let msg),
+             .scriptError(let msg),
+             .scriptException(let msg):
+            return msg
+        }
+    }
 }
 
 extension JSContext {
@@ -134,8 +158,9 @@ class ScriptWidgetRuntime {
             
             var exceptionInfo: String?
             transformContext.exceptionHandler = { context, exception in
-                print("transform exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("transform exception : \(described)")
+                exceptionInfo = described
             }
             transformContext.evaluateScript(babelContent)
             
@@ -182,8 +207,35 @@ class ScriptWidgetRuntime {
         if !result.isString {
             return ""
         }
-        
+
         return result.toString()
+    }
+
+    /// Builds a human-readable description of a JavaScriptCore exception,
+    /// appending line/column and the JS stack trace when available so users
+    /// can locate the failing line instead of seeing a bare message.
+    static func describeException(_ exception: JSValue?) -> String {
+        guard let exception = exception else { return "unknown error" }
+        var message = exception.toString() ?? "unknown error"
+
+        func field(_ name: String) -> String? {
+            guard let value = exception.objectForKeyedSubscript(name),
+                  !value.isUndefined, !value.isNull else { return nil }
+            let string = value.toString()
+            return (string?.isEmpty == false) ? string : nil
+        }
+
+        if let line = field("line") {
+            if let column = field("column") {
+                message += " (line \(line), column \(column))"
+            } else {
+                message += " (line \(line))"
+            }
+        }
+        if let stack = field("stack") {
+            message += "\n" + stack
+        }
+        return message
     }
 }
 
@@ -308,8 +360,9 @@ extension ScriptWidgetRuntime {
 
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             
@@ -547,8 +600,9 @@ extension ScriptWidgetRuntime {
 
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             
@@ -754,8 +808,9 @@ extension ScriptWidgetRuntime {
             
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             

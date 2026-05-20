@@ -75,10 +75,10 @@
 ## 5. 下一步方案（分阶段）
 
 ### 阶段一 · 稳定性与基础（1–2 周，最高优先级）
-- [ ] **离线缓存**：脚本保存/加载时始终写一份本地缓存，iCloud 不可达时回退（解决 Issue #6）。
+- [x] **离线缓存（Issue #6）**：`ScriptWidgetPackage.readFile` 已有 build-cache 回退（iCloud 读失败时读 `__Build` 缓存），每次成功读取会 `syncBuildCache`。配合下方"错误可视化"，离线读真正失败时 Widget 会显示错误而非空白。后续可加：保存时主动写缓存、缓存淘汰。
 - [x] **JSX 转译缓存**：按脚本内容 hash 缓存 Babel 输出，避免每次刷新重转译。（已实现：`ScriptWidgetTranspileCache`，内存 + App Group 落盘）
-- [ ] **错误信息增强**：捕获并透出 JS 行号/堆栈到编辑器与 Widget 占位视图。
-- [ ] 用 `os.Logger` 替换 `print()`，加日志分级。
+- [x] **错误信息增强**：`ScriptWidgetRuntime.describeException` 给异常补上行号/列号/JS 堆栈；`ScriptWidgetError.displayMessage` 统一取信息；iOS/macOS Widget、Live Activity、灵动岛、iOS/macOS 编辑器预览的执行错误现在**显示在界面上**（此前只进日志、界面停在占位符）。
+- [x] **`os.Logger` 日志封装**：新增 `SWLog`（debug/info/error 分级，`.public` 不脱敏），已接入运行时异常路径与各 `systemLog`。剩余的 verbose 调试 `print` 为机械式后续迁移。
 
 ### 阶段二 · 代码健康与测试（1–2 周）
 - [ ] 新建 `ScriptWidgetRuntimeTests` XCTest target，覆盖 JSX→元素树、prop 类型解析、fetch/storage。

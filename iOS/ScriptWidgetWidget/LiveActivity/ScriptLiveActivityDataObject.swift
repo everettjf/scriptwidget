@@ -69,25 +69,16 @@ class ScriptLiveActivityDataObject: ObservableObject {
             self.runtime = nil
             
             if let error = result.1 {
-                switch error {
-                case .undefinedRender(let msg):
-                    self.systemLog(msg)
-                case .internalError(let msg):
-                    self.systemLog(msg)
-                case .scriptError(let msg):
-                    self.systemLog(msg)
-                case .scriptException(let msg):
-                    self.systemLog(msg)
-                case .transformError(let msg):
-                    self.systemLog(msg)
-                }
+                let message = error.displayMessage
+                self.systemLog(message)
+                self.rootElement = createTextElement(info: message)
             }
         }
-        
+
         self.systemLog("[FINISH]")
     }
-    
+
     func systemLog(_ str: String) {
-        print("system log: \(str)")
+        SWLog.info(str)
     }
 }

@@ -89,8 +89,9 @@ class ScriptCodeRunnerDataObject : ObservableObject {
     
     @Published var rootElement : ScriptWidgetRuntimeElement
     var runtime: ScriptWidgetRuntime?
-    
-    
+    var lastErrorMessage: String?
+
+
     init(file: ScriptWidgetPackage, widgetSizeType: Int, scriptParameter: String) {
         self.widgetSizeType = widgetSizeType
         self.scriptParameter = scriptParameter
@@ -129,7 +130,8 @@ class ScriptCodeRunnerDataObject : ObservableObject {
     
     func layoutElements() {
         if !self.runScript() {
-            self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Failed#"])
+            let info = self.lastErrorMessage ?? "#Failed#"
+            self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
         }
     }
     
@@ -166,24 +168,16 @@ class ScriptCodeRunnerDataObject : ObservableObject {
             // succeed
             self.rootElement = element
             self.runtime = runtime
+            self.lastErrorMessage = nil
             returnValue = true
         } else {
             // error
             self.runtime = nil
             returnValue = false
             if let error = result.1 {
-                switch error {
-                case .undefinedRender(let msg):
-                    self.systemLog(msg)
-                case .internalError(let msg):
-                    self.systemLog(msg)
-                case .scriptError(let msg):
-                    self.systemLog(msg)
-                case .scriptException(let msg):
-                    self.systemLog(msg)
-                case .transformError(let msg):
-                    self.systemLog(msg)
-                }
+                let message = error.displayMessage
+                self.lastErrorMessage = message
+                self.systemLog(message)
             }
         }
         DispatchQueue.main.asyncAfter(deadline: .now()+0.5) {
