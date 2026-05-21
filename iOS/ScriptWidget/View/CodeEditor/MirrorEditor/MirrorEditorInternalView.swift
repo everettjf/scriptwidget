@@ -117,7 +117,7 @@ class MirrorEditorInternalView: WKWebView {
         let baseUrl = bundle.resourceURL!.appendingPathComponent("build")
         
         print("base url = \(baseUrl)")
-        var html = try! String(contentsOfFile: indexPath)
+        var html = try! String(contentsOfFile: indexPath, encoding: .utf8)
         if AppHelper.isdarkmode() {
             html = html.replacingOccurrences(of: "theme:light", with: "theme:dark")
         }

@@ -27,8 +27,10 @@ class EditorInternalWebView: WKWebView {
     }
     
     init() {
-        super.init(frame: .zero, configuration: WKWebViewConfiguration())
-        
+        let config = WKWebViewConfiguration()
+        config.setURLSchemeHandler(EditorSchemeHandler(), forURLScheme: kEditorURLScheme)
+        super.init(frame: .zero, configuration: config)
+
         self.setValue(false, forKey: "drawsBackground")
         
         self.bridge = WKWebViewJavascriptBridge(webView: self)

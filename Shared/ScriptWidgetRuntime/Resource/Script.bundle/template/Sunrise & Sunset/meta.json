@@ -1,0 +1,7 @@
+{
+  "description": "Today's sunrise and sunset times for your location.",
+  "category": "weather",
+  "tags": ["sun","location"],
+  "difficulty": "medium",
+  "icon": "sun.horizon.fill"
+}

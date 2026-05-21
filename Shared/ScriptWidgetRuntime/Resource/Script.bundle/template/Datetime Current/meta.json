@@ -1,0 +1,8 @@
+{
+  "description": "Show the current date and time, updated automatically.",
+  "category": "time",
+  "tags": ["time","clock"],
+  "difficulty": "beginner",
+  "icon": "clock",
+  "featured": true
+}

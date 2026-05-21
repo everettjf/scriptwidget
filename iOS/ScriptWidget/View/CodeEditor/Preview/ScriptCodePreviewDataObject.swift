@@ -113,9 +113,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
         self.previewQueue.async {
             self.setPreviewStatus("Running...")
             print("start preview")
-            // new running state
-            sharedRunningState = ScriptWidgetRunningState(package: self.model.package)
-            
+
             self.systemLog("START")
             
             guard let JSX = self.model.package.readFile(fullPath: self.filePath).0 else {
@@ -144,20 +142,22 @@ class ScriptCodePreviewDataObject : ObservableObject {
             ])
             
             let result = runtime.executeJSXSyncForWidget(JSX)
-            
+
+            // Keep the runtime alive in both success and failure paths
+            // so loadScriptConsoleLogs() can still read this run's logs
+            // off its JSContext.
+            self.runtime = runtime
+
             if let element = result.0 {
                 // succeed
                 self.lastErrorMessage = nil
                 DispatchQueue.main.async {
                     self.rootElement = element
-                    self.runtime = runtime
 
                     completion(true)
                 }
             } else {
                 // error
-                self.runtime = nil
-
                 if let error = result.1 {
                     let message = error.displayMessage
                     self.lastErrorMessage = message
@@ -172,8 +172,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
     }
     
     func loadScriptConsoleLogs() {
-        if let runningState = sharedRunningState {
-            let logs = runningState.logger.logs
+        if let logs = self.runtime?.runningState?.logger.logs {
             for log in logs {
                 self.scriptLog(log)
             }

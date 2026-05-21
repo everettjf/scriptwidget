@@ -1,0 +1,7 @@
+{
+  "description": "Daily step count as a ring — pulls from HealthKit.",
+  "category": "health",
+  "tags": ["health","steps","healthkit"],
+  "difficulty": "medium",
+  "icon": "figure.walk"
+}

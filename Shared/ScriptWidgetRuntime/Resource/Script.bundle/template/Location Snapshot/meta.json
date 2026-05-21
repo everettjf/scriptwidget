@@ -1,0 +1,7 @@
+{
+  "description": "Display current GPS coordinates and a simple map preview.",
+  "category": "weather",
+  "tags": ["location","gps"],
+  "difficulty": "medium",
+  "icon": "map.fill"
+}

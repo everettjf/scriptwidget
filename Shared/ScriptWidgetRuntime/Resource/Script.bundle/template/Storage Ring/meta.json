@@ -1,0 +1,7 @@
+{
+  "description": "Free / used storage as a progress ring.",
+  "category": "system",
+  "tags": ["storage","ring"],
+  "difficulty": "medium",
+  "icon": "internaldrive.fill"
+}

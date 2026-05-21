@@ -1,0 +1,7 @@
+{
+  "description": "Show whether today is a working day.",
+  "category": "productivity",
+  "tags": ["workday","weekday"],
+  "difficulty": "beginner",
+  "icon": "briefcase.fill"
+}

@@ -1,0 +1,7 @@
+{
+  "description": "Live crypto prices with 24h change percentage.",
+  "category": "finance",
+  "tags": ["crypto","price","network"],
+  "difficulty": "medium",
+  "icon": "bitcoinsign.circle.fill"
+}

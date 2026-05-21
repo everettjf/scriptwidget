@@ -1,0 +1,7 @@
+{
+  "description": "Current air quality index with a color-coded badge.",
+  "category": "weather",
+  "tags": ["aqi","air","network"],
+  "difficulty": "medium",
+  "icon": "aqi.medium"
+}

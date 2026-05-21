@@ -1,0 +1,7 @@
+{
+  "description": "A rotating inspirational quote of the day.",
+  "category": "productivity",
+  "tags": ["quote","inspiration"],
+  "difficulty": "beginner",
+  "icon": "quote.bubble.fill"
+}

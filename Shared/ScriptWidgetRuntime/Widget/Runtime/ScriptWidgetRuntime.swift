@@ -112,9 +112,15 @@ class ScriptWidgetRuntime {
     init(package: ScriptWidgetPackage, environments: [String:String]) {
         self.package = package
         self.environments = environments
-        // APIs like $file/$console read runtime data from sharedRunningState.
-        // Ensure widget/extension runtime also initializes it.
-        sharedRunningState = ScriptWidgetRunningState(package: package)
+        // APIs like $file/$console read per-execution state from the
+        // owning JSContext.
+        runtimeContext.scriptWidgetRunningState = ScriptWidgetRunningState(package: package)
+    }
+
+    /// Per-execution state attached to this runtime's JSContext. Use
+    /// after `executeJSXSyncForWidget` to read captured logs.
+    var runningState: ScriptWidgetRunningState? {
+        runtimeContext.scriptWidgetRunningState
     }
     
     public func setEnvironment(_ key: String, _ value: String) {

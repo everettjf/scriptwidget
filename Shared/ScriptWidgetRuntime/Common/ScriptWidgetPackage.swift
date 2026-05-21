@@ -30,14 +30,29 @@ struct ScriptWidgetPackage {
     let name: String
     let jsxPath: URL
     let imagePath: URL
+    let metaPath: URL
     let readonly: Bool
-    
+
     init(path: URL, readonly: Bool) {
         self.readonly = readonly
         self.path = path
         self.jsxPath = self.path.appendingPathComponent("main.jsx")
         self.imagePath = self.path.appendingPathComponent("image")
+        self.metaPath = self.path.appendingPathComponent("meta.json")
         self.name = self.path.lastPathComponent
+    }
+
+    func readMetadata() -> ScriptMetadata? {
+        guard FileManager.default.fileExists(atPath: metaPath.path) else { return nil }
+        guard let data = try? Data(contentsOf: metaPath) else { return nil }
+        return try? JSONDecoder().decode(ScriptMetadata.self, from: data)
+    }
+
+    func previewImageURL() -> URL? {
+        let meta = readMetadata()
+        let name = meta?.preview ?? "preview.png"
+        let url = self.path.appendingPathComponent(name)
+        return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }
     
     // readwrite

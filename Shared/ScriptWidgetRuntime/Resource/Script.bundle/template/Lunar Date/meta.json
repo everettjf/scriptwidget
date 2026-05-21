@@ -1,0 +1,7 @@
+{
+  "description": "Show the current Chinese lunar date alongside the Gregorian date.",
+  "category": "time",
+  "tags": ["lunar","chinese","date"],
+  "difficulty": "medium",
+  "icon": "moon.stars.fill"
+}

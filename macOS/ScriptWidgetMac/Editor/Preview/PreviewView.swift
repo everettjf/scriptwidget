@@ -136,7 +136,6 @@ class ScriptCodeRunnerDataObject : ObservableObject {
     }
     
     func runScript() -> Bool {
-        sharedRunningState = ScriptWidgetRunningState(package: self.package)
         self.clearLogs()
         
         self.systemLog("START")
@@ -163,16 +162,19 @@ class ScriptCodeRunnerDataObject : ObservableObject {
         ])
         
         let result = runtime.executeJSXSyncForWidget(JSX)
-        
+
+        // Keep the runtime alive in both success and failure paths so
+        // loadScriptConsoleLogs() can still read this run's logs off
+        // its JSContext.
+        self.runtime = runtime
+
         if let element = result.0 {
             // succeed
             self.rootElement = element
-            self.runtime = runtime
             self.lastErrorMessage = nil
             returnValue = true
         } else {
             // error
-            self.runtime = nil
             returnValue = false
             if let error = result.1 {
                 let message = error.displayMessage
@@ -190,13 +192,11 @@ class ScriptCodeRunnerDataObject : ObservableObject {
     
     func loadScriptConsoleLogs() {
         print("console log (list logs)");
-        if let runningState = sharedRunningState {
-            let logs = runningState.logger.logs
+        if let logs = self.runtime?.runningState?.logger.logs {
             for log in logs {
                 self.scriptLog(log)
             }
         }
-        
     }
     
     func clearLogs() {
@@ -285,11 +285,11 @@ struct PreviewView: View {
                         Text("Preview Size")
                     }
                     .pickerStyle(SegmentedPickerStyle())
-                    .onChange(of: widgetSizeType, perform: { value in
+                    .onChange(of: widgetSizeType) { _, value in
                         print("preview size changed : \(value)")
-                        
+
                         self.data.changeWidgetSizeType(value)
-                    })
+                    }
                 }
                 .padding(.top, 5)
                 

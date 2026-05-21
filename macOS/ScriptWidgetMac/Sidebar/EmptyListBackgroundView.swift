@@ -2,22 +2,25 @@
 //  EmptyListBackgroundView.swift
 //  ScriptWidgetMac
 //
-//  Created by everettjf on 2022/1/15.
+//  Compact empty state shown inside the sidebar when no widgets exist.
 //
-
 
 import SwiftUI
 
 struct EmptyListBackgroundView: View {
     var body: some View {
-        VStack (spacing: 5) {
-            Text("Create your first widget by tapping the plus button upper-right :)")
-                .multilineTextAlignment(.leading)
-                .lineLimit(10)
-                .font(.headline)
+        VStack(alignment: .leading, spacing: 6) {
+            Image(systemName: "sparkles")
+                .font(.system(size: 20))
+                .foregroundStyle(.secondary)
+            Text("No widgets yet")
+                .font(.subheadline).bold()
+            Text("Tap the + button above to browse templates or generate with AI.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
-        .foregroundColor(Color.gray.opacity(0.75))
-        .padding()
+        .padding(.vertical, 8)
     }
 }
 

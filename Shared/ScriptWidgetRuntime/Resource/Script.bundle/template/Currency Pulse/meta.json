@@ -1,0 +1,7 @@
+{
+  "description": "Exchange rates between fiat currencies.",
+  "category": "finance",
+  "tags": ["currency","forex","network"],
+  "difficulty": "medium",
+  "icon": "dollarsign.circle.fill"
+}

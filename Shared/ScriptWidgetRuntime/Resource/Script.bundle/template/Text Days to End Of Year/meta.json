@@ -1,0 +1,7 @@
+{
+  "description": "Count remaining days until the end of the year.",
+  "category": "time",
+  "tags": ["countdown","days"],
+  "difficulty": "beginner",
+  "icon": "calendar"
+}

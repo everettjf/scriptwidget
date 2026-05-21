@@ -1,0 +1,8 @@
+{
+  "description": "Live weather via Open-Meteo — no API key required.",
+  "category": "weather",
+  "tags": ["weather","network","api"],
+  "difficulty": "medium",
+  "icon": "cloud.bolt.rain.fill",
+  "featured": true
+}

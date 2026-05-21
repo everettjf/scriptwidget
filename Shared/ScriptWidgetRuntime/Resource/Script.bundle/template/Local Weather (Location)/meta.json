@@ -1,0 +1,7 @@
+{
+  "description": "Use your current location to fetch local weather.",
+  "category": "weather",
+  "tags": ["weather","location"],
+  "difficulty": "medium",
+  "icon": "location.fill"
+}

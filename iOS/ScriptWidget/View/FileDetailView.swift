@@ -63,12 +63,12 @@ struct FileDetailView: View {
         })
         
         // on file renamed
-        .onChange(of: onFileRenamed, perform: { value in
+        .onChange(of: onFileRenamed) { _, value in
             print("on file renamed : \(value)")
             if value {
                 presentationMode.dismiss()
             }
-        })
+        }
         
         .navigationBarItems(
             trailing: HStack {

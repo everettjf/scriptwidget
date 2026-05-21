@@ -1,0 +1,7 @@
+{
+  "description": "Count remaining days until the end of the current month.",
+  "category": "time",
+  "tags": ["countdown","days"],
+  "difficulty": "beginner",
+  "icon": "calendar.badge.clock"
+}

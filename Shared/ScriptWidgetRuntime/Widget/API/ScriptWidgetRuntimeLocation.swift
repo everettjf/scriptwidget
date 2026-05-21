@@ -40,13 +40,13 @@ import CoreLocation
             return "authorizedWhenInUse"
         }
         return "notDetermined"
-        #endif
-
+        #else
         guard CLLocationManager.locationServicesEnabled() else {
             return "disabled"
         }
         let manager = CLLocationManager()
         return statusString(for: manager.authorizationStatus)
+        #endif
     }
 
     static func requestAuthorization() -> ScriptWidgetRuntimePromise {
@@ -57,9 +57,7 @@ import CoreLocation
         return ScriptWidgetRuntimePromise { resolve, reject in
             #if IsWidgetTarget
             resolve.call(withArguments: [cachedLocationPayload(maxAgeSeconds: nil) != nil])
-            return
-            #endif
-
+            #else
             guard CLLocationManager.locationServicesEnabled() else {
                 reject.call(withArguments: ["Location services are disabled on this device"])
                 return
@@ -74,12 +72,7 @@ import CoreLocation
                 resolve.call(withArguments: [false])
                 return
             case .notDetermined:
-                #if IsWidgetTarget
-                resolve.call(withArguments: [false])
-                return
-                #else
                 break
-                #endif
             @unknown default:
                 resolve.call(withArguments: [false])
                 return
@@ -97,6 +90,7 @@ import CoreLocation
             )
             activeRequests.append(request)
             request.start()
+            #endif
         }
     }
 
@@ -113,9 +107,7 @@ import CoreLocation
             } else {
                 reject.call(withArguments: ["Location data unavailable. Open the main app to refresh location."])
             }
-            return
-            #endif
-
+            #else
             guard CLLocationManager.locationServicesEnabled() else {
                 reject.call(withArguments: ["Location services are disabled on this device"])
                 return
@@ -150,6 +142,7 @@ import CoreLocation
             )
             activeRequests.append(request)
             request.start()
+            #endif
         }
     }
 

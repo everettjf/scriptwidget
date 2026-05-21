@@ -1,0 +1,7 @@
+{
+  "description": "Fill the whole widget area with an image — no margins.",
+  "category": "starter",
+  "tags": ["image","layout"],
+  "difficulty": "beginner",
+  "icon": "rectangle.fill"
+}

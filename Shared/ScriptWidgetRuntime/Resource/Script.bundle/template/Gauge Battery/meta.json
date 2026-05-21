@@ -1,0 +1,7 @@
+{
+  "description": "Circular gauge visualizing the current battery level.",
+  "category": "system",
+  "tags": ["battery","gauge"],
+  "difficulty": "beginner",
+  "icon": "gauge.medium"
+}

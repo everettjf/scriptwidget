@@ -152,14 +152,24 @@ struct ScriptWidgetHomeView: View {
                             Label("Share", systemImage: "square.and.arrow.up")
                         }
                         .tint(.blue)
-                        
+
                         Button {
                             self.selectedEditItem = item
                         } label: {
                             Label("Edit", systemImage: "pencil.circle")
                         }
                         .tint(.systemIndigo)
-                        
+
+                        Button {
+                            let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
+                            if result.0 {
+                                NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
+                            }
+                        } label: {
+                            Label("Remix", systemImage: "square.on.square")
+                        }
+                        .tint(.purple)
+
                         Button(role: .destructive) {
                             self.selectedDeleteItem = item
                             self.isShowingDeleteAlert.toggle()

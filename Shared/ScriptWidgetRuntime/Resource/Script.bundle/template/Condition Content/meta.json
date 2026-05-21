@@ -1,0 +1,7 @@
+{
+  "description": "Swap content based on a condition (if / else).",
+  "category": "starter",
+  "tags": ["basics","logic"],
+  "difficulty": "beginner",
+  "icon": "arrow.triangle.branch"
+}

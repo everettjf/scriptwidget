@@ -66,7 +66,7 @@ import UIKit
     }
     
     static func language() -> String {
-        return NSLocale.current.languageCode ?? ""
+        return Locale.current.language.languageCode?.identifier ?? ""
     }
     
     static func model() -> String {
@@ -138,7 +138,7 @@ import UIKit
     }
     
     static func language() -> String {
-        return NSLocale.current.languageCode ?? ""
+        return Locale.current.language.languageCode?.identifier ?? ""
     }
     
     static func model() -> String {

@@ -1,0 +1,7 @@
+{
+  "description": "A single stock symbol with price and change.",
+  "category": "finance",
+  "tags": ["stock","price","network"],
+  "difficulty": "medium",
+  "icon": "chart.line.uptrend.xyaxis"
+}

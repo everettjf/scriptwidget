@@ -1,0 +1,7 @@
+{
+  "description": "Multi-row system status panel widget.",
+  "category": "system",
+  "tags": ["system","panel"],
+  "difficulty": "medium",
+  "icon": "square.grid.2x2.fill"
+}

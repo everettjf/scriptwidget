@@ -1,0 +1,7 @@
+{
+  "description": "Render an image with custom size and corner radius.",
+  "category": "starter",
+  "tags": ["image","basics"],
+  "difficulty": "beginner",
+  "icon": "photo"
+}

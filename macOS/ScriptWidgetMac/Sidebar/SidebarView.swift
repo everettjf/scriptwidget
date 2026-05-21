@@ -14,17 +14,21 @@ struct SidebarView: View {
     @ObservedObject var store: SharedAppStore
     // create
     @State private var createShowingSheet = false
-    
+
+    // AI generate
+    @State private var aiGenerateShowingSheet = false
+    @State private var aiConfigAlertShown = false
+
     // rename
     @State private var renameCurrentName = ""
     @State private var renameInputName = ""
     @State private var renameShowingSheet = false
-    
+
     // delete
     @State private var deleteCurrentName = ""
     @State private var deleteShowingSheet = false
-    
-    
+
+
     var body: some View {
         content
             .frame(minWidth:200, maxWidth: 300, idealHeight: 250)
@@ -37,6 +41,21 @@ struct SidebarView: View {
             .sheet(isPresented: $createShowingSheet) {
                 CreateGuideView()
             }
+            .sheet(isPresented: $aiGenerateShowingSheet) {
+                AIGenerateWindowView()
+            }
+            .onReceive(NotificationCenter.default.publisher(for: AIGenerateWindowView.openRequestNotification)) { _ in
+                if AISettingsStore.shared.load().isConfigured {
+                    aiGenerateShowingSheet = true
+                } else {
+                    aiConfigAlertShown = true
+                }
+            }
+            .alert("Configure AI First", isPresented: $aiConfigAlertShown) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("Open Settings (⌘,) → AI to add your OpenAI API key, then come back to generate with AI.")
+            }
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button{
@@ -47,10 +66,23 @@ struct SidebarView: View {
                 }
                 ToolbarItem(placement: .automatic) {
                     Button {
+                        if AISettingsStore.shared.load().isConfigured {
+                            self.aiGenerateShowingSheet = true
+                        } else {
+                            self.aiConfigAlertShown = true
+                        }
+                    } label: {
+                        Label("Generate with AI", systemImage: "wand.and.stars")
+                    }
+                    .help("Generate with AI (⌘⇧N)")
+                }
+                ToolbarItem(placement: .automatic) {
+                    Button {
                         self.createShowingSheet.toggle()
                     } label: {
                         Image(systemName: "plus.circle")
                     }
+                    .help("New widget")
                 }
             }
     }
@@ -73,6 +105,14 @@ struct SidebarView: View {
                             }
                             Button("Update") {
                                 item.package.updateFiles()
+                            }
+                            Button("Remix (Duplicate)") {
+                                let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
+                                if result.0 {
+                                    NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
+                                } else {
+                                    MacKitUtil.alertWarn(title: "Remix failed", message: result.1)
+                                }
                             }
                             Button("Rename") {
                                 self.renameCurrentName = item.name

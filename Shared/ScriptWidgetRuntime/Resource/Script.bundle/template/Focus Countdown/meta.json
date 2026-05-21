@@ -1,0 +1,7 @@
+{
+  "description": "A Pomodoro-style focus timer widget.",
+  "category": "productivity",
+  "tags": ["pomodoro","focus"],
+  "difficulty": "medium",
+  "icon": "timer"
+}

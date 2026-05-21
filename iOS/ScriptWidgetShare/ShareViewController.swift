@@ -6,11 +6,11 @@
 //
 
 import UIKit
-import CoreServices
+import UniformTypeIdentifiers
 
 
 class ShareViewController: UIViewController {
-    private let typeURL = String(kUTTypeURL)
+    private let typeURL = UTType.url.identifier
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)

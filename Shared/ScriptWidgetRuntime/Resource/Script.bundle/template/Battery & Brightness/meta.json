@@ -1,0 +1,8 @@
+{
+  "description": "Show battery level and screen brightness side by side.",
+  "category": "system",
+  "tags": ["battery","brightness","system"],
+  "difficulty": "beginner",
+  "icon": "battery.100",
+  "featured": true
+}

@@ -1,0 +1,7 @@
+{
+  "description": "Stars, forks and issues for any GitHub repository.",
+  "category": "productivity",
+  "tags": ["github","stats","api"],
+  "difficulty": "medium",
+  "icon": "chevron.left.forwardslash.chevron.right"
+}

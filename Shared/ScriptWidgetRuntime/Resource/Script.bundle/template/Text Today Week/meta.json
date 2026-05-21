@@ -1,0 +1,7 @@
+{
+  "description": "Show today's weekday name in a friendly format.",
+  "category": "time",
+  "tags": ["weekday","date"],
+  "difficulty": "beginner",
+  "icon": "calendar.day.timeline.left"
+}

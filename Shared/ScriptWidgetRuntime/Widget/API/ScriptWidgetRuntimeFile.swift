@@ -16,7 +16,7 @@ import JavaScriptCore
 
 @objc public class ScriptWidgetRuntimeFile: NSObject, ScriptWidgetRuntimeFileExports {
     static func read(_ relativePath: String) -> String {
-        guard let runningState = sharedRunningState else {
+        guard let runningState = JSContext.current()?.scriptWidgetRunningState else {
             return ""
         }
         guard let content = runningState.package.readFile(relativePath: relativePath).0 else {
@@ -24,9 +24,9 @@ import JavaScriptCore
         }
         return content
     }
-    
+
     static func readJSON(_ relativePath: String) -> [AnyHashable: Any]! {
-        guard let runningState = sharedRunningState else {
+        guard let runningState = JSContext.current()?.scriptWidgetRunningState else {
             return [:]
         }
         guard let content = runningState.package.readFile(relativePath: relativePath).0 else {

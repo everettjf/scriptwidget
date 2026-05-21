@@ -1,0 +1,7 @@
+{
+  "description": "Just the battery percent — big and readable.",
+  "category": "system",
+  "tags": ["battery","system"],
+  "difficulty": "beginner",
+  "icon": "battery.75"
+}

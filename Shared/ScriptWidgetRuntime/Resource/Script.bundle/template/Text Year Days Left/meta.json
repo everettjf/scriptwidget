@@ -1,0 +1,7 @@
+{
+  "description": "A big-number widget for days left in the year.",
+  "category": "time",
+  "tags": ["countdown","year"],
+  "difficulty": "beginner",
+  "icon": "number"
+}

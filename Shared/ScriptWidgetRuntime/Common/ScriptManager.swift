@@ -248,6 +248,26 @@ class ScriptManager {
         let packageName = self.getValidPackageName(recommendPackageName: recommendPackageName)
         return self.saveScript(packageName: packageName, content: content, imageCopyPath: imageCopyPath)
     }
+
+    /// Duplicate an existing script into a new package. Returns the new package name on success.
+    func duplicateScript(sourcePackageName: String) -> (Bool, String) {
+        let srcPath = self.getPackagePathFromPackageName(packageName: sourcePackageName)
+        guard FileManager.default.fileExists(atPath: srcPath.path) else {
+            return (false, "Source not found")
+        }
+        let newName = self.getValidPackageName(recommendPackageName: "\(sourcePackageName) Remix")
+        let destPath = self.getPackagePathFromPackageName(packageName: newName)
+        do {
+            try FileManager.default.copyItem(at: srcPath, to: destPath)
+        } catch {
+            return (false, "Failed to duplicate: \(error.localizedDescription)")
+        }
+        if !self.isBuild {
+            let package = self.getScriptPackage(packageName: newName)
+            _ = buildScriptPackage(package: package)
+        }
+        return (true, newName)
+    }
     
     
     func isExist(packageName: String) -> Bool {

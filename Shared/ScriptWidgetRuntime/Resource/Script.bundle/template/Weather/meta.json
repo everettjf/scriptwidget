@@ -1,0 +1,7 @@
+{
+  "description": "A classic weather widget with icon, temperature and condition.",
+  "category": "weather",
+  "tags": ["weather","temperature"],
+  "difficulty": "beginner",
+  "icon": "cloud.sun.fill"
+}

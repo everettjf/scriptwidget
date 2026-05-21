@@ -17,16 +17,12 @@ import JavaScriptCore
 
 @objc public class ScriptWidgetRuntimeConsole: NSObject, ScriptWidgetRuntimeConsoleExports {
     class func log(_ string: String) {
-        if let runningState = sharedRunningState {
-            runningState.logger.addLog(string)
-        }
+        JSContext.current()?.scriptWidgetRunningState?.logger.addLog(string)
         print("console log : \(string)")
     }
-    
+
     class func error(_ string: String) {
-        if let runningState = sharedRunningState {
-            runningState.logger.addLog(string)
-        }
+        JSContext.current()?.scriptWidgetRunningState?.logger.addLog(string)
         print("console error : \(string)")
     }
 }

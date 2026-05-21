@@ -1,0 +1,7 @@
+{
+  "description": "Open a URL when the widget is tapped.",
+  "category": "starter",
+  "tags": ["link","tap"],
+  "difficulty": "beginner",
+  "icon": "link"
+}

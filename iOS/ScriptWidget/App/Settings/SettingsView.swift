@@ -39,8 +39,14 @@ struct SettingsView: View {
                             SettingsTextRowView(name: "Templates", content: "")
                         }
                     }
-                    
-                    
+
+                    GroupBox (label: SettingsLabelView(title: "AI", image: "sparkles")) {
+                        NavigationLink(destination: SettingAIView()) {
+                            SettingsTextRowView(name: "AI Generate", content: "")
+                        }
+                    }
+
+
                     GroupBox (label: SettingsLabelView(title: "Refresh", image: "paintbrush")) {
                         Divider().padding(.vertical, 4)
 

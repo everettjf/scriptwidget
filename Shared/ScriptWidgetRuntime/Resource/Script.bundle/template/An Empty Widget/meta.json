@@ -1,0 +1,8 @@
+{
+  "description": "A blank widget to start from scratch — just a hello text.",
+  "category": "starter",
+  "tags": ["blank","hello"],
+  "difficulty": "beginner",
+  "icon": "square.dashed",
+  "featured": true
+}

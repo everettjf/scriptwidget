@@ -1,0 +1,7 @@
+{
+  "description": "Draw rounded rectangles, circles and capsules with gradients.",
+  "category": "starter",
+  "tags": ["shape","drawing"],
+  "difficulty": "beginner",
+  "icon": "square.on.circle"
+}

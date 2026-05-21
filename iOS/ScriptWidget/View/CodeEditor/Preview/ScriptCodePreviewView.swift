@@ -122,11 +122,11 @@ struct ScriptCodePreviewView: View {
                 Text("AccessoryCircular").tag(5)
                 Text("AccessoryRectangular").tag(6)
             }
-            .onChange(of: widgetSizeType, perform: { value in
+            .onChange(of: widgetSizeType) { _, value in
                 print("preview size changed : \(value)")
-                
+
                 self.state.changeWidgetSizeType(value)
-            })
+            }
             Toggle("Debug Border", isOn:$isDebugMode)
             
             HStack {

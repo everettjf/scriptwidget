@@ -1,0 +1,7 @@
+{
+  "description": "A dashboard of system stats: battery, storage, memory.",
+  "category": "system",
+  "tags": ["system","dashboard"],
+  "difficulty": "medium",
+  "icon": "cpu.fill"
+}
