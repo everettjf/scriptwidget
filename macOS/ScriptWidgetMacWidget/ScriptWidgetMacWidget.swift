@@ -21,71 +21,25 @@ struct ScriptWidgetTimelineProvider: AppIntentTimelineProvider {
     }
 
     func timeline(for configuration: ScriptWidgetAppIntent, in context: Context) async -> Timeline<ScriptWidgetTimelineEntry> {
-        var entries: [ScriptWidgetTimelineEntry] = []
+        let offset = (configuration.Frequency ?? .hours_1).refreshOffset
+        let entryDate = Calendar.current.date(byAdding: offset.component, value: offset.value, to: Date())!
+        let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
+        return Timeline(entries: [entry], policy: .atEnd)
+    }
+}
 
-        if configuration.Frequency == .minutes_1 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .minute, value: 1, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .minutes_10 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .minute, value: 10, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .minutes_30 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .minute, value: 30, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .hours_1 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .hours_3 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .hour, value: 3, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .hours_6 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .hour, value: 6, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .hours_12 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .hour, value: 12, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else if configuration.Frequency == .day_1 {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .day, value: 1, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
-        } else {
-            let currentDate = Date()
-            let entryDate = Calendar.current.date(byAdding: .hour, value: 1, to: currentDate)!
-            let entry = ScriptWidgetTimelineEntry(isPreview: false, date: entryDate, configuration: configuration)
-            entries.append(entry)
-            let timeline = Timeline(entries: entries, policy: .atEnd)
-            return timeline
+extension AppConfigFrequency {
+    /// Calendar offset used to schedule the next widget refresh.
+    var refreshOffset: (component: Calendar.Component, value: Int) {
+        switch self {
+        case .minutes_1:  return (.minute, 1)
+        case .minutes_10: return (.minute, 10)
+        case .minutes_30: return (.minute, 30)
+        case .hours_1:    return (.hour, 1)
+        case .hours_3:    return (.hour, 3)
+        case .hours_6:    return (.hour, 6)
+        case .hours_12:   return (.hour, 12)
+        case .day_1:      return (.day, 1)
         }
     }
 }
@@ -163,28 +117,19 @@ class ScriptWidgetDataObject : ObservableObject {
         } else {
             // error
             self.runtime = nil
-            
+
             if let error = result.1 {
-                switch error {
-                case .undefinedRender(let msg):
-                    self.systemLog(msg)
-                case .internalError(let msg):
-                    self.systemLog(msg)
-                case .scriptError(let msg):
-                    self.systemLog(msg)
-                case .scriptException(let msg):
-                    self.systemLog(msg)
-                case .transformError(let msg):
-                    self.systemLog(msg)
-                }
+                let message = error.displayMessage
+                self.systemLog(message)
+                self.rootElement = createTextElement(info: message)
             }
         }
-        
+
         self.systemLog("[FINISH]")
     }
-    
+
     func systemLog(_ str: String) {
-        print("system log: \(str)")
+        SWLog.info(str)
     }
 }
 

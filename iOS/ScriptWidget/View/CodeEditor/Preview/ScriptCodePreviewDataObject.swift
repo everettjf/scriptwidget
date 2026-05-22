@@ -19,7 +19,8 @@ class ScriptCodePreviewDataObject : ObservableObject {
     @Published var filePath: URL
     
     var runtime: ScriptWidgetRuntime?
-    
+    var lastErrorMessage: String?
+
     let previewQueue: DispatchQueue
     
     var cancelledByDeinit = false
@@ -95,7 +96,8 @@ class ScriptCodePreviewDataObject : ObservableObject {
                 print("failed preview")
                 self?.setPreviewStatus("Error 0_0")
                 DispatchQueue.main.async {
-                    self?.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Failed#"])
+                    let info = self?.lastErrorMessage ?? "#Failed#"
+                    self?.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
                 }
             }
         }
@@ -148,6 +150,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
 
             if let element = result.0 {
                 // succeed
+                self.lastErrorMessage = nil
                 DispatchQueue.main.async {
                     self.rootElement = element
 
@@ -156,18 +159,9 @@ class ScriptCodePreviewDataObject : ObservableObject {
             } else {
                 // error
                 if let error = result.1 {
-                    switch error {
-                    case .undefinedRender(let msg):
-                        self.systemLog(msg)
-                    case .internalError(let msg):
-                        self.systemLog(msg)
-                    case .scriptError(let msg):
-                        self.systemLog(msg)
-                    case .scriptException(let msg):
-                        self.systemLog(msg)
-                    case .transformError(let msg):
-                        self.systemLog(msg)
-                    }
+                    let message = error.displayMessage
+                    self.lastErrorMessage = message
+                    self.systemLog(message)
                 }
                 DispatchQueue.main.async {
                     completion(false)

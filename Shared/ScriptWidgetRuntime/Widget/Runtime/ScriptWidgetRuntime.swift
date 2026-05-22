@@ -8,14 +8,39 @@
 import Foundation
 import JavaScriptCore
 import Combine
+import CryptoKit
+import os
+
+/// Leveled logging for the runtime and widget targets, replacing scattered
+/// `print` calls. Interpolations are marked `.public` so messages are not
+/// redacted in release builds (these are app-authored diagnostics, not PII).
+enum SWLog {
+    private static let logger = Logger(subsystem: "everettjf.scriptwidget", category: "runtime")
+    static func debug(_ message: String) { logger.debug("\(message, privacy: .public)") }
+    static func info(_ message: String) { logger.info("\(message, privacy: .public)") }
+    static func error(_ message: String) { logger.error("\(message, privacy: .public)") }
+}
 
 enum ScriptWidgetError: Error {
     case undefinedRender(String)
-    
+
     case internalError(String)
     case transformError(String)
     case scriptError(String)
     case scriptException(String)
+
+    /// The underlying message, used both for logging and for surfacing the
+    /// failure to the user in the widget/preview instead of a blank view.
+    var displayMessage: String {
+        switch self {
+        case .undefinedRender(let msg),
+             .internalError(let msg),
+             .transformError(let msg),
+             .scriptError(let msg),
+             .scriptException(let msg):
+            return msg
+        }
+    }
 }
 
 extension JSContext {
@@ -125,13 +150,23 @@ class ScriptWidgetRuntime {
                 promise(.failure(.internalError("Babel file not found")))
                 return
             }
-            
+
+            // Babel transform output is deterministic for a given input + bundle,
+            // so reuse a cached result instead of re-running Babel on every widget
+            // refresh (widget processes are short-lived, hence the disk backing).
+            let cacheKey = ScriptWidgetTranspileCache.key(for: JSX, babelFingerprint: ScriptWidgetTranspileCache.fingerprint(of: babelContent))
+            if let cached = ScriptWidgetTranspileCache.get(cacheKey) {
+                promise(.success(cached))
+                return
+            }
+
             let transformContext = JSContext()!
             
             var exceptionInfo: String?
             transformContext.exceptionHandler = { context, exception in
-                print("transform exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("transform exception : \(described)")
+                exceptionInfo = described
             }
             transformContext.evaluateScript(babelContent)
             
@@ -160,6 +195,7 @@ class ScriptWidgetRuntime {
             }
             
             // success
+            ScriptWidgetTranspileCache.set(cacheKey, jsOutput)
             promise(.success(jsOutput))
         }
         .eraseToAnyPublisher()
@@ -177,8 +213,35 @@ class ScriptWidgetRuntime {
         if !result.isString {
             return ""
         }
-        
+
         return result.toString()
+    }
+
+    /// Builds a human-readable description of a JavaScriptCore exception,
+    /// appending line/column and the JS stack trace when available so users
+    /// can locate the failing line instead of seeing a bare message.
+    static func describeException(_ exception: JSValue?) -> String {
+        guard let exception = exception else { return "unknown error" }
+        var message = exception.toString() ?? "unknown error"
+
+        func field(_ name: String) -> String? {
+            guard let value = exception.objectForKeyedSubscript(name),
+                  !value.isUndefined, !value.isNull else { return nil }
+            let string = value.toString()
+            return (string?.isEmpty == false) ? string : nil
+        }
+
+        if let line = field("line") {
+            if let column = field("column") {
+                message += " (line \(line), column \(column))"
+            } else {
+                message += " (line \(line))"
+            }
+        }
+        if let stack = field("stack") {
+            message += "\n" + stack
+        }
+        return message
     }
 }
 
@@ -303,8 +366,9 @@ extension ScriptWidgetRuntime {
 
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             
@@ -542,8 +606,9 @@ extension ScriptWidgetRuntime {
 
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             
@@ -749,8 +814,9 @@ extension ScriptWidgetRuntime {
             
             var exceptionInfo: String?
             self.runtimeContext.exceptionHandler = { context, exception in
-                print("execute exception : \(exception!.toString() ?? "exception is nil")")
-                exceptionInfo = exception?.toString()
+                let described = ScriptWidgetRuntime.describeException(exception)
+                SWLog.error("execute exception : \(described)")
+                exceptionInfo = described
                 semaphore.signal()
             }
             
@@ -832,6 +898,70 @@ extension ScriptWidgetRuntime {
         }
         .eraseToAnyPublisher()
     }
-    
-    
+
+
+}
+
+/// Caches Babel(JSX) transpile output keyed by source content.
+///
+/// The transpiler is by far the most expensive step of a widget refresh and its
+/// output is a pure function of (source, Babel bundle, preset). Widget extension
+/// processes are short-lived, so the cache is also persisted to the shared app
+/// group container to survive across refreshes.
+enum ScriptWidgetTranspileCache {
+    private static let appGroupIdentifier = "group.everettjf.scriptwidget"
+    // Bump when the transform output format changes in a way unrelated to the
+    // Babel bundle bytes (e.g. how `transform()` wraps the source).
+    private static let formatVersion = "1"
+
+    private static let queue = DispatchQueue(label: "scriptwidget.transpilecache")
+    private static var memory: [String: String] = [:]
+    private static var babelFingerprintCache: String?
+
+    private static let directory: URL? = {
+        guard let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
+            return nil
+        }
+        let dir = base.appendingPathComponent("__TranspileCache")
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }()
+
+    /// Fingerprint of the Babel bundle, computed once per process. A different
+    /// bundle (shipped in an app update) produces a different fingerprint and
+    /// therefore different cache keys, so stale entries are never reused.
+    static func fingerprint(of babelContent: String) -> String {
+        if let cached = queue.sync(execute: { babelFingerprintCache }) {
+            return cached
+        }
+        let digest = SHA256.hash(data: Data(babelContent.utf8))
+        let value = digest.map { String(format: "%02x", $0) }.joined()
+        queue.sync { babelFingerprintCache = value }
+        return value
+    }
+
+    static func key(for source: String, babelFingerprint: String) -> String {
+        let combined = "\(formatVersion)|\(babelFingerprint)|\(source)"
+        let digest = SHA256.hash(data: Data(combined.utf8))
+        return digest.map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func get(_ key: String) -> String? {
+        if let value = queue.sync(execute: { memory[key] }) {
+            return value
+        }
+        guard let file = directory?.appendingPathComponent(key),
+              let data = try? Data(contentsOf: file),
+              let value = String(data: data, encoding: .utf8) else {
+            return nil
+        }
+        queue.sync { memory[key] = value }
+        return value
+    }
+
+    static func set(_ key: String, _ value: String) {
+        queue.sync { memory[key] = value }
+        guard let file = directory?.appendingPathComponent(key) else { return }
+        try? Data(value.utf8).write(to: file, options: .atomic)
+    }
 }
