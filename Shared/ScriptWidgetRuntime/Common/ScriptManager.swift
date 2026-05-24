@@ -41,7 +41,12 @@ class ScriptManager {
     init(isBuild: Bool) {
         self.isBuild = isBuild
         if isBuild {
-            self.scriptDirectory = Self.getSandboxBuildDirectoryURL()!
+            if let buildDir = Self.getSandboxBuildDirectoryURL() {
+                self.scriptDirectory = buildDir
+            } else {
+                print("app group container unavailable; falling back to local build directory")
+                self.scriptDirectory = Self.localFallbackDirectoryURL("__Build")
+            }
             self.isUsingiCloud = false
         } else {
             let dirInfo = Self.getICloudPriorityRootDirectory()
@@ -61,8 +66,12 @@ class ScriptManager {
         if let url = ScriptManager.getICloudRootDirectoryURL() {
             root = url
             isUsingiCloud = true
+        } else if let sandboxRoot = ScriptManager.getSandboxRootDirectoryURL() {
+            root = sandboxRoot
+            isUsingiCloud = false
         } else {
-            root = ScriptManager.getSandboxRootDirectoryURL()!
+            print("app group container unavailable; falling back to local root directory")
+            root = ScriptManager.localFallbackDirectoryURL("Documents")
             isUsingiCloud = false
         }
         
@@ -103,6 +112,19 @@ class ScriptManager {
             return url.appendingPathComponent("__Build")
         }
         return nil
+    }
+
+    /// Local, per-process fallback used when the shared app-group container is
+    /// unavailable (e.g. a missing entitlement). Keeps the app functional with
+    /// local-only storage instead of crashing on a force-unwrap. Prefers
+    /// Application Support and degrades to the temporary directory.
+    static func localFallbackDirectoryURL(_ component: String) -> URL {
+        let base = (try? FileManager.default.url(for: .applicationSupportDirectory,
+                                                 in: .userDomainMask,
+                                                 appropriateFor: nil,
+                                                 create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base.appendingPathComponent("ScriptWidget").appendingPathComponent(component)
     }
     
     static func getSandboxFileCount() -> Int {

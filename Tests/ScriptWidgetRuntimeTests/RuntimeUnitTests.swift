@@ -20,6 +20,8 @@
 
 import XCTest
 import JavaScriptCore
+// Both the iOS and macOS apps build with module name "ScriptWidget"
+// (the macOS target "ScriptWidgetMac" ships PRODUCT_NAME = ScriptWidget).
 @testable import ScriptWidget
 
 final class ScriptWidgetRuntimeElementTests: XCTestCase {
