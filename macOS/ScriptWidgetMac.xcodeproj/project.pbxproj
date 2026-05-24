@@ -11,6 +11,7 @@
 		1C24B164B4EBE88815490627 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */; };
 		1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
 		2748BECB1506585B128418DC /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
+		4A2430275ACA188D22C309B3 /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
 		5A89B79A2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A89B79B2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A89B79D2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */; };
@@ -38,8 +39,10 @@
 		A204000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000100000000000000B0 /* SettingAIView.swift */; };
 		A204000200000000000000B0 /* AIGenerateWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000200000000000000B0 /* AIGenerateWindowView.swift */; };
 		A206000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A206000200000000000000B0 /* SwiftOpenAI */; };
+		A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A207000100000000000000B0 /* EditorSchemeHandler.swift */; };
 		A621B963FD9840DB82F74813 /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */; };
 		A990D65181507F3AA8EB7951 /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAACB8F5182390731F6DFE7 /* ScriptWidgetElementTagExtras.swift */; };
+		BB00D8A249BA2594A1B95767 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */; };
 		D1995C9429536BB800D1BD94 /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5729536BB800D1BD94 /* MineGaugeView.swift */; };
 		D1995C9529536BB800D1BD94 /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5729536BB800D1BD94 /* MineGaugeView.swift */; };
 		D1995C9629536BB800D1BD94 /* ScriptWidgetElementColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5829536BB800D1BD94 /* ScriptWidgetElementColor.swift */; };
@@ -136,11 +139,11 @@
 		D1995CF929536BC700D1BD94 /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF529536BC700D1BD94 /* ScriptWidgetPackage.swift */; };
 		D1995CFB29536BC700D1BD94 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF629536BC700D1BD94 /* ScriptModel.swift */; };
 		D1995CFC29536BC700D1BD94 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF629536BC700D1BD94 /* ScriptModel.swift */; };
-		D1A0000000E0000000001001 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
-		D1A0000000E0000000001002 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
 		D1995CFE29536BC700D1BD94 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF729536BC700D1BD94 /* ScriptManager.swift */; };
 		D1995CFF29536BC700D1BD94 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF729536BC700D1BD94 /* ScriptManager.swift */; };
 		D1995D0629536BF000D1BD94 /* Script.bundle in Resources */ = {isa = PBXBuildFile; fileRef = D1995D0529536BF000D1BD94 /* Script.bundle */; };
+		D1A0000000E0000000001001 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
+		D1A0000000E0000000001002 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
 		F05227BF2AD1D6DF0014BE09 /* ScriptWidgetElementTagToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227BD2AD1D6DE0014BE09 /* ScriptWidgetElementTagToggle.swift */; };
 		F05227C02AD1D6DF0014BE09 /* ScriptWidgetElementTagToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227BD2AD1D6DE0014BE09 /* ScriptWidgetElementTagToggle.swift */; };
 		F05227C12AD1D6DF0014BE09 /* ScriptWidgetElementTagButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227BE2AD1D6DE0014BE09 /* ScriptWidgetElementTagButton.swift */; };
@@ -202,10 +205,16 @@
 		F2CA7ADB27A23BED00569709 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F2CA7ADA27A23BED00569709 /* ZipArchive */; };
 		F2D2B24EA420469CBA72564F /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */; };
 		F2F90FC427970E3E003095A9 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F90FC327970E3E003095A9 /* CreateGuideView.swift */; };
-		A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A207000100000000000000B0 /* EditorSchemeHandler.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		B3806BE2F01E8CD8B6619F21 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F29117D2279101DE00B860B0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F29117E3279101DF00B860B0;
+			remoteInfo = ScriptWidgetMac;
+		};
 		F29118092791034A00B860B0 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F29117D2279101DE00B860B0 /* Project object */;
@@ -234,7 +243,10 @@
 		124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
 		5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
+		5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
+		77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
+		8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
 		8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
 		8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
 		A201000100000000000000B0 /* AISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettings.swift; sourceTree = "<group>"; };
@@ -254,6 +266,7 @@
 		A201000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
 		A203000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A203000200000000000000B0 /* AIGenerateWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateWindowView.swift; sourceTree = "<group>"; };
+		A207000100000000000000B0 /* EditorSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSchemeHandler.swift; sourceTree = "<group>"; };
 		CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
 		D1995C5729536BB800D1BD94 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		D1995C5829536BB800D1BD94 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
@@ -303,9 +316,9 @@
 		D1995C9229536BB800D1BD94 /* Apple ][.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; path = "Apple ][.ttf"; sourceTree = "<group>"; };
 		D1995CF529536BC700D1BD94 /* ScriptWidgetPackage.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetPackage.swift; sourceTree = "<group>"; };
 		D1995CF629536BC700D1BD94 /* ScriptModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptModel.swift; sourceTree = "<group>"; };
-		D1A0000000E0000000001000 /* ScriptMetadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
 		D1995CF729536BC700D1BD94 /* ScriptManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		D1995D0529536BF000D1BD94 /* Script.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Script.bundle; sourceTree = "<group>"; };
+		D1A0000000E0000000001000 /* ScriptMetadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
 		F05227BD2AD1D6DE0014BE09 /* ScriptWidgetElementTagToggle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagToggle.swift; sourceTree = "<group>"; };
 		F05227BE2AD1D6DE0014BE09 /* ScriptWidgetElementTagButton.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagButton.swift; sourceTree = "<group>"; };
 		F05227C62AD1D7100014BE09 /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ButtonActionAppIntent.swift; sourceTree = "<group>"; };
@@ -359,10 +372,17 @@
 		F29118D92792B90700B860B0 /* WKWebViewJavascriptBridgeJS.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewJavascriptBridgeJS.swift; sourceTree = "<group>"; };
 		F29118E72792CCDE00B860B0 /* PreviewWidgetSize.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewWidgetSize.swift; sourceTree = "<group>"; };
 		F2F90FC327970E3E003095A9 /* CreateGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGuideView.swift; sourceTree = "<group>"; };
-		A207000100000000000000B0 /* EditorSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSchemeHandler.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		ADA46A54486895CDEFBBE111 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BB00D8A249BA2594A1B95767 /* Cocoa.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F29117E1279101DF00B860B0 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -388,6 +408,14 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		27B66093848C07B2ED836920 /* OS X */ = {
+			isa = PBXGroup;
+			children = (
+				5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */,
+			);
+			name = "OS X";
+			sourceTree = "<group>";
+		};
 		A205000100000000000000B0 /* AI */ = {
 			isa = PBXGroup;
 			children = (
@@ -409,16 +437,6 @@
 			path = ../Shared/ScriptWidgetRuntime/AI;
 			sourceTree = "<group>";
 		};
-		A205000400000000000000B0 /* Eval */ = {
-			isa = PBXGroup;
-			children = (
-				A201000D00000000000000B0 /* AIEvalCase.swift */,
-				A201000E00000000000000B0 /* AIEvalRunner.swift */,
-				A201000F00000000000000B0 /* AIEvalReport.swift */,
-			);
-			path = Eval;
-			sourceTree = "<group>";
-		};
 		A205000200000000000000B0 /* AIGenerate */ = {
 			isa = PBXGroup;
 			children = (
@@ -434,6 +452,24 @@
 			);
 			path = Settings;
 			sourceTree = "<group>";
+		};
+		A205000400000000000000B0 /* Eval */ = {
+			isa = PBXGroup;
+			children = (
+				A201000D00000000000000B0 /* AIEvalCase.swift */,
+				A201000E00000000000000B0 /* AIEvalRunner.swift */,
+				A201000F00000000000000B0 /* AIEvalReport.swift */,
+			);
+			path = Eval;
+			sourceTree = "<group>";
+		};
+		CD2FF1A289741E5C0853A746 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */,
+			);
+			name = Tests;
+			sourceTree = SOURCE_ROOT;
 		};
 		D1995C5029536B7300D1BD94 /* ScriptWidgetRuntime */ = {
 			isa = PBXGroup;
@@ -719,6 +755,7 @@
 				F29117FF2791034A00B860B0 /* ScriptWidgetMacWidget */,
 				F29117FA2791034A00B860B0 /* Frameworks */,
 				F29117DF279101DF00B860B0 /* Products */,
+				CD2FF1A289741E5C0853A746 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -748,6 +785,7 @@
 			children = (
 				F29117E4279101DF00B860B0 /* ScriptWidget.app */,
 				F29117F92791034A00B860B0 /* ScriptWidgetMacWidget.appex */,
+				77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -758,6 +796,7 @@
 				F29117FB2791034A00B860B0 /* WidgetKit.framework */,
 				F29117FD2791034A00B860B0 /* SwiftUI.framework */,
 				F2461616279E0FED00C3D90F /* Intents.framework */,
+				27B66093848C07B2ED836920 /* OS X */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -867,6 +906,24 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		553ADEAF5B88A06AAAC72772 /* ScriptWidgetRuntimeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 972BF07CD57E8C51FBA6CB1E /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */;
+			buildPhases = (
+				9508D434F575D84656BDB4D8 /* Sources */,
+				ADA46A54486895CDEFBBE111 /* Frameworks */,
+				D3EE69479D47DC1D6B3F4C7D /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				6709A0D70E3188052F99DB0A /* PBXTargetDependency */,
+			);
+			name = ScriptWidgetRuntimeTests;
+			productName = ScriptWidgetRuntimeTests;
+			productReference = 77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		F29117E3279101DF00B860B0 /* ScriptWidgetMac */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F29117F2279101DF00B860B0 /* Build configuration list for PBXNativeTarget "ScriptWidgetMac" */;
@@ -952,11 +1009,19 @@
 			targets = (
 				F29117E3279101DF00B860B0 /* ScriptWidgetMac */,
 				F29117F82791034A00B860B0 /* ScriptWidgetMacWidget */,
+				553ADEAF5B88A06AAAC72772 /* ScriptWidgetRuntimeTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		D3EE69479D47DC1D6B3F4C7D /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F29117E2279101DF00B860B0 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -992,6 +1057,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		9508D434F575D84656BDB4D8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4A2430275ACA188D22C309B3 /* RuntimeUnitTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F29117E0279101DF00B860B0 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1178,6 +1251,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		6709A0D70E3188052F99DB0A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ScriptWidgetMac;
+			target = F29117E3279101DF00B860B0 /* ScriptWidgetMac */;
+			targetProxy = B3806BE2F01E8CD8B6619F21 /* PBXContainerItemProxy */;
+		};
 		F291180A2791034A00B860B0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = F29117F82791034A00B860B0 /* ScriptWidgetMacWidget */;
@@ -1186,6 +1265,40 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		3E0F4ACD35797595BDFC6E73 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YPV49M8592;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/Contents/MacOS/ScriptWidget";
+			};
+			name = Debug;
+		};
+		C9E882E5C38E6BC18E2D90BC /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YPV49M8592;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/Contents/MacOS/ScriptWidget";
+			};
+			name = Release;
+		};
 		F29117ED279101DF00B860B0 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1323,6 +1436,7 @@
 				ENABLE_INCOMING_NETWORK_CONNECTIONS = YES;
 				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SELECTED_FILES = readwrite;
 				EXCLUDED_ARCHS = "";
 				GENERATE_INFOPLIST_FILE = YES;
@@ -1452,6 +1566,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		972BF07CD57E8C51FBA6CB1E /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C9E882E5C38E6BC18E2D90BC /* Release */,
+				3E0F4ACD35797595BDFC6E73 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F29117D5279101DE00B860B0 /* Build configuration list for PBXProject "ScriptWidgetMac" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (

@@ -10,6 +10,8 @@
 		07676AEFBC394DE89F001041 /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		1E22E34C64E42F5CF2DA6EDD /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95D38A9C0960C28615553017 /* HealthKit.framework */; };
 		219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
+		46203256BEF4834A83DB78F5 /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5281E73D1780ED2020D931F0 /* Foundation.framework */; };
+		59522F5490AB5026ED15D3C4 /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */; };
 		5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
 		5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
 		5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
@@ -28,6 +30,25 @@
 		774D548855AA4BF0BF1E9DBA /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */; };
+		A102000100000000000000B0 /* AISettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000100000000000000B0 /* AISettings.swift */; };
+		A102000200000000000000B0 /* AIReferenceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000200000000000000B0 /* AIReferenceSnapshot.swift */; };
+		A102000300000000000000B0 /* PromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000300000000000000B0 /* PromptBuilder.swift */; };
+		A102000400000000000000B0 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000400000000000000B0 /* AIClient.swift */; };
+		A102000500000000000000B0 /* AgentRuntimeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000500000000000000B0 /* AgentRuntimeBridge.swift */; };
+		A102000600000000000000B0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000600000000000000B0 /* AgentLoop.swift */; };
+		A102000700000000000000B0 /* AIGenerateSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000700000000000000B0 /* AIGenerateSession.swift */; };
+		A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000800000000000000B0 /* AIGenerateProgressView.swift */; };
+		A102000900000000000000B0 /* AIExamplePrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000900000000000000B0 /* AIExamplePrompts.swift */; };
+		A102000A00000000000000B0 /* AIKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000A00000000000000B0 /* AIKeychain.swift */; };
+		A102000B00000000000000B0 /* AILocalOAuthServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000B00000000000000B0 /* AILocalOAuthServer.swift */; };
+		A102000C00000000000000B0 /* AIOpenAIOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000C00000000000000B0 /* AIOpenAIOAuth.swift */; };
+		A102000D00000000000000B0 /* AIEvalCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000D00000000000000B0 /* AIEvalCase.swift */; };
+		A102000E00000000000000B0 /* AIEvalRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000E00000000000000B0 /* AIEvalRunner.swift */; };
+		A102000F00000000000000B0 /* AIEvalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000F00000000000000B0 /* AIEvalReport.swift */; };
+		A104000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000100000000000000B0 /* SettingAIView.swift */; };
+		A104000200000000000000B0 /* AIGenerateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000200000000000000B0 /* AIGenerateView.swift */; };
+		A104000300000000000000B0 /* AIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000300000000000000B0 /* AIReviewView.swift */; };
+		A106000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A106000200000000000000B0 /* SwiftOpenAI */; };
 		BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */; };
@@ -66,6 +87,9 @@
 		D19CAF5D28CB976C00DFF98B /* SettingAPIsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CAF5C28CB976C00DFF98B /* SettingAPIsView.swift */; };
 		D19CAF5F28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CAF5E28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift */; };
 		D19CAF6128CC3FAC00DFF98B /* ScriptPackageEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D19CAF6028CC3FAC00DFF98B /* ScriptPackageEditorView.swift */; };
+		D1A0000000E0000000000002 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
+		D1A0000000E0000000000003 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
+		D1A0000000E0000000000004 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
 		D1BD329728DF0D9600F217ED /* ScriptCodePreviewDataObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BD329628DF0D9600F217ED /* ScriptCodePreviewDataObject.swift */; };
 		D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1BD329B28E0713D00F217ED /* ScriptLiveActivityDataObject.swift */; };
 		D1CBAED228D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1CBAED128D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift */; };
@@ -156,9 +180,6 @@
 		F29118F32793034D00B860B0 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EC2793034D00B860B0 /* ScriptModel.swift */; };
 		F29118F42793034D00B860B0 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EC2793034D00B860B0 /* ScriptModel.swift */; };
 		F29118F62793034D00B860B0 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EC2793034D00B860B0 /* ScriptModel.swift */; };
-		D1A0000000E0000000000002 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
-		D1A0000000E0000000000003 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
-		D1A0000000E0000000000004 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000000001 /* ScriptMetadata.swift */; };
 		F29118FB2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
 		F29118FC2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
 		F29118FE2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
@@ -311,28 +332,16 @@
 		F2FC062F27DC749A00A6A99D /* MirrorEditor.bundle in Resources */ = {isa = PBXBuildFile; fileRef = F2FC062E27DC749A00A6A99D /* MirrorEditor.bundle */; };
 		F2FE0A3525ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FE0A3425ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift */; };
 		F2FE0A3725ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FE0A3625ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift */; };
-		A102000100000000000000B0 /* AISettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000100000000000000B0 /* AISettings.swift */; };
-		A102000200000000000000B0 /* AIReferenceSnapshot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000200000000000000B0 /* AIReferenceSnapshot.swift */; };
-		A102000300000000000000B0 /* PromptBuilder.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000300000000000000B0 /* PromptBuilder.swift */; };
-		A102000400000000000000B0 /* AIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000400000000000000B0 /* AIClient.swift */; };
-		A102000500000000000000B0 /* AgentRuntimeBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000500000000000000B0 /* AgentRuntimeBridge.swift */; };
-		A102000600000000000000B0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000600000000000000B0 /* AgentLoop.swift */; };
-		A102000700000000000000B0 /* AIGenerateSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000700000000000000B0 /* AIGenerateSession.swift */; };
-		A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000800000000000000B0 /* AIGenerateProgressView.swift */; };
-		A104000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000100000000000000B0 /* SettingAIView.swift */; };
-		A104000200000000000000B0 /* AIGenerateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000200000000000000B0 /* AIGenerateView.swift */; };
-		A104000300000000000000B0 /* AIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000300000000000000B0 /* AIReviewView.swift */; };
-		A106000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A106000200000000000000B0 /* SwiftOpenAI */; };
-		A102000900000000000000B0 /* AIExamplePrompts.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000900000000000000B0 /* AIExamplePrompts.swift */; };
-		A102000A00000000000000B0 /* AIKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000A00000000000000B0 /* AIKeychain.swift */; };
-		A102000B00000000000000B0 /* AILocalOAuthServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000B00000000000000B0 /* AILocalOAuthServer.swift */; };
-		A102000C00000000000000B0 /* AIOpenAIOAuth.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000C00000000000000B0 /* AIOpenAIOAuth.swift */; };
-		A102000D00000000000000B0 /* AIEvalCase.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000D00000000000000B0 /* AIEvalCase.swift */; };
-		A102000E00000000000000B0 /* AIEvalRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000E00000000000000B0 /* AIEvalRunner.swift */; };
-		A102000F00000000000000B0 /* AIEvalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000F00000000000000B0 /* AIEvalReport.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		99CDA48BF5CDCB43CDD41C22 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D18AAC24252A12D10065386A /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D18AAC2B252A12D10065386A;
+			remoteInfo = ScriptWidget;
+		};
 		D18AAC7C252A14AF0065386A /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D18AAC24252A12D10065386A /* Project object */;
@@ -365,8 +374,11 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		0EF0E97360155CC5F44875F7 /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystem.swift; sourceTree = "<group>"; };
+		3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
 		5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
+		5281E73D1780ED2020D931F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
 		5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
@@ -379,6 +391,24 @@
 		750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
 		95D38A9C0960C28615553017 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeStorage.swift; sourceTree = "<group>"; };
+		A101000100000000000000B0 /* AISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettings.swift; sourceTree = "<group>"; };
+		A101000200000000000000B0 /* AIReferenceSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReferenceSnapshot.swift; sourceTree = "<group>"; };
+		A101000300000000000000B0 /* PromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilder.swift; sourceTree = "<group>"; };
+		A101000400000000000000B0 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIClient.swift; sourceTree = "<group>"; };
+		A101000500000000000000B0 /* AgentRuntimeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRuntimeBridge.swift; sourceTree = "<group>"; };
+		A101000600000000000000B0 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
+		A101000700000000000000B0 /* AIGenerateSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateSession.swift; sourceTree = "<group>"; };
+		A101000800000000000000B0 /* AIGenerateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateProgressView.swift; sourceTree = "<group>"; };
+		A101000900000000000000B0 /* AIExamplePrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIExamplePrompts.swift; sourceTree = "<group>"; };
+		A101000A00000000000000B0 /* AIKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIKeychain.swift; sourceTree = "<group>"; };
+		A101000B00000000000000B0 /* AILocalOAuthServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AILocalOAuthServer.swift; sourceTree = "<group>"; };
+		A101000C00000000000000B0 /* AIOpenAIOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIOpenAIOAuth.swift; sourceTree = "<group>"; };
+		A101000D00000000000000B0 /* AIEvalCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalCase.swift; sourceTree = "<group>"; };
+		A101000E00000000000000B0 /* AIEvalRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalRunner.swift; sourceTree = "<group>"; };
+		A101000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
+		A103000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
+		A103000200000000000000B0 /* AIGenerateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateView.swift; sourceTree = "<group>"; };
+		A103000300000000000000B0 /* AIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReviewView.swift; sourceTree = "<group>"; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
 		D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDynamicIslandCreator.swift; sourceTree = "<group>"; };
 		D13832AD25A1EB6B00DC9C20 /* CreateGuideView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateGuideView.swift; sourceTree = "<group>"; };
@@ -432,6 +462,7 @@
 		D19CAF5C28CB976C00DFF98B /* SettingAPIsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAPIsView.swift; sourceTree = "<group>"; };
 		D19CAF5E28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptPackageHorizontalFileView.swift; sourceTree = "<group>"; };
 		D19CAF6028CC3FAC00DFF98B /* ScriptPackageEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptPackageEditorView.swift; sourceTree = "<group>"; };
+		D1A0000000E0000000000001 /* ScriptMetadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
 		D1BD329628DF0D9600F217ED /* ScriptCodePreviewDataObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptCodePreviewDataObject.swift; sourceTree = "<group>"; };
 		D1BD329B28E0713D00F217ED /* ScriptLiveActivityDataObject.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityDataObject.swift; sourceTree = "<group>"; };
 		D1CBAED128D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityAttributes.swift; sourceTree = "<group>"; };
@@ -497,7 +528,6 @@
 		F28E474225EA92750080A810 /* SettingsICloudView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsICloudView.swift; sourceTree = "<group>"; };
 		F28EC0A925EE98150047F1ED /* SettingsGroupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsGroupView.swift; sourceTree = "<group>"; };
 		F29118EC2793034D00B860B0 /* ScriptModel.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptModel.swift; sourceTree = "<group>"; };
-		D1A0000000E0000000000001 /* ScriptMetadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
 		F29118EE2793034D00B860B0 /* ScriptManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		F29119012793035E00B860B0 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		F29119022793035E00B860B0 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
@@ -607,27 +637,17 @@
 		F2FC062E27DC749A00A6A99D /* MirrorEditor.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = MirrorEditor.bundle; sourceTree = "<group>"; };
 		F2FE0A3425ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyListBackgroundView.swift; sourceTree = "<group>"; };
 		F2FE0A3625ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetPlaceholderView.swift; sourceTree = "<group>"; };
-		A101000100000000000000B0 /* AISettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISettings.swift; sourceTree = "<group>"; };
-		A101000200000000000000B0 /* AIReferenceSnapshot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReferenceSnapshot.swift; sourceTree = "<group>"; };
-		A101000300000000000000B0 /* PromptBuilder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptBuilder.swift; sourceTree = "<group>"; };
-		A101000400000000000000B0 /* AIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIClient.swift; sourceTree = "<group>"; };
-		A101000500000000000000B0 /* AgentRuntimeBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentRuntimeBridge.swift; sourceTree = "<group>"; };
-		A101000600000000000000B0 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
-		A101000700000000000000B0 /* AIGenerateSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateSession.swift; sourceTree = "<group>"; };
-		A101000800000000000000B0 /* AIGenerateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateProgressView.swift; sourceTree = "<group>"; };
-		A103000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
-		A103000200000000000000B0 /* AIGenerateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateView.swift; sourceTree = "<group>"; };
-		A103000300000000000000B0 /* AIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReviewView.swift; sourceTree = "<group>"; };
-		A101000900000000000000B0 /* AIExamplePrompts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIExamplePrompts.swift; sourceTree = "<group>"; };
-		A101000A00000000000000B0 /* AIKeychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIKeychain.swift; sourceTree = "<group>"; };
-		A101000B00000000000000B0 /* AILocalOAuthServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AILocalOAuthServer.swift; sourceTree = "<group>"; };
-		A101000C00000000000000B0 /* AIOpenAIOAuth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIOpenAIOAuth.swift; sourceTree = "<group>"; };
-		A101000D00000000000000B0 /* AIEvalCase.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalCase.swift; sourceTree = "<group>"; };
-		A101000E00000000000000B0 /* AIEvalRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalRunner.swift; sourceTree = "<group>"; };
-		A101000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		455977B9C9D9E8EFECEEF1A2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				46203256BEF4834A83DB78F5 /* Foundation.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D18AAC29252A12D10065386A /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -678,6 +698,62 @@
 				5AE2C8912CDB3D1000A9F4FF /* ScriptWidgetControlWidget.swift */,
 			);
 			path = ControlWidget;
+			sourceTree = "<group>";
+		};
+		A017E802CF902DDB89252314 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */,
+			);
+			name = Tests;
+			sourceTree = SOURCE_ROOT;
+		};
+		A105000100000000000000B0 /* AI */ = {
+			isa = PBXGroup;
+			children = (
+				A101000100000000000000B0 /* AISettings.swift */,
+				A101000200000000000000B0 /* AIReferenceSnapshot.swift */,
+				A101000300000000000000B0 /* PromptBuilder.swift */,
+				A101000400000000000000B0 /* AIClient.swift */,
+				A101000500000000000000B0 /* AgentRuntimeBridge.swift */,
+				A101000600000000000000B0 /* AgentLoop.swift */,
+				A101000700000000000000B0 /* AIGenerateSession.swift */,
+				A101000800000000000000B0 /* AIGenerateProgressView.swift */,
+				A101000900000000000000B0 /* AIExamplePrompts.swift */,
+				A101000A00000000000000B0 /* AIKeychain.swift */,
+				A101000B00000000000000B0 /* AILocalOAuthServer.swift */,
+				A101000C00000000000000B0 /* AIOpenAIOAuth.swift */,
+				A105000300000000000000B0 /* Eval */,
+			);
+			name = AI;
+			path = ../Shared/ScriptWidgetRuntime/AI;
+			sourceTree = "<group>";
+		};
+		A105000200000000000000B0 /* AIGenerate */ = {
+			isa = PBXGroup;
+			children = (
+				A103000200000000000000B0 /* AIGenerateView.swift */,
+				A103000300000000000000B0 /* AIReviewView.swift */,
+			);
+			path = AIGenerate;
+			sourceTree = "<group>";
+		};
+		A105000300000000000000B0 /* Eval */ = {
+			isa = PBXGroup;
+			children = (
+				A101000D00000000000000B0 /* AIEvalCase.swift */,
+				A101000E00000000000000B0 /* AIEvalRunner.swift */,
+				A101000F00000000000000B0 /* AIEvalReport.swift */,
+			);
+			path = Eval;
+			sourceTree = "<group>";
+		};
+		CC6F42B73739364215C9044B /* iOS */ = {
+			isa = PBXGroup;
+			children = (
+				5281E73D1780ED2020D931F0 /* Foundation.framework */,
+			);
+			name = iOS;
 			sourceTree = "<group>";
 		};
 		D1403DA22552FE950076F87C /* PhotoPicker */ = {
@@ -807,6 +883,7 @@
 				F2C6AC7226004B0F009CECE9 /* ScriptWidgetShare */,
 				D18AAC6E252A14AE0065386A /* Frameworks */,
 				D18AAC2D252A12D10065386A /* Products */,
+				A017E802CF902DDB89252314 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -816,6 +893,7 @@
 				D18AAC2C252A12D10065386A /* ScriptWidget.app */,
 				D18AAC6D252A14AE0065386A /* ScriptWidgetWidget.appex */,
 				F2C6AC7126004B0F009CECE9 /* ScriptWidgetShare.appex */,
+				0EF0E97360155CC5F44875F7 /* ScriptWidgetRuntimeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -854,6 +932,7 @@
 				D18AAC6F252A14AE0065386A /* WidgetKit.framework */,
 				D18AAC71252A14AE0065386A /* SwiftUI.framework */,
 				F2433F8425D6FE6200AE4097 /* QuickLook.framework */,
+				CC6F42B73739364215C9044B /* iOS */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -1340,46 +1419,6 @@
 			path = Bridge;
 			sourceTree = "<group>";
 		};
-		A105000100000000000000B0 /* AI */ = {
-			isa = PBXGroup;
-			children = (
-				A101000100000000000000B0 /* AISettings.swift */,
-				A101000200000000000000B0 /* AIReferenceSnapshot.swift */,
-				A101000300000000000000B0 /* PromptBuilder.swift */,
-				A101000400000000000000B0 /* AIClient.swift */,
-				A101000500000000000000B0 /* AgentRuntimeBridge.swift */,
-				A101000600000000000000B0 /* AgentLoop.swift */,
-				A101000700000000000000B0 /* AIGenerateSession.swift */,
-				A101000800000000000000B0 /* AIGenerateProgressView.swift */,
-				A101000900000000000000B0 /* AIExamplePrompts.swift */,
-				A101000A00000000000000B0 /* AIKeychain.swift */,
-				A101000B00000000000000B0 /* AILocalOAuthServer.swift */,
-				A101000C00000000000000B0 /* AIOpenAIOAuth.swift */,
-				A105000300000000000000B0 /* Eval */,
-			);
-			name = AI;
-			path = ../Shared/ScriptWidgetRuntime/AI;
-			sourceTree = "<group>";
-		};
-		A105000300000000000000B0 /* Eval */ = {
-			isa = PBXGroup;
-			children = (
-				A101000D00000000000000B0 /* AIEvalCase.swift */,
-				A101000E00000000000000B0 /* AIEvalRunner.swift */,
-				A101000F00000000000000B0 /* AIEvalReport.swift */,
-			);
-			path = Eval;
-			sourceTree = "<group>";
-		};
-		A105000200000000000000B0 /* AIGenerate */ = {
-			isa = PBXGroup;
-			children = (
-				A103000200000000000000B0 /* AIGenerateView.swift */,
-				A103000300000000000000B0 /* AIReviewView.swift */,
-			);
-			path = AIGenerate;
-			sourceTree = "<group>";
-		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -1430,6 +1469,24 @@
 			productName = ScriptWidgetWidget;
 			productReference = D18AAC6D252A14AE0065386A /* ScriptWidgetWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
+		};
+		E792A3C78EDD483E628993F8 /* ScriptWidgetRuntimeTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 23D341D5A3C0181EF498D149 /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */;
+			buildPhases = (
+				120B0D65325E0F74931AAF0D /* Sources */,
+				455977B9C9D9E8EFECEEF1A2 /* Frameworks */,
+				3E471259AA272E739C1292B0 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				33DF927226002B3D02BEF934 /* PBXTargetDependency */,
+			);
+			name = ScriptWidgetRuntimeTests;
+			productName = ScriptWidgetRuntimeTests;
+			productReference = 0EF0E97360155CC5F44875F7 /* ScriptWidgetRuntimeTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F2C6AC7026004B0F009CECE9 /* ScriptWidgetShare */ = {
 			isa = PBXNativeTarget;
@@ -1497,11 +1554,19 @@
 				D18AAC2B252A12D10065386A /* ScriptWidget */,
 				D18AAC6C252A14AE0065386A /* ScriptWidgetWidget */,
 				F2C6AC7026004B0F009CECE9 /* ScriptWidgetShare */,
+				E792A3C78EDD483E628993F8 /* ScriptWidgetRuntimeTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3E471259AA272E739C1292B0 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D18AAC2A252A12D10065386A /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1606,6 +1671,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		120B0D65325E0F74931AAF0D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				59522F5490AB5026ED15D3C4 /* RuntimeUnitTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		D18AAC28252A12D10065386A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -1853,6 +1926,12 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
+		33DF927226002B3D02BEF934 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = ScriptWidget;
+			target = D18AAC2B252A12D10065386A /* ScriptWidget */;
+			targetProxy = 99CDA48BF5CDCB43CDD41C22 /* PBXContainerItemProxy */;
+		};
 		D18AAC7D252A14AF0065386A /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = D18AAC6C252A14AE0065386A /* ScriptWidgetWidget */;
@@ -1877,6 +1956,41 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		A03ED3C69899D8D353F74278 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/ScriptWidget";
+			};
+			name = Debug;
+		};
+		A5CB91B0978DAE28DC178D6B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CLANG_ENABLE_OBJC_WEAK = NO;
+				CODE_SIGNING_ALLOWED = NO;
+				CODE_SIGN_IDENTITY = "";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/ScriptWidget";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		D18AAC54252A12D20065386A /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -2011,6 +2125,7 @@
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_TESTABILITY = YES;
 				INFOPLIST_FILE = ScriptWidget/Info.plist;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
@@ -2163,6 +2278,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		23D341D5A3C0181EF498D149 /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A5CB91B0978DAE28DC178D6B /* Release */,
+				A03ED3C69899D8D353F74278 /* Debug */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		D18AAC27252A12D10065386A /* Build configuration list for PBXProject "ScriptWidget" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -2210,6 +2334,14 @@
 				minimumVersion = 1.0.1;
 			};
 		};
+		A106000100000000000000B0 /* XCRemoteSwiftPackageReference "SwiftOpenAI" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/jamesrochabrun/SwiftOpenAI";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 4.4.9;
+			};
+		};
 		F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ZipArchive/ZipArchive.git";
@@ -2242,14 +2374,6 @@
 				minimumVersion = 0.1.0;
 			};
 		};
-		A106000100000000000000B0 /* XCRemoteSwiftPackageReference "SwiftOpenAI" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/jamesrochabrun/SwiftOpenAI";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 4.4.9;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2265,6 +2389,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F245BBEB25B9E5DC00F25F68 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */;
 			productName = SDWebImageSwiftUI;
+		};
+		A106000200000000000000B0 /* SwiftOpenAI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A106000100000000000000B0 /* XCRemoteSwiftPackageReference "SwiftOpenAI" */;
+			productName = SwiftOpenAI;
 		};
 		F228DDB527A37776009E8F04 /* ZipArchive */ = {
 			isa = XCSwiftPackageProductDependency;
@@ -2305,11 +2434,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
 			productName = SwiftyJSON;
-		};
-		A106000200000000000000B0 /* SwiftOpenAI */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = A106000100000000000000B0 /* XCRemoteSwiftPackageReference "SwiftOpenAI" */;
-			productName = SwiftOpenAI;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
