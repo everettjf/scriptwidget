@@ -8,10 +8,13 @@
 
 /* Begin PBXBuildFile section */
 		00F55E8ADF6744239EDB3E69 /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */; };
+		0B490F98077E4CE3AB78196B /* RuntimeExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */; };
+		0EB9532D7940424606FF1027 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */; };
 		1C24B164B4EBE88815490627 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */; };
 		1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
 		2748BECB1506585B128418DC /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
 		4A2430275ACA188D22C309B3 /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
+		50E23DC88432B462BE9DAA4F /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */; };
 		5A89B79A2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A89B79B2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A89B79D2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */; };
@@ -205,9 +208,17 @@
 		F2CA7ADB27A23BED00569709 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F2CA7ADA27A23BED00569709 /* ZipArchive */; };
 		F2D2B24EA420469CBA72564F /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8445DB90E4A34EB19697BAEB /* ReloadWidgetAppIntent.swift */; };
 		F2F90FC427970E3E003095A9 /* CreateGuideView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F90FC327970E3E003095A9 /* CreateGuideView.swift */; };
+		FFAEABFC0477190AA93CDC0D /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
+		92F80E75968575809FBDF8AC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F29117D2279101DE00B860B0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = F29117E3279101DF00B860B0;
+			remoteInfo = ScriptWidgetMac;
+		};
 		B3806BE2F01E8CD8B6619F21 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = F29117D2279101DE00B860B0 /* Project object */;
@@ -241,6 +252,9 @@
 /* Begin PBXFileReference section */
 		0DAACB8F5182390731F6DFE7 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
+		1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeExecutionTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeExecutionTests.swift; sourceTree = "<group>"; };
+		28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIGenerationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIGenerationTests.swift; sourceTree = "<group>"; };
+		539EC132F05468E207A652AD /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
 		5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
@@ -375,11 +389,11 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		ADA46A54486895CDEFBBE111 /* Frameworks */ = {
+		BD8635D77C828B60B0B72BDC /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				BB00D8A249BA2594A1B95767 /* Cocoa.framework in Frameworks */,
+				0EB9532D7940424606FF1027 /* Cocoa.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -467,6 +481,8 @@
 			isa = PBXGroup;
 			children = (
 				8A078A98942A275CF9F25103 /* RuntimeUnitTests.swift */,
+				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
+				1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */,
 			);
 			name = Tests;
 			sourceTree = SOURCE_ROOT;
@@ -786,6 +802,7 @@
 				F29117E4279101DF00B860B0 /* ScriptWidget.app */,
 				F29117F92791034A00B860B0 /* ScriptWidgetMacWidget.appex */,
 				77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */,
+				539EC132F05468E207A652AD /* ScriptWidgetRuntimeTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -906,22 +923,22 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		553ADEAF5B88A06AAAC72772 /* ScriptWidgetRuntimeTests */ = {
+		784D137B7F9218C0E84E924C /* ScriptWidgetRuntimeTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 972BF07CD57E8C51FBA6CB1E /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */;
+			buildConfigurationList = 147564C28C4F4F23254A5B52 /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */;
 			buildPhases = (
-				9508D434F575D84656BDB4D8 /* Sources */,
-				ADA46A54486895CDEFBBE111 /* Frameworks */,
-				D3EE69479D47DC1D6B3F4C7D /* Resources */,
+				6EFCE0B49A967E57C8BE9E12 /* Sources */,
+				BD8635D77C828B60B0B72BDC /* Frameworks */,
+				6C30E77563F9075B79DE5A61 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
-				6709A0D70E3188052F99DB0A /* PBXTargetDependency */,
+				4C402F23845BC6613091DCBA /* PBXTargetDependency */,
 			);
 			name = ScriptWidgetRuntimeTests;
 			productName = ScriptWidgetRuntimeTests;
-			productReference = 77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */;
+			productReference = 539EC132F05468E207A652AD /* ScriptWidgetRuntimeTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
 		F29117E3279101DF00B860B0 /* ScriptWidgetMac */ = {
@@ -1009,13 +1026,13 @@
 			targets = (
 				F29117E3279101DF00B860B0 /* ScriptWidgetMac */,
 				F29117F82791034A00B860B0 /* ScriptWidgetMacWidget */,
-				553ADEAF5B88A06AAAC72772 /* ScriptWidgetRuntimeTests */,
+				784D137B7F9218C0E84E924C /* ScriptWidgetRuntimeTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		D3EE69479D47DC1D6B3F4C7D /* Resources */ = {
+		6C30E77563F9075B79DE5A61 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -1057,11 +1074,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
-		9508D434F575D84656BDB4D8 /* Sources */ = {
+		6EFCE0B49A967E57C8BE9E12 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				4A2430275ACA188D22C309B3 /* RuntimeUnitTests.swift in Sources */,
+				50E23DC88432B462BE9DAA4F /* AIGenerationTests.swift in Sources */,
+				0B490F98077E4CE3AB78196B /* RuntimeExecutionTests.swift in Sources */,
+				FFAEABFC0477190AA93CDC0D /* RuntimeUnitTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1251,11 +1270,11 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		6709A0D70E3188052F99DB0A /* PBXTargetDependency */ = {
+		4C402F23845BC6613091DCBA /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = ScriptWidgetMac;
 			target = F29117E3279101DF00B860B0 /* ScriptWidgetMac */;
-			targetProxy = B3806BE2F01E8CD8B6619F21 /* PBXContainerItemProxy */;
+			targetProxy = 92F80E75968575809FBDF8AC /* PBXContainerItemProxy */;
 		};
 		F291180A2791034A00B860B0 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
@@ -1265,6 +1284,23 @@
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		0D94BBC6CE4F7E047E8B8AF0 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YPV49M8592;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/Contents/MacOS/ScriptWidget";
+			};
+			name = Debug;
+		};
 		3E0F4ACD35797595BDFC6E73 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -1281,6 +1317,23 @@
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/Contents/MacOS/ScriptWidget";
 			};
 			name = Debug;
+		};
+		C8FBFD6111FEF21DE90E5A28 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = YPV49M8592;
+				GENERATE_INFOPLIST_FILE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/Contents/MacOS/ScriptWidget";
+			};
+			name = Release;
 		};
 		C9E882E5C38E6BC18E2D90BC /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -1566,11 +1619,11 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		972BF07CD57E8C51FBA6CB1E /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */ = {
+		147564C28C4F4F23254A5B52 /* Build configuration list for PBXNativeTarget "ScriptWidgetRuntimeTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
-				C9E882E5C38E6BC18E2D90BC /* Release */,
-				3E0F4ACD35797595BDFC6E73 /* Debug */,
+				C8FBFD6111FEF21DE90E5A28 /* Release */,
+				0D94BBC6CE4F7E047E8B8AF0 /* Debug */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

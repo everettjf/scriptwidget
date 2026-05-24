@@ -41,7 +41,7 @@
             skipped = "NO">
             <BuildableReference
                BuildableIdentifier = "primary"
-               BlueprintIdentifier = "553ADEAF5B88A06AAAC72772"
+               BlueprintIdentifier = "784D137B7F9218C0E84E924C"
                BuildableName = "ScriptWidgetRuntimeTests.xctest"
                BlueprintName = "ScriptWidgetRuntimeTests"
                ReferencedContainer = "container:ScriptWidgetMac.xcodeproj">
