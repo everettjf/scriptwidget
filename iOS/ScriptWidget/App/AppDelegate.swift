@@ -28,7 +28,11 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     }
     
     func applicationDidBecomeActive(_ application: UIApplication) {
-        
+        // Proactively cache scripts locally while iCloud is reachable so widgets
+        // keep rendering if iCloud Drive later becomes unavailable (issue #6).
+        DispatchQueue.global(qos: .utility).async {
+            sharedScriptManager.precacheAllScripts()
+        }
     }
     
     func applicationWillResignActive(_ application: UIApplication) {

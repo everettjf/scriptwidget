@@ -528,20 +528,67 @@ extension ScriptManager {
     }
     
     func removeAllBuildScriptPackages() -> (Bool, String) {
-        
+
         if isBuild {
             return (false, "Not work when is build is true")
         }
-        
+
         let items = listScripts()
         for item in items {
             _ = removeBuildScriptPackage(package: item.package)
         }
-        
+
         return (true, "Succeed")
     }
-    
-    
+
+
+}
+
+// MARK: - Proactive local caching (issue #6)
+//
+// When iCloud Drive is unavailable (e.g. cellular with iCloud disabled, or the
+// system evicting unused ubiquitous files), reading a script's files fails and
+// the widget shows an error. `ScriptWidgetPackage.readFile` already falls back
+// to a per-file build cache, but that cache is only populated when a file has
+// been successfully read at least once on this device — so a script synced from
+// another device that was never opened here had nothing to fall back to.
+//
+// These helpers proactively read (and thus cache) every script's text files
+// while iCloud is reachable, so later eviction still renders from the cache.
+extension ScriptManager {
+
+    /// File extensions whose contents are cached. Limited to text the runtime
+    /// loads (main.jsx, imports, JSON data); binary assets like images are read
+    /// directly and are not part of the render-blocking path.
+    private static let cacheableExtensions: Set<String> = ["jsx", "js", "json", "txt", "csv", "svg", "md"]
+
+    /// Read and locally cache one package's text files. A successful read writes
+    /// the per-file build cache that `readFile` falls back to. Requesting the
+    /// iCloud download first helps evicted files materialize for a later pass.
+    /// Safe to call repeatedly and off the main thread. Returns the number of
+    /// files cached this pass.
+    @discardableResult
+    func precachePackageFiles(_ package: ScriptWidgetPackage) -> Int {
+        if isBuild { return 0 }
+        package.updateFiles() // ask iCloud to bring back any evicted files
+        var cached = 0
+        for file in package.listFiles() {
+            guard Self.cacheableExtensions.contains(file.path.pathExtension.lowercased()) else { continue }
+            if package.readFile(fullPath: file.path).0 != nil {
+                cached += 1
+            }
+        }
+        return cached
+    }
+
+    /// Proactively cache every script so widgets keep rendering when iCloud is
+    /// later unavailable. Call when the app becomes active / is online.
+    func precacheAllScripts() {
+        if isBuild { return }
+        for model in listScripts() {
+            precachePackageFiles(model.package)
+        }
+    }
 }
 
 
