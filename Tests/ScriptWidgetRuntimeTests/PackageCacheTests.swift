@@ -113,4 +113,62 @@ final class PackageCacheTests: XCTestCase {
         let cachedCount = sharedScriptManager.precachePackageFiles(pkg)
         XCTAssertEqual(cachedCount, 1, "only main.jsx should be cached, not image.png")
     }
+
+    func testPrecacheCachesNestedFiles() {
+        // The URL enumerator recurses, so imports in subdirectories are cached too.
+        let pkg = makeTempPackage()
+        XCTAssertTrue(pkg.writeMainFile(content: "MAIN").0)
+        // writeFile doesn't create intermediate dirs, so make the subdir first.
+        try? FileManager.default.createDirectory(at: pkg.path.appendingPathComponent("lib"),
+                                                 withIntermediateDirectories: true)
+        XCTAssertTrue(pkg.writeFile(relativePath: "lib/util.js", content: "UTIL").0)
+
+        let cachedCount = sharedScriptManager.precachePackageFiles(pkg)
+        XCTAssertEqual(cachedCount, 2, "main.jsx + lib/util.js should both be cached")
+
+        evict(pkg.path.appendingPathComponent("lib/util.js"))
+        let nested = pkg.readFile(relativePath: "lib/util.js")
+        XCTAssertEqual(nested.0, "UTIL", "nested import should read from cache after eviction")
+    }
+
+    // MARK: - Status-aware read result (issue #6, surfaced to UI)
+
+    func testReadFileResultReportsSourceFileOnPrimaryRead() {
+        let pkg = makeTempPackage()
+        XCTAssertTrue(pkg.writeMainFile(content: "HELLO").0)
+
+        let result = pkg.readMainFileResult()
+        XCTAssertEqual(result.content, "HELLO")
+        XCTAssertEqual(result.source, .file)
+        XCTAssertTrue(result.succeeded)
+        XCTAssertEqual(result.message, "succeed")
+    }
+
+    func testReadFileResultReportsBuildCacheAfterEviction() {
+        let pkg = makeTempPackage()
+        XCTAssertTrue(pkg.writeMainFile(content: "CACHED").0)
+        _ = pkg.readMainFile() // populate the build cache while "online"
+        evict(pkg.jsxPath)
+
+        let result = pkg.readMainFileResult()
+        XCTAssertEqual(result.content, "CACHED")
+        XCTAssertEqual(result.source, .buildCache, "served from local cache after eviction")
+        XCTAssertTrue(result.succeeded)
+    }
+
+    func testReadFileResultReportsNotFoundWhenMissingAndUncached() {
+        // A plain local temp file (not an iCloud item) that was never cached is a
+        // real miss — not a transient "downloading" state.
+        let pkg = makeTempPackage()
+        let result = pkg.readMainFileResult()
+        XCTAssertNil(result.content)
+        XCTAssertNil(result.source)
+        XCTAssertEqual(result.icloud, .notInICloud)
+    }
+
+    func testMainFileICloudStateIsLocalForPresentFile() {
+        let pkg = makeTempPackage()
+        XCTAssertTrue(pkg.writeMainFile(content: "X").0)
+        XCTAssertEqual(pkg.mainFileICloudState(), .local)
+    }
 }

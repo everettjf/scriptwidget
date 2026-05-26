@@ -562,19 +562,24 @@ extension ScriptManager {
     /// directly and are not part of the render-blocking path.
     private static let cacheableExtensions: Set<String> = ["jsx", "js", "json", "txt", "csv", "svg", "md"]
 
+    /// How long a single precache pass will wait for one evicted iCloud file to
+    /// download before moving on. Bounded so a slow/absent network can't stall
+    /// the whole pass; remaining files are simply picked up on the next pass.
+    private static let precacheDownloadTimeout: TimeInterval = 8
+
     /// Read and locally cache one package's text files. A successful read writes
-    /// the per-file build cache that `readFile` falls back to. Requesting the
-    /// iCloud download first helps evicted files materialize for a later pass.
-    /// Safe to call repeatedly and off the main thread. Returns the number of
-    /// files cached this pass.
+    /// the per-file build cache that `readFile` falls back to. For files that
+    /// iCloud has evicted this requests the download and *waits* (bounded) for it
+    /// to materialize before reading — so an evicted file is cached on this pass
+    /// rather than only after a later app launch (issue #6). MUST be called off
+    /// the main thread. Returns the number of files cached this pass.
     @discardableResult
     func precachePackageFiles(_ package: ScriptWidgetPackage) -> Int {
         if isBuild { return 0 }
-        package.updateFiles() // ask iCloud to bring back any evicted files
         var cached = 0
-        for file in package.listFiles() {
-            guard Self.cacheableExtensions.contains(file.path.pathExtension.lowercased()) else { continue }
-            if package.readFile(fullPath: file.path).0 != nil {
+        for fileURL in cacheableFileURLs(in: package.path) {
+            guard ensureDownloaded(fileURL) else { continue }
+            if package.readFile(fullPath: fileURL).0 != nil {
                 cached += 1
             }
         }
@@ -588,6 +593,64 @@ extension ScriptManager {
         for model in listScripts() {
             precachePackageFiles(model.package)
         }
+    }
+
+    /// Logical URLs of cacheable text files under `root`, resolving iCloud
+    /// placeholders (".main.jsx.icloud") back to their real names so evicted
+    /// files are still discovered and downloaded.
+    private func cacheableFileURLs(in root: URL) -> [URL] {
+        guard let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsPackageDescendants]
+        ) else {
+            return []
+        }
+        var result: [URL] = []
+        for case let url as URL in enumerator {
+            if (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true {
+                continue
+            }
+            let logical = Self.logicalURL(for: url)
+            if Self.cacheableExtensions.contains(logical.pathExtension.lowercased()) {
+                result.append(logical)
+            }
+        }
+        return result
+    }
+
+    /// Map an iCloud placeholder URL (".main.jsx.icloud") back to its logical
+    /// file URL ("main.jsx"); returns `url` unchanged for normal files.
+    private static func logicalURL(for url: URL) -> URL {
+        let name = url.lastPathComponent
+        guard name.hasPrefix("."), name.hasSuffix(".icloud") else { return url }
+        let logicalName = String(name.dropFirst().dropLast(".icloud".count))
+        return url.deletingLastPathComponent().appendingPathComponent(logicalName)
+    }
+
+    /// Ensure a (possibly iCloud-evicted) file is present locally. Returns
+    /// immediately if it already exists; otherwise requests the download and
+    /// polls up to `precacheDownloadTimeout`. Returns whether the file is present
+    /// afterwards. MUST be called off the main thread.
+    private func ensureDownloaded(_ url: URL) -> Bool {
+        if FileManager.default.fileExists(atPath: url.path) {
+            return true
+        }
+        try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+
+        let deadline = Date().addingTimeInterval(Self.precacheDownloadTimeout)
+        while Date() < deadline {
+            if FileManager.default.fileExists(atPath: url.path) {
+                return true
+            }
+            if let values = try? url.resourceValues(forKeys: [.ubiquitousItemDownloadingErrorKey]),
+               let error = values.ubiquitousItemDownloadingError {
+                print("precache: iCloud download error for \(url.lastPathComponent): \(error)")
+                break
+            }
+            Thread.sleep(forTimeInterval: 0.25)
+        }
+        return FileManager.default.fileExists(atPath: url.path)
     }
 }
 

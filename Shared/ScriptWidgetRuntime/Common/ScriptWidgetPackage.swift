@@ -25,6 +25,33 @@ struct FileModel: Identifiable, Hashable {
     let path: URL
 }
 
+/// iCloud availability of a single ubiquitous (or local) file. Surfaced so the
+/// UI can tell "downloading from iCloud" apart from a real failure (issue #6).
+enum ICloudItemState: Equatable {
+    case local          // a non-ubiquitous file that is present on disk
+    case downloaded     // ubiquitous item present locally (current)
+    case downloading    // not present locally; an iCloud download is in flight
+    case notInICloud    // not present and no iCloud placeholder to download from
+    case error(String)  // iCloud reported a download error
+}
+
+/// Where a file's content came from when read.
+enum ScriptFileSource: Equatable {
+    case file        // the primary (iCloud / local) path
+    case buildCache  // the local fallback cache, primary was unavailable
+}
+
+/// Outcome of reading a script file, richer than the legacy `(String?, String)`
+/// tuple so callers can show a meaningful state instead of a generic error.
+struct ScriptFileReadResult {
+    let content: String?
+    let source: ScriptFileSource?
+    let icloud: ICloudItemState
+    let message: String
+
+    var succeeded: Bool { content != nil }
+}
+
 struct ScriptWidgetPackage {
     let path: URL
     let name: String
@@ -104,50 +131,103 @@ struct ScriptWidgetPackage {
     func readMainFile() -> (String?, String) {
         return readFile(fullPath: self.jsxPath)
     }
-    
+
+    func readMainFileResult() -> ScriptFileReadResult {
+        return readFileResult(fullPath: self.jsxPath)
+    }
+
     func readFile(relativePath: String) -> (String?, String) {
-        // make sure icloud download status
         let filePath = self.path.appendingPathComponent(relativePath)
         return readFile(fullPath: filePath)
     }
-    
+
+    /// Legacy tuple API kept for existing callers. The second element preserves
+    /// the historical status strings ("succeed" / "read from build cache: …" /
+    /// error text) so behavior and tests are unchanged.
     func readFile(fullPath: URL) -> (String?, String) {
-        // make sure icloud download status
-        do {
-            if !FileManager.default.fileExists(atPath: fullPath.path) {
-                print("file not exist now , try download from icloud : \(fullPath)")
-                try? FileManager.default.startDownloadingUbiquitousItem(at: fullPath)
-            }
-            let values = try fullPath.resourceValues(forKeys: [.ubiquitousItemIsDownloadingKey])
-            if values.ubiquitousItemDownloadRequested ?? false {
-                print("requested download : \(fullPath)")
-            }
-            
-            if values.ubiquitousItemIsDownloading ?? false {
-                print("downloading : \(fullPath)")
-            } else {
-                //                print("not downloading : \(self.jsxPath)")
-            }
-            
-            if values.ubiquitousItemDownloadingError != nil {
-                print("download error : \(String(describing: values.ubiquitousItemDownloadingError))")
-            }
-            
-        } catch {
-            print("icloud start download exception : \(error)")
-        }
-        do {
-            let content = try String(contentsOf: fullPath, encoding: .utf8)
+        let result = readFileResult(fullPath: fullPath)
+        return (result.content, result.message)
+    }
+
+    /// Read a file, reporting where the content came from and — when it can't be
+    /// read — whether iCloud is still downloading it (vs a genuine miss). Reading
+    /// the primary copy succeeds first and refreshes the local build cache; if the
+    /// primary is unavailable (e.g. iCloud-evicted) the build cache is the
+    /// fallback. Requesting the iCloud download is deferred until the primary read
+    /// fails, so a normal read stays cheap.
+    func readFileResult(fullPath: URL) -> ScriptFileReadResult {
+        // 1) Primary path — when present this is authoritative and (re)caches.
+        if let content = try? String(contentsOf: fullPath, encoding: .utf8) {
             syncBuildCache(fullPath: fullPath, content: content)
-            return (content, "succeed")
-        } catch {
-            let errorInfo = "\(error)"
-            if let buildCachePath = buildCachePath(for: fullPath),
-               let content = try? String(contentsOf: buildCachePath, encoding: .utf8) {
-                return (content, "read from build cache: \(buildCachePath.path)")
-            }
-            return (nil, errorInfo)
+            let state: ICloudItemState = isUbiquitous(fullPath) ? .downloaded : .local
+            return ScriptFileReadResult(content: content, source: .file, icloud: state, message: "succeed")
         }
+
+        // 2) Primary unavailable — ask iCloud to bring it back and check status.
+        let icloud = requestICloudDownloadState(for: fullPath)
+
+        // 3) Local build-cache fallback so widgets keep rendering offline.
+        if let buildCachePath = buildCachePath(for: fullPath),
+           let content = try? String(contentsOf: buildCachePath, encoding: .utf8) {
+            return ScriptFileReadResult(content: content,
+                                        source: .buildCache,
+                                        icloud: icloud,
+                                        message: "read from build cache: \(buildCachePath.path)")
+        }
+
+        // 4) Nothing to serve — describe why for the UI.
+        let message: String
+        switch icloud {
+        case .downloading: message = "Downloading from iCloud"
+        case .error(let e): message = e
+        case .notInICloud, .local, .downloaded: message = "File not found: \(fullPath.path)"
+        }
+        return ScriptFileReadResult(content: nil, source: nil, icloud: icloud, message: message)
+    }
+
+    /// Whether the item at `url` is managed by iCloud (downloaded or evicted).
+    func isUbiquitous(_ url: URL) -> Bool {
+        return (try? url.resourceValues(forKeys: [.isUbiquitousItemKey]))?.isUbiquitousItem ?? false
+    }
+
+    /// iCloud state of a file that is *not* currently present locally, kicking off
+    /// a download so a later read (or the next precache pass) can serve it.
+    private func requestICloudDownloadState(for fullPath: URL) -> ICloudItemState {
+        try? FileManager.default.startDownloadingUbiquitousItem(at: fullPath)
+
+        if let values = try? fullPath.resourceValues(forKeys: [
+            .ubiquitousItemDownloadingStatusKey,
+            .ubiquitousItemIsDownloadingKey,
+            .ubiquitousItemDownloadingErrorKey,
+        ]) {
+            if let error = values.ubiquitousItemDownloadingError {
+                return .error("\(error)")
+            }
+            if values.ubiquitousItemIsDownloading == true {
+                return .downloading
+            }
+            if let status = values.ubiquitousItemDownloadingStatus {
+                switch status {
+                case .current, .downloaded: return .downloaded
+                default: return .downloading // requested above; not yet here
+                }
+            }
+        }
+
+        // No ubiquitous metadata: it's a real miss unless an evicted-item
+        // placeholder (".name.icloud") is sitting next to it.
+        let placeholder = fullPath.deletingLastPathComponent()
+            .appendingPathComponent("." + fullPath.lastPathComponent + ".icloud")
+        return FileManager.default.fileExists(atPath: placeholder.path) ? .downloading : .notInICloud
+    }
+
+    /// Current iCloud state of the package's main script file, for status UI.
+    /// Does not block; reports `.downloading` once a fetch has been requested.
+    func mainFileICloudState() -> ICloudItemState {
+        if FileManager.default.fileExists(atPath: self.jsxPath.path) {
+            return isUbiquitous(self.jsxPath) ? .downloaded : .local
+        }
+        return requestICloudDownloadState(for: self.jsxPath)
     }
 
     private func buildCachePath(for fullPath: URL) -> URL? {
