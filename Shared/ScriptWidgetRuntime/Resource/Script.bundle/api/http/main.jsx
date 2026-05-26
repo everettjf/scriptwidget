@@ -54,6 +54,20 @@ console.log(post_string_with_header_result);
 // $http.patch (same to post)
 // $http.delete (same to post)
 
+// responseType: "base64"
+// By default the response is decoded as UTF-8 text. For binary resources
+// (such as images) pass responseType: "base64" to get the raw bytes back as
+// a Base64 string. This is useful when the resource needs custom headers
+// (e.g. a Referer / Cookie) that the <image url="..."> tag cannot send.
+//
+// const base64 = await $http.get("https://example.com/camera.jpg", {
+//   headers: { Referer: "https://example.com/webcam-page/" },
+//   responseType: "base64",
+// });
+// $render(
+//   <image url={`data:image/jpeg;base64,${base64}`} mode="fit" frame="340,340" />
+// );
+
 $render(
   <vstack>
     <text>$http example</text>

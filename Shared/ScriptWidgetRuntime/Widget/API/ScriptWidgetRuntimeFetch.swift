@@ -78,9 +78,18 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
             if let error = error {
                 print("$fetch error : \(error)")
                 reject.call(withArguments: [error.localizedDescription])
-            } else if let data = data, let string = String(data: data, encoding: String.Encoding.utf8) {
-                print("$fetch string: \(string)");
-                resolve.call(withArguments: [string])
+            } else if let data = data {
+                if let responseType = params?["responseType"] as? String, responseType == "base64" {
+                    let base64 = data.base64EncodedString()
+                    print("$fetch base64 length: \(base64.count)");
+                    resolve.call(withArguments: [base64])
+                } else if let string = String(data: data, encoding: String.Encoding.utf8) {
+                    print("$fetch string: \(string)");
+                    resolve.call(withArguments: [string])
+                } else {
+                    print("$fetch unable to decode response as utf8");
+                    reject.call(withArguments: ["\(urlValue) is empty"])
+                }
             } else {
                 print("$fetch unknown error");
                 reject.call(withArguments: ["\(urlValue) is empty"])
