@@ -29,14 +29,52 @@ struct WidgetRowTextView: View {
 }
 
 
+/// Small iCloud status indicator shown when a script's main file isn't available
+/// locally — so the user understands why a widget might be downloading or stale,
+/// instead of seeing only a generic widget error (issue #6).
+struct ICloudStatusBadge: View {
+    let model: ScriptModel
+    @State private var state: ICloudItemState = .downloaded
+
+    var body: some View {
+        Group {
+            switch state {
+            case .downloading:
+                Image(systemName: "arrow.down.circle")
+                    .foregroundColor(.secondary)
+            case .notInICloud:
+                Image(systemName: "exclamationmark.icloud")
+                    .foregroundColor(.orange)
+            case .error:
+                Image(systemName: "exclamationmark.icloud")
+                    .foregroundColor(.red)
+            case .local, .downloaded:
+                EmptyView()
+            }
+        }
+        .font(.footnote)
+        .onAppear(perform: refresh)
+    }
+
+    private func refresh() {
+        let package = model.package
+        DispatchQueue.global(qos: .utility).async {
+            let resolved = package.mainFileICloudState()
+            DispatchQueue.main.async { self.state = resolved }
+        }
+    }
+}
+
 struct WidgetRowView: View {
-    
+
     var model: ScriptModel
-    
+
     var body: some View {
         HStack {
             WidgetRowImageView(model: model)
             WidgetRowTextView(model: model)
+            Spacer()
+            ICloudStatusBadge(model: model)
         }
     }
 }

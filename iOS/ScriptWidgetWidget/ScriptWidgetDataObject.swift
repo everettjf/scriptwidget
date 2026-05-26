@@ -49,9 +49,20 @@ class ScriptWidgetDataObject : ObservableObject {
         
         self.systemLog("[START]")
         
-        let (JSX, errorInfo) = self.package.readMainFile()
-        guard let JSX = JSX else {
-            self.rootElement = createTextElement(info: "Failed to open script : \(errorInfo)")
+        let readResult = self.package.readMainFileResult()
+        guard let JSX = readResult.content else {
+            // Distinguish a transient iCloud download from a real failure so the
+            // widget shows a reassuring message instead of a scary error (#6).
+            let info: String
+            switch readResult.icloud {
+            case .downloading:
+                info = "Downloading from iCloud…\nThis widget will update once the script is available."
+            case .notInICloud:
+                info = "Script not found.\nOpen the app once while online to sync it."
+            default:
+                info = "Failed to open script : \(readResult.message)"
+            }
+            self.rootElement = createTextElement(info: info)
             return
         }
         
