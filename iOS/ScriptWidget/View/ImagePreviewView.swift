@@ -20,7 +20,8 @@ struct LocalImagePreviewImageView: View {
             }
             .resizable()
             .aspectRatio(contentMode: .fit)
-            .frame(width: screenWidth - 20)
+            .frame(maxWidth: 600)
+            .padding(.horizontal)
             .cornerRadius(5)
     }
 }

@@ -132,9 +132,9 @@ struct SidebarView: View {
                                     print("try import path : \(path)")
                                     let result = sharedScriptManager.importScript(fromPath: path)
                                     if result {
-                                        MacKitUtil.alertInfo(title: "", message: "Succeed import :)")
+                                        MacKitUtil.alertInfo(title: "Import Succeeded", message: "The script was imported.")
                                     } else {
-                                        MacKitUtil.alertWarn(title: "", message: "Failed import, please retry ~")
+                                        MacKitUtil.alertWarn(title: "Import Failed", message: "Could not import the script. Please check the file and try again.")
                                     }
                                     
                                     NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
@@ -149,9 +149,9 @@ struct SidebarView: View {
                                     let exportFilePath = path.appendingPathComponent(item.exportFileName)
                                     let result = sharedScriptManager.exportScript(model: item, toPath: exportFilePath)
                                     if result {
-                                        MacKitUtil.alertInfo(title: "", message: "Succeed export :)")
+                                        MacKitUtil.alertInfo(title: "Export Succeeded", message: "The script was exported.")
                                     } else {
-                                        MacKitUtil.alertWarn(title: "", message: "Failed export, please retry ~")
+                                        MacKitUtil.alertWarn(title: "Export Failed", message: "Could not export the script. Please choose another location and try again.")
                                     }
                                 }
                             }

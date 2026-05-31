@@ -51,7 +51,7 @@ struct RenameConfirmView: View {
                     
                     let (result, error) = sharedScriptManager.renameScript(srcPackageName: oldName, destPackageName: newName)
                     if !result {
-                        print("rename failed : \(error)")
+                        MacKitUtil.alertWarn(title: "Rename Failed", message: error.isEmpty ? "Could not rename the widget. A widget with that name may already exist." : error)
                         return
                     }
                     

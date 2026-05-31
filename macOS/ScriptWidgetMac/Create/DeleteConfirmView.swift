@@ -33,6 +33,7 @@ struct DeleteConfirmView: View {
                     
                     let result = sharedScriptManager.deleteScript(packageName: inputText)
                     if !result {
+                        MacKitUtil.alertWarn(title: "Delete Failed", message: "Could not delete the widget. Please try again.")
                         return
                     }
                     

@@ -79,11 +79,6 @@ class EditorInternalWebView: WKWebView {
                 return
             }
             
-            print("timer save succeed")
-            print("----BEGIN SAVE CONTENT----")
-            print(value)
-            print("----END SAVE CONTENT----")
-            
             callback?(["result": "ok"])
         })
         
@@ -122,10 +117,6 @@ class EditorInternalWebView: WKWebView {
                 print("save failed : write file : \(result.1)")
                 return
             }
-            print("cmd+s save succeed")
-            print("----BEGIN SAVE CONTENT----")
-            print(value)
-            print("----END SAVE CONTENT----")
         }
     }
     

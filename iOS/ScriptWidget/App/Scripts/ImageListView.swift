@@ -56,7 +56,9 @@ struct ImageListView: View {
     let title: String
     
     init(model: ScriptModel) {
-        self.size = screenShortLength / 3 - 10
+        // Cap thumbnail size so the grid stays well-proportioned on iPad / wide
+        // multitasking windows instead of rendering a few oversized images.
+        self.size = min(screenShortLength / 3 - 10, 110)
         self.columns = [
             GridItem(.adaptive(size), spacing: 5),
         ]
@@ -98,7 +100,7 @@ struct ImageListView: View {
                 .padding(.leading, 30)
                 .padding(.top, 5)
                 .padding(.bottom, 5)
-        }))
+        }).accessibilityLabel(Text("Add Image")))
         .sheet(isPresented: $isAddingImage) {
             PhotoPickerView(scriptModel: dataObject.model)
         }
