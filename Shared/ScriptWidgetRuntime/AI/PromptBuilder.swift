@@ -17,6 +17,7 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
     case medium
     case large
     case extraLarge
+    case extraLargePortrait
     case accessoryInline
     case accessoryCircular
     case accessoryRectangular
@@ -29,6 +30,7 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
         case .medium: return "Medium"
         case .large: return "Large"
         case .extraLarge: return "Extra Large"
+        case .extraLargePortrait: return "Extra Large Portrait"
         case .accessoryInline: return "Accessory Inline"
         case .accessoryCircular: return "Accessory Circular"
         case .accessoryRectangular: return "Accessory Rectangular"
@@ -41,6 +43,7 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
         case .medium:                 return CGSize(width: 329, height: 170)
         case .large:                  return CGSize(width: 329, height: 345)
         case .extraLarge:             return CGSize(width: 345, height: 329)
+        case .extraLargePortrait:     return CGSize(width: 345, height: 639)
         case .accessoryInline:        return CGSize(width: 250, height: 30)
         case .accessoryCircular:      return CGSize(width: 72,  height: 72)
         case .accessoryRectangular:   return CGSize(width: 170, height: 72)
@@ -59,6 +62,8 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
             return "Square, ~329x345 px. Multiple sections / richer layout."
         case .extraLarge:
             return "Wide rectangle (iPad), ~639x345 px. Dashboard-style density is fine."
+        case .extraLargePortrait:
+            return "Tall rectangle, ~345x639 px. Use vertically stacked sections and flexible sizing."
         case .accessoryInline:
             return "Single line of text only. No colors, no layout containers beyond text."
         case .accessoryCircular:

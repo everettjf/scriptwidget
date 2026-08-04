@@ -12,17 +12,25 @@ import Combine
 
 struct ScriptWidgetMainWidget: Widget {
 
+    private var supportedFamilies: [WidgetFamily] {
+        var families: [WidgetFamily] = [
+            .systemSmall, .systemMedium, .systemLarge,
+            .systemExtraLarge,
+            .accessoryInline, .accessoryCircular, .accessoryRectangular,
+        ]
+        if #available(iOSApplicationExtension 27.0, *) {
+            families.append(.systemExtraLargePortrait)
+        }
+        return families
+    }
+
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: "ScriptWidget", intent: ScriptWidgetAppIntent.self, provider: ScriptWidgetTimelineProvider()) { entry in
             ScriptWidgetWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("ScriptWidget")
         .description("Build widgets with JavaScript")
-        .supportedFamilies([
-            .systemSmall, .systemMedium, .systemLarge,
-            .systemExtraLarge,
-            .accessoryInline, .accessoryCircular, .accessoryRectangular,
-        ])
+        .supportedFamilies(supportedFamilies)
         .contentMarginsDisabled()
     }
     

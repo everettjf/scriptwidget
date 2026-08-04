@@ -66,16 +66,20 @@ class ScriptWidgetDataObject : ObservableObject {
             return
         }
         
-        var widgetSizeString = ""
-        switch self.widgetFamily {
-        case .systemLarge: widgetSizeString = "large"
-        case .systemMedium: widgetSizeString = "medium"
-        case .systemSmall: widgetSizeString = "small"
-        case .systemExtraLarge: widgetSizeString = "extraLarge"
-        case .accessoryInline: widgetSizeString = "accessoryInline"
-        case .accessoryCircular: widgetSizeString = "accessoryCircular"
-        case .accessoryRectangular: widgetSizeString = "accessoryRectangular"
-        default: widgetSizeString = "small"
+        let widgetSizeString: String
+        if #available(iOSApplicationExtension 27.0, *), self.widgetFamily == .systemExtraLargePortrait {
+            widgetSizeString = "extraLargePortrait"
+        } else {
+            switch self.widgetFamily {
+            case .systemLarge: widgetSizeString = "large"
+            case .systemMedium: widgetSizeString = "medium"
+            case .systemSmall: widgetSizeString = "small"
+            case .systemExtraLarge: widgetSizeString = "extraLarge"
+            case .accessoryInline: widgetSizeString = "accessoryInline"
+            case .accessoryCircular: widgetSizeString = "accessoryCircular"
+            case .accessoryRectangular: widgetSizeString = "accessoryRectangular"
+            default: widgetSizeString = "small"
+            }
         }
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : widgetSizeString,

@@ -106,12 +106,17 @@ class ScriptWidgetDataObject : ObservableObject {
             return
         }
         
-        var widgetSizeString = ""
-        switch self.widgetFamily {
-        case .systemLarge: widgetSizeString = "large"
-        case .systemMedium: widgetSizeString = "medium"
-        case .systemSmall: widgetSizeString = "small"
-        default: widgetSizeString = "small"
+        let widgetSizeString: String
+        if #available(macOSApplicationExtension 27.0, *), self.widgetFamily == .systemExtraLargePortrait {
+            widgetSizeString = "extraLargePortrait"
+        } else {
+            switch self.widgetFamily {
+            case .systemLarge: widgetSizeString = "large"
+            case .systemMedium: widgetSizeString = "medium"
+            case .systemSmall: widgetSizeString = "small"
+            case .systemExtraLarge: widgetSizeString = "extraLarge"
+            default: widgetSizeString = "small"
+            }
         }
         let runtime = ScriptWidgetRuntime(package:self.package, environments: [
             "widget-size" : widgetSizeString,
@@ -182,8 +187,10 @@ struct ScriptWidgetMacWidgetEntryView : View {
     var body: some View {
         if self.entry.isPreview {
             ScriptWidgetPlaceholderView()
+                .containerBackground(.background, for: .widget)
         } else {
             ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, entry: self.entry)
+                .containerBackground(.background, for: .widget)
         }
     }
 }
@@ -192,13 +199,24 @@ struct ScriptWidgetMacWidgetEntryView : View {
 struct ScriptWidgetMacWidget: Widget {
     let kind: String = "ScriptWidgetMacWidget"
 
+    private var supportedFamilies: [WidgetFamily] {
+        var families: [WidgetFamily] = [
+            .systemSmall, .systemMedium, .systemLarge, .systemExtraLarge,
+        ]
+        if #available(macOSApplicationExtension 27.0, *) {
+            families.append(.systemExtraLargePortrait)
+        }
+        return families
+    }
+
     var body: some WidgetConfiguration {
         AppIntentConfiguration(kind: kind, intent: ScriptWidgetAppIntent.self, provider: ScriptWidgetTimelineProvider()) { entry in
             ScriptWidgetMacWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("ScriptWidget")
         .description("Build your own widgets")
-        .supportedFamilies([.systemSmall, .systemMedium, .systemLarge])
+        .supportedFamilies(supportedFamilies)
+        .contentMarginsDisabled()
     }
 }
 
