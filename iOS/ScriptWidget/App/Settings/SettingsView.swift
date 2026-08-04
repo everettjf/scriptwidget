@@ -67,7 +67,7 @@ struct SettingsView: View {
                                     .font(.caption)
                                 Text("Refresh")
                                     .font(.caption)
-                                    .width(50)
+                                    .frame(width: 50)
                             }
                             .buttonStyle(.bordered)
                         }
@@ -113,7 +113,12 @@ struct SettingsView: View {
                         SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
                         SettingsLinkRowView(name: "Special Thanks", label: "Reina", urlString: "https://github.com/Reinachan")
                         SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())
-                        SettingsLinkRowView(name: "More Apps", label: "https://xnu.app", urlString: "https://xnu.app")
+                    }
+
+                    GroupBox (label: SettingsLabelView(title: "More Apps", image: "square.grid.2x2")) {
+                        SettingsLinkRowView(name: "BSSID SCAN", label: "App Store", urlString: "https://apps.apple.com/us/app/bssid-scan/id1442586100")
+                        SettingsLinkRowView(name: "CountMyDays", label: "App Store", urlString: "https://apps.apple.com/us/app/countmydays-days-counter/id6753280745")
+                        SettingsLinkRowView(name: "Remote Keyboard", label: "App Store", urlString: "https://apps.apple.com/us/app/remote-keyboard/id1474458879")
                     }
                     
                 }

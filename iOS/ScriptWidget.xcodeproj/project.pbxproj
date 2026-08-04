@@ -268,7 +268,6 @@
 		F29119962793223300B860B0 /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119922793223300B860B0 /* ScriptWidgetPackage.swift */; };
 		F296EA1A25E8909700E87A4A /* StoreKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F296EA1925E8909700E87A4A /* StoreKit.framework */; };
 		F2997F02274A710100CD7DD6 /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2997F01274A710100CD7DD6 /* SwiftyJSON */; };
-		F2997F05274A717A00CD7DD6 /* SwiftUIX in Frameworks */ = {isa = PBXBuildFile; productRef = F2997F04274A717A00CD7DD6 /* SwiftUIX */; };
 		F2B20CC425D2EF5E00B62DAC /* NameAutoImageView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B20CC325D2EF5E00B62DAC /* NameAutoImageView.swift */; };
 		F2B20CC925D37C1C00B62DAC /* GradientColorData.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2B20CC825D37C1C00B62DAC /* GradientColorData.swift */; };
 		F2B20CED25D3AD6200B62DAC /* SwiftyJSON in Frameworks */ = {isa = PBXBuildFile; productRef = F2B20CEC25D3AD6200B62DAC /* SwiftyJSON */; };
@@ -672,7 +671,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				A106000300000000000000B0 /* SwiftOpenAI in Frameworks */,
-				F2997F05274A717A00CD7DD6 /* SwiftUIX in Frameworks */,
 				F2B20D1925D3EAEA00B62DAC /* CloudKit.framework in Frameworks */,
 				5A912FAA2D2135330050F250 /* ClockHandRotationKit in Frameworks */,
 				F296EA1A25E8909700E87A4A /* StoreKit.framework in Frameworks */,
@@ -1484,7 +1482,6 @@
 				A106000200000000000000B0 /* SwiftOpenAI */,
 				F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */,
 				F245BBF725B9E62300F25F68 /* SwiftyJSON */,
-				F2997F04274A717A00CD7DD6 /* SwiftUIX */,
 				F228DDB527A37776009E8F04 /* ZipArchive */,
 			);
 			productName = ScriptWidget;
@@ -1567,7 +1564,6 @@
 				A106000100000000000000B0 /* XCRemoteSwiftPackageReference "SwiftOpenAI" */,
 				F245BBEB25B9E5DC00F25F68 /* XCRemoteSwiftPackageReference "SDWebImageSwiftUI" */,
 				F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */,
-				F2997F03274A717A00CD7DD6 /* XCRemoteSwiftPackageReference "SwiftUIX" */,
 				F228DDB427A37776009E8F04 /* XCRemoteSwiftPackageReference "ZipArchive" */,
 				5A89B7A32F10D408008B90A2 /* XCRemoteSwiftPackageReference "ClockHandRotationKit" */,
 			);
@@ -2428,14 +2424,6 @@
 				minimumVersion = 5.0.0;
 			};
 		};
-		F2997F03274A717A00CD7DD6 /* XCRemoteSwiftPackageReference "SwiftUIX" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/SwiftUIX/SwiftUIX";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.0;
-			};
-		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -2486,11 +2474,6 @@
 			isa = XCSwiftPackageProductDependency;
 			package = F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */;
 			productName = SwiftyJSON;
-		};
-		F2997F04274A717A00CD7DD6 /* SwiftUIX */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = F2997F03274A717A00CD7DD6 /* XCRemoteSwiftPackageReference "SwiftUIX" */;
-			productName = SwiftUIX;
 		};
 		F2B20CEC25D3AD6200B62DAC /* SwiftyJSON */ = {
 			isa = XCSwiftPackageProductDependency;

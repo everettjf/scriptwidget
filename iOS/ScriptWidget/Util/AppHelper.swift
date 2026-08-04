@@ -46,9 +46,15 @@ class AppHelper {
     }
     
     @MainActor static func requestReview() {
-        if let windowScene = UIApplication.shared.firstKeyWindow?.windowScene {
-            AppStore.requestReview(in: windowScene)
-        }
+        let windowScene = UIApplication.shared.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .first { scene in
+                scene.activationState == .foregroundActive
+                    && scene.windows.contains(where: \.isKeyWindow)
+            }
+
+        guard let windowScene else { return }
+        AppStore.requestReview(in: windowScene)
     }
     
     static func isdarkmode() -> Bool {

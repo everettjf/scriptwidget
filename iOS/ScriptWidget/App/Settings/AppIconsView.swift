@@ -12,7 +12,7 @@ struct AppIconsView: View {
     private var iconNames = AppHelper.getAlternateIconNames()
     
     private var gridItemLayout = [
-        GridItem(.adaptive(50), spacing: 5)
+        GridItem(.adaptive(minimum: 50), spacing: 5)
     ]
     
     var body: some View {

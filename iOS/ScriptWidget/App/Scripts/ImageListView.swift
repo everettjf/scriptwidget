@@ -60,7 +60,7 @@ struct ImageListView: View {
         // multitasking windows instead of rendering a few oversized images.
         self.size = min(screenShortLength / 3 - 10, 110)
         self.columns = [
-            GridItem(.adaptive(size), spacing: 5),
+            GridItem(.adaptive(minimum: size), spacing: 5),
         ]
         self.dataObject = ImageDataObject(model: model)
         self.title = "Images"

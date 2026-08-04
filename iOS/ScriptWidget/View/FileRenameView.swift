@@ -10,7 +10,7 @@ import SwiftUI
 struct FileRenameView: View {
     let scriptModel: ScriptModel
     let fileModel: FileModel
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     @State private var inputFileName = "";
     @State private var message = ""
@@ -87,7 +87,7 @@ struct FileRenameView: View {
         let result = scriptModel.package.renameFile(relativePath: fileModel.relativePath, destRelativePath: fileName)
         if result.0 {
             message = "succeed"
-            presentationMode.dismiss()
+            dismiss()
             onFileRenamed.toggle()
         } else {
             message = ("failed rename : \(result.1)")

@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct FileDetailView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     let scriptModel: ScriptModel
     let fileModel: FileModel
@@ -53,7 +53,7 @@ struct FileDetailView: View {
                 
                 scriptModel.package.deleteFile(relativePath: fileModel.relativePath)
                 
-                presentationMode.dismiss()
+                dismiss()
             })
         })
         
@@ -66,7 +66,7 @@ struct FileDetailView: View {
         .onChange(of: onFileRenamed) { _, value in
             print("on file renamed : \(value)")
             if value {
-                presentationMode.dismiss()
+                dismiss()
             }
         }
         
@@ -85,7 +85,7 @@ struct FileDetailView: View {
                     } label: {
                         Label("Edit", systemImage: "pencil.circle")
                     }
-                    .tint(.systemIndigo)
+                    .tint(Color(uiColor: .systemIndigo))
                 }
             }
         )

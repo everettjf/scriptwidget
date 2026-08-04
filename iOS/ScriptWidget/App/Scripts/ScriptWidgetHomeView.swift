@@ -7,7 +7,6 @@
 
 import SwiftUI
 import UIKit
-import SwiftUIX
 import WidgetKit
 
 class ScriptWidgetHomeViewDataObject : ObservableObject {
@@ -71,7 +70,7 @@ struct ScriptWidgetHomeView: View {
                 })
                 .sheet(item: $selectedShareItem, content: { item in
                     // share
-                    AppActivityView(activityItems: sharedScriptManager.exportScriptItemsInTempPath(model: item))
+                    ActivityViewController(activityItems: sharedScriptManager.exportScriptItemsInTempPath(model: item))
                 })
                 .alert("Confirm Delete : \(selectedDeleteItem?.name ?? "") ? ", isPresented: $isShowingDeleteAlert, presenting: selectedDeleteItem, actions: { item in
                     Button("Delete", role:.destructive ,action: {
@@ -158,7 +157,7 @@ struct ScriptWidgetHomeView: View {
                         } label: {
                             Label("Edit", systemImage: "pencil.circle")
                         }
-                        .tint(.systemIndigo)
+                        .tint(Color(uiColor: .systemIndigo))
 
                         Button {
                             let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)

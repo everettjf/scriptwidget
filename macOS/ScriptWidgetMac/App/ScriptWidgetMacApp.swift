@@ -64,7 +64,34 @@ struct ScriptWidgetMacApp: App {
         }
 
         Settings {
+            ScriptWidgetMacSettingsView()
+        }
+    }
+}
+
+private struct ScriptWidgetMacSettingsView: View {
+    var body: some View {
+        TabView {
             SettingAIView()
+                .tabItem {
+                    Label("AI", systemImage: "sparkles")
+                }
+
+            Form {
+                Section("More Apps") {
+                    Link(destination: URL(string: "https://apps.apple.com/us/app/myjsondiff/id6742816661")!) {
+                        Label("MyJSONDiff", systemImage: "curlybraces")
+                    }
+                    Link(destination: URL(string: "https://apps.apple.com/us/app/startmyapp-fast-app-launch/id6753610893")!) {
+                        Label("StartMyApp", systemImage: "bolt")
+                    }
+                }
+            }
+            .formStyle(.grouped)
+            .frame(minWidth: 520, minHeight: 320)
+            .tabItem {
+                Label("More Apps", systemImage: "square.grid.2x2")
+            }
         }
     }
 }

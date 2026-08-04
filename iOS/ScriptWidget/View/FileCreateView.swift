@@ -9,7 +9,7 @@ import SwiftUI
 
 struct FileCreateView: View {
     let scriptModel: ScriptModel
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     @State private var inputFileName = "config.json";
     @State private var message = ""
@@ -60,7 +60,7 @@ struct FileCreateView: View {
         let result = scriptModel.package.writeFile(relativePath: fileName, content: "")
         if result.0 {
             message = "succeed"
-            presentationMode.dismiss()
+            dismiss()
         } else {
             message = ("failed create : \(result.1)")
         }
