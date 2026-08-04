@@ -93,6 +93,24 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertTrue(text.contains("hello-param"), "expected widget-param in output, got: \(text)")
     }
 
+    func testRuntimeContractIsVisibleToScripts() {
+        let jsx = "$render(<text>{$runtime.apiVersion}</text>);"
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
+        XCTAssertNil(error)
+        XCTAssertTrue(collectText(element!).contains("1.0"))
+    }
+
+    func testNeverResolvingScriptTimesOut() {
+        let start = Date()
+        let (_, error) = makeRuntime().executeJSXSyncForWidget(
+            "if (false) { $render(<text>never</text>); }"
+        )
+        XCTAssertLessThan(Date().timeIntervalSince(start), 7)
+        guard case .resourceLimit = error else {
+            return XCTFail("expected resource-limit timeout, got \(String(describing: error))")
+        }
+    }
+
     // MARK: - Error surfacing (PR #12: visible script errors)
 
     func testThrownErrorIsSurfaced() {

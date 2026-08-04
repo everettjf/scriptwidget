@@ -28,6 +28,7 @@ enum ScriptWidgetError: Error {
     case transformError(String)
     case scriptError(String)
     case scriptException(String)
+    case resourceLimit(String)
 
     /// The underlying message, used both for logging and for surfacing the
     /// failure to the user in the widget/preview instead of a blank view.
@@ -37,9 +38,49 @@ enum ScriptWidgetError: Error {
              .internalError(let msg),
              .transformError(let msg),
              .scriptError(let msg),
-             .scriptException(let msg):
+             .scriptException(let msg),
+             .resourceLimit(let msg):
             return msg
         }
+    }
+}
+
+enum ScriptWidgetRuntimeContract {
+    static let apiVersion = "1.0"
+    static let maximumSourceBytes = 512 * 1_024
+    static let maximumTranspiledBytes = 2 * 1_024 * 1_024
+    static let executionTimeout: DispatchTimeInterval = .seconds(5)
+
+    static let globalAPIs = [
+        "$component", "$console", "$device", "$dynamic_island", "$element",
+        "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
+        "$location", "$render", "$runtime", "$storage", "$system", "console", "fetch",
+    ]
+
+    static func validateSource(_ source: String) -> ScriptWidgetError? {
+        validateByteCount(source.utf8.count, maximum: maximumSourceBytes, label: "Source")
+    }
+
+    static func validateTranspiled(_ source: String) -> ScriptWidgetError? {
+        validateByteCount(source.utf8.count, maximum: maximumTranspiledBytes, label: "Transpiled script")
+    }
+
+    private static func validateByteCount(_ count: Int, maximum: Int, label: String) -> ScriptWidgetError? {
+        guard count <= maximum else {
+            return .resourceLimit("\(label) exceeds the \(maximum)-byte runtime memory budget")
+        }
+        return nil
+    }
+
+    static var javascriptDescriptor: [String: Any] {
+        [
+            "apiVersion": apiVersion,
+            "limits": [
+                "sourceBytes": maximumSourceBytes,
+                "transpiledBytes": maximumTranspiledBytes,
+                "executionMilliseconds": 5_000,
+            ],
+        ]
     }
 }
 
@@ -132,6 +173,9 @@ class ScriptWidgetRuntime {
     }
     
     private func transform(_ paramJSX: String, wrapMain: Bool, callAsynFunctionName: String = "") -> AnyPublisher<String, ScriptWidgetError> {
+        if let error = ScriptWidgetRuntimeContract.validateSource(paramJSX) {
+            return Fail(error: error).eraseToAnyPublisher()
+        }
         // async/await support
         var JSX = ""
         if wrapMain {
@@ -185,6 +229,10 @@ class ScriptWidgetRuntime {
             
             guard let jsOutput = result.toString() else {
                 promise(.failure(.transformError("Transform result is not string : \(result)")))
+                return
+            }
+            if let error = ScriptWidgetRuntimeContract.validateTranspiled(jsOutput) {
+                promise(.failure(error))
                 return
             }
             
@@ -279,7 +327,10 @@ extension ScriptWidgetRuntime {
             cancellables.append(cancelable)
         }
         
-        sem.wait()
+        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            cancellables.removeAll()
+            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        }
         
         return (resultElement, resultError)
     }
@@ -327,6 +378,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
+            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {
@@ -444,7 +496,10 @@ extension ScriptWidgetRuntime {
             }
 
             DispatchQueue.global().async {
-                semaphore.wait()
+                guard semaphore.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+                    promise(.failure(.resourceLimit("Script exceeded the 5-second execution limit")))
+                    return
+                }
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
@@ -500,7 +555,10 @@ extension ScriptWidgetRuntime {
             cancellables.append(cancelable)
         }
         
-        sem.wait()
+        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            cancellables.removeAll()
+            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        }
         
         return (resultElement, resultError)
     }
@@ -548,6 +606,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
+            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {
@@ -684,7 +743,10 @@ extension ScriptWidgetRuntime {
             }
 
             DispatchQueue.global().async {
-                semaphore.wait()
+                guard semaphore.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+                    promise(.failure(.resourceLimit("Script exceeded the 5-second execution limit")))
+                    return
+                }
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
@@ -739,7 +801,10 @@ extension ScriptWidgetRuntime {
             cancellables.append(cancelable)
         }
         
-        sem.wait()
+        guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            cancellables.removeAll()
+            return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
+        }
         
         return (resultElement, resultError)
     }
@@ -785,6 +850,7 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
             self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
+            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
 
             let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
                 if let value = self?.environments[key] {
@@ -885,7 +951,10 @@ extension ScriptWidgetRuntime {
             let _ = mainEntry.call(withArguments: [])
 
             DispatchQueue.global().async {
-                semaphore.wait()
+                guard semaphore.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+                    promise(.failure(.resourceLimit("Script exceeded the 5-second execution limit")))
+                    return
+                }
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))

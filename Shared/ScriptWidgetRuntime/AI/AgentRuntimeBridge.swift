@@ -123,6 +123,7 @@ extension ScriptWidgetError {
         case .transformError(let m):  return "transformError: \(m)"
         case .scriptError(let m):     return "scriptError: \(m)"
         case .scriptException(let m): return "scriptException: \(m)"
+        case .resourceLimit(let m):   return "resourceLimit: \(m)"
         }
     }
 }

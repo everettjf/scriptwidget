@@ -128,6 +128,38 @@ final class ScriptWidgetErrorTests: XCTestCase {
         XCTAssertEqual(ScriptWidgetError.transformError("t").displayMessage, "t")
         XCTAssertEqual(ScriptWidgetError.scriptError("s").displayMessage, "s")
         XCTAssertEqual(ScriptWidgetError.scriptException("e").displayMessage, "e")
+        XCTAssertEqual(ScriptWidgetError.resourceLimit("r").displayMessage, "r")
+    }
+}
+
+final class RuntimeContractTests: XCTestCase {
+    func testPublicAPIVersionAndGlobalsAreFixed() {
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.0")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
+        XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
+        XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))
+    }
+
+    func testSourceMemoryBudgetRejectsOversizedScripts() {
+        let oversized = String(repeating: "x", count: ScriptWidgetRuntimeContract.maximumSourceBytes + 1)
+        XCTAssertNotNil(ScriptWidgetRuntimeContract.validateSource(oversized))
+        XCTAssertNil(ScriptWidgetRuntimeContract.validateSource("$render(<text>ok</text>)"))
+    }
+
+    func testBundledExamplesFitThePublishedSourceBudget() throws {
+        let testsDirectory = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+        let templates = testsDirectory
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appendingPathComponent("Shared/ScriptWidgetRuntime/Resource/Script.bundle/template")
+        let files = try FileManager.default.subpathsOfDirectory(atPath: templates.path)
+            .filter { $0.hasSuffix("/main.jsx") }
+        XCTAssertGreaterThan(files.count, 20)
+
+        for relativePath in files {
+            let source = try String(contentsOf: templates.appendingPathComponent(relativePath), encoding: .utf8)
+            XCTAssertNil(ScriptWidgetRuntimeContract.validateSource(source), relativePath)
+        }
     }
 }
 
