@@ -1,0 +1,8 @@
+{
+  "description": "A polished personal dashboard with date, focus, and daily progress.",
+  "category": "productivity",
+  "tags": ["dashboard", "focus", "progress", "date"],
+  "difficulty": "beginner",
+  "icon": "rectangle.3.group.fill",
+  "featured": true
+}

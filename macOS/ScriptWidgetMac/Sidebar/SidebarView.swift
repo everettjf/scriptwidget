@@ -19,6 +19,10 @@ struct SidebarView: View {
     @State private var aiGenerateShowingSheet = false
     @State private var aiConfigAlertShown = false
 
+    // setup guide
+    @State private var widgetGuideShowingSheet = false
+    @State private var searchText = ""
+
     // rename
     @State private var renameCurrentName = ""
     @State private var renameInputName = ""
@@ -43,6 +47,9 @@ struct SidebarView: View {
             }
             .sheet(isPresented: $aiGenerateShowingSheet) {
                 AIGenerateWindowView()
+            }
+            .sheet(isPresented: $widgetGuideShowingSheet) {
+                MacWidgetSetupGuideView()
             }
             .onReceive(NotificationCenter.default.publisher(for: AIGenerateWindowView.openRequestNotification)) { _ in
                 if AISettingsStore.shared.load().isConfigured {
@@ -84,17 +91,54 @@ struct SidebarView: View {
                     }
                     .help("New widget")
                 }
+                ToolbarItem(placement: .automatic) {
+                    Button {
+                        widgetGuideShowingSheet = true
+                    } label: {
+                        Label("Add Widget", systemImage: "rectangle.stack.badge.plus")
+                    }
+                    .help("How to add ScriptWidget to the desktop")
+                }
             }
+            .searchable(text: $searchText, prompt: "Search widgets")
     }
     
     @ViewBuilder
     var content: some View {
         List {
+            Section("Quick Start") {
+                Button {
+                    createShowingSheet = true
+                } label: {
+                    Label("New from Template", systemImage: "plus")
+                }
+
+                Button {
+                    if AISettingsStore.shared.load().isConfigured {
+                        aiGenerateShowingSheet = true
+                    } else {
+                        aiConfigAlertShown = true
+                    }
+                } label: {
+                    Label("Generate with AI", systemImage: "sparkles")
+                }
+
+                Button {
+                    widgetGuideShowingSheet = true
+                } label: {
+                    Label("Add Widget to Desktop", systemImage: "rectangle.stack.badge.plus")
+                }
+            }
+
             Section("Scripts") {
                 if store.scriptModels.isEmpty {
                     EmptyListBackgroundView()
+                } else if filteredScriptModels.isEmpty {
+                    Text("No widgets match ‘\(searchText)’")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 } else {
-                    ForEach(store.scriptModels) { item in
+                    ForEach(filteredScriptModels) { item in
                         NavigationLink(destination: EditorMainView(scriptModel: item)) {
                             WidgetRowView(model: item)
                                 .padding(.vertical, 2)
@@ -170,6 +214,14 @@ struct SidebarView: View {
                     Label("Templates", systemImage: "scribble.variable")
                 }
             }
+        }
+    }
+
+    private var filteredScriptModels: [ScriptModel] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return store.scriptModels }
+        return store.scriptModels.filter {
+            $0.name.localizedCaseInsensitiveContains(query)
         }
     }
 }

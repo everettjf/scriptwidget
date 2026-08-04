@@ -1,0 +1,8 @@
+{
+  "description": "A clean hydration ring driven by a simple current/goal parameter.",
+  "category": "health",
+  "tags": ["water", "hydration", "ring", "goal"],
+  "difficulty": "beginner",
+  "icon": "drop.fill",
+  "featured": true
+}

@@ -155,6 +155,27 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertEqual(first.0?.tagAsString(), second.0?.tagAsString())
     }
 
+    func testNewBundledTemplatesRenderWithoutNetwork() throws {
+        let templateNames = [
+            "Weekly Planner",
+            "Hydration Goal",
+            "Personal Dashboard",
+            "Quick Launcher",
+        ]
+
+        for name in templateNames {
+            let package = ScriptWidgetPackage(bundle: "Script", relativePath: "template/\(name)")
+            let source = try XCTUnwrap(package.readMainFile().0, "missing source for \(name)")
+            let runtime = ScriptWidgetRuntime(
+                package: package,
+                environments: ["widget-size": "medium", "widget-param": "5,8"]
+            )
+            let (element, error) = runtime.executeJSXSyncForWidget(source)
+            XCTAssertNil(error, "\(name) failed: \(String(describing: error?.displayMessage))")
+            XCTAssertNotNil(element, "\(name) did not render an element")
+        }
+    }
+
     // MARK: - Dynamic Island path
 
     func testDynamicIslandRenders() {

@@ -25,6 +25,7 @@ class MacOnboardingFeaturedDataObject: ObservableObject {
 struct EmptyHelloView: View {
     @StateObject private var data = MacOnboardingFeaturedDataObject()
     @State private var showCreate = false
+    @State private var showWidgetGuide = false
 
     var body: some View {
         ScrollView {
@@ -43,6 +44,9 @@ struct EmptyHelloView: View {
         .frame(minWidth: 480, minHeight: 400)
         .sheet(isPresented: $showCreate) {
             CreateGuideView()
+        }
+        .sheet(isPresented: $showWidgetGuide) {
+            MacWidgetSetupGuideView()
         }
     }
 
@@ -112,6 +116,13 @@ struct EmptyHelloView: View {
                 Label("Generate with AI", systemImage: "sparkles")
             }
             .controlSize(.large)
+
+            Button {
+                showWidgetGuide = true
+            } label: {
+                Label("Add to Desktop", systemImage: "rectangle.stack.badge.plus")
+            }
+            .controlSize(.large)
         }
     }
 
@@ -127,6 +138,85 @@ struct EmptyHelloView: View {
         } else {
             MacKitUtil.alertWarn(title: "Create failed", message: result.1)
         }
+    }
+}
+
+struct MacWidgetSetupGuideView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Add ScriptWidget to your Mac")
+                        .font(.title2.bold())
+                    Text("Place a script on the desktop or in Notification Center.")
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button("Done") { dismiss() }
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(24)
+
+            Divider()
+
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    MacWidgetSetupStep(number: 1, icon: "desktopcomputer", title: "Open the widget gallery", detail: "Control-click the desktop and choose Edit Widgets, or open Notification Center and choose Edit Widgets.")
+                    MacWidgetSetupStep(number: 2, icon: "magnifyingglass", title: "Find ScriptWidget", detail: "Search for ScriptWidget, pick a size, then drag it onto the desktop or Notification Center.")
+                    MacWidgetSetupStep(number: 3, icon: "slider.horizontal.3", title: "Choose your script", detail: "Control-click the widget, choose Edit ScriptWidget, then select a script, parameter, and refresh frequency.")
+                    MacWidgetSetupStep(number: 4, icon: "icloud", title: "Share across devices", detail: "Keep ScriptWidget open long enough for iCloud to download scripts before selecting them in a widget.")
+
+                    HStack(spacing: 12) {
+                        Button {
+                            MacKitUtil.revealInFinder(sharedScriptManager.scriptDirectory.path)
+                        } label: {
+                            Label("Open Scripts Folder", systemImage: "folder")
+                        }
+
+                        Button {
+                            sharedScriptManager.requestUpdateICloudScripts()
+                        } label: {
+                            Label("Sync iCloud Scripts", systemImage: "arrow.triangle.2.circlepath.icloud")
+                        }
+                    }
+                    .controlSize(.large)
+                }
+                .padding(24)
+            }
+        }
+        .frame(width: 620, height: 540)
+    }
+}
+
+private struct MacWidgetSetupStep: View {
+    let number: Int
+    let icon: String
+    let title: String
+    let detail: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(.tint.opacity(0.12))
+                Image(systemName: icon)
+                    .font(.title3)
+                    .foregroundStyle(.tint)
+            }
+            .frame(width: 48, height: 48)
+            .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text("\(number). \(title)")
+                    .font(.headline)
+                Text(detail)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 

@@ -38,6 +38,10 @@ class MacCreateGuideDataObject: ObservableObject {
     init() {
         DispatchQueue.global().async { [weak self] in
             let items = ScriptManager.listBundleScripts(bundle: "Script", relativePath: "template")
+                .sorted { left, right in
+                    if left.isFeatured != right.isFeatured { return left.isFeatured }
+                    return left.name.localizedCaseInsensitiveCompare(right.name) == .orderedAscending
+                }
             DispatchQueue.main.async {
                 self?.models = items
             }
@@ -286,6 +290,21 @@ struct MacTemplateCardView: View {
                         Image(systemName: model.iconSystemName)
                             .font(.system(size: 30))
                             .foregroundColor(accentColor)
+                    }
+
+                    if model.isFeatured {
+                        VStack {
+                            HStack {
+                                Label("Featured", systemImage: "sparkles")
+                                    .font(.caption2.weight(.semibold))
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 4)
+                                    .background(.thinMaterial, in: .capsule)
+                                Spacer()
+                            }
+                            Spacer()
+                        }
+                        .padding(7)
                     }
                 }
                 .frame(height: 86)

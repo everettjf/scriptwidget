@@ -3,5 +3,6 @@
   "category": "finance",
   "tags": ["stock","price","network"],
   "difficulty": "medium",
-  "icon": "chart.line.uptrend.xyaxis"
+  "icon": "chart.line.uptrend.xyaxis",
+  "featured": true
 }

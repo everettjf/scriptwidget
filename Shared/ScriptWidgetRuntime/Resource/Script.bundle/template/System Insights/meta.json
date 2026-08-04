@@ -3,5 +3,6 @@
   "category": "system",
   "tags": ["system","dashboard"],
   "difficulty": "medium",
-  "icon": "cpu.fill"
+  "icon": "cpu.fill",
+  "featured": true
 }

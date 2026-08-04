@@ -3,5 +3,6 @@
   "category": "productivity",
   "tags": ["habit","streak"],
   "difficulty": "medium",
-  "icon": "flame.fill"
+  "icon": "flame.fill",
+  "featured": true
 }

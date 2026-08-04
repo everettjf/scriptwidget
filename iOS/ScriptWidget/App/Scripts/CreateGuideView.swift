@@ -14,6 +14,10 @@ class CreateGuideDataObject: ObservableObject {
     init() {
         DispatchQueue.global().async { [self] in
             let items = ScriptManager.listBundleScripts(bundle: "Script", relativePath: "template")
+                .sorted { left, right in
+                    if left.isFeatured != right.isFeatured { return left.isFeatured }
+                    return left.name.localizedCaseInsensitiveCompare(right.name) == .orderedAscending
+                }
             DispatchQueue.main.async {
                 self.models = items
             }
@@ -33,7 +37,7 @@ struct CreateGuideView: View {
     @State private var searchText: String = ""
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
                     aiRow
@@ -65,7 +69,7 @@ struct CreateGuideView: View {
                 .padding(.top, 8)
             }
             .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search templates")
-            .navigationBarTitle(Text("New Widget"), displayMode: .large)
+            .navigationTitle("New Widget")
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
@@ -76,12 +80,9 @@ struct CreateGuideView: View {
                     }
                 }
             }
-            .background(
-                NavigationLink(isActive: $showingAIGenerate) {
-                    AIGenerateView()
-                } label: { EmptyView() }
-                .hidden()
-            )
+            .navigationDestination(isPresented: $showingAIGenerate) {
+                AIGenerateView()
+            }
             .alert("Configure AI First", isPresented: $showingAIConfigAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -241,6 +242,21 @@ struct TemplateCardView: View {
                     Image(systemName: model.iconSystemName)
                         .font(.system(size: 34, weight: .regular))
                         .foregroundColor(accentColor)
+                }
+
+                if model.isFeatured {
+                    VStack {
+                        HStack {
+                            Label("Featured", systemImage: "sparkles")
+                                .font(.caption2.weight(.semibold))
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 4)
+                                .background(.thinMaterial, in: .capsule)
+                            Spacer()
+                        }
+                        Spacer()
+                    }
+                    .padding(7)
                 }
             }
             .frame(height: 96)

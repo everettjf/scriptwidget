@@ -8,17 +8,18 @@
 import SwiftUI
 
 struct ContentView: View {
-    @StateObject var store = SharedAppStore()
+    @StateObject private var store = SharedAppStore()
     
     var body: some View {
-        NavigationView {
+        NavigationSplitView {
             SidebarView(store: store)
-  
+        } detail: {
             EmptyHelloView()
                 .toolbar {
                     ButtonOfficalSite()
                 }
         }
+        .navigationSplitViewStyle(.balanced)
     }
 }
 

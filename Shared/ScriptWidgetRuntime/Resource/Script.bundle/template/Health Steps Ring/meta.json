@@ -3,5 +3,6 @@
   "category": "health",
   "tags": ["health","steps","healthkit"],
   "difficulty": "medium",
-  "icon": "figure.walk"
+  "icon": "figure.walk",
+  "featured": true
 }

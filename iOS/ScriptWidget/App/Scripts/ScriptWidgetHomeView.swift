@@ -44,28 +44,24 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
 }
 
 struct ScriptWidgetHomeView: View {
-    private var idiom : UIUserInterfaceIdiom { UIDevice.current.userInterfaceIdiom }
-
-    @State private var tabBar: UITabBar? = nil
-    
     @State private var isShowingSettings: Bool = false
     @State private var isShowingCreateGuide: Bool = false
-    
-    @Environment(\.presentationMode) var presentationMode
-    
-    @ObservedObject var dataObject = ScriptWidgetHomeViewDataObject()
-    
-    @State var selectedEditItem: ScriptModel?
-    @State var selectedShareItem: ScriptModel?
-    @State var selectedDeleteItem: ScriptModel?
-    @State var isShowingDeleteAlert = false
+    @State private var isShowingWidgetGuide = false
+    @State private var searchText = ""
+
+    @StateObject private var dataObject = ScriptWidgetHomeViewDataObject()
+
+    @State private var selectedEditItem: ScriptModel?
+    @State private var selectedShareItem: ScriptModel?
+    @State private var selectedDeleteItem: ScriptModel?
+    @State private var isShowingDeleteAlert = false
     
     var body: some View {
-        NavigationView {
+        NavigationSplitView {
             content
                 .fullScreenCover(item: $selectedEditItem, content: { item in
                     EditAttributesView(scriptModel: item) {
-                        self.presentationMode.wrappedValue.dismiss()
+                        selectedEditItem = nil
                     }
                 })
                 .sheet(item: $selectedShareItem, content: { item in
@@ -77,13 +73,13 @@ struct ScriptWidgetHomeView: View {
                         // real delete
                         if sharedScriptManager.deleteScript(packageName: item.name) {
                             NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptDeleteNotification, object: nil)
-                            // confirm
-                            self.presentationMode.wrappedValue.dismiss()
+                            selectedDeleteItem = nil
                         }
                     })
                     
                 })
                 .navigationTitle("ScriptWidget")
+                .searchable(text: $searchText, prompt: "Search widgets")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
@@ -108,74 +104,82 @@ struct ScriptWidgetHomeView: View {
                             CreateGuideView()
                         }
                     }
-                }
-            
-            HomeHelloView()
-        }
-        .background(TabBarAccessor { tabbar in   // << here !!
-            if idiom != .pad {
-                self.tabBar = tabbar
-            }
-        })
-    }
-    
-    func showTabBar(_ visible: Bool) {
-        guard let tabBar = tabBar else {
-            return
-        }
 
-        if visible {
-            tabBar.isHidden = false
-        } else {
-            tabBar.isHidden = true
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button {
+                            isShowingWidgetGuide = true
+                        } label: {
+                            Label("Add Widget to Home Screen", systemImage: "rectangle.stack.badge.plus")
+                        }
+                    }
+
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button {
+                            dataObject.reload()
+                            WidgetCenter.shared.reloadAllTimelines()
+                        } label: {
+                            Label("Refresh Widgets", systemImage: "arrow.clockwise")
+                        }
+                    }
+                }
+                .sheet(isPresented: $isShowingWidgetGuide) {
+                    WidgetSetupGuideView()
+                }
+        } detail: {
+            HomeHelloView()
         }
     }
     
     @ViewBuilder
     var content: some View {
-        if dataObject.models.isEmpty {
+        if dataObject.models.isEmpty && searchText.isEmpty {
             EmptyListBackgroundView()
+        } else if filteredModels.isEmpty {
+            ContentUnavailableView.search(text: searchText)
         } else {
             List {
-                ForEach(dataObject.models) { item in
-                    NavigationLink(destination:
-                                    ScriptCodeEditorView(mode: .editor, scriptModel: item)
-                                    .onAppear { showTabBar(false) }     // !!
-                                    .onDisappear { showTabBar(true) } // !!
-                    ) {
-                        WidgetRowView(model: item)
-                    }.swipeActions(allowsFullSwipe: false) {
-                        Button {
-                            self.selectedShareItem = item
-                        } label: {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                        }
-                        .tint(.blue)
-
-                        Button {
-                            self.selectedEditItem = item
-                        } label: {
-                            Label("Edit", systemImage: "pencil.circle")
-                        }
-                        .tint(Color(uiColor: .systemIndigo))
-
-                        Button {
-                            let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
-                            if result.0 {
-                                NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
+                Section {
+                    ForEach(filteredModels) { item in
+                        NavigationLink(destination:
+                                        ScriptCodeEditorView(mode: .editor, scriptModel: item)
+                                        .toolbarVisibility(.hidden, for: .tabBar)
+                        ) {
+                            WidgetRowView(model: item)
+                        }.swipeActions(allowsFullSwipe: false) {
+                            Button {
+                                self.selectedShareItem = item
+                            } label: {
+                                Label("Share", systemImage: "square.and.arrow.up")
                             }
-                        } label: {
-                            Label("Remix", systemImage: "square.on.square")
-                        }
-                        .tint(.purple)
+                            .tint(.blue)
 
-                        Button(role: .destructive) {
-                            self.selectedDeleteItem = item
-                            self.isShowingDeleteAlert.toggle()
-                        } label: {
-                            Label("Delete", systemImage: "trash.fill")
+                            Button {
+                                self.selectedEditItem = item
+                            } label: {
+                                Label("Edit", systemImage: "pencil.circle")
+                            }
+                            .tint(Color(uiColor: .systemIndigo))
+
+                            Button {
+                                let result = sharedScriptManager.duplicateScript(sourcePackageName: item.name)
+                                if result.0 {
+                                    NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
+                                }
+                            } label: {
+                                Label("Remix", systemImage: "square.on.square")
+                            }
+                            .tint(.purple)
+
+                            Button(role: .destructive) {
+                                self.selectedDeleteItem = item
+                                self.isShowingDeleteAlert.toggle()
+                            } label: {
+                                Label("Delete", systemImage: "trash.fill")
+                            }
                         }
                     }
+                } header: {
+                    Text("\(filteredModels.count) widget\(filteredModels.count == 1 ? "" : "s")")
                 }
                 .listRowBackground(Color.clear)
             }
@@ -184,6 +188,14 @@ struct ScriptWidgetHomeView: View {
                 WidgetCenter.shared.reloadAllTimelines()
             }
             
+        }
+    }
+
+    private var filteredModels: [ScriptModel] {
+        let query = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !query.isEmpty else { return dataObject.models }
+        return dataObject.models.filter {
+            $0.name.localizedCaseInsensitiveContains(query)
         }
     }
 }

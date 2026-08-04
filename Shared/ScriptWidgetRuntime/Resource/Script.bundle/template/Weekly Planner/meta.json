@@ -1,0 +1,8 @@
+{
+  "description": "A calm week-at-a-glance strip that highlights today.",
+  "category": "productivity",
+  "tags": ["week", "planner", "calendar", "date"],
+  "difficulty": "beginner",
+  "icon": "calendar.badge.checkmark",
+  "featured": true
+}
