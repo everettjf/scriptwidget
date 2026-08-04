@@ -28,3 +28,11 @@
 ## Commit & Pull Request Guidelines
 - History shows short, informal summaries (often lowercase) and merge commits; no strict convention. Use concise, action-oriented summaries and add a short body when context helps.
 - PRs should include: a clear description, linked issue (if applicable), and screenshots for UI changes. Note which schemes/commands you ran (e.g., `ScriptWidgetWidget`, `npm test`).
+
+## Current Product Priorities
+
+- Define and version the public JavaScript/JSX runtime API, including supported components, properties, errors, storage, networking, and migration behavior.
+- Add a Swift test target for parser/runtime semantics and golden rendering fixtures for representative widgets.
+- Keep example templates runnable against the current runtime and validate them in CI.
+- Treat script execution, network access, shared containers, and imported packages as security boundaries; document limits and fail closed on unsupported capabilities.
+- Measure widget timeline generation, JavaScript evaluation, memory use, and cold launch on both iOS and macOS before adding heavier APIs.
