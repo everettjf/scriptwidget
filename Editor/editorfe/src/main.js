@@ -51,7 +51,6 @@ function scheduleSave() {
   saveTimer = window.setTimeout(() => {
     const content = view.state.doc.toString();
     callNative(bridge, StudioMessage.documentSave, { content, version: documentVersion }, documentID);
-    bridge?.callHandler("event_editorSave", { value: content }, () => {});
   }, 700);
 }
 

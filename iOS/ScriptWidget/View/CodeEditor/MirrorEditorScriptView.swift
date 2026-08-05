@@ -23,7 +23,7 @@ struct MirrorEditorScriptView: UIViewRepresentable {
     }
     
     func createActionProvider() -> MirrorEditorInternalActionProvider {
-        let provider = MirrorEditorInternalActionProvider {
+        let provider = MirrorEditorInternalActionProvider(documentID: filePath.standardizedFileURL.path) {
             print("on read : \(self.filePath.lastPathComponent)")
             guard let content = model.package.readFile(fullPath: self.filePath).0 else {
                 return ""
@@ -47,15 +47,14 @@ struct MirrorEditorScriptView: UIViewRepresentable {
     func makeUIView(context: Context) -> MirrorEditorInternalView {
         print("MirrorEditorScriptView make ui view : \(filePath.lastPathComponent)")
         let uiView = MirrorEditorInternalView()
-        uiView.action = createActionProvider()
+        uiView.updateDocument(action: createActionProvider())
         
         return uiView;
     }
     
     func updateUIView(_ uiView: MirrorEditorInternalView, context: Context) {
         print("MirrorEditorScriptView update ui view: \(filePath.lastPathComponent)")
-        uiView.action = createActionProvider()
-        uiView.updateScript()
+        uiView.updateDocument(action: createActionProvider())
     }
     
 }

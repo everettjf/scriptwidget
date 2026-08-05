@@ -57,7 +57,7 @@ struct AIGenerateView: View {
                         }
                         .pickerStyle(.menu)
                         .labelsHidden()
-                        .onChange(of: activeProfileID) { _, newValue in
+                        .onChange(of: activeProfileID) { newValue in
                             AISettingsStore.shared.setActiveProfile(id: newValue)
                         }
                     }
@@ -96,7 +96,7 @@ struct AIGenerateView: View {
         .onReceive(NotificationCenter.default.publisher(for: AISettingsStore.changedNotification)) { _ in
             loadProfiles()
         }
-        .onChange(of: session.phase) { _, newPhase in
+        .onChange(of: session.phase) { newPhase in
             if case .done = newPhase {
                 showReview = true
             } else if case .exhausted = newPhase {

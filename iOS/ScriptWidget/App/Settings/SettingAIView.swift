@@ -52,7 +52,7 @@ struct SettingAIView: View {
                             .foregroundStyle(.secondary)
                     }
                 }
-                .onChange(of: maxIterations) { saveAgentLoop() }
+                .onChange(of: maxIterations) { _ in saveAgentLoop() }
 
                 VStack(alignment: .leading) {
                     HStack {
@@ -62,7 +62,7 @@ struct SettingAIView: View {
                             .foregroundStyle(.secondary)
                     }
                     Slider(value: $temperature, in: 0.0...1.5, step: 0.05)
-                        .onChange(of: temperature) { saveAgentLoop() }
+                        .onChange(of: temperature) { _ in saveAgentLoop() }
                 }
             }
         }
@@ -178,7 +178,7 @@ struct AIProfileEditorView: View {
             Section("Name") {
                 TextField("Profile name", text: $name)
                     .textInputAutocapitalization(.words)
-                    .onChange(of: name) { persist() }
+                    .onChange(of: name) { _ in persist() }
             }
 
             Section("Provider") {
@@ -201,14 +201,14 @@ struct AIProfileEditorView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
-                    .onChange(of: baseURL) { persist() }
+                    .onChange(of: baseURL) { _ in persist() }
             }
 
             Section("Model") {
                 TextField("gpt-4o-mini", text: $model)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
-                    .onChange(of: model) { persist() }
+                    .onChange(of: model) { _ in persist() }
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 6) {
                         ForEach(modelSuggestions, id: \.self) { preset in
@@ -229,7 +229,7 @@ struct AIProfileEditorView: View {
                     Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
                 }
                 .pickerStyle(.segmented)
-                .onChange(of: authMethod) { persist() }
+                .onChange(of: authMethod) { _ in persist() }
 
                 if authMethod == .apiKey {
                     HStack {
@@ -249,7 +249,7 @@ struct AIProfileEditorView: View {
                         }
                         .buttonStyle(.borderless)
                     }
-                    .onChange(of: apiKey) { persist() }
+                    .onChange(of: apiKey) { _ in persist() }
                 } else {
                     oauthSection
                 }

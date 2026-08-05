@@ -6,6 +6,7 @@ import Foundation
 import SwiftUI
 import WidgetKit
 
+@available(iOSApplicationExtension 18.0, *)
 struct ScriptWidgetControlWidget: ControlWidget {
   var body: some ControlWidgetConfiguration {
 //    StaticControlConfiguration(kind: "ScriptWidget") {

@@ -135,14 +135,23 @@ struct ScriptWidgetHomeView: View {
         if dataObject.models.isEmpty && searchText.isEmpty {
             EmptyListBackgroundView()
         } else if filteredModels.isEmpty {
-            ContentUnavailableView.search(text: searchText)
+            VStack(spacing: 12) {
+                Image(systemName: "magnifyingglass")
+                    .font(.largeTitle)
+                    .foregroundStyle(.secondary)
+                Text("No Results for “\(searchText)”")
+                    .font(.headline)
+                Text("Try a different widget name.")
+                    .foregroundStyle(.secondary)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             List {
                 Section {
                     ForEach(filteredModels) { item in
                         NavigationLink(destination:
                                         ScriptCodeEditorView(mode: .editor, scriptModel: item)
-                                        .toolbarVisibility(.hidden, for: .tabBar)
+                                        .toolbar(.hidden, for: .tabBar)
                         ) {
                             WidgetRowView(model: item)
                         }.swipeActions(allowsFullSwipe: false) {

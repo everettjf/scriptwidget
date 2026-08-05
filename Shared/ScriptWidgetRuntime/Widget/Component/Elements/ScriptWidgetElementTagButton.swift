@@ -23,22 +23,32 @@ class ScriptWidgetElementTagButton {
     }
     
     @ViewBuilder private static func buildButton(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> some View {
-        let action = getButtonAction(element)
-        switch action {
-        case .reload:
-            Button(intent: ReloadWidgetAppIntent()) {
-                ForEach(element.childrenAsElements()) { item -> AnyView in
-                    return ScriptWidgetElementView.buildView(element: item, context: context)
+        if #available(iOS 17.0, macOS 14.0, *) {
+            let action = getButtonAction(element)
+            switch action {
+            case .reload:
+                Button(intent: ReloadWidgetAppIntent()) {
+                    buttonLabel(element: element, context: context)
                 }
-            }
-            .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
-        case .callFunction(let functionName):
-            Button(intent: ButtonActionAppIntent(functionName: functionName, package: context.package)) {
-                ForEach(element.childrenAsElements()) { item -> AnyView in
-                    return ScriptWidgetElementView.buildView(element: item, context: context)
+                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+            case .callFunction(let functionName):
+                Button(intent: ButtonActionAppIntent(functionName: functionName, package: context.package)) {
+                    buttonLabel(element: element, context: context)
                 }
+                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
             }
+        } else {
+            Button(action: {}) {
+                buttonLabel(element: element, context: context)
+            }
+            .disabled(true)
             .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+        }
+    }
+
+    @ViewBuilder private static func buttonLabel(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> some View {
+        ForEach(element.childrenAsElements()) { item -> AnyView in
+            ScriptWidgetElementView.buildView(element: item, context: context)
         }
     }
     

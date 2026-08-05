@@ -63,7 +63,7 @@ struct FileDetailView: View {
         })
         
         // on file renamed
-        .onChange(of: onFileRenamed) { _, value in
+        .onChange(of: onFileRenamed) { value in
             print("on file renamed : \(value)")
             if value {
                 dismiss()

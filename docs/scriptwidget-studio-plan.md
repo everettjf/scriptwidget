@@ -32,8 +32,9 @@ Studio 由三层组成：
 
 ### 2.1 平台版本基线
 
-- ScriptWidget Studio 的最低支持版本调整为 **iOS 16.0**。
+- ScriptWidget Studio 主 App 与 Share Extension 的最低支持版本调整为 **iOS 16.0**。
 - iPadOS 与 iOS 采用相同的代码和能力基线，最低支持版本为 **iPadOS 16.0**。
+- Widget Extension 维持 **iOS 18.0**：可配置 AppIntent Widget 需要 iOS 17，现有 Control Widget 需要 iOS 18；App 内编辑与预览在 iOS 16 提供非交互的 Button/Toggle 降级渲染。
 - macOS 最低支持版本为 **macOS 26.0**。
 - 编辑器和 Bridge 不得依赖高于最低系统版本的 API；使用较新系统能力时必须通过 availability 检查提供降级路径。
 

@@ -1,218 +1,206 @@
 //
-//  WebView.swift
-//  MineFolder
+//  EditorWebView.swift
+//  ScriptWidgetMac
 //
-//  Created by everettjf on 2021/4/21.
+//  Shared ScriptWidget Studio editor host.
 //
 
+import Combine
 import SwiftUI
 import WebKit
-import Combine
 
-
-class EditorService {
-    public static let saveNotification = Notification.Name("EditorService_SaveNotification")
+final class EditorService {
+    static let saveNotification = Notification.Name("EditorService_SaveNotification")
 }
 
-class EditorInternalWebView: WKWebView {
-    
-    var bridge: WKWebViewJavascriptBridge?
-    var scriptModel: ScriptModel?
-    var isEditorReady = false
-    var pendingActions: [() -> Void] = []
-    var cancellables = [Cancellable]()
+final class EditorInternalWebView: WKWebView {
+    private enum StudioMessage {
+        static let ready = "studio.ready"
+        static let documentOpen = "document.open"
+        static let documentSave = "document.save"
+        static let documentSetReadOnly = "document.setReadOnly"
+        static let editorGetState = "editor.getState"
+    }
+
+    private static let protocolVersion = 1
+
+    private var bridge: WKWebViewJavascriptBridge?
+    private var scriptModel: ScriptModel?
+    private var isEditorReady = false
+    private var pendingActions: [() -> Void] = []
+    private var cancellables = Set<AnyCancellable>()
+    private var currentDocumentID: String?
+    private var lastSavedContent = ""
+    private var hasLoadedEditor = false
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
     }
-    
-    init() {
-        let config = WKWebViewConfiguration()
-        config.setURLSchemeHandler(EditorSchemeHandler(), forURLScheme: kEditorURLScheme)
-        super.init(frame: .zero, configuration: config)
 
-        self.setValue(false, forKey: "drawsBackground")
-        
-        self.bridge = WKWebViewJavascriptBridge(webView: self)
-        
-        // event_editorReady
-        self.bridge?.register(handlerName: "event_editorReady") { [weak self] (parameters, callback) in
-            self?.isEditorReady = true
-            print("event_editorReady : \(String(describing: parameters))")
-            self?.eventOnEditorReady()
-            callback?(["result":"ok"])
-        }
-        
-        // event_printLog
-        self.bridge?.register(handlerName: "event_printLog", handler: { [weak self] (parameters, callback) in
-            
-            guard let value = parameters?["value"] as? String else {
-                print("editor print log : param invalid")
-                callback?(["result": "failed"])
-                return
-            }
-            
-            print("editor print log : \(value)")
-            callback?(["result": "ok"])
-        })
-        
-        // event_editorSave
-        self.bridge?.register(handlerName: "event_editorSave", handler: { [weak self] (parameters, callback) in
-            
-            guard let value = parameters?["value"] as? String else {
-                print("save failed : param invalid")
-                callback?(["result": "failed"])
-                return
-            }
-            
-            // save
-            guard let script = self?.scriptModel else {
-                print("save failed : model invalid")
-                callback?(["result": "failed"])
-                return
-            }
-            
-            let result = script.package.writeMainFile(content: value)
-            if !result.0 {
-                print("save failed : write file : \(result.1)")
-                callback?(["result": "failed"])
-                return
-            }
-            
-            callback?(["result": "ok"])
-        })
-        
-        
-        let cancellableSave = NotificationCenter.default.publisher(for: EditorService.saveNotification)
-            .sink { [weak self] (notification) in
-                // save
-                DispatchQueue.main.async {
-                    self?.saveCurrentContent()
-                }
-            }
-        self.cancellables.append(cancellableSave)
-        
+    init() {
+        let configuration = WKWebViewConfiguration()
+        configuration.defaultWebpagePreferences.allowsContentJavaScript = true
+        configuration.setURLSchemeHandler(EditorSchemeHandler(), forURLScheme: kEditorURLScheme)
+        super.init(frame: .zero, configuration: configuration)
+
+        setValue(false, forKey: "drawsBackground")
+        bridge = WKWebViewJavascriptBridge(webView: self)
+        registerBridgeHandlers()
+
+        NotificationCenter.default.publisher(for: EditorService.saveNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] _ in self?.saveCurrentContent() }
+            .store(in: &cancellables)
     }
-    
+
     deinit {
-        for cancellable in self.cancellables {
-            cancellable.cancel()
+        stopLoading()
+        pendingActions.removeAll()
+        bridge?.reset()
+        bridge = nil
+    }
+
+    func loadEditorIfNeeded() {
+        guard !hasLoadedEditor else { return }
+        hasLoadedEditor = true
+        load(URLRequest(url: editorWebServiceURL()))
+    }
+
+    func updateScript(_ model: ScriptModel) {
+        scriptModel = model
+        let documentID = model.package.jsxPath.standardizedFileURL.path
+
+        guard currentDocumentID != documentID else {
+            if isEditorReady {
+                setReadOnly(model.package.readonly)
+            }
+            return
+        }
+
+        currentDocumentID = documentID
+        runWhenReady { [weak self] in self?.openCurrentDocument() }
+    }
+
+    private func registerBridgeHandlers() {
+        bridge?.register(handlerName: StudioMessage.ready) { [weak self] _, callback in
+            guard let self else { return }
+            if !isEditorReady {
+                isEditorReady = true
+                flushPendingActions()
+            }
+            callback?(["result": "ok", "protocolVersion": Self.protocolVersion])
+        }
+
+        bridge?.register(handlerName: StudioMessage.documentSave) { [weak self] parameters, callback in
+            guard
+                let self,
+                let payload = parameters?["payload"] as? [String: Any],
+                let content = payload["content"] as? String
+            else {
+                callback?(["result": "failed", "message": "Invalid document payload"])
+                return
+            }
+
+            callback?(save(content: content) ? ["result": "ok"] : ["result": "failed"])
         }
     }
-    
-    func saveCurrentContent() {
-        editor_getValue { (succeed, value) in
-            if !succeed {
-                return
-            }
-            
-            // save
-            guard let script = self.scriptModel else {
-                print("save failed : model invalid")
-                return
-            }
-            
-            let result = script.package.writeMainFile(content: value)
-            if !result.0 {
-                print("save failed : write file : \(result.1)")
-                return
-            }
+
+    private func openCurrentDocument() {
+        guard let model = scriptModel else { return }
+        let result = model.package.readMainFile()
+        guard let content = result.0 else { return }
+
+        lastSavedContent = content
+        callStudio(
+            handlerName: StudioMessage.documentOpen,
+            payload: [
+                "content": content,
+                "version": 0,
+                "readOnly": model.package.readonly,
+            ]
+        )
+    }
+
+    private func setReadOnly(_ readOnly: Bool) {
+        callStudio(handlerName: StudioMessage.documentSetReadOnly, payload: ["readOnly": readOnly])
+    }
+
+    private func saveCurrentContent() {
+        guard isEditorReady else { return }
+        callStudio(handlerName: StudioMessage.editorGetState) { [weak self] response in
+            guard
+                let self,
+                let state = response as? [String: Any],
+                let content = state["content"] as? String
+            else { return }
+            _ = save(content: content)
         }
     }
-    
-    func editor_setValue(value: String) {
-        // tell editor
-        let message = [
-            "value": value
+
+    @discardableResult
+    private func save(content: String) -> Bool {
+        guard content != lastSavedContent else { return true }
+        guard let scriptModel else { return false }
+
+        let result = scriptModel.package.writeMainFile(content: content)
+        guard result.0 else {
+            print("Studio save failed: \(result.1)")
+            return false
+        }
+
+        lastSavedContent = content
+        NotificationCenter.default.post(name: PreviewService.updateNotification, object: scriptModel.package)
+        return true
+    }
+
+    private func runWhenReady(_ action: @escaping () -> Void) {
+        if isEditorReady {
+            DispatchQueue.main.async(execute: action)
+        } else {
+            pendingActions.append(action)
+        }
+    }
+
+    private func flushPendingActions() {
+        let actions = pendingActions
+        pendingActions.removeAll()
+        actions.forEach { $0() }
+    }
+
+    private func studioEnvelope(type: String, payload: [String: Any]) -> [String: Any] {
+        [
+            "protocolVersion": Self.protocolVersion,
+            "type": type,
+            "documentID": currentDocumentID as Any? ?? NSNull(),
+            "payload": payload,
         ]
-        self.bridge?.call(handlerName: "editor_setValue", data: message, callback: { responseData in
-            print("editor_setValue response : \(String(describing: responseData))")
-        })
     }
-    func editor_setReadonly(readonly: Bool) {
-        // tell editor
-        let message = [
-            "readonly": readonly
-        ]
-        self.bridge?.call(handlerName: "editor_setReadonly", data: message, callback: { responseData in
-            print("editor_setReadonly response : \(String(describing: responseData))")
-        })
+
+    private func callStudio(
+        handlerName: String,
+        payload: [String: Any] = [:],
+        callback: ((Any?) -> Void)? = nil
+    ) {
+        bridge?.call(
+            handlerName: handlerName,
+            data: studioEnvelope(type: handlerName, payload: payload),
+            callback: callback
+        )
     }
-    
-    func editor_getValue(callback: @escaping (Bool, String)-> Void){
-        self.bridge?.call(handlerName: "editor_getValue", data: [], callback: { responseData in
-            guard let data = responseData as? [String: Any] else {
-                callback(false, "")
-                return
-            }
-            
-            guard let value = data["value"] as? String else {
-                callback(false, "")
-                return
-            }
-            
-            callback(true, value)
-        })
-    }
-    
-    
-    func updateScript(scriptModel: ScriptModel) {
-        self.scriptModel = scriptModel
-        
-        self.runJSAction {
-            self.reloadCurrentScript()
-        }
-    }
-    
-    
-    func runJSAction(_ action:@escaping () -> Void) {
-        DispatchQueue.main.async {
-            self.pendingActions.append(action)
-        }
-    }
-    
-    func eventOnEditorReady() {
-        DispatchQueue.main.async {
-            let pendingActions = self.pendingActions
-            self.pendingActions = []
-            for action in pendingActions {
-                action()
-            }
-            
-            DispatchQueue.main.async {
-                // init tasks
-            }
-        }
-    }
-    
-    func reloadCurrentScript() {
-        guard let model = self.scriptModel else { return }
-        let (mainContent, error) = model.package.readMainFile()
-        guard let content = mainContent else { return }
-        self.editor_setValue(value: content)
-        self.editor_setReadonly(readonly: model.package.readonly)
-    }
-    
 }
 
-
-
 struct EditorWebView: NSViewRepresentable {
-    
     let scriptModel: ScriptModel
 
     func makeNSView(context: Context) -> EditorInternalWebView {
         let webView = EditorInternalWebView()
-        
+        webView.loadEditorIfNeeded()
+        webView.updateScript(scriptModel)
         return webView
     }
 
     func updateNSView(_ view: EditorInternalWebView, context: Context) {
-        let url = editorWebServiceUrl()
-        let request = URLRequest(url: URL(string: url)!)
-        view.load(request)
-
-        view.updateScript(scriptModel: scriptModel)
+        view.updateScript(scriptModel)
     }
 }
 

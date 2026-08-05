@@ -20,12 +20,24 @@ struct MirrorEditorInternalActionProvider {
     typealias ISREADONLY = () -> Bool
     typealias WRITER = (String) -> Bool
     
+    var documentID: String
     var onRead: READER?
     var onWrite: WRITER?
     var onIsReadOnly: ISREADONLY?
 }
 
 class MirrorEditorInternalView: WKWebView {
+    private enum StudioMessage {
+        static let ready = "studio.ready"
+        static let documentOpen = "document.open"
+        static let documentSave = "document.save"
+        static let documentSetReadOnly = "document.setReadOnly"
+        static let editorInsert = "editor.insert"
+        static let editorFormat = "editor.format"
+        static let editorGetState = "editor.getState"
+    }
+
+    private static let protocolVersion = 1
     
     public var accessoryView: UIView?
     
@@ -35,8 +47,8 @@ class MirrorEditorInternalView: WKWebView {
     var cancellables = [Cancellable]()
     var isTearingDown = false
     
-    var saveTimer: Timer? = nil
     var lastSaveContent = ""
+    private var currentDocumentID: String?
     
     var action: MirrorEditorInternalActionProvider?
     
@@ -62,30 +74,21 @@ class MirrorEditorInternalView: WKWebView {
         // bridge
         self.bridge = WKWebViewJavascriptBridge(webView: self)
         
-        // event_editorReady
-        self.bridge?.register(handlerName: "event_editorReady") { [weak self] (parameters, callback) in
-            self?.isEditorReady = true
-            print("event_editorReady : \(String(describing: parameters))")
-            self?.eventOnEditorReady()
-            callback?(["result":"ok"])
-        }
-        
-        // event_printLog
-        self.bridge?.register(handlerName: "event_printLog", handler: { [weak self] (parameters, callback) in
-            guard let value = parameters?["value"] as? String else {
-                print("editor print log : param invalid")
-                callback?(["result": "failed"])
+        self.bridge?.register(handlerName: StudioMessage.ready, handler: { [weak self] (parameters, callback) in
+            guard self?.isEditorReady == false else {
+                callback?(["result": "ok", "protocolVersion": Self.protocolVersion])
                 return
             }
-            
-            print("editor print log : \(value)")
-            callback?(["result": "ok"])
+            self?.isEditorReady = true
+            self?.eventOnEditorReady()
+            callback?(["result": "ok", "protocolVersion": Self.protocolVersion])
         })
         
-        // event_editorSave
-        self.bridge?.register(handlerName: "event_editorSave", handler: { [weak self] (parameters, callback) in
-            
-            guard let value = parameters?["value"] as? String else {
+        self.bridge?.register(handlerName: StudioMessage.documentSave, handler: { [weak self] (parameters, callback) in
+            guard
+                let payload = parameters?["payload"] as? [String: Any],
+                let value = payload["content"] as? String
+            else {
                 print("save failed : param invalid")
                 callback?(["result": "failed"])
                 return
@@ -99,31 +102,22 @@ class MirrorEditorInternalView: WKWebView {
                     callback?(["result": "failed"])
                     return
                 }
+                self?.lastSaveContent = value
             }
 
             callback?(["result": "ok"])
         })
         
-        // Load CodeMirror bundle
-        guard let bundlePath = Bundle.main.url(forResource: "MirrorEditor", withExtension: "bundle") else {
-            fatalError("MirrorEditor.bundle is missing")
+        guard let bundlePath = Bundle.main.url(forResource: "StudioEditor", withExtension: "bundle") else {
+            fatalError("StudioEditor.bundle is missing")
         }
         guard let bundle = Bundle(url: bundlePath) else {
-            fatalError("MirrorEditor.bundle is missing")
+            fatalError("StudioEditor.bundle is invalid")
         }
-        guard let indexPath = bundle.path(forResource: "build/index", ofType: "html") else {
-            fatalError("MirrorEditor.bundle is missing")
+        guard let indexURL = bundle.url(forResource: "index", withExtension: "html") else {
+            fatalError("StudioEditor.bundle/index.html is missing")
         }
-        let baseUrl = bundle.resourceURL!.appendingPathComponent("build")
-        
-        print("base url = \(baseUrl)")
-        var html = try! String(contentsOfFile: indexPath, encoding: .utf8)
-        if AppHelper.isdarkmode() {
-            html = html.replacingOccurrences(of: "theme:light", with: "theme:dark")
-        }
-        self.loadHTMLString(html, baseURL: baseUrl)
-        
-        startAutoSave()
+        self.loadFileURL(indexURL, allowingReadAccessTo: bundle.resourceURL!)
         
         let saveNoti = NotificationCenter.default.publisher(for: MirrorEditorService.saveNotification, object: nil).sink { [weak self] noti in
             self?.saveCurrentContent()
@@ -135,14 +129,13 @@ class MirrorEditorInternalView: WKWebView {
         print("de-init editor")
         isTearingDown = true
         pendingActions.removeAll()
-        self.saveTimer?.invalidate()
-        self.saveTimer = nil
         self.stopLoading()
         
         for cancellable in self.cancellables {
             cancellable.cancel()
         }
         self.cancellables.removeAll()
+        self.bridge?.reset()
         self.bridge = nil
     }
     
@@ -150,17 +143,11 @@ class MirrorEditorInternalView: WKWebView {
         return accessoryView
     }
     
-    func startAutoSave() {
-        self.saveTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true, block: { [weak self] timer in
-            self?.saveCurrentContent()
-        })
-    }
-    
     func saveCurrentContent() {
         guard !isTearingDown else {
             return
         }
-        editor_getValue { [weak self] (succeed, value) in
+        editorGetValue { [weak self] (succeed, value) in
             guard let self = self else { return }
             guard !self.isTearingDown else { return }
             if !succeed {
@@ -185,60 +172,33 @@ class MirrorEditorInternalView: WKWebView {
         }
     }
     
-    func editor_setValue(value: String) {
+    func editorInsert(value: String) {
         guard !isTearingDown else { return }
-        // tell editor
-        let message = [
-            "value": value
-        ]
-        self.bridge?.call(handlerName: "editor_setValue", data: message, callback: { responseData in
-            print("editor_setValue response : \(String(describing: responseData))")
-        })
+        callStudio(handlerName: StudioMessage.editorInsert, payload: ["content": value])
+    }
+
+    func editorFormatCode() {
+        guard !isTearingDown else { return }
+        callStudio(handlerName: StudioMessage.editorFormat)
+    }
+
+    func editorSetReadOnly(_ readOnly: Bool) {
+        guard !isTearingDown else { return }
+        callStudio(handlerName: StudioMessage.documentSetReadOnly, payload: ["readOnly": readOnly])
     }
     
-    func editor_insertValue(value: String) {
-        guard !isTearingDown else { return }
-        // tell editor
-        let message = [
-            "value": value
-        ]
-        self.bridge?.call(handlerName: "editor_insertValue", data: message, callback: { responseData in
-            print("editor_insertValue response : \(String(describing: responseData))")
-        })
-    }
-    func editor_formatCode() {
-        guard !isTearingDown else { return }
-        // tell editor
-        let message = [
-            "value": "format"
-        ]
-        self.bridge?.call(handlerName: "editor_formatCode", data: message, callback: { responseData in
-            print("editor_formatCode response : \(String(describing: responseData))")
-        })
-    }
-    func editor_setReadonly(readonly: Bool) {
-        guard !isTearingDown else { return }
-        // tell editor
-        let message = [
-            "readonly": readonly
-        ]
-        self.bridge?.call(handlerName: "editor_setReadonly", data: message, callback: { responseData in
-            print("editor_setReadonly response : \(String(describing: responseData))")
-        })
-    }
-    
-    func editor_getValue(callback: @escaping (Bool, String)-> Void){
+    func editorGetValue(callback: @escaping (Bool, String) -> Void) {
         guard !isTearingDown else {
             callback(false, "")
             return
         }
-        self.bridge?.call(handlerName: "editor_getValue", data: [], callback: { responseData in
+        callStudio(handlerName: StudioMessage.editorGetState, callback: { responseData in
             guard let data = responseData as? [String: Any] else {
                 callback(false, "")
                 return
             }
             
-            guard let value = data["value"] as? String else {
+            guard let value = data["content"] as? String else {
                 callback(false, "")
                 return
             }
@@ -248,11 +208,39 @@ class MirrorEditorInternalView: WKWebView {
     }
     
     
-    func updateScript() {
+    func updateDocument(action: MirrorEditorInternalActionProvider) {
+        self.action = action
+        guard currentDocumentID != action.documentID else {
+            if isEditorReady {
+                editorSetReadOnly(action.onIsReadOnly?() ?? false)
+            }
+            return
+        }
+        currentDocumentID = action.documentID
         self.runJSAction { [weak self] in
-            print("update script : \(String(describing: self))")
             self?.reloadCurrentScript()
         }
+    }
+
+    private func studioEnvelope(type: String, payload: [String: Any]) -> [String: Any] {
+        [
+            "protocolVersion": Self.protocolVersion,
+            "type": type,
+            "documentID": currentDocumentID as Any? ?? NSNull(),
+            "payload": payload,
+        ]
+    }
+
+    private func callStudio(
+        handlerName: String,
+        payload: [String: Any] = [:],
+        callback: ((Any?) -> Void)? = nil
+    ) {
+        bridge?.call(
+            handlerName: handlerName,
+            data: studioEnvelope(type: handlerName, payload: payload),
+            callback: callback
+        )
     }
     
     
@@ -287,13 +275,14 @@ class MirrorEditorInternalView: WKWebView {
         if let onRead = action?.onRead {
             let content = onRead()
             
-            self.editor_setValue(value: content)
-            if let onIsReadOnly = action?.onIsReadOnly {
-                self.editor_setReadonly(readonly: onIsReadOnly())
-            }else {
-                self.editor_setReadonly(readonly: false)
-            }
-            
+            callStudio(
+                handlerName: StudioMessage.documentOpen,
+                payload: [
+                    "content": content,
+                    "version": 0,
+                    "readOnly": action?.onIsReadOnly?() ?? false,
+                ]
+            )
             lastSaveContent = content
         }
     }
@@ -373,7 +362,7 @@ extension MirrorEditorInternalView {
             return
         }
         DispatchQueue.main.async {
-            self.editor_insertValue(value: text)
+            self.editorInsert(value: text)
         }
     }
     
@@ -381,6 +370,6 @@ extension MirrorEditorInternalView {
         self.resignFirstResponder()
     }
     @objc func onButtonFormatTapped(sender: UIButton) {
-        self.editor_formatCode()
+        self.editorFormatCode()
     }
 }

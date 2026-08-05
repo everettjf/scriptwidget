@@ -8,6 +8,7 @@
 import SwiftUI
 import WidgetKit
 
+@available(iOSApplicationExtension 16.1, *)
 struct ScriptLiveActivityWidget: Widget {
     
     
@@ -91,6 +92,7 @@ struct ScriptLiveActivityRootView: View {
 }
 
 
+@available(iOSApplicationExtension 16.1, *)
 struct LockScreenLiveActivityView: View {
     let context: ActivityViewContext<ScriptLiveActivityAttributes>
     

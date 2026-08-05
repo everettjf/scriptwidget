@@ -122,7 +122,7 @@ struct ScriptCodePreviewView: View {
                 Text("AccessoryCircular").tag(5)
                 Text("AccessoryRectangular").tag(6)
             }
-            .onChange(of: widgetSizeType) { _, value in
+            .onChange(of: widgetSizeType) { value in
                 print("preview size changed : \(value)")
 
                 self.state.changeWidgetSizeType(value)

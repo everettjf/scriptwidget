@@ -32,5 +32,5 @@ struct ScriptWidgetAppIntent: WidgetConfigurationIntent {
     static var parameterSummary: some ParameterSummary {
         Summary()
     }
-}
 
+}

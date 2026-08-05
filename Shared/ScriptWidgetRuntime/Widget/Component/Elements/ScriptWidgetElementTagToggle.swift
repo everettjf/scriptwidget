@@ -19,12 +19,24 @@ class ScriptWidgetElementTagToggle {
     }
     
     @ViewBuilder private static func buildToggle(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> some View {
-        Toggle(isOn: self.getToggleValue(element), intent: ButtonActionAppIntent(functionName: Self.getToggleActionFunctionName(element), package: context.package)) {
-            ForEach(element.childrenAsElements()) { item -> AnyView in
-                return ScriptWidgetElementView.buildView(element: item, context: context)
+        if #available(iOS 17.0, macOS 14.0, *) {
+            Toggle(isOn: self.getToggleValue(element), intent: ButtonActionAppIntent(functionName: Self.getToggleActionFunctionName(element), package: context.package)) {
+                toggleLabel(element: element, context: context)
             }
+            .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+        } else {
+            Toggle(isOn: .constant(self.getToggleValue(element))) {
+                toggleLabel(element: element, context: context)
+            }
+            .disabled(true)
+            .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
         }
-        .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+    }
+
+    @ViewBuilder private static func toggleLabel(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> some View {
+        ForEach(element.childrenAsElements()) { item -> AnyView in
+            ScriptWidgetElementView.buildView(element: item, context: context)
+        }
     }
     
     static func getToggleActionFunctionName(_ element: ScriptWidgetRuntimeElement) -> String {

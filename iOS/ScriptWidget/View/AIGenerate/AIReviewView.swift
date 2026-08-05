@@ -68,7 +68,7 @@ struct AIReviewView: View {
             Text(saveError ?? "")
         }
         .onAppear(perform: ensurePreviewPackage)
-        .onChange(of: jsx) {
+        .onChange(of: jsx) { _ in
             refreshPreviewPackage()
         }
     }

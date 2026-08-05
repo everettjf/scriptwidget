@@ -2,7 +2,7 @@
 //  EditorSchemeHandler.swift
 //  ScriptWidgetMac
 //
-//  Serves the bundled Monaco editor static files (Editor.bundle/static)
+//  Serves the bundled shared CodeMirror editor files
 //  directly to WKWebView via a custom URL scheme. Replaces the old
 //  Vapor-based localhost HTTP service.
 //
@@ -18,8 +18,8 @@ final class EditorSchemeHandler: NSObject, WKURLSchemeHandler {
     private let staticRoot: URL?
 
     override init() {
-        if let bundleURL = Bundle.main.url(forResource: "Editor", withExtension: "bundle") {
-            self.staticRoot = bundleURL.appendingPathComponent("static", isDirectory: true)
+        if let bundleURL = Bundle.main.url(forResource: "StudioEditor", withExtension: "bundle") {
+            self.staticRoot = bundleURL
         } else {
             self.staticRoot = nil
         }
@@ -38,7 +38,7 @@ final class EditorSchemeHandler: NSObject, WKURLSchemeHandler {
 
         var relative = url.path
         if relative.hasPrefix("/") { relative.removeFirst() }
-        if relative.isEmpty { relative = "editor-dark.html" }
+        if relative.isEmpty { relative = "index.html" }
 
         let rootPath = root.standardizedFileURL.path
         let candidate = root.appendingPathComponent(relative).standardizedFileURL

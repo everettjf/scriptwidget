@@ -202,7 +202,7 @@
 		F29118C82791DEC800B860B0 /* EditorWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118C72791DEC800B860B0 /* EditorWebView.swift */; };
 		F29118CA2791E2DB00B860B0 /* EditorMainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118C92791E2DB00B860B0 /* EditorMainView.swift */; };
 		F29118CC2791E2EF00B860B0 /* PreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118CB2791E2EF00B860B0 /* PreviewView.swift */; };
-		F29118D22792B0D200B860B0 /* Editor.bundle in Resources */ = {isa = PBXBuildFile; fileRef = F29118D12792B0D200B860B0 /* Editor.bundle */; };
+		F29118D22792B0D200B860B0 /* StudioEditor.bundle in Resources */ = {isa = PBXBuildFile; fileRef = F29118D12792B0D200B860B0 /* StudioEditor.bundle */; };
 		F29118D42792B32900B860B0 /* EditorWebSevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118D32792B32900B860B0 /* EditorWebSevice.swift */; };
 		F29118DA2792B90700B860B0 /* WKWebViewJavascriptBridgeBase.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118D62792B90700B860B0 /* WKWebViewJavascriptBridgeBase.swift */; };
 		F29118DB2792B90700B860B0 /* WKWebViewJavascriptBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118D72792B90700B860B0 /* WKWebViewJavascriptBridge.swift */; };
@@ -386,7 +386,7 @@
 		F29118C72791DEC800B860B0 /* EditorWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWebView.swift; sourceTree = "<group>"; };
 		F29118C92791E2DB00B860B0 /* EditorMainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorMainView.swift; sourceTree = "<group>"; };
 		F29118CB2791E2EF00B860B0 /* PreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PreviewView.swift; sourceTree = "<group>"; };
-		F29118D12792B0D200B860B0 /* Editor.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Editor.bundle; sourceTree = "<group>"; };
+		F29118D12792B0D200B860B0 /* StudioEditor.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = StudioEditor.bundle; sourceTree = "<group>"; };
 		F29118D32792B32900B860B0 /* EditorWebSevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorWebSevice.swift; sourceTree = "<group>"; };
 		F29118D62792B90700B860B0 /* WKWebViewJavascriptBridgeBase.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewJavascriptBridgeBase.swift; sourceTree = "<group>"; };
 		F29118D72792B90700B860B0 /* WKWebViewJavascriptBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewJavascriptBridge.swift; sourceTree = "<group>"; };
@@ -800,7 +800,7 @@
 				F2911811279103B800B860B0 /* App */,
 				F29117D9279101DF00B860B0 /* Assets.xcassets */,
 				F246160D279CFAFF00C3D90F /* Info.plist */,
-				F29118D12792B0D200B860B0 /* Editor.bundle */,
+				F29118D12792B0D200B860B0 /* StudioEditor.bundle */,
 				F29117E6279101DF00B860B0 /* macOS.entitlements */,
 			);
 			path = ScriptWidgetMac;
@@ -1062,7 +1062,7 @@
 				F0C613172AE9589100877D9F /* OneSlot.ttf in Resources */,
 				F29117EC279101DF00B860B0 /* Assets.xcassets in Resources */,
 				F0C613112AE9587A00877D9F /* Larabiefont Free.ttf in Resources */,
-				F29118D22792B0D200B860B0 /* Editor.bundle in Resources */,
+				F29118D22792B0D200B860B0 /* StudioEditor.bundle in Resources */,
 				D1995CEE29536BB800D1BD94 /* support.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1306,7 +1306,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1323,7 +1323,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1340,7 +1340,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1357,7 +1357,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				GENERATE_INFOPLIST_FILE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = macosx;
@@ -1420,7 +1420,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -1478,7 +1478,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -1514,7 +1514,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 26.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
@@ -1551,7 +1551,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 26.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
@@ -1584,7 +1584,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 26.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -1618,7 +1618,7 @@
 					"@executable_path/../Frameworks",
 					"@executable_path/../../../../Frameworks",
 				);
-				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MACOSX_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 26.6;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";

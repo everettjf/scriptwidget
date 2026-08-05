@@ -18,6 +18,7 @@ struct ScriptCodePreviewConsoleOutput : Identifiable {
 class ScriptCodePreviewConsoleDataObject : ObservableObject {
     public static let addLogNotification = Notification.Name("ScriptCodePreviewConsoleDataObject_addLog")
     public static let clearLogNotification = Notification.Name("ScriptCodePreviewConsoleDataObject_clearLog")
+    public static let replaceLogsNotification = Notification.Name("ScriptCodePreviewConsoleDataObject_replaceLogs")
     
     @Published var consoleOutputs : [ScriptCodePreviewConsoleOutput] = []
     var cancellables = [Cancellable]()
@@ -39,6 +40,13 @@ class ScriptCodePreviewConsoleDataObject : ObservableObject {
                 self.consoleOutputs.removeAll()
             }
         self.cancellables.append(cancellableClearLog)
+
+        let cancellableReplaceLogs = NotificationCenter.default.publisher(for: Self.replaceLogsNotification)
+            .sink { [weak self] notification in
+                let logs = notification.object as? [String] ?? []
+                self?.consoleOutputs = logs.suffix(500).map { ScriptCodePreviewConsoleOutput(data: $0) }
+            }
+        self.cancellables.append(cancellableReplaceLogs)
     }
     
     deinit {
@@ -54,10 +62,14 @@ class ScriptCodePreviewConsoleDataObject : ObservableObject {
     static func clearLog() {
         NotificationCenter.default.post(name: Self.clearLogNotification, object: nil)
     }
+
+    static func replaceLogs(_ logs: [String]) {
+        NotificationCenter.default.post(name: Self.replaceLogsNotification, object: logs)
+    }
 }
 
 struct ScriptCodePreviewConsoleView : View {
-    @ObservedObject var data = ScriptCodePreviewConsoleDataObject()
+    @StateObject private var data = ScriptCodePreviewConsoleDataObject()
     
     var body: some View {
         List {
@@ -80,12 +92,21 @@ struct ScriptCodePreviewConsoleView : View {
 
 
 
-class ScriptCodeRunnerDataObject : ObservableObject {
+final class ScriptCodeRunnerDataObject: ObservableObject {
+    private struct RenderOutput {
+        let rootElement: ScriptWidgetRuntimeElement
+        let runtime: ScriptWidgetRuntime
+        let errorMessage: String?
+        let logs: [String]
+    }
+
     let package: ScriptWidgetPackage
-    var widgetSizeType: Int
-    var scriptParameter: String
-    
-    var cancellables = [Cancellable]()
+    private var widgetSizeType: Int
+    private var scriptParameter: String
+    private var cancellables = [Cancellable]()
+    private let renderQueue = DispatchQueue(label: "com.everettjf.scriptwidget.studio-preview", qos: .userInitiated)
+    private var pendingRender: DispatchWorkItem?
+    private var renderGeneration = 0
     
     @Published var rootElement : ScriptWidgetRuntimeElement
     var runtime: ScriptWidgetRuntime?
@@ -97,14 +118,13 @@ class ScriptCodeRunnerDataObject : ObservableObject {
         self.scriptParameter = scriptParameter
         self.package = file
         self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Loading#"])
-        self.layoutElements()
+        scheduleRender(immediate: true)
         
         let cancellableSave = NotificationCenter.default.publisher(for: PreviewService.updateNotification)
             .sink { [weak self](notification) in
                 // re-execute
                 DispatchQueue.main.async {
-                    self?.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Loading#"])
-                    self?.layoutElements()
+                    self?.scheduleRender()
                 }
             }
         self.cancellables.append(cancellableSave)
@@ -114,106 +134,84 @@ class ScriptCodeRunnerDataObject : ObservableObject {
         for cancellable in self.cancellables {
             cancellable.cancel()
         }
+        pendingRender?.cancel()
     }
     
     func changeWidgetSizeType(_ newWidgetSizeType : Int) {
         self.widgetSizeType = newWidgetSizeType
         
-        self.layoutElements()
+        scheduleRender()
     }
     
     func changeWidgetParameter(_ parameter: String) {
         self.scriptParameter = parameter
         
-        self.layoutElements()
+        scheduleRender()
     }
-    
-    func layoutElements() {
-        if !self.runScript() {
-            let info = self.lastErrorMessage ?? "#Failed#"
-            self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
+
+    private func scheduleRender(immediate: Bool = false) {
+        pendingRender?.cancel()
+        renderGeneration += 1
+        let generation = renderGeneration
+        let size = widgetSizeType
+        let parameter = scriptParameter
+
+        rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Loading#"])
+        ScriptCodePreviewConsoleDataObject.replaceLogs(["$START"])
+
+        let work = DispatchWorkItem { [weak self] in
+            guard let self else { return }
+            let output = Self.render(package: package, widgetSizeType: size, scriptParameter: parameter)
+            DispatchQueue.main.async { [weak self] in
+                guard let self, generation == renderGeneration else { return }
+                runtime = output.runtime
+                rootElement = output.rootElement
+                lastErrorMessage = output.errorMessage
+                ScriptCodePreviewConsoleDataObject.replaceLogs(["$START"] + output.logs + ["$FINISH"])
+            }
         }
+        pendingRender = work
+        renderQueue.asyncAfter(deadline: .now() + (immediate ? 0 : 0.3), execute: work)
     }
-    
-    func runScript() -> Bool {
-        self.clearLogs()
-        
-        self.systemLog("START")
-        
-        let JSXResult = self.package.readMainFile()
-        guard let JSX = JSXResult.0 else {
-            self.systemLog("Can not open file : \(JSXResult.1)")
-            return false
-        }
-        
-        var returnValue = false
-        
-        var widgetSizeString = ""
-        switch widgetSizeType {
-        case 0: widgetSizeString = "small"
-        case 1: widgetSizeString = "medium"
-        case 2: widgetSizeString = "large"
-        default: widgetSizeString = "small"
-        }
-        
-        let runtime = ScriptWidgetRuntime(package: self.package, environments: [
-            "widget-size": widgetSizeString,
-            "widget-param": self.scriptParameter,
+
+    private static func render(
+        package: ScriptWidgetPackage,
+        widgetSizeType: Int,
+        scriptParameter: String
+    ) -> RenderOutput {
+        let sourceResult = package.readMainFile()
+        let source = sourceResult.0 ?? ""
+        let widgetSize = ["small", "medium", "large"].indices.contains(widgetSizeType)
+            ? ["small", "medium", "large"][widgetSizeType]
+            : "small"
+        let runtime = ScriptWidgetRuntime(package: package, environments: [
+            "widget-size": widgetSize,
+            "widget-param": scriptParameter,
         ])
-        
-        let result = runtime.executeJSXSyncForWidget(JSX)
 
-        // Keep the runtime alive in both success and failure paths so
-        // loadScriptConsoleLogs() can still read this run's logs off
-        // its JSContext.
-        self.runtime = runtime
+        guard sourceResult.0 != nil else {
+            let message = "Can not open file: \(sourceResult.1)"
+            return RenderOutput(
+                rootElement: ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [message]),
+                runtime: runtime,
+                errorMessage: message,
+                logs: [message]
+            )
+        }
 
+        let result = runtime.executeJSXSyncForWidget(source)
+        let runtimeLogs = runtime.runningState?.logger.logs ?? []
         if let element = result.0 {
-            // succeed
-            self.rootElement = element
-            self.lastErrorMessage = nil
-            returnValue = true
-        } else {
-            // error
-            returnValue = false
-            if let error = result.1 {
-                let message = error.displayMessage
-                self.lastErrorMessage = message
-                self.systemLog(message)
-            }
+            return RenderOutput(rootElement: element, runtime: runtime, errorMessage: nil, logs: runtimeLogs)
         }
-        DispatchQueue.main.asyncAfter(deadline: .now()+0.5) {
-            self.loadScriptConsoleLogs()
-            self.systemLog("FINISH")
-        }
-        
-        return returnValue
-    }
-    
-    func loadScriptConsoleLogs() {
-        print("console log (list logs)");
-        if let logs = self.runtime?.runningState?.logger.logs {
-            for log in logs {
-                self.scriptLog(log)
-            }
-        }
-    }
-    
-    func clearLogs() {
-        print("console log (clear logs)")
-        ScriptCodePreviewConsoleDataObject.clearLog()
-    }
-    
-    func scriptLog(_ str: String) {
-        DispatchQueue.main.async {
-            ScriptCodePreviewConsoleDataObject.addLog(str)
-        }
-    }
-    
-    func systemLog(_ str: String) {
-        DispatchQueue.main.async {
-            ScriptCodePreviewConsoleDataObject.addLog("$" + str)
-        }
+
+        let message = result.1?.displayMessage ?? "#Failed#"
+        return RenderOutput(
+            rootElement: ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [message]),
+            runtime: runtime,
+            errorMessage: message,
+            logs: runtimeLogs + [message]
+        )
     }
 }
 
@@ -225,17 +223,21 @@ class PreviewService {
 struct PreviewView: View {
     
     let scriptModel: ScriptModel
-    @ObservedObject var data: ScriptCodeRunnerDataObject
+    @StateObject private var data: ScriptCodeRunnerDataObject
     
-    @State var widgetSizeType = 0
-    @State var isDebugMode = false
+    @State private var widgetSizeType = 0
+    @State private var isDebugMode = false
     
-    @State var scriptParameter = ""
-    @State var scriptParameterApplied = ""
+    @State private var scriptParameter = ""
+    @State private var scriptParameterApplied = ""
     
     init(scriptModel: ScriptModel) {
         self.scriptModel = scriptModel
-        self.data = ScriptCodeRunnerDataObject(file: self.scriptModel.package, widgetSizeType: 0, scriptParameter: "")
+        _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
+            file: scriptModel.package,
+            widgetSizeType: 0,
+            scriptParameter: ""
+        ))
     }
     
     var body: some View {
@@ -258,7 +260,7 @@ struct PreviewView: View {
                 width: PreviewWidgetSize.size(self.widgetSizeType).width,
                 height: PreviewWidgetSize.size(self.widgetSizeType).height
             )
-            .cornerRadius(10)
+            .clipShape(.rect(cornerRadius: 12))
     }
     
     var content: some View {

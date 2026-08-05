@@ -11,16 +11,24 @@ struct HomeHelloView: View {
     @State private var isShowingWidgetGuide = false
 
     var body: some View {
-        ContentUnavailableView {
-            Label("Select a Widget", systemImage: "square.grid.2x2")
-        } description: {
+        VStack(spacing: 14) {
+            Image(systemName: "square.grid.2x2")
+                .font(.system(size: 42))
+                .foregroundStyle(.secondary)
+                .accessibilityHidden(true)
+            Text("Select a Widget")
+                .font(.title2.bold())
             Text("Choose a script to edit and preview, or learn how to place it on your Home Screen.")
-        } actions: {
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 420)
             Button("How to Add a Widget") {
                 isShowingWidgetGuide = true
             }
             .buttonStyle(.borderedProminent)
         }
+        .padding(32)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $isShowingWidgetGuide) {
             WidgetSetupGuideView()
         }

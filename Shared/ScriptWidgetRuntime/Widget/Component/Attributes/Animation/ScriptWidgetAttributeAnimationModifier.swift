@@ -141,7 +141,7 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                         }
                     } catch {
                         print("animation json parse error : \(error)")
-                        animationType == "error"
+                        animationType = "error"
                     }
                 }
             } else {

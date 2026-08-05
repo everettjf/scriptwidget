@@ -1,4 +1,4 @@
-import { STUDIO_PROTOCOL_VERSION, StudioMessage, studioEnvelope } from "./studioProtocol.js";
+import { StudioMessage, studioEnvelope } from "./studioProtocol.js";
 
 export function connectNativeBridge(onConnected) {
   if (window.WKWebViewJavascriptBridge) {
@@ -25,7 +25,4 @@ export function callNative(bridge, type, payload = {}, documentID = null) {
 export function announceReady(bridge) {
   const payload = { capabilities: ["jsx", "format", "search", "completion", "diagnostics"] };
   callNative(bridge, StudioMessage.ready, payload);
-
-  // Compatibility during the staged native migration.
-  bridge.callHandler("event_editorReady", { protocolVersion: STUDIO_PROTOCOL_VERSION }, () => {});
 }
