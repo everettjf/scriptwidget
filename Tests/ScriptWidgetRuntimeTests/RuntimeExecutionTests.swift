@@ -282,6 +282,14 @@ final class RuntimeExecutionTests: XCTestCase {
             let name = directory.lastPathComponent
             let package = ScriptWidgetPackage(path: directory, readonly: true)
             let source = try XCTUnwrap(package.readMainFile().0, "missing source for \(name)")
+            // Public-network availability is not a deterministic test input.
+            // Network templates are covered by catalog/source validation and a
+            // manually-triggered integration pass; offline templates execute here.
+            if source.contains("fetch(") || source.contains("$http.") ||
+                source.contains("$location.") || source.contains("$health.") {
+                XCTAssertNil(ScriptWidgetRuntimeContract.validateSource(source), name)
+                continue
+            }
             let runtime = ScriptWidgetRuntime(
                 package: package,
                 environments: ["widget-size": "medium", "widget-param": ""]

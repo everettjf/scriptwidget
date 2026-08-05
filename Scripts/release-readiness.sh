@@ -21,6 +21,9 @@ if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
   xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidget \
     -sdk iphonesimulator -derivedDataPath "$DERIVED_DATA/ios-app" \
     CODE_SIGNING_ALLOWED=NO build
+  xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
+    -destination "${SCRIPTWIDGET_IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17}" \
+    -derivedDataPath "$DERIVED_DATA/ios-tests" test
 fi
 
 echo "✓ ScriptWidget release-readiness checks passed"

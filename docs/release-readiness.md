@@ -4,6 +4,7 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 
 ```sh
 ./Scripts/release-readiness.sh
+./Scripts/device-matrix.sh
 ```
 
 ## Automated gates
