@@ -163,6 +163,38 @@ final class RuntimeContractTests: XCTestCase {
     }
 }
 
+final class RuntimeSecurityTests: XCTestCase {
+    private func makePackage() -> ScriptWidgetPackage {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ScriptWidgetSecurity-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        return ScriptWidgetPackage(path: directory)
+    }
+
+    func testPackagePathsCannotEscapeRoot() {
+        let package = makePackage()
+        XCTAssertNotNil(package.resolvedPackageURL(relativePath: "lib/helper.js"))
+        XCTAssertNil(package.resolvedPackageURL(relativePath: "../secret.txt"))
+        XCTAssertNil(package.resolvedPackageURL(relativePath: "/tmp/secret.txt"))
+        XCTAssertFalse(package.writeFile(relativePath: "../secret.txt", content: "secret").0)
+    }
+
+    func testFetchPolicyAllowsPublicHTTPAndRejectsLocalResources() {
+        XCTAssertNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "https://example.com/data.json")!))
+        XCTAssertNotNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "file:///tmp/private")!))
+        XCTAssertNotNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "http://localhost:8080")!))
+        XCTAssertNotNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "http://192.168.1.2")!))
+        XCTAssertNotNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "http://172.20.0.2")!))
+    }
+
+    func testPublishedResourceBudgetsRemainBounded() {
+        XCTAssertLessThanOrEqual(ScriptWidgetRuntimeContract.maximumSourceBytes, 512 * 1_024)
+        XCTAssertLessThanOrEqual(ScriptWidgetFetchManager.maximumResponseBytes, 2 * 1_024 * 1_024)
+        XCTAssertLessThanOrEqual(ScriptWidgetRuntimeStorage.maximumValueBytes, 256 * 1_024)
+        XCTAssertLessThanOrEqual(ScriptWidgetConsoleLogger.maximumEntries, 500)
+    }
+}
+
 final class TranspileCacheTests: XCTestCase {
 
     func testKeyIsDeterministic() {

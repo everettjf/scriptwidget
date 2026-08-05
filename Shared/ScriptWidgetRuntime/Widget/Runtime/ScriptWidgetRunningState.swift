@@ -16,11 +16,17 @@ import JavaScriptCore
 
 
 class ScriptWidgetConsoleLogger {
+    static let maximumEntries = 500
+    static let maximumEntryBytes = 8 * 1_024
     var logs: [String] = []
 
     func addLog(_ log: String) {
+        let bounded = String(decoding: log.utf8.prefix(Self.maximumEntryBytes), as: UTF8.self)
         DispatchQueue.main.async {
-            self.logs.append(log)
+            self.logs.append(bounded)
+            if self.logs.count > Self.maximumEntries {
+                self.logs.removeFirst(self.logs.count - Self.maximumEntries)
+            }
         }
     }
 
@@ -36,6 +42,8 @@ class ScriptWidgetRunningState {
 
     var logger: ScriptWidgetConsoleLogger
     var package: ScriptWidgetPackage
+
+    var storageNamespace: String { "script.\(package.name)." }
 
     init(package: ScriptWidgetPackage) {
         self.logger = ScriptWidgetConsoleLogger()

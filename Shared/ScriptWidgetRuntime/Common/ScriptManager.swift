@@ -109,9 +109,20 @@ class ScriptManager {
     
     static func getSandboxBuildDirectoryURL() -> URL? {
         if let url = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget") {
-            return url.appendingPathComponent("__Build")
+            let buildURL = url.appendingPathComponent("__Build")
+            do {
+                try FileManager.default.createDirectory(at: buildURL, withIntermediateDirectories: true)
+                let probe = buildURL.appendingPathComponent(".write-probe-\(UUID().uuidString)")
+                try Data().write(to: probe)
+                try FileManager.default.removeItem(at: probe)
+                return buildURL
+            } catch {
+                // Unsigned CI test hosts can resolve the group URL without being
+                // allowed to write it. Keep cache tests and local previews usable.
+                return localFallbackDirectoryURL("__Build")
+            }
         }
-        return nil
+        return localFallbackDirectoryURL("__Build")
     }
 
     /// Local, per-process fallback used when the shared app-group container is
@@ -119,6 +130,11 @@ class ScriptManager {
     /// local-only storage instead of crashing on a force-unwrap. Prefers
     /// Application Support and degrades to the temporary directory.
     static func localFallbackDirectoryURL(_ component: String) -> URL {
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            return FileManager.default.temporaryDirectory
+                .appendingPathComponent("ScriptWidgetTests")
+                .appendingPathComponent(component)
+        }
         let base = (try? FileManager.default.url(for: .applicationSupportDirectory,
                                                  in: .userDomainMask,
                                                  appropriateFor: nil,

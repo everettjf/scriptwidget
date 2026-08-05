@@ -10,6 +10,8 @@ import JavaScriptCore
 
 
 class ScriptWidgetFetchManager {
+    static let maximumResponseBytes = 2 * 1_024 * 1_024
+    static let allowedSchemes = Set(["https", "http"])
     let session: URLSession
     
     init() {
@@ -60,6 +62,21 @@ class ScriptWidgetFetchManager {
     }
 }
 
+enum ScriptWidgetFetchPolicy {
+    static func validationError(for url: URL) -> String? {
+        guard let scheme = url.scheme?.lowercased(),
+              ScriptWidgetFetchManager.allowedSchemes.contains(scheme) else {
+            return "Only HTTP and HTTPS URLs are allowed"
+        }
+        guard let host = url.host?.lowercased(), !host.isEmpty else { return "URL host is required" }
+        let blocked = host == "localhost" || host == "::1" || host.hasSuffix(".local") ||
+            host.hasPrefix("127.") || host.hasPrefix("10.") || host.hasPrefix("192.168.") ||
+            (host.split(separator: ".").count == 4 && host.split(separator: ".").first == "172" &&
+             (16...31).contains(Int(host.split(separator: ".")[1]) ?? -1))
+        return blocked ? "Local and private network hosts are not allowed" : nil
+    }
+}
+
 
 let sharedFetchManager = ScriptWidgetFetchManager()
 
@@ -73,12 +90,20 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
             reject.call(withArguments: ["\(url) is not url"])
             return
         }
+        if let validationError = ScriptWidgetFetchPolicy.validationError(for: urlValue) {
+            reject.call(withArguments: [validationError])
+            return
+        }
         
         sharedFetchManager.fetch(httpMethod: httpMethod ,url: urlValue, params: params){ (data, response, error) in
             if let error = error {
                 print("$fetch error : \(error)")
                 reject.call(withArguments: [error.localizedDescription])
             } else if let data = data {
+                guard data.count <= ScriptWidgetFetchManager.maximumResponseBytes else {
+                    reject.call(withArguments: ["Response exceeds the 2097152-byte limit"])
+                    return
+                }
                 if let responseType = params?["responseType"] as? String, responseType == "base64" {
                     let base64 = data.base64EncodedString()
                     print("$fetch base64 length: \(base64.count)");

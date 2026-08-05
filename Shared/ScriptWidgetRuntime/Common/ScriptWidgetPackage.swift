@@ -137,8 +137,23 @@ struct ScriptWidgetPackage {
     }
 
     func readFile(relativePath: String) -> (String?, String) {
-        let filePath = self.path.appendingPathComponent(relativePath)
+        guard let filePath = resolvedPackageURL(relativePath: relativePath) else {
+            return (nil, "Invalid package-relative path")
+        }
         return readFile(fullPath: filePath)
+    }
+
+    /// Resolves an untrusted script path while keeping it inside this package.
+    /// Standardising both URLs also rejects `..`, absolute paths and symlink escapes.
+    func resolvedPackageURL(relativePath: String) -> URL? {
+        guard !relativePath.isEmpty, !relativePath.hasPrefix("/") else { return nil }
+        let root = path.standardizedFileURL.resolvingSymlinksInPath()
+        let candidate = root.appendingPathComponent(relativePath)
+            .standardizedFileURL
+            .resolvingSymlinksInPath()
+        let rootPrefix = root.path.hasSuffix("/") ? root.path : root.path + "/"
+        guard candidate.path.hasPrefix(rootPrefix) else { return nil }
+        return candidate
     }
 
     /// Legacy tuple API kept for existing callers. The second element preserves
@@ -299,16 +314,20 @@ struct ScriptWidgetPackage {
     }
     
     func writeFile(relativePath: String, content: String) -> (Bool,String) {
-        let fullPath = self.path.appendingPathComponent(relativePath)
+        guard let fullPath = resolvedPackageURL(relativePath: relativePath) else {
+            return (false, "Invalid package-relative path")
+        }
         return self.writeFile(fullPath: fullPath, content: content)
     }
     
     func renameFile(relativePath: String, destRelativePath: String) -> (Bool, String) {
-        let destFullPath = self.path.appendingPathComponent(destRelativePath)
+        guard let destFullPath = resolvedPackageURL(relativePath: destRelativePath),
+              let fullPath = resolvedPackageURL(relativePath: relativePath) else {
+            return (false, "Invalid package-relative path")
+        }
         if FileManager.default.fileExists(atPath: destFullPath.path) {
             return (false, "new name existed")
         }
-        let fullPath = self.path.appendingPathComponent(relativePath)
         do {
             try FileManager.default.moveItem(at: fullPath, to: destFullPath)
         } catch {
@@ -318,12 +337,12 @@ struct ScriptWidgetPackage {
     }
     
     func isFileExist(relativePath: String) -> Bool {
-        let fullPath = self.path.appendingPathComponent(relativePath)
+        guard let fullPath = resolvedPackageURL(relativePath: relativePath) else { return false }
         return FileManager.default.fileExists(atPath: fullPath.path)
     }
     
     func deleteFile(relativePath: String) {
-        let fullPath = self.path.appendingPathComponent(relativePath)
+        guard let fullPath = resolvedPackageURL(relativePath: relativePath) else { return }
         try? FileManager.default.removeItem(at: fullPath)
     }
     
