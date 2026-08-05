@@ -34,6 +34,7 @@ import { STUDIO_PROTOCOL_VERSION, StudioMessage } from "./studioProtocol.js";
 import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
+import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import "./style.css";
 
 const readOnly = new Compartment();
@@ -43,6 +44,25 @@ let documentID = null;
 let documentVersion = 0;
 let suppressChanges = false;
 let saveTimer = null;
+let stateTimer = null;
+const saveStatus = document.querySelector("#save-status");
+
+function setSaveStatus(value, state = "idle") {
+  saveStatus.textContent = value;
+  saveStatus.dataset.state = state;
+}
+
+function persistEditorState() {
+  window.clearTimeout(stateTimer);
+  stateTimer = window.setTimeout(() => {
+    const selection = view.state.selection.main;
+    saveDocumentState(window.localStorage, documentID, {
+      anchor: selection.anchor,
+      head: selection.head,
+      scrollTop: view.scrollDOM.scrollTop,
+    });
+  }, 180);
+}
 
 function systemTheme() {
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -50,13 +70,17 @@ function systemTheme() {
 
 function scheduleSave() {
   window.clearTimeout(saveTimer);
+  setSaveStatus("Saving…", "saving");
   saveTimer = window.setTimeout(() => {
     const content = view.state.doc.toString();
-    callNative(bridge, StudioMessage.documentSave, { content, version: documentVersion }, documentID);
+    callNative(bridge, StudioMessage.documentSave, { content, version: documentVersion }, documentID, (response = {}) => {
+      setSaveStatus(response.result === "ok" || response.result === "unavailable" ? "Saved" : "Save failed", response.result === "failed" ? "error" : "saved");
+    });
   }, 700);
 }
 
 function onEditorUpdate(update) {
+  if (update.selectionSet || update.viewportChanged || update.docChanged) persistEditorState();
   if (!update.docChanged || suppressChanges) return;
   documentVersion += 1;
   const changes = [];
@@ -109,15 +133,20 @@ const view = new EditorView({
 });
 
 function replaceDocument(content, nextDocumentID = documentID, version = 0) {
+  const previousSelection = view.state.selection.main;
+  saveDocumentState(window.localStorage, documentID, { anchor: previousSelection.anchor, head: previousSelection.head, scrollTop: view.scrollDOM.scrollTop });
   suppressChanges = true;
   documentID = nextDocumentID;
   documentVersion = version;
+  const restored = loadDocumentState(window.localStorage, documentID, (content ?? "").length);
   view.dispatch({
     changes: { from: 0, to: view.state.doc.length, insert: content ?? "" },
-    selection: { anchor: 0 },
+    selection: restored ? { anchor: restored.anchor, head: restored.head } : { anchor: 0 },
     scrollIntoView: true,
   });
+  if (restored) window.requestAnimationFrame(() => { view.scrollDOM.scrollTop = restored.scrollTop; });
   suppressChanges = false;
+  setSaveStatus("Saved", "saved");
 }
 
 function insertText(content) {

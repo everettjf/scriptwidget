@@ -1,5 +1,7 @@
 # ScriptWidget Studio 与 CodeMirror 6 统一规划
 
+> 实施状态（2026-08-05）：Studio 1.0–1.2 的核心范围已落地。iOS 与 macOS 共用 CodeMirror 6 bundle 和 StudioBridge v1；macOS Monaco 已移除；API Schema、组件/属性/枚举补全、Hover、编辑前诊断、保存状态与文档位置恢复均已实现。
+
 ## 1. 项目目标
 
 ScriptWidget Studio 不是一个新的独立 App，而是现有 iOS 与 macOS App 内统一的脚本创作工作区。
@@ -279,6 +281,14 @@ ScriptWidgetAPI.json
 - iPhone、iPad、Apple Silicon Mac 的 Release 构建实机表现。
 
 建议将代表性脚本加入自动化回归，并对 Runtime 元素树使用 golden fixture。
+
+### 7.1 当前验收记录
+
+- 前端 14 项自动化测试通过，覆盖 Bridge 协议、Schema/Runtime 对齐、补全、诊断以及光标和滚动恢复。
+- Vite production/release 构建通过；iOS 与 macOS 内嵌 bundle 字节级一致。
+- Xcode 27 Debug 构建通过：iOS App/Share 为 iOS 16，Widget Extension 为 iOS 18，macOS App/Widget 为 macOS 26。
+- macOS 编辑器页面只加载一次；编辑只发送增量事件，预览采用 300ms 防抖、后台串行执行和过期结果丢弃。
+- CodeMirror 初始状态基准：100KB 16.82ms、500KB 8.46ms、1MB 8.49ms（Apple Silicon，本地 Node 基准；大文档采用 CodeMirror 增量解析）。
 
 ## 8. 数据安全与迁移原则
 
