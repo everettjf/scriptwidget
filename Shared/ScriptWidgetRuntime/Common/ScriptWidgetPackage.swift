@@ -360,49 +360,6 @@ struct ScriptWidgetPackage {
     }
     
     
-    func getGifFile(_ fileName: String) -> URL? {
-        let trimmedName = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmedName.isEmpty {
-            return nil
-        }
-        
-        // 1) Accept direct file name (with extension), e.g. "cat.gif" / "cat.GIF".
-        let directPath = self.imagePath.appendingPathComponent(trimmedName)
-        if FileManager.default.fileExists(atPath: directPath.path),
-           directPath.pathExtension.lowercased() == "gif" {
-            return directPath
-        }
-        
-        // 2) Accept bare name, e.g. "cat" -> "cat.gif".
-        if directPath.pathExtension.isEmpty {
-            let appendedGifPath = directPath.appendingPathExtension("gif")
-            if FileManager.default.fileExists(atPath: appendedGifPath.path) {
-                return appendedGifPath
-            }
-        }
-        
-        // 3) Fallback: scan directory and match case-insensitively.
-        guard let items = try? FileManager.default.contentsOfDirectory(atPath: self.imagePath.path) else {
-            return nil
-        }
-        
-        let targetNameNoExt = URL(fileURLWithPath: trimmedName).deletingPathExtension().lastPathComponent.lowercased()
-        for item in items {
-            let itemURL = self.imagePath.appendingPathComponent(item)
-            if itemURL.pathExtension.lowercased() != "gif" {
-                continue
-            }
-            
-            let itemFullName = itemURL.lastPathComponent.lowercased()
-            let itemNameNoExt = itemURL.deletingPathExtension().lastPathComponent.lowercased()
-            if itemFullName == trimmedName.lowercased() || itemNameNoExt == targetNameNoExt {
-                return itemURL
-            }
-        }
-        
-        return nil
-    }
-    
     func getImageList() -> [ImageModel] {
         do {
             let items = try FileManager.default.contentsOfDirectory(atPath: self.imagePath.path)

@@ -26,10 +26,6 @@ function $gradient(obj) {
     return "gradient:" + JSON.stringify(obj)
 }
 
-function $animation(obj) {
-    return "animation:" + JSON.stringify(obj)
-}
-
 function $json(obj) {
     return JSON.stringify(obj)
 }
