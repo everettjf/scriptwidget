@@ -1,0 +1,3 @@
+// widget-param: saved,target (optional), e.g. 1250,3000
+const values = ($getenv("widget-param") || "1250,3000").split(",").map(Number); const saved = values[0] || 0; const target = values[1] || 3000;
+$render(<vstack frame="max" alignment="leading" spacing="9" padding="14" background="#052e2b"><hstack frame="max"><text font="headline" weight="bold" color="white">Savings</text><spacer/><icon systemName="banknote.fill" size="20" color="#5eead4"/></hstack><text font="title2" weight="bold" color="#99f6e4">${saved.toLocaleString()}</text><progress value={saved} total={target} color="#14b8a6"/><text font="caption" color="#ccfbf1">{Math.round(saved/target*100)}% of ${target.toLocaleString()} goal</text></vstack>);

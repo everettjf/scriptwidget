@@ -161,6 +161,18 @@ final class RuntimeExecutionTests: XCTestCase {
             "Hydration Goal",
             "Personal Dashboard",
             "Quick Launcher",
+            "Daily Agenda",
+            "Pomodoro Focus",
+            "Mood Check-in",
+            "Reading Goal",
+            "Savings Goal",
+            "Birthday Countdown",
+            "Packing Checklist",
+            "Meal Planner",
+            "Study Tracker",
+            "Sleep Schedule",
+            "Plant Care",
+            "Daily Affirmation",
         ]
 
         for name in templateNames {
@@ -168,11 +180,45 @@ final class RuntimeExecutionTests: XCTestCase {
             let source = try XCTUnwrap(package.readMainFile().0, "missing source for \(name)")
             let runtime = ScriptWidgetRuntime(
                 package: package,
-                environments: ["widget-size": "medium", "widget-param": "5,8"]
+                environments: ["widget-size": "medium", "widget-param": ""]
             )
             let (element, error) = runtime.executeJSXSyncForWidget(source)
             XCTAssertNil(error, "\(name) failed: \(String(describing: error?.displayMessage))")
             XCTAssertNotNil(element, "\(name) did not render an element")
+        }
+    }
+
+    func testBundledTemplateCatalogContainsSixtyReadyToUseTemplates() throws {
+        let templateDirectory = try XCTUnwrap(
+            Bundle.main.url(forResource: "template", withExtension: nil, subdirectory: "Script.bundle")
+        )
+        let entries = try FileManager.default.contentsOfDirectory(
+            at: templateDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )
+        let templateDirectories = entries.filter {
+            (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+
+        XCTAssertEqual(templateDirectories.count, 60)
+        for directory in templateDirectories {
+            let mainURL = directory.appendingPathComponent("main.jsx")
+            let metadataURL = directory.appendingPathComponent("meta.json")
+            XCTAssertTrue(
+                FileManager.default.fileExists(atPath: mainURL.path),
+                "missing main.jsx for \(directory.lastPathComponent)"
+            )
+            XCTAssertTrue(
+                FileManager.default.fileExists(atPath: metadataURL.path),
+                "missing meta.json for \(directory.lastPathComponent)"
+            )
+            let metadata = try JSONDecoder().decode(ScriptMetadata.self, from: Data(contentsOf: metadataURL))
+            XCTAssertNotNil(
+                metadata.category.flatMap(ScriptCategory.init(rawValue:)),
+                "unknown category for \(directory.lastPathComponent)"
+            )
+            XCTAssertFalse(metadata.description?.isEmpty ?? true, "missing description for \(directory.lastPathComponent)")
         }
     }
 

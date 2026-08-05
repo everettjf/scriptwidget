@@ -1,0 +1,3 @@
+// widget-param: plant name,days until watering (optional)
+const p=($getenv("widget-param")||"Monstera,2").split(","); const days=Math.min(7,Math.max(0,Number(p[1])||0));
+$render(<vstack frame="max" alignment="leading" spacing="8" padding="14" background="#14532d"><hstack frame="max"><icon systemName="leaf.fill" size="24" color="#86efac"/><spacer/><text font="caption" color="#bbf7d0">PLANT CARE</text></hstack><text font="title2" weight="bold" color="white">{p[0].trim()}</text><text font="callout" color="#dcfce7">{days===0?"Water today":`Water in ${days} days`}</text><spacer/><progress value={7-days} total="7" color="#4ade80"/></vstack>);

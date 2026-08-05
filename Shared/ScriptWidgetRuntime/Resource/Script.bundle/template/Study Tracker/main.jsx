@@ -1,0 +1,3 @@
+// widget-param: completed sessions,target (optional), e.g. 3,5
+const v=($getenv("widget-param")||"3,5").split(",").map(Number); const done=v[0]||0; const target=v[1]||5;
+$render(<vstack frame="max" alignment="leading" spacing="9" padding="14" background="#1e1b4b"><hstack frame="max"><icon systemName="graduationcap.fill" size="22" color="#a5b4fc"/><spacer/><badge text={`${done}/${target}`} color="#818cf8"/></hstack><text font="title2" weight="bold" color="white">Study streak</text><progress value={done} total={target} color="#818cf8"/><text font="caption" color="#c7d2fe">{done>=target?"Goal complete — great work!":`${target-done} sessions left today`}</text></vstack>);

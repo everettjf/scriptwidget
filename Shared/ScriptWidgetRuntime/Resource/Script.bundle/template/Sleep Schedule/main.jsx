@@ -1,0 +1,3 @@
+// widget-param: bedtime,wake time (optional)
+const t=($getenv("widget-param")||"10:30 PM,6:30 AM").split(",");
+$render(<vstack frame="max" spacing="10" padding="14" background="#111827"><hstack frame="max"><text font="headline" weight="bold" color="white">Sleep schedule</text><spacer/><icon systemName="moon.stars.fill" size="21" color="#c4b5fd"/></hstack><spacer/><hstack frame="max"><vstack><text font="caption" color="#9ca3af">BEDTIME</text><text font="title3" weight="bold" color="white">{t[0].trim()}</text></vstack><spacer/><vstack><text font="caption" color="#9ca3af">WAKE UP</text><text font="title3" weight="bold" color="white">{(t[1]||"6:30 AM").trim()}</text></vstack></hstack><spacer/></vstack>);
