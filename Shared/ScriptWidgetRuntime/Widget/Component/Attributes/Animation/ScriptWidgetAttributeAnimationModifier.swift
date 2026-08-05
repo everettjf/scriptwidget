@@ -112,10 +112,7 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                                 clockAnchor = ScriptWidgetElementPoint.getPointFromPointValue(anchorValue)
                             }
                             if let intervalValue = json["interval"].double {
-                                clockCustomInterval = TimeInterval(intervalValue)
-                                if clockCustomInterval < 1 {
-                                    clockCustomInterval = 1
-                                }
+                                clockCustomInterval = Self.normalizedInterval(intervalValue)
                             }
                         }
 
@@ -155,6 +152,11 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
                     // clockMiniute
                     // clockHour
                     animationType = animationTypeValue
+                } else if parts.count == 2,
+                          parts[0].trimmingCharacters(in: .whitespaces) == "clockCustom",
+                          let interval = Double(parts[1].trimmingCharacters(in: .whitespaces)) {
+                    animationType = "clock"
+                    clockCustomInterval = Self.normalizedInterval(interval)
                 }
             }
         }
@@ -175,7 +177,7 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
         if animationType == "clockSecond" {
             content
                 .clockHandRotationEffect(period: .secondHand, in: self.clockTimezone, anchor: self.clockAnchor)
-        } else if animationType == "clockMiniute" {
+        } else if animationType == "clockMinute" || animationType == "clockMiniute" {
             content
                 .clockHandRotationEffect(period: .minuteHand, in: self.clockTimezone, anchor: self.clockAnchor)
         } else if animationType == "clockHour" {
@@ -206,6 +208,19 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
 
         // default
         return .current
+    }
+
+    /// WidgetKit accepts signed custom periods. A negative value reverses the
+    /// rotation, which makes epicycles and counter-rotating systems possible.
+    private static func normalizedInterval(_ interval: Double) -> TimeInterval {
+        guard interval.isFinite else {
+            return 10
+        }
+
+        if abs(interval) < 0.25 {
+            return interval < 0 ? -0.25 : 0.25
+        }
+        return TimeInterval(interval)
     }
 }
 

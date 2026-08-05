@@ -157,6 +157,11 @@ final class RuntimeExecutionTests: XCTestCase {
 
     func testNewBundledTemplatesRenderWithoutNetwork() throws {
         let templateNames = [
+            "Animation Golden Bloom",
+            "Animation Lissajous",
+            "Animation Orbital Resonance",
+            "Animation Phase Wave",
+            "Animation Spirograph",
             "Weekly Planner",
             "Hydration Goal",
             "Personal Dashboard",
@@ -201,7 +206,7 @@ final class RuntimeExecutionTests: XCTestCase {
             (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
         }
 
-        XCTAssertEqual(templateDirectories.count, 60)
+        XCTAssertEqual(templateDirectories.count, 65)
         for directory in templateDirectories {
             let mainURL = directory.appendingPathComponent("main.jsx")
             let metadataURL = directory.appendingPathComponent("meta.json")
@@ -233,7 +238,7 @@ final class RuntimeExecutionTests: XCTestCase {
         ).filter {
             (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
         }
-        XCTAssertEqual(directories.count, 60)
+        XCTAssertEqual(directories.count, 65)
 
         for directory in directories {
             let name = directory.lastPathComponent

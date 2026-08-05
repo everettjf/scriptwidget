@@ -1,0 +1,7 @@
+{
+  "description": "Counter-rotating epicycles inspired by a hypotrochoid spirograph.",
+  "category": "fun",
+  "tags": ["animation", "math", "geometry"],
+  "difficulty": "advanced",
+  "icon": "scribble.variable"
+}

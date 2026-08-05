@@ -1,0 +1,7 @@
+{
+  "description": "Coprime horizontal and vertical oscillators draw a Lissajous path.",
+  "category": "fun",
+  "tags": ["animation", "math", "oscillation"],
+  "difficulty": "advanced",
+  "icon": "waveform.path"
+}
