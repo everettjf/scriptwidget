@@ -29,7 +29,6 @@ struct ScriptWidgetAttributeGeneralModifier: ViewModifier {
             .modifier(ScriptWidgetAttributeCornerRadiusModifier(element))
             .modifier(ScriptWidgetAttributeClippedModifier(element))
             .modifier(ScriptWidgetAttributeOpacityModifier(element))
-            .modifier(ScriptWidgetAttributeAnimationModifier(element))
             .modifier(ScriptWidgetAttributeRotationEffectModifier(element))
             .modifier(ScriptWidgetAttributeRotation3DEffectModifier(element))
             .modifier(ScriptWidgetAttributeShadowModifier(element))

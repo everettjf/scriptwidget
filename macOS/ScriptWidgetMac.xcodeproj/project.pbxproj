@@ -14,10 +14,6 @@
 		1DA43989AC34C73FB448AB0B /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
 		2748BECB1506585B128418DC /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8E3B593386F820DCF99C631E /* ScriptWidgetRuntimeSystem.swift */; };
 		50E23DC88432B462BE9DAA4F /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */; };
-		5A89B79A2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
-		5A89B79B2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */; };
-		5A89B79D2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */; };
-		5A89B79E2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */; };
 		65BB9B8C3E605B9CDA324E9C /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAACB8F5182390731F6DFE7 /* ScriptWidgetElementTagExtras.swift */; };
 		6FF5C020AAF78B28756B34D9 /* Cocoa.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */; };
 		745E4E208730DB92AA537EE1 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8CAE66D10656192ADC2F9019 /* ScriptWidgetRuntimeStorage.swift */; };
@@ -90,8 +86,6 @@
 		D1995CBD29536BB800D1BD94 /* ScriptWidgetAttributeShadowModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7029536BB800D1BD94 /* ScriptWidgetAttributeShadowModifier.swift */; };
 		D1995CBE29536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7129536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift */; };
 		D1995CBF29536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7129536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift */; };
-		D1995CC029536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7329536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift */; };
-		D1995CC129536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7329536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift */; };
 		D1995CC229536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7529536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift */; };
 		D1995CC329536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7529536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift */; };
 		D1995CC429536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C7629536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift */; };
@@ -258,8 +252,6 @@
 		1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeExecutionTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeExecutionTests.swift; sourceTree = "<group>"; };
 		28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIGenerationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIGenerationTests.swift; sourceTree = "<group>"; };
 		539EC132F05468E207A652AD /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
-		5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
 		5CBD28F52391D2A6FD860DE8 /* Cocoa.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Cocoa.framework; path = Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.0.sdk/System/Library/Frameworks/Cocoa.framework; sourceTree = DEVELOPER_DIR; };
 		77AA76CA4DC3B9BF781E4FD2 /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		7CF0C59766F5837DEC033FB9 /* PackageCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PackageCacheTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/PackageCacheTests.swift; sourceTree = "<group>"; };
@@ -307,7 +299,6 @@
 		D1995C6F29536BB800D1BD94 /* ScriptWidgetAttributeRotation3DEffectModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeRotation3DEffectModifier.swift; sourceTree = "<group>"; };
 		D1995C7029536BB800D1BD94 /* ScriptWidgetAttributeShadowModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeShadowModifier.swift; sourceTree = "<group>"; };
 		D1995C7129536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeRotationEffectModifier.swift; sourceTree = "<group>"; };
-		D1995C7329536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeAnimationModifier.swift; sourceTree = "<group>"; };
 		D1995C7529536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeImageModifier.swift; sourceTree = "<group>"; };
 		D1995C7629536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeGeneral.swift; sourceTree = "<group>"; };
 		D1995C7829536BB800D1BD94 /* ScriptWidgetAttributeForegroundModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeForegroundModifier.swift; sourceTree = "<group>"; };
@@ -558,7 +549,6 @@
 				D1995C6629536BB800D1BD94 /* General */,
 				D1995C6D29536BB800D1BD94 /* ScriptWidgetAttributeText.swift */,
 				D1995C6E29536BB800D1BD94 /* Effect */,
-				D1995C7229536BB800D1BD94 /* Animation */,
 				D1995C7429536BB800D1BD94 /* Image */,
 				D1995C7629536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift */,
 				D1995C7729536BB800D1BD94 /* Text */,
@@ -590,15 +580,6 @@
 			path = Effect;
 			sourceTree = "<group>";
 		};
-		D1995C7229536BB800D1BD94 /* Animation */ = {
-			isa = PBXGroup;
-			children = (
-				5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */,
-				D1995C7329536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift */,
-			);
-			path = Animation;
-			sourceTree = "<group>";
-		};
 		D1995C7429536BB800D1BD94 /* Image */ = {
 			isa = PBXGroup;
 			children = (
@@ -628,7 +609,6 @@
 		D1995C7D29536BB800D1BD94 /* Elements */ = {
 			isa = PBXGroup;
 			children = (
-				5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */,
 				F05227BE2AD1D6DE0014BE09 /* ScriptWidgetElementTagButton.swift */,
 				F05227BD2AD1D6DE0014BE09 /* ScriptWidgetElementTagToggle.swift */,
 				D1995C7E29536BB800D1BD94 /* ScriptWidgetElementTagLink.swift */,
@@ -1123,7 +1103,6 @@
 				F215EF0F27C0949A0085AD8F /* FileListView.swift in Sources */,
 				F29118BE2791DBD100B860B0 /* EmptyListBackgroundView.swift in Sources */,
 				D1995CF829536BC700D1BD94 /* ScriptWidgetPackage.swift in Sources */,
-				D1995CC029536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */,
 				D1995CD429536BB800D1BD94 /* ScriptWidgetElementTagDate.swift in Sources */,
 				D1995CD629536BB800D1BD94 /* ScriptWidgetElementTagImage.swift in Sources */,
 				F29118CA2791E2DB00B860B0 /* EditorMainView.swift in Sources */,
@@ -1161,7 +1140,6 @@
 				F29118CC2791E2EF00B860B0 /* PreviewView.swift in Sources */,
 				F29118DA2792B90700B860B0 /* WKWebViewJavascriptBridgeBase.swift in Sources */,
 				D1995CC629536BB800D1BD94 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
-				5A89B79B2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F05227BF2AD1D6DF0014BE09 /* ScriptWidgetElementTagToggle.swift in Sources */,
 				F276BD4827ACB87100E0ABE8 /* ImageListView.swift in Sources */,
 				D1995CB029536BB800D1BD94 /* ScriptWidgetAttributeClippedModifier.swift in Sources */,
@@ -1181,7 +1159,6 @@
 				F29118DC2792B90700B860B0 /* WKWebViewJavascriptBridgeJS.swift in Sources */,
 				D1995CAA29536BB800D1BD94 /* ScriptWidgetRuntimeElement.swift in Sources */,
 				D1995CEC29536BB800D1BD94 /* ScriptWidgetRuntimeDevice.swift in Sources */,
-				5A89B79D2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				D1995CBA29536BB800D1BD94 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */,
 				D1995CAC29536BB800D1BD94 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
 				D1995CEA29536BB800D1BD94 /* ScriptWidgetRuntimeConsole.swift in Sources */,
@@ -1224,17 +1201,14 @@
 				D1995CA129536BB800D1BD94 /* ScriptWidgetRunningState.swift in Sources */,
 				D1995CBD29536BB800D1BD94 /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
 				D1995CE329536BB800D1BD94 /* ScriptWidgetElementTagGrid.swift in Sources */,
-				5A89B79E2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				D1995C9729536BB800D1BD94 /* ScriptWidgetElementColor.swift in Sources */,
 				D1995CE529536BB800D1BD94 /* ScriptWidgetRuntimeFetch.swift in Sources */,
 				D1995CEB29536BB800D1BD94 /* ScriptWidgetRuntimeConsole.swift in Sources */,
-				5A89B79A2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				D1995CC729536BB800D1BD94 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,
 				D1995CB329536BB800D1BD94 /* ScriptWidgetAttributePaddingModifier.swift in Sources */,
 				F05227C02AD1D6DF0014BE09 /* ScriptWidgetElementTagToggle.swift in Sources */,
 				D1995CD129536BB800D1BD94 /* ScriptWidgetElementTagStack.swift in Sources */,
 				D1995CB729536BB800D1BD94 /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
-				D1995CC129536BB800D1BD94 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */,
 				D1995CAD29536BB800D1BD94 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
 				F090DD3F2AD23E9F00E14331 /* AppConfigFrequency.swift in Sources */,
 				F2461610279E07C200C3D90F /* ScriptWidgetPlaceholderView.swift in Sources */,

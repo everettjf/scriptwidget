@@ -11,15 +11,6 @@
       }
     },
     {
-      "identity" : "clockhandrotationkit",
-      "kind" : "remoteSourceControl",
-      "location" : "https://github.com/xnuapp/ClockHandRotationKit",
-      "state" : {
-        "revision" : "18ece16317fa2ef74bb38c56897d6908a78f64ec",
-        "version" : "1.0.1"
-      }
-    },
-    {
       "identity" : "sdwebimage",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage.git",
