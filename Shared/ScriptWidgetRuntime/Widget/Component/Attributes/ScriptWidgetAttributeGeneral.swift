@@ -20,11 +20,14 @@ struct ScriptWidgetAttributeGeneralModifier: ViewModifier {
     
     func body(content: Content) -> some View {
         content
+            // Padding is part of a component's painted content. Applying it
+            // after the background grows the view outside its fill and leaves
+            // a light halo around otherwise full-bleed widget cards.
+            .modifier(ScriptWidgetAttributePaddingModifier(element))
             .modifier(ScriptWidgetAttributeFrameModifier(element))
+            .modifier(ScriptWidgetAttributeBackgroundModifier(element))
             .modifier(ScriptWidgetAttributeCornerRadiusModifier(element))
             .modifier(ScriptWidgetAttributeClippedModifier(element))
-            .modifier(ScriptWidgetAttributeBackgroundModifier(element))
-            .modifier(ScriptWidgetAttributePaddingModifier(element))
             .modifier(ScriptWidgetAttributeOpacityModifier(element))
             .modifier(ScriptWidgetAttributeAnimationModifier(element))
             .modifier(ScriptWidgetAttributeRotationEffectModifier(element))

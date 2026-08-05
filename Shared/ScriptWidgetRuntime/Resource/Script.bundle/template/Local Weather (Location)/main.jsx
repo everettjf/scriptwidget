@@ -8,10 +8,7 @@
 
 if (!$location.isAvailable()) {
   $render(
-    <vstack frame="max" background="#0f172a">
-      <text font="title3" color="#f87171">Location Unavailable</text>
-      <text font="caption" color="#94a3b8">Location services are disabled.</text>
-    </vstack>
+    <hstack frame="max" background="#0c4a6e" padding="14" spacing="14"><icon systemName="location.slash.fill" size="44" color="#38bdf8"/><vstack alignment="leading" spacing="4"><text font="caption" color="#7dd3fc">LOCAL WEATHER</text><text font="title2" weight="bold" color="white">Location on iPhone</text><text font="caption" color="#bae6fd">Add on iOS for weather where you are.</text></vstack></hstack>
   );
   return;
 }
@@ -21,10 +18,7 @@ const authorized = status === "authorizedWhenInUse" || status === "authorizedAlw
 
 if (!authorized) {
   $render(
-    <vstack frame="max" background="#0f172a">
-      <text font="title3" color="#fbbf24">Permission Needed</text>
-      <text font="caption" color="#94a3b8">Enable Location access in the app.</text>
-    </vstack>
+    <hstack frame="max" background="#0c4a6e" padding="14" spacing="14"><icon systemName="location.circle.fill" size="44" color="#38bdf8"/><vstack alignment="leading" spacing="4"><text font="caption" color="#7dd3fc">LOCAL WEATHER</text><text font="title2" weight="bold" color="white">Share your location</text><text font="caption" color="#bae6fd">Allow access for a live local forecast.</text></vstack></hstack>
   );
   return;
 }

@@ -131,39 +131,48 @@ class ScriptWidgetElementTagLabel {
 
 class ScriptWidgetElementTagProgress {
     static func buildView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
-        let value = element.getPropDouble("value") ?? 0
-        let total = element.getPropDouble("total") ?? 1
+        let value = max(element.getPropDouble("value") ?? 0, 0)
+        let total = max(element.getPropDouble("total") ?? 1, 0.000_001)
+        let progress = min(value / total, 1)
         let label = element.getPropString("label") ?? ""
         let style = element.getPropString("style") ?? "linear"
-        let tintValue = element.getPropString("color")
-        let tintColor = tintValue != nil ? ScriptWidgetAttributeColor(tintValue!).color : nil
+        let tintColor = ScriptWidgetAttributeColor(element.getPropString("color") ?? "#3b82f6").color ?? .blue
+        let trackColor = element.getPropString("trackColor")
+            .flatMap { ScriptWidgetAttributeColor($0).color }
+            ?? Color.white.opacity(0.15)
+        let thickness = CGFloat(element.getPropDouble("thickness") ?? 6)
 
-        let progressView: AnyView
-        if label.isEmpty {
-            progressView = AnyView(ProgressView(value: value, total: total))
-        } else {
-            progressView = AnyView(ProgressView(label, value: value, total: total))
-        }
-
-        let styledView: AnyView
         if style == "circular" {
-            styledView = AnyView(progressView.progressViewStyle(CircularProgressViewStyle()))
+            let size = CGFloat(element.getPropDouble("frame") ?? 32)
+            let ring = ZStack {
+                Circle().stroke(trackColor, lineWidth: thickness)
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(tintColor, style: StrokeStyle(lineWidth: thickness, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                if !label.isEmpty {
+                    Text(label).font(.caption2)
+                }
+            }
+            .frame(width: size, height: size)
+            return AnyView(ring.modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
         } else {
-            styledView = AnyView(progressView.progressViewStyle(LinearProgressViewStyle()))
+            let bar = VStack(alignment: .leading, spacing: label.isEmpty ? 0 : 4) {
+                if !label.isEmpty {
+                    Text(label).font(.caption2)
+                }
+                GeometryReader { proxy in
+                    ZStack(alignment: .leading) {
+                        Capsule().fill(trackColor)
+                        Capsule()
+                            .fill(tintColor)
+                            .frame(width: proxy.size.width * progress)
+                    }
+                }
+                .frame(height: thickness)
+            }
+            return AnyView(bar.modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
         }
-
-        let tintedView: AnyView
-        if let tintColor = tintColor {
-            tintedView = AnyView(styledView.tint(tintColor))
-        } else {
-            tintedView = AnyView(styledView)
-        }
-
-        return AnyView(
-            tintedView
-                .modifier(ScriptWidgetAttributeFontModifier(element))
-                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
-        )
     }
 }
 

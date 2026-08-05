@@ -219,19 +219,16 @@ function Countdown(target, countdown_to) {
 }
 
 // Retrieve target from widget parameter
-const param = $getenv("widget-param");
+const demoYear = new Date().getFullYear() + 1;
+const param = ($getenv("widget-param") || `${demoYear}-01-01 New Year`).trim();
 const dtre = /\d\d\d\d\-\d\d\-\d\d(T\d\d\:\d\d\:\d\d)?/;
 dt_param = param.match(dtre);
 if (!dt_param) {
   $render(
-    <vstack frame="max">
-      <text>No valid widget parameter specified!</text>
-
-      <text></text>
-      <text font="caption">
-        Please provide a parameter like '2022-11-26 Vacation' or
-        '2022-11-26T12:35:00 Flight'
-      </text>
+    <vstack frame="max" background="#7f1d1d" padding="14">
+      <icon systemName="calendar.badge.exclamationmark" size="28" color="#fecaca"/>
+      <text font="headline" color="white">Use YYYY-MM-DD Event</text>
+      <text font="caption" color="#fecaca">Example: 2027-01-01 New Year</text>
     </vstack>
   );
   return;
@@ -271,10 +268,11 @@ if (countdown_to === "T") {
 $render(
   <vstack
     background={$gradient(linearGradient)}
-    frame="max,leading"
+    frame="max"
     alignment="leading"
+    padding="14"
   >
-    <hstack padding="10">
+    <hstack frame="max">
       <vstack alignment="leading">
         <text font="body" color="white">
           {event}
@@ -286,7 +284,7 @@ $render(
       <spacer />
     </hstack>
     <spacer />
-    <text font="title" color="white" padding="10">
+    <text font="title" weight="bold" color="white">
       {text}
     </text>
   </vstack>

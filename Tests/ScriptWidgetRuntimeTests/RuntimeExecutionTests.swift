@@ -222,6 +222,33 @@ final class RuntimeExecutionTests: XCTestCase {
         }
     }
 
+    func testEveryBundledTemplateRendersWithDefaultConfiguration() throws {
+        let templateDirectory = try XCTUnwrap(
+            Bundle.main.url(forResource: "template", withExtension: nil, subdirectory: "Script.bundle")
+        )
+        let directories = try FileManager.default.contentsOfDirectory(
+            at: templateDirectory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        ).filter {
+            (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
+        }
+        XCTAssertEqual(directories.count, 60)
+
+        for directory in directories {
+            let name = directory.lastPathComponent
+            let package = ScriptWidgetPackage(path: directory, readonly: true)
+            let source = try XCTUnwrap(package.readMainFile().0, "missing source for \(name)")
+            let runtime = ScriptWidgetRuntime(
+                package: package,
+                environments: ["widget-size": "medium", "widget-param": ""]
+            )
+            let (element, error) = runtime.executeJSXSyncForWidget(source)
+            XCTAssertNil(error, "\(name) failed: \(String(describing: error?.displayMessage))")
+            XCTAssertNotNil(element, "\(name) did not render a root element")
+        }
+    }
+
     // MARK: - Dynamic Island path
 
     func testDynamicIslandRenders() {

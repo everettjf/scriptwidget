@@ -25,8 +25,8 @@
 */
 
 $render(
-  <vstack>
-    <image url="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" frame="20,20"/>
-    <image id="image" frame="260,60"/>
-  </vstack>
+  <zstack frame="max" background="#0f172a">
+    <image id="image" mode="fill" frame="max"/>
+    <vstack frame="max,bottomLeading" alignment="leading" padding="14"><spacer/><badge text="LOCAL IMAGE" color="white"/><text font="title2" weight="bold" color="white">Photo spotlight</text></vstack>
+  </zstack>
 );

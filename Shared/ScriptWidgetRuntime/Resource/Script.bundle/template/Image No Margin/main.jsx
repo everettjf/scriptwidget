@@ -7,18 +7,9 @@
 
 
 $render(
-  <vstack spacing="0">
-    <zstack>
-        <image id="image0" padding="0" />
-        <text> Hello </text>
-    </zstack>
-    <zstack>
-        <image id="image1" padding="0" />
-        <text> World </text>
-    </zstack>
-    <zstack>
-        <image id="image2" padding="0" />
-        <text> :) </text>
-    </zstack>
-  </vstack>
+  <hstack frame="max" spacing="0" background="#111827">
+    <zstack frame="max"><image id="image0" mode="fill" frame="max"/><text font="headline" weight="bold" color="white">Explore</text></zstack>
+    <zstack frame="max"><image id="image1" mode="fill" frame="max"/><text font="headline" weight="bold" color="white">Create</text></zstack>
+    <zstack frame="max"><image id="image2" mode="fill" frame="max"/><text font="headline" weight="bold" color="white">Enjoy</text></zstack>
+  </hstack>
 );

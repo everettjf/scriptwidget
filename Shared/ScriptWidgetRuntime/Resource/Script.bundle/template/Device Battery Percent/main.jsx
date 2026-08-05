@@ -9,30 +9,9 @@
 var percent = $device.battery().level * 100;
 percent = percent.toFixed(0);
 
-let linearGradient = {
-  type: "linear",
-  colors: ["blue", "red", "green"],
-  startPoint: "topLeading",
-  endPoint: "bottomTrailing",
-};
-
-
-let radialGradient = {
-  type: "radial",
-  colors: ["orange", "red", "white"],
-  center: "center",
-  startRadius: 100,
-  endRadius: 470,
-};
-
-let angularGradient = {
-  type: "angular",
-  colors: ["green", "blue", "black", "green", "blue", "black", "green"],
-  center: "center",
-};
-
 $render(
-  <vstack background={$gradient(linearGradient)} frame="max">
-    <text font="50">🔋{percent} % </text>
-  </vstack>
+  <hstack background="#052e2b" frame="max" spacing="16" padding="14">
+    <vstack alignment="leading" spacing="4"><text font="caption" color="#5eead4">DEVICE BATTERY</text><text font="largeTitle" weight="bold" color="white">{percent}%</text><text font="caption" color="#99f6e4">Power at a glance</text></vstack>
+    <spacer/><ring value={Number(percent)/100} thickness="10" color="#2dd4bf" trackColor="#134e4a" frame="82,82"/>
+  </hstack>
 );

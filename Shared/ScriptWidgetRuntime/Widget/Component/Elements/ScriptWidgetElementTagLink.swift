@@ -24,6 +24,7 @@ struct ScriptWidgetElementTagLink {
                 return ScriptWidgetElementView.buildView(element: item, context: context)
             }
         }
+        .buttonStyle(.plain)
         .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
     }
     

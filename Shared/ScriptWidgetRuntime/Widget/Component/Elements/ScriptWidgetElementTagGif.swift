@@ -5,12 +5,16 @@
 //  Created by eevv on 12/29/24.
 //
 
-#if !os(macOS)
 import Foundation
 import SwiftUI
+#if os(macOS)
+import AppKit
+#else
 import SDWebImageSwiftUI
 import ClockHandRotationKit
+#endif
 
+#if !os(macOS)
 struct DynamicGifArcView: Shape {
     var arcStartAngle: Double
     var arcEndAngle: Double
@@ -25,7 +29,23 @@ struct DynamicGifArcView: Shape {
         return path
     }
 }
+#else
+struct DynamicGifView: View {
+    let gifPath: URL
 
+    var body: some View {
+        if let image = NSImage(contentsOf: gifPath) {
+            Image(nsImage: image)
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+        } else {
+            Text("GIF unavailable")
+        }
+    }
+}
+#endif
+
+#if !os(macOS)
 struct DynamicGifView: View {
     var gifPath: URL
     var body: some View {
@@ -71,6 +91,7 @@ struct DynamicGifView: View {
         }
     }
 }
+#endif
 
 
 
@@ -104,5 +125,3 @@ class ScriptWidgetElementTagGif {
         )
     }
 }
-#endif
-

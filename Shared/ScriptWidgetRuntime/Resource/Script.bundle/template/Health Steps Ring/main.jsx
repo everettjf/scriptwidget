@@ -10,19 +10,16 @@ const goal = 8000;
 
 if (!$health.isAvailable()) {
   $render(
-    <vstack frame="max"  background="#0f172a">
-      <text font="title3" color="#f87171">HealthKit Unavailable</text>
-      <text font="caption" color="#94a3b8">Check platform support.</text>
-    </vstack>
+    <hstack frame="max" background="#422006" padding="14" spacing="14">
+      <icon systemName="figure.walk.circle.fill" size="48" color="#fbbf24"/>
+      <vstack alignment="leading" spacing="4"><text font="caption" color="#fcd34d">STEPS TODAY</text><text font="title2" weight="bold" color="white">Health on iPhone</text><text font="caption" color="#fde68a">Add this widget on iOS to see your ring.</text></vstack>
+    </hstack>
   );
 } else {
   const granted = await $health.requestAuthorization();
   if (!granted) {
     $render(
-      <vstack frame="max" background="#0f172a">
-        <text font="title3" color="#fbbf24">Permission Needed</text>
-        <text font="caption" color="#94a3b8">Enable Health access in the app.</text>
-      </vstack>
+      <hstack frame="max" background="#422006" padding="14" spacing="14"><icon systemName="heart.text.square.fill" size="46" color="#fbbf24"/><vstack alignment="leading" spacing="4"><text font="caption" color="#fcd34d">HEALTH ACCESS</text><text font="title2" weight="bold" color="white">Connect your steps</text><text font="caption" color="#fde68a">Allow read access in ScriptWidget.</text></vstack></hstack>
     );
   } else {
     const steps = await $health.stepCountToday();

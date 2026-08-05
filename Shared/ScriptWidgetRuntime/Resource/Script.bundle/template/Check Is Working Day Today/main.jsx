@@ -7,35 +7,12 @@ var d = new Date();
 var n = d.getDay();
 console.log(n);
 
-let linearGradient = {
-  type: "linear",
-  colors: ["yellow", "red"],
-  startPoint: "top",
-  endPoint: "bottom",
-};
-
+const working = n >= 1 && n <= 5;
 $render(
-  <vstack
-    background={$gradient(linearGradient)}
-    frame="max,leading"
-    alignment="leading"
-  >
-    <hstack padding="10">
-      <vstack alignment="leading">
-        <text font="body" color="black">
-          {d.getFullYear()}-{d.getMonth() + 1}-{d.getDate()}
-        </text>
-        <text font="body" color="black">
-          Is Working Day Today ?
-        </text>
-      </vstack>
-      <spacer />
-    </hstack>
-    <spacer />
-    <hstack alignment="center">
-        <text font="largeTitle" color="black" padding="10">
-        {(n >= 1 && n <= 5) ? "Yes⛽️⛽️⛽️" : "No😄"}
-        </text>
-    </hstack>    
+  <vstack background={working ? "#0f3d3e" : "#3b1d4a"} frame="max" alignment="leading" spacing="8" padding="14">
+    <hstack frame="max"><text font="caption" color={working ? "#99f6e4" : "#f5d0fe"}>DAY STATUS</text><spacer/><date date="now" style="date" font="caption" color="white"/></hstack>
+    <spacer/>
+    <hstack spacing="10"><icon systemName={working ? "briefcase.fill" : "cup.and.saucer.fill"} size="28" color={working ? "#5eead4" : "#e879f9"}/><text font="title" weight="bold" color="white">{working ? "Work day" : "Day off"}</text></hstack>
+    <text font="caption" color={working ? "#ccfbf1" : "#fae8ff"}>{working ? "Choose one meaningful priority." : "Rest, reset, and enjoy."}</text>
   </vstack>
 );
