@@ -11,6 +11,7 @@ import {
   dropCursor,
   rectangularSelection,
   crosshairCursor,
+  hoverTooltip,
 } from "@codemirror/view";
 import {
   defaultKeymap,
@@ -27,10 +28,11 @@ import {
 import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from "@codemirror/autocomplete";
 import { javascript } from "@codemirror/lang-javascript";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
-import { lintGutter, setDiagnostics } from "@codemirror/lint";
+import { lintGutter, linter, setDiagnostics } from "@codemirror/lint";
 import { connectNativeBridge, announceReady, callNative } from "./bridge.js";
 import { STUDIO_PROTOCOL_VERSION, StudioMessage } from "./studioProtocol.js";
 import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
+import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
 import "./style.css";
 
@@ -83,6 +85,8 @@ const extensions = [
   highlightActiveLine(),
   highlightSelectionMatches(),
   lintGutter(),
+  linter(scriptWidgetDiagnostics, { delay: 350 }),
+  hoverTooltip(scriptWidgetHover),
   javascript({ jsx: true }),
   keymap.of([
     indentWithTab,

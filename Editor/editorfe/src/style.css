@@ -17,6 +17,19 @@ body,
   overflow: hidden;
 }
 
+.studio-hover {
+  max-width: 320px;
+  padding: 9px 11px;
+  color: light-dark(#1f2328, #eef1f5);
+  background: light-dark(#ffffff, #292b30);
+}
+
+.studio-hover p {
+  margin: 5px 0 0;
+  color: light-dark(#59636e, #aeb4bd);
+  line-height: 1.35;
+}
+
 body {
   background: light-dark(#fafafc, #1e1f22);
   -webkit-font-smoothing: antialiased;

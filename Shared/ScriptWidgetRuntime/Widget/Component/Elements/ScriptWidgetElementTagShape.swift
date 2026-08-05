@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct AnyShape: Shape {
+struct AnyShape: Shape, @unchecked Sendable {
     init<S: Shape>(_ wrapped: S) {
         _path = { rect in
             wrapped.path(in: rect)
