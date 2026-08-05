@@ -43,6 +43,28 @@ enum ScriptWidgetError: Error {
             return msg
         }
     }
+
+    var category: String {
+        switch self {
+        case .undefinedRender: return "Render"
+        case .internalError: return "Internal"
+        case .transformError: return "Syntax"
+        case .scriptError, .scriptException: return "Runtime"
+        case .resourceLimit: return "Resource Limit"
+        }
+    }
+
+    var recoverySuggestion: String {
+        switch self {
+        case .undefinedRender: return "Call $render(...) once from the main script."
+        case .internalError: return "Retry. If this persists, export the package and report the diagnostic."
+        case .transformError: return "Check the highlighted JSX syntax and property values."
+        case .scriptError, .scriptException: return "Use the reported line and stack trace to inspect the script."
+        case .resourceLimit: return "Reduce source size, imported work, network data, or execution time."
+        }
+    }
+
+    var diagnosticMessage: String { "[\(category)] \(displayMessage)\n\(recoverySuggestion)" }
 }
 
 enum ScriptWidgetRuntimeContract {

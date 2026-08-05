@@ -148,10 +148,16 @@ struct ScriptWidgetPackage {
     func resolvedPackageURL(relativePath: String) -> URL? {
         guard !relativePath.isEmpty, !relativePath.hasPrefix("/") else { return nil }
         let root = path.standardizedFileURL.resolvingSymlinksInPath()
-        let candidate = root.appendingPathComponent(relativePath)
-            .standardizedFileURL
-            .resolvingSymlinksInPath()
+        let standardized = root.appendingPathComponent(relativePath).standardizedFileURL
         let rootPrefix = root.path.hasSuffix("/") ? root.path : root.path + "/"
+        guard standardized.path.hasPrefix(rootPrefix) else { return nil }
+        let candidate: URL
+        if FileManager.default.fileExists(atPath: standardized.path) {
+            candidate = standardized.resolvingSymlinksInPath()
+        } else {
+            candidate = standardized.deletingLastPathComponent().resolvingSymlinksInPath()
+                .appendingPathComponent(standardized.lastPathComponent)
+        }
         guard candidate.path.hasPrefix(rootPrefix) else { return nil }
         return candidate
     }
@@ -249,8 +255,8 @@ struct ScriptWidgetPackage {
         guard let buildDirectory = ScriptManager.getSandboxBuildDirectoryURL() else {
             return nil
         }
-        let packageRootPath = self.path.path
-        let fullPathValue = fullPath.path
+        let packageRootPath = self.path.standardizedFileURL.resolvingSymlinksInPath().path
+        let fullPathValue = fullPath.standardizedFileURL.resolvingSymlinksInPath().path
         guard fullPathValue.hasPrefix(packageRootPath) else {
             return nil
         }

@@ -159,7 +159,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
             } else {
                 // error
                 if let error = result.1 {
-                    let message = error.displayMessage
+                    let message = error.diagnosticMessage
                     self.lastErrorMessage = message
                     self.systemLog(message)
                 }

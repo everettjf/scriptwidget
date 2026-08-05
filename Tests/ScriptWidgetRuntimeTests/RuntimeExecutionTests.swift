@@ -18,6 +18,21 @@ import JavaScriptCore
 
 final class RuntimeExecutionTests: XCTestCase {
 
+    private func snapshot(_ element: ScriptWidgetRuntimeElement) -> String {
+        let props = element.getProps().map { key, value in
+            "\(String(describing: key))=\(String(describing: value))"
+        }.sorted().joined(separator: ",")
+        let children = element.getChildren().map { child -> String in
+            if let nested = child as? ScriptWidgetRuntimeElement { return snapshot(nested) }
+            if let nested = child as? [Any] {
+                return nested.compactMap { $0 as? ScriptWidgetRuntimeElement }.map(snapshot).joined()
+            }
+            return "\"\(String(describing: child))\""
+        }.joined(separator: ",")
+        let tag = element.tagAsString() ?? "unknown"
+        return "<\(tag){\(props)}>\(children)</\(tag)>"
+    }
+
     /// A throwaway, writable package rooted in a unique temp directory.
     private func makeTempPackage() -> ScriptWidgetPackage {
         let dir = URL(fileURLWithPath: NSTemporaryDirectory(), isDirectory: true)
@@ -75,6 +90,29 @@ final class RuntimeExecutionTests: XCTestCase {
         let text = collectText(element!)
         XCTAssertTrue(text.contains("Left") && text.contains("Right") && text.contains("Body"),
                       "rendered text was: \(text)")
+    }
+
+    func testCanonicalElementTreeGolden() {
+        let jsx = "$render(<vstack alignment=\"leading\" spacing={8}><text font=\"headline\">Release</text><hstack><icon systemName=\"checkmark.circle.fill\"/><spacer/><text>Ready</text></hstack></vstack>);"
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
+        XCTAssertNil(error)
+        XCTAssertEqual(
+            snapshot(element!),
+            "<vstack{alignment=leading,spacing=8}><text{font=headline}>\"Release\"</text>,<hstack{}><icon{systemName=checkmark.circle.fill}></icon>,<spacer{}></spacer>,<text{}>\"Ready\"</text></hstack></vstack>"
+        )
+    }
+
+    func testCachedRuntimePerformanceBudget() {
+        let source = "$render(<vstack><text>performance</text><spacer/><text>{$getenv(\"widget-size\")}</text></vstack>);"
+        _ = makeRuntime().executeJSXSyncForWidget(source)
+        let start = ContinuousClock.now
+        for _ in 0..<10 {
+            let result = makeRuntime().executeJSXSyncForWidget(source)
+            XCTAssertNil(result.1)
+            XCTAssertNotNil(result.0)
+        }
+        let elapsed = ContinuousClock.now - start
+        XCTAssertLessThan(elapsed, .seconds(3), "10 cached renders exceeded the release performance budget")
     }
 
     // MARK: - $getenv passthrough

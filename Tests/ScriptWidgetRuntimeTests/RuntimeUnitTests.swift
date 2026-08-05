@@ -130,6 +130,13 @@ final class ScriptWidgetErrorTests: XCTestCase {
         XCTAssertEqual(ScriptWidgetError.scriptException("e").displayMessage, "e")
         XCTAssertEqual(ScriptWidgetError.resourceLimit("r").displayMessage, "r")
     }
+
+    func testDiagnosticIncludesCategoryAndRecovery() {
+        let diagnostic = ScriptWidgetError.resourceLimit("too large").diagnosticMessage
+        XCTAssertTrue(diagnostic.contains("[Resource Limit]"))
+        XCTAssertTrue(diagnostic.contains("too large"))
+        XCTAssertTrue(diagnostic.contains("Reduce"))
+    }
 }
 
 final class RuntimeContractTests: XCTestCase {

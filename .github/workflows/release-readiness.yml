@@ -1,0 +1,38 @@
+name: Release Readiness
+
+on:
+  pull_request:
+  push:
+    branches: [main, "codex/**"]
+
+concurrency:
+  group: release-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  editor-and-catalog:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Editor/editorfe/package-lock.json
+      - run: npm ci
+        working-directory: Editor/editorfe
+      - run: SCRIPTWIDGET_SKIP_XCODE=1 ./Scripts/release-readiness.sh
+
+  apple-platforms:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: Editor/editorfe/package-lock.json
+      - run: npm ci
+        working-directory: Editor/editorfe
+      - run: sudo xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
+      - run: ./Scripts/release-readiness.sh

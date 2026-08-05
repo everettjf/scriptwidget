@@ -205,7 +205,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
             return RenderOutput(rootElement: element, runtime: runtime, errorMessage: nil, logs: runtimeLogs)
         }
 
-        let message = result.1?.displayMessage ?? "#Failed#"
+        let message = result.1?.diagnosticMessage ?? "#Failed#"
         return RenderOutput(
             rootElement: ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [message]),
             runtime: runtime,

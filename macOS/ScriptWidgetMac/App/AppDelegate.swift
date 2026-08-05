@@ -11,7 +11,7 @@ import AppKit
 class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("did finish launching")
-        // Monaco editor is now served via a WKURLSchemeHandler — no
+        // The embedded editor is served via a WKURLSchemeHandler — no
         // local HTTP server needed.
         precacheScripts()
     }
