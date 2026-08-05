@@ -85,6 +85,7 @@ final class EditorSchemeHandler: NSObject, WKURLSchemeHandler {
         case "svg":         return "image/svg+xml"
         case "png":         return "image/png"
         case "jpg", "jpeg": return "image/jpeg"
+        case "gif":         return "image/gif"
         case "ttf":         return "font/ttf"
         case "otf":         return "font/otf"
         case "woff":        return "font/woff"

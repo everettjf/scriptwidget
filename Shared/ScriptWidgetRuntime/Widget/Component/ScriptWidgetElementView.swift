@@ -66,6 +66,7 @@ struct ScriptWidgetElementView: View {
             case "date": return ScriptWidgetElementTagDate.buildView(element, context)
             case "image": return ScriptWidgetElementTagImage.buildView(element, context)
                 
+            case "gif": return ScriptWidgetElementTagGif.buildView(element, context)
             case "spacer": return ScriptWidgetElementTagSpacer.buildView(element, context)
             case "rect": return ScriptWidgetElementTagRectangle.buildView(element, context)
             case "capsule": return ScriptWidgetElementTagCapsule.buildView(element, context)

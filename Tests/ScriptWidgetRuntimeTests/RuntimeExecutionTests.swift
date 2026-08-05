@@ -201,7 +201,7 @@ final class RuntimeExecutionTests: XCTestCase {
             (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
         }
 
-        XCTAssertEqual(templateDirectories.count, 57)
+        XCTAssertEqual(templateDirectories.count, 60)
         for directory in templateDirectories {
             let mainURL = directory.appendingPathComponent("main.jsx")
             let metadataURL = directory.appendingPathComponent("meta.json")
@@ -233,7 +233,7 @@ final class RuntimeExecutionTests: XCTestCase {
         ).filter {
             (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true
         }
-        XCTAssertEqual(directories.count, 57)
+        XCTAssertEqual(directories.count, 60)
 
         for directory in directories {
             let name = directory.lastPathComponent

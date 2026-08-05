@@ -13,6 +13,12 @@
 		2430E21D4B97E82D7DCA974F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5281E73D1780ED2020D931F0 /* Foundation.framework */; };
 		41EB46718721B65431419598 /* RuntimeExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */; };
 		557FA1D54AACDD61E7F1B35E /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */; };
+		5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
+		5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
+		A20000012F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
+		A20000022F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
+		5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
+		5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A912FB22D214B2C0050F250 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5A912FB12D214B2C0050F250 /* SDWebImageSwiftUI */; };
 		5AC386D22CDA09800027B976 /* ImportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D12CDA09760027B976 /* ImportView.swift */; };
 		5AC386D42CDA0CB10027B976 /* ImportExportManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */; };
@@ -218,6 +224,8 @@
 		F29119592793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119162793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift */; };
 		F291195A2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119172793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift */; };
 		F291195B2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119172793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift */; };
+		F291195C2793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119192793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift */; };
+		F291195D2793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119192793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift */; };
 		F291195E2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291191A2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift */; };
 		F291195F2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291191A2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift */; };
 		F29119602793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = F291191C2793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift */; };
@@ -384,6 +392,9 @@
 		3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = RuntimeUnitTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/RuntimeUnitTests.swift; sourceTree = "<group>"; };
 		5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		5281E73D1780ED2020D931F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
+		5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
+		A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockHandRotationEffect.swift; sourceTree = "<group>"; };
+		5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportManager.swift; sourceTree = "<group>"; };
 		5AC386D52CDB48350027B976 /* ScriptWidgetSelectTimerIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSelectTimerIntent.swift; sourceTree = "<group>"; };
@@ -554,6 +565,7 @@
 		F29119152793035E00B860B0 /* ScriptWidgetAttributeRotation3DEffectModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeRotation3DEffectModifier.swift; sourceTree = "<group>"; };
 		F29119162793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeShadowModifier.swift; sourceTree = "<group>"; };
 		F29119172793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeRotationEffectModifier.swift; sourceTree = "<group>"; };
+		F29119192793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeAnimationModifier.swift; sourceTree = "<group>"; };
 		F291191A2793035E00B860B0 /* ScriptWidgetAttributeGeneral.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeGeneral.swift; sourceTree = "<group>"; };
 		F291191C2793035E00B860B0 /* ScriptWidgetAttributeForegroundModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeForegroundModifier.swift; sourceTree = "<group>"; };
 		F291191D2793035E00B860B0 /* ScriptWidgetAttributeFontModifier.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeFontModifier.swift; sourceTree = "<group>"; };
@@ -1163,6 +1175,7 @@
 				F277CB9827CB296C003AB97D /* Image */,
 				F291190F2793035E00B860B0 /* General */,
 				F29119142793035E00B860B0 /* Effect */,
+				F29119182793035E00B860B0 /* Animation */,
 				F291191B2793035E00B860B0 /* Text */,
 				F291191F2793035E00B860B0 /* Debug */,
 			);
@@ -1192,6 +1205,16 @@
 			path = Effect;
 			sourceTree = "<group>";
 		};
+		F29119182793035E00B860B0 /* Animation */ = {
+			isa = PBXGroup;
+			children = (
+				A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */,
+				5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */,
+				F29119192793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift */,
+			);
+			path = Animation;
+			sourceTree = "<group>";
+		};
 		F291191B2793035E00B860B0 /* Text */ = {
 			isa = PBXGroup;
 			children = (
@@ -1213,6 +1236,7 @@
 		F29119212793035E00B860B0 /* Elements */ = {
 			isa = PBXGroup;
 			children = (
+				5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */,
 				F28D681A27CE8874000C2D03 /* ScriptWidgetElementTagGrid.swift */,
 				F28D681927CE8874000C2D03 /* ScriptWidgetElementTagStack.swift */,
 				F29119222793035E00B860B0 /* ScriptWidgetElementTagLink.swift */,
@@ -1705,6 +1729,7 @@
 				D13832AE25A1EB6B00DC9C20 /* CreateGuideView.swift in Sources */,
 				D19CAF5928CB94D500DFF98B /* APIsHomeView.swift in Sources */,
 				D1403DE82552FEB40076F87C /* TOActivityCroppedImageProvider.m in Sources */,
+				5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */,
 				F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */,
 				F29118F32793034D00B860B0 /* ScriptModel.swift in Sources */,
@@ -1739,6 +1764,8 @@
 				F29119932793223300B860B0 /* ScriptWidgetPackage.swift in Sources */,
 				F29119382793035E00B860B0 /* MineGaugeView.swift in Sources */,
 				F29119542793035E00B860B0 /* ScriptWidgetAttributeText.swift in Sources */,
+				F291195C2793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */,
+				A20000012F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */,
 				F28D681E27CE8874000C2D03 /* ScriptWidgetElementTagGrid.swift in Sources */,
 				F2B99C1F27B6CD25009584A3 /* FileListView.swift in Sources */,
 				D183E0A428CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift in Sources */,
@@ -1769,6 +1796,7 @@
 				D19CAF6128CC3FAC00DFF98B /* ScriptPackageEditorView.swift in Sources */,
 				F277CB9A27CB2995003AB97D /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				D19CAF5F28CC3F8E00DFF98B /* ScriptPackageHorizontalFileView.swift in Sources */,
+				5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				D18AAC32252A12D10065386A /* ContentView.swift in Sources */,
 				F29119402793035E00B860B0 /* MineRingView.swift in Sources */,
 				F291195A2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
@@ -1850,6 +1878,8 @@
 				D183E0A528CE0EFE003F44A0 /* ScriptWidgetElementTagChart.swift in Sources */,
 				F29119632793035E00B860B0 /* ScriptWidgetAttributeFontModifier.swift in Sources */,
 				F291197D2793035E00B860B0 /* ScriptWidgetRuntimeFetch.swift in Sources */,
+				F291195D2793035E00B860B0 /* ScriptWidgetAttributeAnimationModifier.swift in Sources */,
+				A20000022F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */,
 				F29119392793035E00B860B0 /* MineGaugeView.swift in Sources */,
 				F28D681D27CE8874000C2D03 /* ScriptWidgetElementTagStack.swift in Sources */,
 				F28D681327CE764B000C2D03 /* ScriptWidgetAttributeClippedModifier.swift in Sources */,
@@ -1882,12 +1912,14 @@
 				BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */,
 				D1BD329C28E0713D00F217ED /* ScriptLiveActivityDataObject.swift in Sources */,
 				5AE2C8942CDB3D7F00A9F4FF /* ScriptWidgetControlAppIntent.swift in Sources */,
+				5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F29119432793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */,
 				F291195B2793035E00B860B0 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
 				D1CBAED328D5B13400DE4E65 /* ScriptLiveActivityAttributes.swift in Sources */,
 				F291197F2793035E00B860B0 /* ScriptWidgetRuntimePromise.swift in Sources */,
 				F277CB9B27CB2995003AB97D /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				F291196B2793035E00B860B0 /* ScriptWidgetElementTagSpacer.swift in Sources */,
+				5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				F28D681527CE764B000C2D03 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */,
 				F08113B42AD0831C00605DE1 /* ScriptWidgetTimelineProvider.swift in Sources */,
 				F277CBA527CB5A2C003AB97D /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
