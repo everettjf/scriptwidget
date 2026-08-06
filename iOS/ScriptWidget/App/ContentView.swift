@@ -32,6 +32,7 @@ struct ContentView: View {
             APIsHomeView()
                 .tabItem({ TabLabel(imageName: "pencil.line", label: "APIs")})
         }
+        .tint(.indigo)
     }
 }
 

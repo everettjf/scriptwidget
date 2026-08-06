@@ -35,7 +35,7 @@ struct SidebarView: View {
 
     var body: some View {
         content
-            .frame(minWidth:200, maxWidth: 300, idealHeight: 250)
+            .frame(minWidth: 230, idealWidth: 260, maxWidth: 320)
             .sheet(isPresented: $renameShowingSheet) {
                 RenameConfirmView(currentName: $renameCurrentName, inputName: $renameInputName)
             }
@@ -68,8 +68,9 @@ struct SidebarView: View {
                     Button{
                         MacKitUtil.toggleSidebar()
                     } label: {
-                        Image(systemName: "sidebar.left")
+                        Label("Toggle Sidebar", systemImage: "sidebar.left")
                     }
+                    .help("Toggle sidebar")
                 }
                 ToolbarItem(placement: .automatic) {
                     Button {
@@ -87,7 +88,7 @@ struct SidebarView: View {
                     Button {
                         self.createShowingSheet.toggle()
                     } label: {
-                        Image(systemName: "plus.circle")
+                        Label("New Widget", systemImage: "plus")
                     }
                     .help("New widget")
                 }
@@ -110,7 +111,7 @@ struct SidebarView: View {
                 Button {
                     createShowingSheet = true
                 } label: {
-                    Label("New from Template", systemImage: "plus")
+                    Label("New from Template", systemImage: "square.grid.2x2")
                 }
 
                 Button {
@@ -123,11 +124,6 @@ struct SidebarView: View {
                     Label("Generate with AI", systemImage: "sparkles")
                 }
 
-                Button {
-                    widgetGuideShowingSheet = true
-                } label: {
-                    Label("Add Widget to Desktop", systemImage: "rectangle.stack.badge.plus")
-                }
             }
 
             Section("Scripts") {
@@ -205,15 +201,29 @@ struct SidebarView: View {
             }
             Section("Resources") {
                 NavigationLink(destination: ResourceCodeView(resourceType: "api")) {
-                    Label("APIs", systemImage: "scribble.variable")
+                    Label("APIs", systemImage: "curlybraces")
                 }
                 NavigationLink(destination: ResourceCodeView(resourceType: "component")) {
-                    Label("Components", systemImage: "scribble.variable")
+                    Label("Components", systemImage: "cube")
                 }
                 NavigationLink(destination: ResourceCodeView(resourceType: "template")) {
-                    Label("Templates", systemImage: "scribble.variable")
+                    Label("Templates", systemImage: "rectangle.stack")
                 }
             }
+        }
+        .listStyle(.sidebar)
+        .safeAreaInset(edge: .bottom) {
+            Button {
+                widgetGuideShowingSheet = true
+            } label: {
+                Label("Add Widget to Desktop", systemImage: "rectangle.stack.badge.plus")
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.bar)
         }
     }
 

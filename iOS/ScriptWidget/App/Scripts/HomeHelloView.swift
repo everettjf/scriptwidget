@@ -11,27 +11,68 @@ struct HomeHelloView: View {
     @State private var isShowingWidgetGuide = false
 
     var body: some View {
-        VStack(spacing: 14) {
-            Image(systemName: "square.grid.2x2")
-                .font(.system(size: 42))
-                .foregroundStyle(.secondary)
+        ZStack {
+            LinearGradient(
+                colors: [Color.accentColor.opacity(0.07), .clear],
+                startPoint: .topLeading,
+                endPoint: .center
+            )
+            .ignoresSafeArea()
+
+            VStack(spacing: 18) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .fill(.tint.opacity(0.12))
+                    Image(systemName: "square.grid.2x2")
+                        .font(.system(size: 34, weight: .medium))
+                        .foregroundStyle(.tint)
+                }
+                .frame(width: 76, height: 76)
                 .accessibilityHidden(true)
-            Text("Select a Widget")
-                .font(.title2.bold())
-            Text("Choose a script to edit and preview, or learn how to place it on your Home Screen.")
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 420)
-            Button("How to Add a Widget") {
-                isShowingWidgetGuide = true
+
+                VStack(spacing: 8) {
+                    Text("Your Widget Workspace")
+                        .font(.title2.bold())
+                    Text("Select a script to edit code, manage assets, and preview every supported widget size.")
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .frame(maxWidth: 460)
+                }
+
+                HStack(spacing: 18) {
+                    WorkspaceCapability(icon: "chevron.left.forwardslash.chevron.right", title: "Code")
+                    WorkspaceCapability(icon: "play.rectangle", title: "Preview")
+                    WorkspaceCapability(icon: "photo.on.rectangle", title: "Assets")
+                }
+
+                Button {
+                    isShowingWidgetGuide = true
+                } label: {
+                    Label("How to Add a Widget", systemImage: "rectangle.stack.badge.plus")
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
             }
-            .buttonStyle(.borderedProminent)
+            .padding(40)
         }
-        .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .sheet(isPresented: $isShowingWidgetGuide) {
             WidgetSetupGuideView()
         }
+    }
+}
+
+private struct WorkspaceCapability: View {
+    let icon: String
+    let title: String
+
+    var body: some View {
+        Label(title, systemImage: icon)
+            .font(.caption.weight(.semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
+            .background(.regularMaterial, in: .capsule)
     }
 }
 

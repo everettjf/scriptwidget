@@ -59,6 +59,7 @@ struct ScriptWidgetHomeView: View {
     var body: some View {
         NavigationSplitView {
             content
+                .navigationSplitViewColumnWidth(min: 320, ideal: 380, max: 460)
                 .fullScreenCover(item: $selectedEditItem, content: { item in
                     EditAttributesView(scriptModel: item) {
                         selectedEditItem = nil
@@ -78,14 +79,14 @@ struct ScriptWidgetHomeView: View {
                     })
                     
                 })
-                .navigationTitle("ScriptWidget")
+                .navigationTitle("Widgets")
                 .searchable(text: $searchText, prompt: "Search widgets")
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: {
                             isShowingSettings = true
                         }) {
-                            Label("Settings", systemImage: "slider.horizontal.3")
+                            Label("Settings", systemImage: "gearshape")
                                 .labelStyle(.iconOnly)
                         }
                         .sheet(isPresented: $isShowingSettings) {
@@ -97,7 +98,7 @@ struct ScriptWidgetHomeView: View {
                         Button(action: {
                             isShowingCreateGuide = true
                         }) {
-                            Label("Create", systemImage: "plus.square")
+                            Label("Create", systemImage: "plus")
                                 .labelStyle(.iconOnly)
                         }
                         .sheet(isPresented: $isShowingCreateGuide) {
@@ -190,8 +191,8 @@ struct ScriptWidgetHomeView: View {
                 } header: {
                     Text("\(filteredModels.count) widget\(filteredModels.count == 1 ? "" : "s")")
                 }
-                .listRowBackground(Color.clear)
             }
+            .listStyle(.insetGrouped)
             .refreshable {
                 dataObject.reload()
                 WidgetCenter.shared.reloadAllTimelines()

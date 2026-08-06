@@ -29,18 +29,20 @@ struct EditorPanelView: View {
             VStack {
                 PreviewView(scriptModel: scriptModel)
             }
-            .tabItem({ EditorPanelTabLabel(imageName: "house.fill", label: "Preview") })
+            .tabItem({ EditorPanelTabLabel(imageName: "play.rectangle", label: "Preview") })
             
             VStack {
                 ImageListView(scriptModel: scriptModel)
             }
-            .tabItem({ EditorPanelTabLabel(imageName: "magnifyingglass", label: "Images") })
+            .tabItem({ EditorPanelTabLabel(imageName: "photo.on.rectangle", label: "Images") })
             
             VStack {
                 FileListView(scriptModel: scriptModel)
             }
-            .tabItem({ EditorPanelTabLabel(imageName: "filemenu.and.cursorarrow", label: "Files") })
+            .tabItem({ EditorPanelTabLabel(imageName: "doc.on.doc", label: "Files") })
         }
+        .padding(.top, 4)
+        .background(Color(nsColor: .controlBackgroundColor))
     }
 }
 

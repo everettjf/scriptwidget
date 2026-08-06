@@ -28,9 +28,9 @@ struct EmptyListBackgroundView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 24) {
+            VStack(alignment: .leading, spacing: 28) {
                 heroSection
-                    .padding(.top, 20)
+                    .padding(.top, 16)
 
                 howItWorks
 
@@ -45,6 +45,7 @@ struct EmptyListBackgroundView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
         }
+        .background(Color(.systemGroupedBackground))
         .fullScreenCover(isPresented: $showCreate) {
             CreateGuideView()
         }
@@ -71,19 +72,34 @@ struct EmptyListBackgroundView: View {
     // MARK: - Sections
 
     private var heroSection: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Image(systemName: "sparkles.square.filled.on.square")
-                .font(.system(size: 48))
-                .foregroundStyle(
-                    LinearGradient(colors: [.purple, .blue],
-                                   startPoint: .topLeading,
-                                   endPoint: .bottomTrailing)
-                )
+        VStack(alignment: .leading, spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [.purple, .blue],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
+                Image(systemName: "sparkles.square.filled.on.square")
+                    .font(.system(size: 28, weight: .semibold))
+                    .foregroundStyle(.white)
+            }
+            .frame(width: 58, height: 58)
+            .shadow(color: .purple.opacity(0.2), radius: 12, y: 6)
+            .accessibilityHidden(true)
+
+            Text("SCRIPTWIDGET STUDIO")
+                .font(.caption2.weight(.bold))
+                .tracking(1.2)
+                .foregroundStyle(.tint)
             Text("Build widgets with JavaScript")
-                .font(.title2).bold()
+                .font(.title2.weight(.bold))
             Text("Pick a template, preview it instantly, then add it to your Home Screen. No Xcode required.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -91,21 +107,22 @@ struct EmptyListBackgroundView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("How it works")
                 .font(.headline)
-            HStack(alignment: .top, spacing: 12) {
-                OnboardingStep(number: 1,
-                               icon: "square.grid.2x2.fill",
-                               title: "Pick",
-                               detail: "Choose a ready template.")
-                OnboardingStep(number: 2,
-                               icon: "play.rectangle.fill",
-                               title: "Preview",
-                               detail: "Live preview in the editor.")
-                OnboardingStep(number: 3,
-                               icon: "rectangle.stack.badge.plus",
-                               title: "Install",
-                               detail: "Add to Home Screen.")
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .top, spacing: 10) {
+                    onboardingSteps
+                }
+                VStack(spacing: 10) {
+                    onboardingSteps
+                }
             }
         }
+    }
+
+    @ViewBuilder
+    private var onboardingSteps: some View {
+        OnboardingStep(number: 1, icon: "square.grid.2x2.fill", title: "Pick", detail: "Choose a ready template.")
+        OnboardingStep(number: 2, icon: "play.rectangle.fill", title: "Preview", detail: "Run it live as you edit.")
+        OnboardingStep(number: 3, icon: "rectangle.stack.badge.plus", title: "Install", detail: "Add it to Home Screen.")
     }
 
     private var featuredSection: some View {
@@ -138,14 +155,13 @@ struct EmptyListBackgroundView: View {
                     Image(systemName: "chevron.right").font(.caption)
                 }
                 .padding(14)
-                .background(Color.accentColor.opacity(0.12))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .background(.tint.opacity(0.12), in: .rect(cornerRadius: 14))
             }
             .buttonStyle(.plain)
 
             Text("Or tap \(Image(systemName: "plus.square")) in the top-right to create from scratch or with AI.")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
 }
@@ -166,19 +182,23 @@ struct OnboardingStep: View {
                     .frame(width: 36, height: 36)
                 Image(systemName: icon)
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.accentColor)
+                    .foregroundStyle(.tint)
             }
             Text("\(number). \(title)")
                 .font(.subheadline).bold()
             Text(detail)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .padding(12)
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
+        .overlay {
+            RoundedRectangle(cornerRadius: 14)
+                .stroke(Color(.separator).opacity(0.35), lineWidth: 0.5)
+        }
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -198,16 +218,16 @@ struct FeaturedRow: View {
                     .frame(width: 50, height: 50)
                 Image(systemName: model.iconSystemName)
                     .font(.system(size: 22))
-                    .foregroundColor(accent)
+                    .foregroundStyle(accent)
             }
             VStack(alignment: .leading, spacing: 3) {
                 Text(model.name)
                     .font(.subheadline).bold()
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                 if let summary = model.summary {
                     Text(summary)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .multilineTextAlignment(.leading)
                 }
@@ -215,15 +235,15 @@ struct FeaturedRow: View {
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.tertiary)
         }
-        .padding(12)
-        .background(Color(.systemBackground))
-        .overlay(
+        .padding(13)
+        .background(Color(.secondarySystemGroupedBackground))
+        .overlay {
             RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+                .stroke(Color(.separator).opacity(0.35), lineWidth: 0.5)
+        }
+        .clipShape(.rect(cornerRadius: 12))
     }
 
     private var accent: Color {

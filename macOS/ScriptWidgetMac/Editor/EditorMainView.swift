@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EditorMainView: View {
     
-    @SceneStorage("editorPanelLayoutMode") var panelLayoutModeVertical = true
+    @SceneStorage("editorPanelLayoutMode") private var panelLayoutModeVertical = true
     
     let scriptModel: ScriptModel
     
@@ -19,18 +19,18 @@ struct EditorMainView: View {
     
     var body: some View {
         content
-            .navigationTitle("ScriptWidget - \(scriptModel.name)")
+            .navigationTitle(scriptModel.name)
             .toolbar {
                 ToolbarItem(placement: .automatic) {
                     Button(action: {
                         panelLayoutModeVertical.toggle()
                     }) {
-                        if panelLayoutModeVertical {
-                            Image(systemName: "align.horizontal.left")
-                        } else {
-                            Image(systemName: "align.vertical.top")
-                        }
+                        Label(
+                            panelLayoutModeVertical ? "Stack Vertically" : "Place Side by Side",
+                            systemImage: panelLayoutModeVertical ? "rectangle.split.2x1" : "rectangle.split.1x2"
+                        )
                     }
+                    .help(panelLayoutModeVertical ? "Place preview below editor" : "Place preview beside editor")
                 }
                 
                 ToolbarItem(placement: .automatic) {
@@ -40,27 +40,58 @@ struct EditorMainView: View {
     }
     
     var content: some View {
-        Group {
-            if panelLayoutModeVertical {
-                HSplitView {
-                    EditorWebView(scriptModel: scriptModel)
-                        .frame(idealWidth:600)
-                    
-                    EditorPanelView(scriptModel: scriptModel)
-                        .frame(minWidth: 280, maxWidth: 380)
-                        .frame(idealHeight: 380)
-                }
-            } else {
-                VSplitView {
-                    EditorWebView(scriptModel: scriptModel)
-                        .frame(idealHeight: 600)
-                    
-                    EditorPanelView(scriptModel: scriptModel)
-                        .frame(minHeight: 300)
-                        .frame(idealHeight: 400)
+        VStack(spacing: 0) {
+            EditorWorkspaceHeader(scriptModel: scriptModel)
+            Divider()
+
+            Group {
+                if panelLayoutModeVertical {
+                    HSplitView {
+                        EditorWebView(scriptModel: scriptModel)
+                            .frame(idealWidth: 640)
+
+                        EditorPanelView(scriptModel: scriptModel)
+                            .frame(minWidth: 300, idealWidth: 360, maxWidth: 440)
+                    }
+                } else {
+                    VSplitView {
+                        EditorWebView(scriptModel: scriptModel)
+                            .frame(idealHeight: 620)
+
+                        EditorPanelView(scriptModel: scriptModel)
+                            .frame(minHeight: 280, idealHeight: 380)
+                    }
                 }
             }
         }
+    }
+}
+
+private struct EditorWorkspaceHeader: View {
+    let scriptModel: ScriptModel
+
+    var body: some View {
+        HStack(spacing: 10) {
+            NameAutoImageView(
+                name: scriptModel.name,
+                colors: getGradientColorsWithString(string: scriptModel.name),
+                size: 30
+            )
+            VStack(alignment: .leading, spacing: 1) {
+                Text(scriptModel.name)
+                    .font(.headline)
+                Label("Saved automatically", systemImage: "checkmark.icloud")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Text("⌘R Preview")
+                .font(.caption.monospaced())
+                .foregroundStyle(.tertiary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 9)
+        .background(.bar)
     }
 }
 

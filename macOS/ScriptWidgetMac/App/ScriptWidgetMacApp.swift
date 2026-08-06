@@ -15,9 +15,11 @@ struct ScriptWidgetMacApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
-                .frame(minWidth: 400,minHeight: 300)
-                .frame(idealWidth: 800, idealHeight: 600)
+                .frame(minWidth: 760, minHeight: 520)
         }
+        .defaultSize(width: 1180, height: 760)
+        .windowResizability(.contentMinSize)
+        .windowToolbarStyle(.unified)
         .commands {
             CommandGroup(after: .newItem) {
                 Button("Generate Widget with AI...") {

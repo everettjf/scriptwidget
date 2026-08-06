@@ -9,21 +9,26 @@ import SwiftUI
 
 
 struct WidgetRowImageView: View {
-    var model: ScriptModel
+    let model: ScriptModel
     
     var body: some View {
-        NameAutoImageView(name: model.name, colors: getGradientColorsWithString(string: model.name), size: 20)
+        NameAutoImageView(name: model.name, colors: getGradientColorsWithString(string: model.name), size: 28)
     }
 }
 
 struct WidgetRowTextView: View {
-    var model: ScriptModel
+    let model: ScriptModel
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 2) {
+        VStack(alignment: .leading, spacing: 1) {
             Text(model.name)
+                .fontWeight(.medium)
+                .lineLimit(1)
+            Text(model.summary ?? "JavaScript widget")
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
         }
-        .frame(height:20)
     }
 }
 
@@ -68,16 +73,17 @@ struct ICloudStatusBadge: View {
 }
 
 struct WidgetRowView: View {
-
-    var model: ScriptModel
+    let model: ScriptModel
 
     var body: some View {
-        HStack {
+        HStack(spacing: 9) {
             WidgetRowImageView(model: model)
             WidgetRowTextView(model: model)
             Spacer()
             ICloudStatusBadge(model: model)
         }
+        .padding(.vertical, 3)
+        .accessibilityElement(children: .combine)
     }
 }
 
