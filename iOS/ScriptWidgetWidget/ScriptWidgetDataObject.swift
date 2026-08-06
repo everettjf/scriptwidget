@@ -66,21 +66,28 @@ class ScriptWidgetDataObject : ObservableObject {
             return
         }
         
-        let widgetSizeString: String
-        if #available(iOSApplicationExtension 27.0, *), self.widgetFamily == .systemExtraLargePortrait {
-            widgetSizeString = "extraLargePortrait"
-        } else {
+        let standardWidgetSizeString: String = {
             switch self.widgetFamily {
-            case .systemLarge: widgetSizeString = "large"
-            case .systemMedium: widgetSizeString = "medium"
-            case .systemSmall: widgetSizeString = "small"
-            case .systemExtraLarge: widgetSizeString = "extraLarge"
-            case .accessoryInline: widgetSizeString = "accessoryInline"
-            case .accessoryCircular: widgetSizeString = "accessoryCircular"
-            case .accessoryRectangular: widgetSizeString = "accessoryRectangular"
-            default: widgetSizeString = "small"
+            case .systemLarge: return "large"
+            case .systemMedium: return "medium"
+            case .systemSmall: return "small"
+            case .systemExtraLarge: return "extraLarge"
+            case .accessoryInline: return "accessoryInline"
+            case .accessoryCircular: return "accessoryCircular"
+            case .accessoryRectangular: return "accessoryRectangular"
+            default: return "small"
             }
-        }
+        }()
+        let widgetSizeString: String
+        #if compiler(>=6.4)
+            if #available(iOSApplicationExtension 27.0, *), self.widgetFamily == .systemExtraLargePortrait {
+                widgetSizeString = "extraLargePortrait"
+            } else {
+                widgetSizeString = standardWidgetSizeString
+            }
+        #else
+            widgetSizeString = standardWidgetSizeString
+        #endif
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : widgetSizeString,
             "widget-param": scriptParameter,

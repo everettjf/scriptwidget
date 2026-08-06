@@ -18,9 +18,11 @@ struct ScriptWidgetMainWidget: Widget {
             .systemExtraLarge,
             .accessoryInline, .accessoryCircular, .accessoryRectangular,
         ]
-        if #available(iOSApplicationExtension 27.0, *) {
-            families.append(.systemExtraLargePortrait)
-        }
+        #if compiler(>=6.4)
+            if #available(iOSApplicationExtension 27.0, *) {
+                families.append(.systemExtraLargePortrait)
+            }
+        #endif
         return families
     }
 
