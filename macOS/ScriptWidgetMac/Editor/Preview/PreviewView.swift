@@ -93,7 +93,7 @@ struct ScriptCodePreviewConsoleView : View {
 
 
 final class ScriptCodeRunnerDataObject: ObservableObject {
-    private struct RenderOutput {
+    struct RenderOutput {
         let rootElement: ScriptWidgetRuntimeElement
         let runtime: ScriptWidgetRuntime
         let errorMessage: String?
@@ -174,7 +174,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
         renderQueue.asyncAfter(deadline: .now() + (immediate ? 0 : 0.3), execute: work)
     }
 
-    private static func render(
+    static func render(
         package: ScriptWidgetPackage,
         widgetSizeType: Int,
         scriptParameter: String
