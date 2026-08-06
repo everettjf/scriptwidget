@@ -43,7 +43,7 @@ class ImageDataObject: ObservableObject {
 struct ImageListView: View {
     
     let scriptModel: ScriptModel
-    @ObservedObject var dataObject: ImageDataObject
+    @StateObject private var dataObject: ImageDataObject
     
     @State private var showingAddImage = false
     @State private var previewingImage: ImageModel?
@@ -55,7 +55,7 @@ struct ImageListView: View {
     
     init(scriptModel: ScriptModel) {
         self.scriptModel = scriptModel
-        self.dataObject = ImageDataObject(model: scriptModel)
+        _dataObject = StateObject(wrappedValue: ImageDataObject(model: scriptModel))
         self.size = 100
         self.columns = [
             GridItem(.adaptive(minimum: self.size, maximum: self.size), spacing: 5),
@@ -64,46 +64,52 @@ struct ImageListView: View {
 
     
     var body: some View {
-        VStack {
-            if dataObject.images.count == 0 {
-                Text("No image in current widget")
-                
+        VStack(spacing: 0) {
+            HStack {
+                Text("Assets")
+                    .font(.headline)
+                Spacer()
                 Button {
-                    self.showingAddImage.toggle()
+                    showingAddImage = true
                 } label: {
-                    HStack {
-                        Image(systemName: "plus.rectangle.on.rectangle")
-                        Text("Add Image")
-                    }
-                }
-            } else {
-                HStack {
-                    Spacer()
-                    Button {
-                        self.showingAddImage.toggle()
-                    } label: {
-                        HStack {
-                            Image(systemName: "plus.rectangle.on.rectangle")
-                            Text("Add Image")
-                        }
-                    }
+                    Label("Add Image", systemImage: "plus")
                 }
             }
-            
-            ScrollView(.vertical) {
-                LazyVGrid(columns: columns) {
+            .padding(12)
+            .background(.bar)
+
+            ScrollView {
+                if dataObject.images.isEmpty {
+                    VStack(spacing: 8) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.largeTitle)
+                        Text("No images yet").font(.headline)
+                        Text("Add an image to use it in this widget.")
+                            .font(.caption)
+                    }
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 50)
+                }
+
+                LazyVGrid(columns: columns, spacing: 12) {
                     ForEach(dataObject.images) { item in
-                        VStack {
+                        VStack(alignment: .leading, spacing: 6) {
                             AsyncImage(url: item.path) { image in
                                 image.resizable()
-                                    .aspectRatio(contentMode: .fit)
+                                    .aspectRatio(contentMode: .fill)
                                     .frame(height: size)
-                                    .cornerRadius(5)
+                                    .clipShape(.rect(cornerRadius: 10))
                             } placeholder: {
                                 ProgressView()
+                                    .frame(maxWidth: .infinity, minHeight: size)
                             }
                             Text(item.name)
+                                .font(.caption)
+                                .lineLimit(1)
                         }
+                        .padding(8)
+                        .background(.quaternary.opacity(0.35), in: .rect(cornerRadius: 12))
                         .contextMenu {
                             Button {
                                 self.selectedImageName = item.name
@@ -149,9 +155,8 @@ struct ImageListView: View {
                     
                     }
                 }
+                .padding(12)
             }
-            .padding(.top)
-            .padding(.bottom)
         }
         .sheet(isPresented: $showingAddImage) {
             ImageAddView(scriptModel: scriptModel)

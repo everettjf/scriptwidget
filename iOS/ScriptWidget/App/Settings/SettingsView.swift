@@ -12,8 +12,7 @@ import CoreLocation
 import UIKit
 
 struct SettingsView: View {
-    
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @State private var showingAlert = false
     @State private var alertMessage = ""
     
@@ -24,116 +23,71 @@ struct SettingsView: View {
     
     var body: some View {
         content
-            .alert(isPresented: $showingAlert) {
-                Alert(title: Text("Notification"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+            .alert("Notification", isPresented: $showingAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text(alertMessage)
             }
     }
 
     var content: some View {
-        NavigationView {
-            ScrollView(.vertical, showsIndicators: false) {
-                VStack(spacing: 20) {
-                    
-                    GroupBox (label: SettingsLabelView(title: "ScriptWidget", image: "info.circle")) {
-                        NavigationLink(destination: SettingTemplatesView()) {
-                            SettingsTextRowView(name: "Templates", content: "")
-                        }
+        NavigationStack {
+            Form {
+                Section {
+                    NavigationLink(destination: SettingTemplatesView()) {
+                        Label("Templates", systemImage: "rectangle.stack")
                     }
-
-                    GroupBox (label: SettingsLabelView(title: "AI", image: "sparkles")) {
-                        NavigationLink(destination: SettingAIView()) {
-                            SettingsTextRowView(name: "AI Generate", content: "")
-                        }
+                    NavigationLink(destination: SettingAIView()) {
+                        Label("AI Providers", systemImage: "sparkles")
                     }
-
-
-                    GroupBox (label: SettingsLabelView(title: "Refresh", image: "paintbrush")) {
-                        Divider().padding(.vertical, 4)
-
-                        HStack {
-                            Text("Force all widgets to re-run their JavaScript code. This is useful after you've made changes to the code.")
-                                .padding(.vertical, 8)
-                                .font(.footnote)
-                                .multilineTextAlignment(.leading)
-                            
-                            Spacer()
-                            
-                            Button {
-                                WidgetCenter.shared.reloadAllTimelines()
-                                
-                                showAlert("Widgets are refreshed :)")
-                            } label: {
-                                Image(systemName: "paintbrush")
-                                    .font(.caption)
-                                Text("Refresh")
-                                    .font(.caption)
-                                    .frame(width: 50)
-                            }
-                            .buttonStyle(.bordered)
-                        }
-                    }
-                    
-                    
-                    GroupBox (label: SettingsLabelView(title: "Export & Import", image: "info.circle")) {
-                        
-                        NavigationLink(destination: ExportView()) {
-                            SettingsTextRowView(name: "Export", content: "")
-                        }
-                        NavigationLink(destination: ImportView()) {
-                            SettingsTextRowView(name: "Import", content: "")
-                        }
-                    }
-                    
-                    
-                    GroupBox (label: SettingsLabelView(title: "iCloud", image: "icloud")) {
-                        Divider().padding(.vertical, 4)
-                        
-                        SettingsICloudView()
-                    }
-
-                    GroupBox (label: SettingsLabelView(title: "Health", image: "heart")) {
-                        Divider().padding(.vertical, 4)
-
-                        SettingsHealthView()
-                    }
-
-                    GroupBox (label: SettingsLabelView(title: "Location", image: "location")) {
-                        Divider().padding(.vertical, 4)
-
-                        SettingsLocationView()
-                    }
-                    
-                    GroupBox (label: SettingsLabelView(title: "Application", image: "appclip")) {
-                        
-                        NavigationLink(destination: AppIconsView()) {
-                            SettingsTextRowView(name: "App Icons", content: "")
-                        }
-                        SettingsLinkRowView(name: "Website", label: "https://xnu.app/scriptwidget", urlString: "https://xnu.app/scriptwidget")
-                        SettingsLinkRowView(name: "Discord", label: "", urlString: "https://discord.gg/eGzEaP6TzR")
-                        SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
-                        SettingsLinkRowView(name: "Special Thanks", label: "Reina", urlString: "https://github.com/Reinachan")
-                        SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())
-                    }
-
-                    GroupBox (label: SettingsLabelView(title: "More Apps", image: "square.grid.2x2")) {
-                        SettingsLinkRowView(name: "BSSID SCAN", label: "App Store", urlString: "https://apps.apple.com/us/app/bssid-scan/id1442586100")
-                        SettingsLinkRowView(name: "CountMyDays", label: "App Store", urlString: "https://apps.apple.com/us/app/countmydays-days-counter/id6753280745")
-                        SettingsLinkRowView(name: "Remote Keyboard", label: "App Store", urlString: "https://apps.apple.com/us/app/remote-keyboard/id1474458879")
-                    }
-                    
+                } header: {
+                    Text("Studio")
                 }
-                .navigationBarTitle(Text("Settings"), displayMode: .large)
-                .toolbar {
-                    ToolbarItem(placement: .navigationBarTrailing) {
-                        Button(action: {
-                            presentationMode.wrappedValue.dismiss()
-                        }) {
-                            Label("Close", systemImage: "xmark")
-                                .labelStyle(.iconOnly)
-                        }
+
+                Section {
+                    Button {
+                        WidgetCenter.shared.reloadAllTimelines()
+                        showAlert("All widget timelines were refreshed.")
+                    } label: {
+                        Label("Refresh All Widgets", systemImage: "arrow.clockwise")
                     }
+                    NavigationLink(destination: ExportView()) {
+                        Label("Export Scripts", systemImage: "square.and.arrow.up")
+                    }
+                    NavigationLink(destination: ImportView()) {
+                        Label("Import Scripts", systemImage: "square.and.arrow.down")
+                    }
+                } header: {
+                    Text("Library")
+                } footer: {
+                    Text("Refresh after editing scripts outside the app or when a widget appears stale.")
                 }
-                .padding()
+
+                Section("iCloud") { SettingsICloudView() }
+                Section("Health") { SettingsHealthView() }
+                Section("Location") { SettingsLocationView() }
+
+                Section("Application") {
+                    NavigationLink(destination: AppIconsView()) {
+                        Label("App Icon", systemImage: "app.badge")
+                    }
+                    SettingsLinkRowView(name: "Website", label: "", urlString: "https://xnu.app/scriptwidget")
+                    SettingsLinkRowView(name: "Discord", label: "", urlString: "https://discord.gg/eGzEaP6TzR")
+                    SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
+                    SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())
+                }
+
+                Section("More Apps") {
+                    SettingsLinkRowView(name: "BSSID SCAN", label: "App Store", urlString: "https://apps.apple.com/us/app/bssid-scan/id1442586100")
+                    SettingsLinkRowView(name: "CountMyDays", label: "App Store", urlString: "https://apps.apple.com/us/app/countmydays-days-counter/id6753280745")
+                    SettingsLinkRowView(name: "Remote Keyboard", label: "App Store", urlString: "https://apps.apple.com/us/app/remote-keyboard/id1474458879")
+                }
+            }
+            .navigationTitle("Settings")
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
             }
         }
     }

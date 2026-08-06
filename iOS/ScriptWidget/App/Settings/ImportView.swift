@@ -10,46 +10,48 @@ struct ImportView: View {
     @State private var logMessages: [String] = []
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Import button and progress bar
-            VStack {
-                Button(action: {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                Label("Restore your widget library", systemImage: "archivebox")
+                    .font(.title3.bold())
+                Text("Choose a ScriptWidget ZIP archive. Import activity and any conflicts will be shown below.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Button {
                     showFilePicker = true
-                }) {
-                    Text("Import")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
+                } label: {
+                    Label(importSucceeded ? "Import Complete" : "Choose Archive", systemImage: importSucceeded ? "checkmark.circle.fill" : "doc.zipper")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(isImporting || importSucceeded ? Color.gray : Color.green)
-                        .cornerRadius(15)
                 }
-                .padding(.horizontal, 20)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(isImporting || importSucceeded)
-                
+
                 ProgressView(value: progress)
-                    .progressViewStyle(LinearProgressViewStyle(tint: .green))
-                    .scaleEffect(1.5)
-                    .padding(.top, 10)
-                
+                    .tint(.indigo)
+
                 Text(statusMessage)
                     .font(.caption)
-                    .padding(.top, 5)
+                    .foregroundStyle(.secondary)
             }
-            
-            // Modify the log list to take up more space
+            .padding()
+
             List {
-                ForEach(logMessages, id: \.self) { message in
-                    Text(message)
-                        .font(.caption)
+                Section("Activity") {
+                    if logMessages.isEmpty {
+                        Label("Import activity will appear here", systemImage: "clock")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(logMessages, id: \.self) { message in
+                        Label(message, systemImage: "checkmark.circle")
+                            .font(.caption)
+                    }
                 }
             }
-            .frame(maxHeight: .infinity)
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(10)
+            .listStyle(.insetGrouped)
         }
-        .padding()
+        .navigationTitle("Import Scripts")
         .fileImporter(
             isPresented: $showFilePicker,
             allowedContentTypes: [UTType.zip],

@@ -32,22 +32,37 @@ struct FileListRowView: View {
     
     var body: some View {
         NavigationLink(destination: FileDetailView(scriptModel: scriptModel, fileModel: fileModel)) {
-            Text(fileModel.relativePath)
+            Label {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(fileModel.name)
+                        .fontWeight(.medium)
+                    Text(fileModel.relativePath)
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } icon: {
+                Image(systemName: "doc.text")
+                    .foregroundStyle(.tint)
+            }
         }
     }
 }
 
 struct FileListView: View {
-    @ObservedObject var data: FileListDataObject
+    @StateObject private var data: FileListDataObject
     
     
     init(model: ScriptModel) {
-        self.data = FileListDataObject(model: model)
+        _data = StateObject(wrappedValue: FileListDataObject(model: model))
     }
     
     var body: some View {
-        VStack {
-            List {
+        List {
+            Section("Package Files") {
+                if data.files.isEmpty {
+                    Label("No additional files", systemImage: "doc")
+                        .foregroundStyle(.secondary)
+                }
                 ForEach(data.files) { file in
                     FileListRowView(
                         scriptModel: data.model,
@@ -59,12 +74,17 @@ struct FileListView: View {
         .onAppear(perform: {
             self.data.reload()
         })
-        .navigationBarTitle(Text(LocalizedStringKey("Files")), displayMode: .inline)
-        .navigationBarItems(trailing: HStack {
-            NavigationLink(destination: FileCreateView(scriptModel: data.model)) {
-                Image(systemName: "plus")
+        .listStyle(.insetGrouped)
+        .navigationTitle("Files")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                NavigationLink(destination: FileCreateView(scriptModel: data.model)) {
+                    Label("New File", systemImage: "plus")
+                        .labelStyle(.iconOnly)
+                }
             }
-        })
+        }
     }
 }
 

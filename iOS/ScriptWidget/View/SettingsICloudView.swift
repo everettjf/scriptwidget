@@ -8,55 +8,47 @@
 import SwiftUI
 
 struct SettingsICloudView: View {
-    
-    func getText() -> Text {
-        let icloudEnable = sharedScriptManager.isICloudAvaliable()
-        if !icloudEnable {
-            return Text("iCloud is not enabled. So scripts will store to app's private sandbox and can not eazy export. It is recommended to enable iCloud, since you could directly open or edit scripts in system Files app.")
-        }
-        
-        let sandboxCount = ScriptManager.getSandboxFileCount()
-        if sandboxCount > 0 {
-            return Text("iCloud storage is enabled but there are some older files that still needs to be moved to iCloud. Press \"MOVE\" to move those files to iCloud. This problem exists when you not enable iCloud sometimes previously.")
-        }
-        
-        return Text("iCloud is enabled, you could directly open or edit scripts in system Files app.")
+    private var isICloudAvailable: Bool {
+        sharedScriptManager.isICloudAvaliable()
     }
-    
+
+    private var sandboxFileCount: Int {
+        ScriptManager.getSandboxFileCount()
+    }
+
     var body: some View {
-        VStack(alignment: .leading) {
-            HStack(spacing: 0) {
-                self.getText()
-                    .padding(.vertical, 8)
-                    .layoutPriority(1)
-                    .font(.footnote)
-                    .multilineTextAlignment(.leading)
-                
-                if sharedScriptManager.isICloudAvaliable() && ScriptManager.getSandboxFileCount() > 0 {
-                    CountDownButton(text: "MOVE", waitSeconds: 2) {
-                        if ScriptManager.moveSandboxFilesToICloud() {
-                            
-                        } else {
-                            
-                        }
-                    }
+        VStack(alignment: .leading, spacing: 10) {
+            Label(isICloudAvailable ? "iCloud Drive Available" : "Using Local Storage",
+                  systemImage: isICloudAvailable ? "icloud.fill" : "internaldrive")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(isICloudAvailable ? Color.accentColor : Color.secondary)
+
+            Text(statusMessage)
+                .font(.footnote)
+                .foregroundStyle(.secondary)
+
+            if isICloudAvailable && sandboxFileCount > 0 {
+                CountDownButton(text: "Move \(sandboxFileCount) Local File\(sandboxFileCount == 1 ? "" : "s")", waitSeconds: 2) {
+                    _ = ScriptManager.moveSandboxFilesToICloud()
                 }
             }
-            
-            if sharedScriptManager.isICloudAvaliable() {
-                HStack(spacing: 0) {
-                    Text("If you modified scripts directly on iCloud on other devices, you could request iCloud to update all the scripts.")
-                        .padding(.vertical, 8)
-                        .layoutPriority(1)
-                        .font(.footnote)
-                        .multilineTextAlignment(.leading)
-                    
-                    CountDownButton(text: "UPDATE", waitSeconds: 10) {
-                        sharedScriptManager.requestUpdateICloudScripts()
-                    }
+
+            if isICloudAvailable {
+                CountDownButton(text: "Sync from iCloud", waitSeconds: 10) {
+                    sharedScriptManager.requestUpdateICloudScripts()
                 }
             }
         }
+    }
+
+    private var statusMessage: String {
+        guard isICloudAvailable else {
+            return "Scripts are stored inside ScriptWidget. Enable iCloud Drive to edit and manage them from the Files app."
+        }
+        if sandboxFileCount > 0 {
+            return "iCloud Drive is ready. Move your remaining local files to keep the complete library available across devices."
+        }
+        return "Scripts are stored in iCloud Drive and can be opened from the Files app. Sync after editing them on another device."
     }
 }
 

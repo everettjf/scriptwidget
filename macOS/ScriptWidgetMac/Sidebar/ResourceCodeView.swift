@@ -65,52 +65,40 @@ struct ResourceCodeListView : View {
     @ObservedObject var store: ResourceCodeStore
     
     var body: some View {
-        if resourceType == "api" {
-            contentAPIs
-        } else if resourceType == "component" {
-            contentComponents
-        } else if resourceType == "template" {
-            contentTemplates
-        } else {
-            Text("Unknown resource type -o-")
-        }
-    }
-    
-    var contentAPIs: some View {
         List {
-            ForEach(store.apiModels) { item in
+            ForEach(models) { item in
                 ResourceCodeNavigationLink(item: item)
             }
         }
+        .navigationTitle(title)
+        .listStyle(.inset)
     }
-    
-    var contentComponents: some View {
-        List {
-            ForEach(store.componentModels) { item in
-                ResourceCodeNavigationLink(item: item)
-            }
+
+    private var models: [ScriptModel] {
+        switch resourceType {
+        case "api": return store.apiModels
+        case "component": return store.componentModels
+        case "template": return store.templateModels
+        default: return []
         }
     }
-    
-    var contentTemplates: some View {
-        List {
-            ForEach(store.templateModels) { item in
-                ResourceCodeNavigationLink(item: item)
-            }
+
+    private var title: String {
+        switch resourceType {
+        case "api": return "APIs"
+        case "component": return "Components"
+        case "template": return "Templates"
+        default: return "Resources"
         }
     }
 }
 
 struct ResourceCodeView: View {
     let resourceType: String
-    @StateObject var store = ResourceCodeStore()
+    @StateObject private var store = ResourceCodeStore()
     
     var body: some View {
-        NavigationView {
-            ResourceCodeListView(resourceType: resourceType,store: store)
-            
-            Text("Resources \(resourceType) :)")
-        }
+        ResourceCodeListView(resourceType: resourceType, store: store)
     }
 }
 

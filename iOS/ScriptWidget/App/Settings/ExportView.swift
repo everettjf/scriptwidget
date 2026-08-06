@@ -11,47 +11,48 @@ struct ExportView: View {
     @State private var showShareSheet = false
     
     var body: some View {
-        VStack(spacing: 20) {
-            // Export button and progress bar
-            VStack {
-                Button(action: {
+        VStack(spacing: 0) {
+            VStack(alignment: .leading, spacing: 16) {
+                Label("Back up your widget library", systemImage: "archivebox")
+                    .font(.title3.bold())
+                Text("Package every script and its assets into one portable ZIP archive for sharing or safekeeping.")
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+
+                Button {
                     startExport()
-                }) {
-                    Text("Export")
-                        .font(.title2)
-                        .fontWeight(.bold)
-                        .foregroundColor(.white)
+                } label: {
+                    Label(exportSucceeded ? "Export Complete" : "Create Archive", systemImage: exportSucceeded ? "checkmark.circle.fill" : "square.and.arrow.up")
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(isExporting || exportSucceeded ? Color.gray : Color.blue) // Change background color when disabled
-                        .cornerRadius(15)
                 }
-                .padding(.horizontal, 20)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
                 .disabled(isExporting || exportSucceeded)
-                
-                // Always show progress view
+
                 ProgressView(value: progress)
-                    .progressViewStyle(LinearProgressViewStyle(tint: .blue))
-                    .scaleEffect(1.5)
-                    .padding(.top, 10)
-                
+                    .tint(.indigo)
+
                 Text(statusMessage)
                     .font(.caption)
-                    .padding(.top, 5)
+                    .foregroundStyle(.secondary)
             }
-            
-            // Move log list outside the VStack and increase its height
+            .padding()
+
             List {
-                ForEach(logMessages, id: \.self) { message in
-                    Text(message)
-                        .font(.caption)
+                Section("Activity") {
+                    if logMessages.isEmpty {
+                        Label("Export activity will appear here", systemImage: "clock")
+                            .foregroundStyle(.secondary)
+                    }
+                    ForEach(logMessages, id: \.self) { message in
+                        Label(message, systemImage: "checkmark.circle")
+                            .font(.caption)
+                    }
                 }
             }
-            .frame(maxHeight: .infinity) // Allow the list to expand and fill available space
-            .background(Color.gray.opacity(0.1))
-            .cornerRadius(10)
+            .listStyle(.insetGrouped)
         }
-        .padding()
+        .navigationTitle("Export Scripts")
         .sheet(isPresented: $showShareSheet, content: {
             if let fileURL = exportedFileURL {
                 ActivityViewController(activityItems: [fileURL])

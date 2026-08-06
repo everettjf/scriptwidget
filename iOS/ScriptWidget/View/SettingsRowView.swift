@@ -6,7 +6,6 @@
 //
 
 import SwiftUI
-import UIKit
 
 struct SettingsLinkRowView: View {
     
@@ -17,26 +16,18 @@ struct SettingsLinkRowView: View {
     var urlString: String
     
     var body: some View {
-        VStack {
-            Divider().padding(.vertical, 4)
-            
-            Button(action: {
-                if let url = URL(string: urlString) {
-                    UIApplication.shared.open(url)
-                }
-            }) {
-                HStack {
-                    Text(LocalizedStringKey(name))
-                    
-                    Spacer()
-                    
+        Link(destination: URL(string: urlString)!) {
+            HStack {
+                Text(LocalizedStringKey(name))
+                Spacer()
+                if !label.isEmpty {
                     Text(LocalizedStringKey(label))
-                    
-                    Image(systemName: "arrow.up.right.square")
-                        .foregroundColor(.blue)
+                        .foregroundStyle(.secondary)
                 }
+                Image(systemName: "arrow.up.right")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
-
         }
     }
 }
@@ -48,19 +39,11 @@ struct SettingsTextRowView: View {
     var content: String
     
     var body: some View {
-        VStack {
-            Divider().padding(.vertical, 4)
-
-            HStack {
-                Text(LocalizedStringKey(name))
-                
-                Spacer()
-                
-                Text(content)
-                    
-                Image(systemName: "arrow.up.right.square")
-                    .foregroundColor(.blue)
-            }
+        HStack {
+            Text(LocalizedStringKey(name))
+            Spacer()
+            Text(content)
+                .foregroundStyle(.secondary)
         }
     }
 }

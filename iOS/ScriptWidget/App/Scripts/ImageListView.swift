@@ -49,7 +49,7 @@ class ImageDataObject: ObservableObject {
 struct ImageListView: View {
     @State private var previewingImage: ImageModel?
     @State private var isAddingImage: Bool = false
-    @ObservedObject var dataObject: ImageDataObject
+    @StateObject private var dataObject: ImageDataObject
     
     let size: CGFloat
     let columns: [GridItem]
@@ -62,45 +62,69 @@ struct ImageListView: View {
         self.columns = [
             GridItem(.adaptive(minimum: size), spacing: 5),
         ]
-        self.dataObject = ImageDataObject(model: model)
+        _dataObject = StateObject(wrappedValue: ImageDataObject(model: model))
         self.title = "Images"
     }
     
     var body: some View {
-        ScrollView(.vertical) {
-            
-            LazyVGrid(columns: columns) {
+        ScrollView {
+            LazyVGrid(columns: columns, spacing: 16) {
+                if dataObject.images.isEmpty {
+                    VStack(spacing: 10) {
+                        Image(systemName: "photo.on.rectangle.angled")
+                            .font(.largeTitle)
+                        Text("No images yet")
+                            .font(.headline)
+                        Text("Add an image to use it from your widget script.")
+                            .font(.caption)
+                            .multilineTextAlignment(.center)
+                    }
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                }
                 ForEach(dataObject.images) { item in
                     Button(action: {
                         self.previewingImage = item
                     }) {
                         
-                        VStack {
+                        VStack(alignment: .leading, spacing: 8) {
                             WebImage(url: item.path)
                                 .placeholder {
-                                    Rectangle().foregroundColor(.gray)
+                                    RoundedRectangle(cornerRadius: 12)
+                                        .fill(.quaternary)
                                 }
                                 .resizable()
-                                .aspectRatio(contentMode: .fit)
+                                .aspectRatio(contentMode: .fill)
                                 .frame(height: size)
-                                .cornerRadius(5)
+                                .frame(maxWidth: .infinity)
+                                .clipShape(.rect(cornerRadius: 12))
                             Text(item.name)
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
                         }
+                        .padding(10)
+                        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
                     }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding()
+        }
+        .background(Color(.systemGroupedBackground))
+        .navigationTitle(title)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button {
+                    isAddingImage = true
+                } label: {
+                    Label("Add Image", systemImage: "plus")
+                        .labelStyle(.iconOnly)
                 }
             }
         }
-        .padding(.top)
-        .padding(.bottom)
-        .navigationBarTitle(Text(LocalizedStringKey(self.title)), displayMode: .inline)
-        .navigationBarItems(trailing: Button(action: {
-            self.isAddingImage.toggle()
-        }, label: {
-            Image(systemName: "plus.square")
-                .padding(.leading, 30)
-                .padding(.top, 5)
-                .padding(.bottom, 5)
-        }).accessibilityLabel(Text("Add Image")))
         .sheet(isPresented: $isAddingImage) {
             PhotoPickerView(scriptModel: dataObject.model)
         }

@@ -33,18 +33,34 @@ class FileListDataObject: ObservableObject {
 }
 
 struct FileListView: View {
-    @ObservedObject var data: FileListDataObject
+    @StateObject private var data: FileListDataObject
     
     init(scriptModel: ScriptModel) {
-        self.data = FileListDataObject(scriptModel: scriptModel)
+        _data = StateObject(wrappedValue: FileListDataObject(scriptModel: scriptModel))
     }
     
     var body: some View {
         List {
+            if data.files.isEmpty {
+                Label("No additional files", systemImage: "doc")
+                    .foregroundStyle(.secondary)
+            }
             ForEach(data.files) { file in
-                Text(file.relativePath)
+                Label {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text(file.name).fontWeight(.medium)
+                        Text(file.relativePath)
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                } icon: {
+                    Image(systemName: "doc.text")
+                        .foregroundStyle(.tint)
+                }
+                .padding(.vertical, 2)
             }
         }
+        .listStyle(.inset)
         .refreshable {
             self.data.reload()
         }

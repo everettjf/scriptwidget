@@ -7,28 +7,28 @@
 
 import SwiftUI
 struct ScriptCodePreviewView: View {
-    @Environment(\.presentationMode) var presentationMode
-    @SceneStorage("preview-size-type") var widgetSizeType = 0
+    @Environment(\.dismiss) private var dismiss
+    @SceneStorage("preview-size-type") private var widgetSizeType = 0
     
-    @State var isDebugMode = false
-    @State var showAlert = false
-    @State var showAlertMessage = ""
+    @State private var isDebugMode = false
+    @State private var showAlert = false
+    @State private var showAlertMessage = ""
     
-    @State var scriptParameter = ""
-    @State var scriptParameterApplied = ""
+    @State private var scriptParameter = ""
+    @State private var scriptParameterApplied = ""
     @FocusState private var scriptParameterIsFocused: Bool
     
-    @ObservedObject var consoleData = ScriptCodePreviewConsoleDataObject()
+    @StateObject private var consoleData = ScriptCodePreviewConsoleDataObject()
   
-    @ObservedObject var state: ScriptCodePreviewDataObject
+    @StateObject private var state: ScriptCodePreviewDataObject
     
     @Binding var filePath: URL
     
     init(model: ScriptModel, filePath: Binding<URL>) {
 //        print("PreviewView init model-id: \(model.id)  file-path: \(filePath.wrappedValue)")
         
-        self._filePath = filePath
-        self.state = ScriptCodePreviewDataObject(model: model, filePath: filePath.wrappedValue, widgetSizeType: 0, scriptParameter: "")
+        _filePath = filePath
+        _state = StateObject(wrappedValue: ScriptCodePreviewDataObject(model: model, filePath: filePath.wrappedValue, widgetSizeType: 0, scriptParameter: ""))
     }
 
     var body: some View {
@@ -51,13 +51,17 @@ struct ScriptCodePreviewView: View {
             .padding(.bottom, 5)
             
             ZStack {
-                Rectangle()
-                    .fill(Color.secondary)
-                    .opacity(0.2)
+                Color(.secondarySystemGroupedBackground)
                 
                 preview
             }
-            .frame(height: WidgetSizeHelper.size(Int32(self.widgetSizeType)).height + 5)
+            .frame(minHeight: WidgetSizeHelper.size(Int32(widgetSizeType)).height + 48)
+            .overlay(alignment: .bottomTrailing) {
+                Text(previewSizeLabel)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.secondary)
+                    .padding(8)
+            }
             
             Form {
                 Section("Config") {
@@ -75,19 +79,25 @@ struct ScriptCodePreviewView: View {
         HStack {
             Spacer()
             
-            Text("Preview (\(state.previewStatus))")
-                .font(.body)
-                .fontWeight(.bold)
+            VStack(spacing: 2) {
+                Text("Widget Preview")
+                    .font(.headline)
+                Text(state.previewStatus)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
             
             Spacer()
             
             Button (action: {
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             }, label: {
                 Image(systemName: "xmark")
             })
         }
-        .padding()
+        .padding(.horizontal)
+        .padding(.vertical, 10)
+        .background(.bar)
     }
     
     var preview: some View {
@@ -105,15 +115,16 @@ struct ScriptCodePreviewView: View {
             width: WidgetSizeHelper.size(Int32(self.widgetSizeType)).width,
             height: WidgetSizeHelper.size(Int32(self.widgetSizeType)).height
         )
-        .background(UITraitCollection.current.userInterfaceStyle == .dark ? Color.black : Color.white)
-        .cornerRadius(widgetSizeType == 5 ? (WidgetSizeHelper.size(Int32(self.widgetSizeType)).height / 2) :  10)
+        .background(Color(.systemBackground))
+        .clipShape(.rect(cornerRadius: widgetSizeType == 5 ? (WidgetSizeHelper.size(Int32(widgetSizeType)).height / 2) : 16))
+        .shadow(color: .black.opacity(0.12), radius: 16, y: 8)
     }
     
     
     
     var config: some View {
         Group {
-            Picker(selection: $widgetSizeType, label:Text("Preview Size")) {
+            Picker(selection: $widgetSizeType, label: Label("Preview Size", systemImage: "rectangle.resize")) {
                 Text("Small").tag(0)
                 Text("Medium").tag(1)
                 Text("Large").tag(2)
@@ -127,7 +138,9 @@ struct ScriptCodePreviewView: View {
 
                 self.state.changeWidgetSizeType(value)
             }
-            Toggle("Debug Border", isOn:$isDebugMode)
+            Toggle(isOn: $isDebugMode) {
+                Label("Debug Borders", systemImage: "square.dashed")
+            }
             
             HStack {
                 TextField("Parameter", text: $scriptParameter)
@@ -143,6 +156,11 @@ struct ScriptCodePreviewView: View {
                 }
             }
         }
+    }
+
+    private var previewSizeLabel: String {
+        let size = WidgetSizeHelper.size(Int32(widgetSizeType))
+        return "\(Int(size.width)) × \(Int(size.height))"
     }
     
     

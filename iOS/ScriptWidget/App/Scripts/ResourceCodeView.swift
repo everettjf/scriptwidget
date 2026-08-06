@@ -9,10 +9,7 @@ import SwiftUI
 
 struct ResourceCodeView: View {
     
-    @Environment(\.presentationMode) var presentationMode
-    
-    @State var showingToast = false
-    @State var toastMessage = ""
+    @Environment(\.dismiss) private var dismiss
 
     let model: ScriptModel
     
@@ -28,40 +25,36 @@ struct ResourceCodeView: View {
     }
     
     var content: some View {
-        NavigationView {
-            List{
-                Section(header: Text("Images")) {
+        NavigationStack {
+            List {
+                Section("Package") {
                     NavigationLink(destination: ImageListView(model: model)) {
-                        Label("Images", systemImage: "photo")
+                        Label("Images", systemImage: "photo.on.rectangle")
                     }
-                }
-                Section(header: Text("Files")) {
                     NavigationLink(destination: FileListView(model: model)) {
-                        Label("Files", systemImage: "doc.plaintext")
+                        Label("Files", systemImage: "doc.on.doc")
                     }
                 }
-                Section(header: Text("Codes")) {
+                Section("Reference") {
                     NavigationLink(destination: SettingComponentsView()) {
-                        Label("Components", systemImage: "command")
+                        Label("Components", systemImage: "cube")
                     }
                     NavigationLink(destination: SettingAPIsView()) {
-                        Label("APIs", systemImage: "book")
+                        Label("APIs", systemImage: "curlybraces")
                     }
                     NavigationLink(destination: SettingTemplatesView()) {
-                        Label("Templates", systemImage: "simcard")
+                        Label("Templates", systemImage: "rectangle.stack")
                     }
                 }
-                
             }
-            .navigationBarTitle(Text("Resources"), displayMode: .inline)
-            .navigationBarItems(
-                trailing: Button (action: {
-                    presentationMode.wrappedValue.dismiss()
-                }, label: {
-                    Image(systemName: "xmark")
-                        .padding()
-                })
-            )
+            .listStyle(.insetGrouped)
+            .navigationTitle("Resources")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
         }
     }
 }
