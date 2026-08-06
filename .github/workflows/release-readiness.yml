@@ -34,6 +34,9 @@ jobs:
           cache-dependency-path: Editor/editorfe/package-lock.json
       - run: npm ci
         working-directory: Editor/editorfe
-      - run: sudo xcode-select -s /Applications/Xcode_27.0.app/Contents/Developer
+      - name: Report Apple toolchain
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
       - run: ./Scripts/release-readiness.sh
       - run: ./Scripts/ipad-icloud-tests.sh
