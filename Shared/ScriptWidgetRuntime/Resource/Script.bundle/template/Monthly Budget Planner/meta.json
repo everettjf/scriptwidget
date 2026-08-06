@@ -1,0 +1,8 @@
+{
+  "description": "A large monthly budget view with remaining cash and category guardrails.",
+  "category": "finance",
+  "tags": ["large", "budget", "spending", "finance"],
+  "difficulty": "beginner",
+  "icon": "chart.pie.fill",
+  "featured": true
+}

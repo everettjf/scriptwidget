@@ -1,0 +1,8 @@
+{
+  "description": "A large travel-day dashboard for departure, route, weather, and essentials.",
+  "category": "productivity",
+  "tags": ["large", "travel", "flight", "checklist"],
+  "difficulty": "beginner",
+  "icon": "airplane.departure",
+  "featured": true
+}

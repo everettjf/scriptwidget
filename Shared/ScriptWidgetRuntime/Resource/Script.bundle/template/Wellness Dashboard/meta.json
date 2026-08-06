@@ -1,0 +1,8 @@
+{
+  "description": "A large no-permission wellness dashboard for sleep, movement, hydration, and recovery.",
+  "category": "health",
+  "tags": ["large", "wellness", "sleep", "hydration", "habits"],
+  "difficulty": "beginner",
+  "icon": "heart.text.square.fill",
+  "featured": true
+}

@@ -1,0 +1,8 @@
+{
+  "description": "A large shared-family board for events, chores, and the next meal.",
+  "category": "productivity",
+  "tags": ["large", "family", "chores", "calendar"],
+  "difficulty": "beginner",
+  "icon": "house.and.flag.fill",
+  "featured": true
+}

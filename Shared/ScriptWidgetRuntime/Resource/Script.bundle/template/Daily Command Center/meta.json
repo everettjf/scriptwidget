@@ -1,0 +1,8 @@
+{
+  "description": "A large daily command center with priorities, schedule, and day progress.",
+  "category": "productivity",
+  "tags": ["large", "agenda", "focus", "schedule"],
+  "difficulty": "beginner",
+  "icon": "rectangle.3.group.fill",
+  "featured": true
+}

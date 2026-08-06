@@ -7,7 +7,7 @@ const goal = Math.max(1, parseFloat(parts[1]) || 8);
 const progress = Math.min(1, current / goal);
 
 $render(
-  <vstack frame="max" background="#082f49" spacing="8" padding="14">
+  <vstack frame="max" background="#0369a1" spacing="8" padding="14">
     <hstack frame="max">
       <label title="Hydration" systemName="drop.fill" color="#38bdf8" />
       <spacer />

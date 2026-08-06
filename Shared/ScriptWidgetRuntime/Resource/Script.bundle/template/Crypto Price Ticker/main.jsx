@@ -18,7 +18,7 @@ const changeColor = change >= 0 ? "#22c55e" : "#ef4444";
 const changeLabel = change >= 0 ? "+" + change.toFixed(2) : change.toFixed(2);
 
 $render(
-  <vstack frame="max" background="#0f172a">
+  <vstack frame="max" background="#0f766e">
     <text font="caption" color="#94a3b8">Crypto Ticker</text>
     <text font="title2" color="#e2e8f0">{coin.toUpperCase()}</text>
     <text font="title3" color="#38bdf8">${price.toFixed(2)}</text>

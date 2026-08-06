@@ -27,7 +27,7 @@ const data = JSON.parse(result);
 const current = data.current || {};
 
 $render(
-  <vstack frame="max" background="#0f172a">
+  <vstack frame="max" background="#155e75">
     <text font="caption" color="#94a3b8">Air Quality</text>
     <text font="title2" color="#e2e8f0">AQI {current.us_aqi ?? "-"}</text>
     <hstack spacing="12">

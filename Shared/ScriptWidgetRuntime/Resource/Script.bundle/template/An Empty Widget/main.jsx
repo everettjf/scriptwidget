@@ -9,7 +9,7 @@
 
 const size = $getenv("widget-size");
 $render(
-  <vstack frame="max" alignment="leading" spacing="8" padding="16" background="#0f172a">
+  <vstack frame="max" alignment="leading" spacing="8" padding="16" background="#1d4ed8">
     <hstack frame="max"><icon systemName="wand.and.stars" size="22" color="#60a5fa"/><spacer/><badge text={size} color="#93c5fd"/></hstack>
     <spacer/>
     <text font="title2" weight="bold" color="white">Your next idea</text>

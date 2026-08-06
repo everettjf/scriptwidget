@@ -168,6 +168,12 @@ private struct BatchPreviewView: View {
     }
 
     private func preferredSizeType(for model: ScriptModel) -> Int {
+        let largeTemplates: Set<String> = [
+            "Daily Command Center", "Family Command Board", "Monthly Budget Planner",
+            "Travel Day Dashboard", "Wellness Dashboard"
+        ]
+        if largeTemplates.contains(model.name) { return 2 }
+
         let mediumTemplates: Set<String> = [
             "Animation Clock", "Battery & Brightness", "Datetime Current", "Datetime Timezone",
             "Device Battery Percent", "Health Steps Ring", "Live Activity Demo", "Local Weather (Location)",
