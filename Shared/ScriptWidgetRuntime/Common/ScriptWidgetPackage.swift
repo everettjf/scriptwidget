@@ -35,6 +35,28 @@ enum ICloudItemState: Equatable {
     case error(String)  // iCloud reported a download error
 }
 
+/// Pure iCloud metadata classifier. Keeping this separate from FileManager
+/// makes every user-visible state deterministic and testable without requiring
+/// a signed-in iCloud account on CI or Simulator.
+enum ICloudItemStateResolver {
+    static func resolve(
+        downloadError: Error?,
+        isDownloading: Bool?,
+        downloadingStatus: URLUbiquitousItemDownloadingStatus?,
+        hasPlaceholder: Bool
+    ) -> ICloudItemState {
+        if let downloadError { return .error(downloadError.localizedDescription) }
+        if isDownloading == true { return .downloading }
+        if let downloadingStatus {
+            switch downloadingStatus {
+            case .current, .downloaded: return .downloaded
+            default: return .downloading
+            }
+        }
+        return hasPlaceholder ? .downloading : .notInICloud
+    }
+}
+
 /// Where a file's content came from when read.
 enum ScriptFileSource: Equatable {
     case file        // the primary (iCloud / local) path
@@ -221,25 +243,26 @@ struct ScriptWidgetPackage {
             .ubiquitousItemIsDownloadingKey,
             .ubiquitousItemDownloadingErrorKey,
         ]) {
-            if let error = values.ubiquitousItemDownloadingError {
-                return .error("\(error)")
-            }
-            if values.ubiquitousItemIsDownloading == true {
-                return .downloading
-            }
-            if let status = values.ubiquitousItemDownloadingStatus {
-                switch status {
-                case .current, .downloaded: return .downloaded
-                default: return .downloading // requested above; not yet here
-                }
-            }
+            let placeholder = fullPath.deletingLastPathComponent()
+                .appendingPathComponent("." + fullPath.lastPathComponent + ".icloud")
+            return ICloudItemStateResolver.resolve(
+                downloadError: values.ubiquitousItemDownloadingError,
+                isDownloading: values.ubiquitousItemIsDownloading,
+                downloadingStatus: values.ubiquitousItemDownloadingStatus,
+                hasPlaceholder: FileManager.default.fileExists(atPath: placeholder.path)
+            )
         }
 
         // No ubiquitous metadata: it's a real miss unless an evicted-item
         // placeholder (".name.icloud") is sitting next to it.
         let placeholder = fullPath.deletingLastPathComponent()
             .appendingPathComponent("." + fullPath.lastPathComponent + ".icloud")
-        return FileManager.default.fileExists(atPath: placeholder.path) ? .downloading : .notInICloud
+        return ICloudItemStateResolver.resolve(
+            downloadError: nil,
+            isDownloading: nil,
+            downloadingStatus: nil,
+            hasPlaceholder: FileManager.default.fileExists(atPath: placeholder.path)
+        )
     }
 
     /// Current iCloud state of the package's main script file, for status UI.

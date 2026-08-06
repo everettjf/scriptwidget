@@ -131,6 +131,17 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertTrue(text.contains("hello-param"), "expected widget-param in output, got: \(text)")
     }
 
+    func testIPadWidgetFamiliesReachRuntime() {
+        for family in ["extraLarge", "extraLargePortrait"] {
+            let runtime = makeRuntime(environments: ["widget-size": family, "widget-param": "ipad"])
+            let (element, error) = runtime.executeJSXSyncForWidget(
+                "$render(<text>{$getenv(\"widget-size\") + ':' + $getenv(\"widget-param\")}</text>);"
+            )
+            XCTAssertNil(error)
+            XCTAssertTrue(collectText(element!).contains("\(family):ipad"))
+        }
+    }
+
     func testRuntimeContractIsVisibleToScripts() {
         let jsx = "$render(<text>{$runtime.apiVersion}</text>);"
         let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)

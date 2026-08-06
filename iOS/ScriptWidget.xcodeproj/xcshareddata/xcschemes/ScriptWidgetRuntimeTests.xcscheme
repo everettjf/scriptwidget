@@ -36,6 +36,23 @@
             ReferencedContainer = "container:ScriptWidget.xcodeproj">
          </BuildableReference>
       </MacroExpansion>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "SCRIPTWIDGET_ICLOUD_INTEGRATION"
+            value = "$(SCRIPTWIDGET_ICLOUD_INTEGRATION)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SCRIPTWIDGET_ICLOUD_ROLE"
+            value = "$(SCRIPTWIDGET_ICLOUD_ROLE)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+         <EnvironmentVariable
+            key = "SCRIPTWIDGET_ICLOUD_SHARED_TOKEN"
+            value = "$(SCRIPTWIDGET_ICLOUD_SHARED_TOKEN)"
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
       <Testables>
          <TestableReference
             skipped = "NO">

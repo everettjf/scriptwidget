@@ -637,7 +637,7 @@ extension ScriptManager {
 
     /// Map an iCloud placeholder URL (".main.jsx.icloud") back to its logical
     /// file URL ("main.jsx"); returns `url` unchanged for normal files.
-    private static func logicalURL(for url: URL) -> URL {
+    static func logicalURL(for url: URL) -> URL {
         let name = url.lastPathComponent
         guard name.hasPrefix("."), name.hasSuffix(".icloud") else { return url }
         let logicalName = String(name.dropFirst().dropLast(".icloud".count))

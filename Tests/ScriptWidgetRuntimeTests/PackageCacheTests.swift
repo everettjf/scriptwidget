@@ -171,4 +171,91 @@ final class PackageCacheTests: XCTestCase {
         XCTAssertTrue(pkg.writeMainFile(content: "X").0)
         XCTAssertEqual(pkg.mainFileICloudState(), .local)
     }
+
+    func testICloudStateResolverCoversEveryVisibleState() {
+        struct TestError: LocalizedError { var errorDescription: String? { "cloud unavailable" } }
+        XCTAssertEqual(
+            ICloudItemStateResolver.resolve(downloadError: TestError(), isDownloading: nil, downloadingStatus: nil, hasPlaceholder: false),
+            .error("cloud unavailable")
+        )
+        XCTAssertEqual(
+            ICloudItemStateResolver.resolve(downloadError: nil, isDownloading: true, downloadingStatus: nil, hasPlaceholder: false),
+            .downloading
+        )
+        XCTAssertEqual(
+            ICloudItemStateResolver.resolve(downloadError: nil, isDownloading: false, downloadingStatus: .current, hasPlaceholder: false),
+            .downloaded
+        )
+        XCTAssertEqual(
+            ICloudItemStateResolver.resolve(downloadError: nil, isDownloading: nil, downloadingStatus: nil, hasPlaceholder: true),
+            .downloading
+        )
+        XCTAssertEqual(
+            ICloudItemStateResolver.resolve(downloadError: nil, isDownloading: nil, downloadingStatus: nil, hasPlaceholder: false),
+            .notInICloud
+        )
+    }
+
+    func testICloudPlaceholderMapsToLogicalRuntimeFile() {
+        let placeholder = URL(fileURLWithPath: "/tmp/package/.main.jsx.icloud")
+        XCTAssertEqual(ScriptManager.logicalURL(for: placeholder).path, "/tmp/package/main.jsx")
+        let nested = URL(fileURLWithPath: "/tmp/package/lib/.weather.json.icloud")
+        XCTAssertEqual(ScriptManager.logicalURL(for: nested).path, "/tmp/package/lib/weather.json")
+        let normal = URL(fileURLWithPath: "/tmp/package/main.jsx")
+        XCTAssertEqual(ScriptManager.logicalURL(for: normal), normal)
+    }
+}
+
+final class ICloudContainerIntegrationTests: XCTestCase {
+    private func integrationContainer() throws -> URL {
+        try XCTUnwrap(
+            FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.ScriptWidget"),
+            "The test was explicitly enabled, but the iCloud container is unavailable"
+        )
+    }
+
+    func testRealICloudContainerRoundTripWhenEnabled() throws {
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_ICLOUD_INTEGRATION"] == "1" else {
+            throw XCTSkip("Set SCRIPTWIDGET_ICLOUD_INTEGRATION=1 on a signed-in device to run real iCloud I/O")
+        }
+        let container = try integrationContainer()
+        let directory = container.appendingPathComponent("Documents/Automation", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("roundtrip-\(UUID().uuidString).txt")
+        let payload = "ScriptWidget iCloud automation \(Date().timeIntervalSince1970)"
+        defer { try? FileManager.default.removeItem(at: url) }
+
+        try payload.write(to: url, atomically: true, encoding: .utf8)
+        XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), payload)
+        let values = try url.resourceValues(forKeys: [.isUbiquitousItemKey])
+        XCTAssertEqual(values.isUbiquitousItem, true)
+    }
+
+    func testCrossDeviceConvergenceWhenConfigured() throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["SCRIPTWIDGET_ICLOUD_INTEGRATION"] == "1",
+              let role = environment["SCRIPTWIDGET_ICLOUD_ROLE"],
+              let token = environment["SCRIPTWIDGET_ICLOUD_SHARED_TOKEN"],
+              !token.isEmpty else {
+            throw XCTSkip("Configure iCloud role and shared token for a two-device convergence test")
+        }
+        let directory = try integrationContainer().appendingPathComponent("Documents/Automation", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let url = directory.appendingPathComponent("cross-device-\(token).txt")
+
+        if role == "writer" {
+            try token.write(to: url, atomically: true, encoding: .utf8)
+            XCTAssertEqual(try String(contentsOf: url, encoding: .utf8), token)
+            return
+        }
+        guard role == "reader" else { return XCTFail("Unknown iCloud test role: \(role)") }
+        defer { try? FileManager.default.removeItem(at: url) }
+        let deadline = Date().addingTimeInterval(60)
+        while Date() < deadline {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
+            if (try? String(contentsOf: url, encoding: .utf8)) == token { return }
+            Thread.sleep(forTimeInterval: 1)
+        }
+        XCTFail("The writer's iCloud file did not converge to the reader within 60 seconds")
+    }
 }

@@ -5,6 +5,7 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 ```sh
 ./Scripts/release-readiness.sh
 ./Scripts/device-matrix.sh
+./Scripts/ipad-icloud-tests.sh
 ```
 
 ## Automated gates
@@ -15,6 +16,7 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 - macOS app/tests and iOS Simulator app compile with signing disabled.
 - Runtime execution stays below the checked performance budgets in `RuntimePerformanceTests`.
 - CI runs the same entry point; no separate “CI-only” validation logic is allowed.
+- CI also runs the full shared test target on an iPad Simulator; real iCloud tests remain opt-in because hosted runners have no signed-in Apple ID.
 
 ## Device matrix
 
@@ -27,6 +29,12 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 | Apple silicon Mac, current macOS | current Mac | all widgets, iCloud sync, import/export, animation |
 
 Record OS/build, hardware, commit, pass/fail, peak memory and links to screenshots or Instruments traces. Physical-device rows cannot be replaced by Simulator results.
+
+### iPad and iCloud automation
+
+`ipad-icloud-tests.sh` always runs deterministic iPad tests for Extra Large families, package caching, eviction fallback, placeholder mapping, and every user-visible iCloud state. Supply `SCRIPTWIDGET_IPAD_UDID` to additionally invoke Simulator's `icloud_sync` command.
+
+For real iCloud I/O, connect and trust a signed-in iPad, then set `SCRIPTWIDGET_ICLOUD_DEVICE_DESTINATION` to its xcodebuild destination. For cross-device convergence, connect two signed-in devices using the same iCloud account and set both `SCRIPTWIDGET_ICLOUD_WRITER_DESTINATION` and `SCRIPTWIDGET_ICLOUD_READER_DESTINATION`. The test writes on one device and requires the other to observe the same token within 60 seconds. Real-container tests deliberately fail—not skip—when explicitly enabled but the entitlement/account/container is unavailable.
 
 ## Performance budgets
 
