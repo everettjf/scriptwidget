@@ -229,7 +229,7 @@ Start with the **[documentation hub](docs/README.md)** or build **[your first wi
 | Platform | Support | Notes |
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
-| **macOS** | ✅ Full | macOS 13+ (Mac) |
+| **macOS** | ✅ Full | macOS 26+ (Mac) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
 
