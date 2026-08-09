@@ -30,6 +30,149 @@ extension String {
     
 }
 
+struct ScriptPackageImportResult: Equatable {
+    let succeeded: Bool
+    let packageName: String?
+    let message: String
+    let validation: WidgetPackageValidationReport?
+}
+
+enum ScriptPackageArchivePolicy {
+    static let maximumArchiveBytes = 32 * 1024 * 1024
+    static let maximumExpandedBytes = 64 * 1024 * 1024
+    static let maximumFileBytes = 25 * 1024 * 1024
+    static let maximumFileCount = 500
+    static let maximumPathDepth = 16
+}
+
+enum ScriptPackageArchivePreflight {
+    static func validate(_ archiveURL: URL) -> String? {
+        guard let values = try? archiveURL.resourceValues(forKeys: [.fileSizeKey]),
+              let archiveBytes = values.fileSize,
+              archiveBytes > 0,
+              archiveBytes <= ScriptPackageArchivePolicy.maximumArchiveBytes else {
+            return "Archive must be between 1 byte and 32 MiB."
+        }
+        guard let data = try? Data(contentsOf: archiveURL) else {
+            return "Archive could not be read."
+        }
+        guard let end = endOfCentralDirectory(in: data) else {
+            return "Archive has no valid ZIP central directory."
+        }
+        guard data.uint16LE(at: end + 4) == 0,
+              data.uint16LE(at: end + 6) == 0,
+              data.uint16LE(at: end + 8) == data.uint16LE(at: end + 10) else {
+            return "Multi-disk ZIP archives are not supported."
+        }
+        let commentLength = Int(data.uint16LE(at: end + 20))
+        guard end + 22 + commentLength == data.count else {
+            return "Archive has a malformed ZIP footer."
+        }
+        let entries = Int(data.uint16LE(at: end + 10))
+        let centralSize = Int(data.uint32LE(at: end + 12))
+        let centralOffset = Int(data.uint32LE(at: end + 16))
+        guard entries > 0, entries <= ScriptPackageArchivePolicy.maximumFileCount else {
+            return "Archive must contain 1–\(ScriptPackageArchivePolicy.maximumFileCount) entries."
+        }
+        guard centralOffset >= 0, centralSize >= 0,
+              centralOffset + centralSize <= data.count else {
+            return "Archive central directory is out of bounds."
+        }
+
+        var cursor = centralOffset
+        var expandedBytes: UInt64 = 0
+        var normalizedPaths: Set<String> = []
+        for _ in 0..<entries {
+            guard cursor + 46 <= data.count,
+                  data.uint32LE(at: cursor) == 0x02014B50 else {
+                return "Archive central directory contains an invalid entry."
+            }
+            let flags = data.uint16LE(at: cursor + 8)
+            let method = data.uint16LE(at: cursor + 10)
+            let compressed = data.uint32LE(at: cursor + 20)
+            let uncompressed = data.uint32LE(at: cursor + 24)
+            let nameLength = Int(data.uint16LE(at: cursor + 28))
+            let extraLength = Int(data.uint16LE(at: cursor + 30))
+            let commentLength = Int(data.uint16LE(at: cursor + 32))
+            let externalAttributes = data.uint32LE(at: cursor + 38)
+            let entryEnd = cursor + 46 + nameLength + extraLength + commentLength
+            guard nameLength > 0, entryEnd <= data.count else {
+                return "Archive contains a truncated filename."
+            }
+            guard compressed != UInt32.max, uncompressed != UInt32.max else {
+                return "ZIP64 packages are not supported."
+            }
+            guard flags & 0x1 == 0 else { return "Encrypted package entries are not supported." }
+            guard method == 0 || method == 8 else { return "Unsupported ZIP compression method \(method)." }
+            let nameData = data.subdata(in: (cursor + 46)..<(cursor + 46 + nameLength))
+            guard let name = String(data: nameData, encoding: .utf8), validEntryPath(name) else {
+                return "Archive contains an unsafe or non-UTF-8 path."
+            }
+            let normalizedPath = name.precomposedStringWithCanonicalMapping.lowercased()
+                .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+            guard normalizedPaths.insert(normalizedPath).inserted else {
+                return "Archive contains duplicate or case-colliding paths."
+            }
+            let unixMode = UInt16((externalAttributes >> 16) & 0xFFFF)
+            if unixMode & 0xF000 == 0xA000 {
+                return "Symbolic links are not allowed in ScriptWidget packages."
+            }
+            if !name.hasSuffix("/") {
+                guard uncompressed <= ScriptPackageArchivePolicy.maximumFileBytes else {
+                    return "Package file \(name) exceeds 25 MiB."
+                }
+                expandedBytes += UInt64(uncompressed)
+                guard expandedBytes <= UInt64(ScriptPackageArchivePolicy.maximumExpandedBytes) else {
+                    return "Expanded package exceeds 64 MiB."
+                }
+                if uncompressed > 1024 * 1024, compressed == 0 {
+                    return "Archive entry \(name) has an invalid compression ratio."
+                }
+            }
+            cursor = entryEnd
+        }
+        guard cursor == centralOffset + centralSize else {
+            return "Archive entries do not match the declared central directory."
+        }
+        return nil
+    }
+
+    private static func validEntryPath(_ name: String) -> Bool {
+        guard !name.hasPrefix("/"), !name.hasPrefix("\\"), !name.contains("\\"), !name.contains(":"), !name.contains("\0") else {
+            return false
+        }
+        let parts = name.split(separator: "/", omittingEmptySubsequences: true)
+        guard !parts.isEmpty, parts.count <= ScriptPackageArchivePolicy.maximumPathDepth else { return false }
+        return parts.allSatisfy { $0 != "." && $0 != ".." }
+    }
+
+    private static func endOfCentralDirectory(in data: Data) -> Int? {
+        guard data.count >= 22 else { return nil }
+        let lowerBound = max(0, data.count - 65_557)
+        var index = data.count - 22
+        while index >= lowerBound {
+            if data.uint32LE(at: index) == 0x06054B50 { return index }
+            index -= 1
+        }
+        return nil
+    }
+}
+
+private extension Data {
+    func uint16LE(at index: Int) -> UInt16 {
+        guard index >= 0, index + 2 <= count else { return 0 }
+        return UInt16(self[index]) | (UInt16(self[index + 1]) << 8)
+    }
+
+    func uint32LE(at index: Int) -> UInt32 {
+        guard index >= 0, index + 4 <= count else { return 0 }
+        return UInt32(self[index])
+            | (UInt32(self[index + 1]) << 8)
+            | (UInt32(self[index + 2]) << 16)
+            | (UInt32(self[index + 3]) << 24)
+    }
+}
+
 
 
 class ScriptManager {
@@ -243,6 +386,11 @@ class ScriptManager {
             try? FileManager.default.copyItem(at: imageCopyPath, to: targetDir)
         }
 
+        if result.0, package.readManifest() == nil {
+            let manifestResult = package.writeManifest(.newProject(name: packageName))
+            guard manifestResult.0 else { return manifestResult }
+        }
+
         if result.0, !self.isBuild {
             _ = buildScriptPackage(package: package)
         }
@@ -406,6 +554,9 @@ extension ScriptManager {
 extension ScriptManager {
     
     func exportScript(model: ScriptModel, toPath: URL) -> Bool {
+        guard model.package.ensureManifest().0 else { return false }
+        let validation = WidgetPackageManifestValidator.validate(model.package.effectiveManifest(), package: model.package)
+        guard validation.isValid else { return false }
         let packageDir = model.package.path
         let result = SSZipArchive.createZipFile(atPath: toPath.path, withContentsOfDirectory: packageDir.path, keepParentDirectory: true)
         return result
@@ -431,40 +582,106 @@ extension ScriptManager {
     }
     
     func importScript(fromPath: URL) -> Bool {
-        let tempDir = URL(fileURLWithPath: NSTemporaryDirectory())
-        let tempPath = tempDir.appendingPathComponent("ScriptWidgetTempImport")
-        
-        try? FileManager.default.createDirectory(at: tempPath, withIntermediateDirectories: true, attributes: [
-            FileAttributeKey.protectionKey : FileProtectionType.none
-        ])
-        
-        print("temp path : \(tempPath)")
-        
-        let result = SSZipArchive.unzipFile(atPath: fromPath.path, toDestination: tempPath.path)
-        if !result {
-            return false
+        importScriptPackage(fromPath: fromPath).succeeded
+    }
+
+    func importScriptPackage(fromPath: URL) -> ScriptPackageImportResult {
+        if let preflightError = ScriptPackageArchivePreflight.validate(fromPath) {
+            return .init(succeeded: false, packageName: nil, message: preflightError, validation: nil)
         }
-        
-        let originalImportScriptName = fromPath.deletingPathExtension().lastPathComponent
-        let tempPackagePath = tempPath.appendingPathComponent(originalImportScriptName)
-        print("target package path : \(tempPackagePath)")
-        
-        // copy
-        let confirmImportScriptName = self.getValidPackageName(recommendPackageName: originalImportScriptName)
-        let confirmPackagePath = self.getPackagePathFromPackageName(packageName: confirmImportScriptName)
-        print("target path : \(confirmPackagePath)")
-        
+        let tempPath = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ScriptWidgetImport-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: tempPath) }
         do {
-            try FileManager.default.moveItem(at: tempPackagePath, to: confirmPackagePath)
+            try FileManager.default.createDirectory(at: tempPath, withIntermediateDirectories: true)
         } catch {
-            return false
+            return .init(succeeded: false, packageName: nil, message: error.localizedDescription, validation: nil)
         }
-        
-        if !self.isBuild {
-            let package = self.getScriptPackage(packageName: confirmImportScriptName)
-            _ = buildScriptPackage(package: package)
+        guard SSZipArchive.unzipFile(atPath: fromPath.path, toDestination: tempPath.path) else {
+            return .init(succeeded: false, packageName: nil, message: "The package could not be extracted.", validation: nil)
         }
-        return true
+        guard let extractedPackage = extractedPackageRoot(in: tempPath) else {
+            return .init(succeeded: false, packageName: nil, message: "The archive must contain one widget package.", validation: nil)
+        }
+        if let extractedError = validateExtractedTree(extractedPackage) {
+            return .init(succeeded: false, packageName: nil, message: extractedError, validation: nil)
+        }
+
+        let temporaryPackage = ScriptWidgetPackage(path: extractedPackage)
+        if temporaryPackage.readManifest() == nil {
+            let migration = temporaryPackage.writeManifest(.legacy(
+                name: extractedPackage.lastPathComponent,
+                metadata: temporaryPackage.readMetadata()
+            ))
+            guard migration.0 else {
+                return .init(succeeded: false, packageName: nil, message: migration.1, validation: nil)
+            }
+        }
+        guard let manifest = temporaryPackage.readManifest() else {
+            return .init(succeeded: false, packageName: nil, message: "widget.json is invalid.", validation: nil)
+        }
+        let report = WidgetPackageManifestValidator.validate(manifest, package: temporaryPackage)
+        guard report.isValid else {
+            return .init(
+                succeeded: false,
+                packageName: nil,
+                message: report.errors.map(\.message).joined(separator: "\n"),
+                validation: report
+            )
+        }
+
+        let importedName = getValidPackageName(recommendPackageName: manifest.name)
+        let destination = getPackagePathFromPackageName(packageName: importedName)
+        do {
+            try FileManager.default.copyItem(at: extractedPackage, to: destination)
+        } catch {
+            return .init(succeeded: false, packageName: nil, message: error.localizedDescription, validation: report)
+        }
+        if !isBuild {
+            _ = buildScriptPackage(package: getScriptPackage(packageName: importedName))
+        }
+        return .init(succeeded: true, packageName: importedName, message: "", validation: report)
+    }
+
+    private func extractedPackageRoot(in directory: URL) -> URL? {
+        let children = ((try? FileManager.default.contentsOfDirectory(
+            at: directory,
+            includingPropertiesForKeys: [.isDirectoryKey],
+            options: [.skipsHiddenFiles]
+        )) ?? []).filter { $0.lastPathComponent != "__MACOSX" }
+        if children.contains(where: { $0.lastPathComponent == "main.jsx" || $0.lastPathComponent == "widget.json" }) {
+            return directory
+        }
+        let directories = children.filter {
+            (try? $0.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
+        }
+        guard directories.count == 1 else { return nil }
+        return directories[0]
+    }
+
+    private func validateExtractedTree(_ root: URL) -> String? {
+        guard let enumerator = FileManager.default.enumerator(
+            at: root,
+            includingPropertiesForKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey],
+            options: [.skipsHiddenFiles]
+        ) else { return "Extracted package could not be enumerated." }
+        var count = 0
+        var total = 0
+        for case let url as URL in enumerator {
+            let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey, .fileSizeKey])
+            if values?.isSymbolicLink == true { return "Symbolic links are not allowed." }
+            guard values?.isRegularFile == true else { continue }
+            count += 1
+            guard let size = values?.fileSize, size >= 0 else { return "Package file size could not be verified." }
+            if count > ScriptPackageArchivePolicy.maximumFileCount { return "Package contains too many files." }
+            if size > ScriptPackageArchivePolicy.maximumFileBytes { return "Package file \(url.lastPathComponent) exceeds 25 MiB." }
+            guard total <= ScriptPackageArchivePolicy.maximumExpandedBytes - size else {
+                return "Expanded package exceeds 64 MiB."
+            }
+            total += size
+            if total > ScriptPackageArchivePolicy.maximumExpandedBytes { return "Expanded package exceeds 64 MiB." }
+        }
+        return nil
     }
     
 }

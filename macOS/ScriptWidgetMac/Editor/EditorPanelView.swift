@@ -254,6 +254,18 @@ private struct WidgetConfigurationView: View {
     let scriptModel: ScriptModel
     @Bindable var configuration: StudioWidgetConfiguration
 
+    @State private var manifest: WidgetPackageManifest
+    @State private var networkDomains: String
+    @State private var statusMessage: String?
+
+    init(scriptModel: ScriptModel, configuration: StudioWidgetConfiguration) {
+        self.scriptModel = scriptModel
+        self.configuration = configuration
+        let value = scriptModel.package.effectiveManifest()
+        _manifest = State(initialValue: value)
+        _networkDomains = State(initialValue: value.networkDomains.joined(separator: "\n"))
+    }
+
     var body: some View {
         Form {
             Section("Preview") {
@@ -272,8 +284,11 @@ private struct WidgetConfigurationView: View {
             }
 
             Section("Project") {
-                LabeledContent("Package", value: scriptModel.name)
-                LabeledContent("Entry point", value: "main.jsx")
+                TextField("Name", text: $manifest.name)
+                TextField("Identifier", text: $manifest.id)
+                TextField("Version", text: $manifest.version)
+                TextField("Entry point", text: $manifest.entry)
+                LabeledContent("Runtime", value: manifest.runtimeVersion)
                 LabeledContent("Location", value: scriptModel.package.path.path)
                     .lineLimit(2)
                     .textSelection(.enabled)
@@ -282,12 +297,72 @@ private struct WidgetConfigurationView: View {
                 }
             }
 
-            Section {
-                Text("Package metadata, permissions, supported families, and network domains will be saved in widget.json during Package 2.0.")
+            Section("Supported families") {
+                ForEach(WidgetPackageFamily.allCases) { family in
+                    Toggle(family.displayName, isOn: familyBinding(family))
+                }
+            }
+
+            Section("Permissions") {
+                ForEach(WidgetPackagePermission.allCases) { permission in
+                    Toggle(permission.displayName, isOn: permissionBinding(permission))
+                }
+                Text("Permissions are declarations reviewed during import. Runtime enforcement is introduced capability by capability.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
+
+            Section("Network allowlist") {
+                TextEditor(text: $networkDomains)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(minHeight: 72)
+                Text("One lowercase host per line, for example api.example.com or *.example.com. HTTPS URLs remain subject to the runtime network policy.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section {
+                HStack {
+                    Button("Save widget.json", systemImage: "square.and.arrow.down") { saveManifest() }
+                        .buttonStyle(.borderedProminent)
+                        .disabled(scriptModel.package.readonly)
+                    if let statusMessage {
+                        Text(statusMessage).font(.caption).foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
         .formStyle(.grouped)
+    }
+
+    private func familyBinding(_ family: WidgetPackageFamily) -> Binding<Bool> {
+        Binding(
+            get: { manifest.supportedFamilies.contains(family) },
+            set: { enabled in
+                if enabled { manifest.supportedFamilies.append(family) }
+                else { manifest.supportedFamilies.removeAll { $0 == family } }
+            }
+        )
+    }
+
+    private func permissionBinding(_ permission: WidgetPackagePermission) -> Binding<Bool> {
+        Binding(
+            get: { manifest.permissions.contains(permission) },
+            set: { enabled in
+                if enabled { manifest.permissions.append(permission) }
+                else { manifest.permissions.removeAll { $0 == permission } }
+            }
+        )
+    }
+
+    private func saveManifest() {
+        manifest.supportedFamilies = WidgetPackageFamily.allCases.filter(manifest.supportedFamilies.contains)
+        manifest.permissions = WidgetPackagePermission.allCases.filter(manifest.permissions.contains)
+        manifest.networkDomains = networkDomains
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        let result = scriptModel.package.writeManifest(manifest)
+        statusMessage = result.0 ? "Saved Package 2.0 manifest." : result.1
     }
 }

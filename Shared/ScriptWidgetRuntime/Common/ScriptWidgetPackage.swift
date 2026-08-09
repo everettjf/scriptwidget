@@ -287,6 +287,7 @@ struct ScriptWidgetPackage {
     let jsxPath: URL
     let imagePath: URL
     let metaPath: URL
+    let manifestPath: URL
     let readonly: Bool
 
     init(path: URL, readonly: Bool) {
@@ -295,6 +296,7 @@ struct ScriptWidgetPackage {
         self.jsxPath = self.path.appendingPathComponent("main.jsx")
         self.imagePath = self.path.appendingPathComponent("image")
         self.metaPath = self.path.appendingPathComponent("meta.json")
+        self.manifestPath = self.path.appendingPathComponent("widget.json")
         self.name = self.path.lastPathComponent
     }
 
@@ -304,9 +306,64 @@ struct ScriptWidgetPackage {
         return try? JSONDecoder().decode(ScriptMetadata.self, from: data)
     }
 
+    func readManifest() -> WidgetPackageManifest? {
+        guard let data = try? Data(contentsOf: manifestPath) else { return nil }
+        guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
+        let allowedKeys: Set<String> = [
+            "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
+            "supportedFamilies", "permissions", "networkDomains", "description",
+            "category", "tags", "icon", "preview", "author", "license"
+        ]
+        guard Set(object.keys).isSubset(of: allowedKeys) else { return nil }
+        if let author = object["author"] as? [String: Any],
+           !Set(author.keys).isSubset(of: ["name", "url"]) {
+            return nil
+        }
+        return try? JSONDecoder().decode(WidgetPackageManifest.self, from: data)
+    }
+
+    func effectiveManifest() -> WidgetPackageManifest {
+        readManifest() ?? .legacy(name: name, metadata: readMetadata())
+    }
+
+    @discardableResult
+    func writeManifest(_ manifest: WidgetPackageManifest) -> (Bool, String) {
+        guard !readonly else { return (false, "Package is readonly") }
+        let report = WidgetPackageManifestValidator.validate(manifest, package: self)
+        guard report.isValid else {
+            return (false, report.errors.map(\.message).joined(separator: "\n"))
+        }
+        do {
+            try makePackageDirectory()
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            try encoder.encode(manifest).write(to: manifestPath, options: .atomic)
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.none],
+                ofItemAtPath: manifestPath.path
+            )
+            return (true, "")
+        } catch {
+            return (false, error.localizedDescription)
+        }
+    }
+
+    /// Migrates a writable legacy package in place. Bundled read-only examples
+    /// expose an effective manifest without mutating application resources.
+    @discardableResult
+    func ensureManifest() -> (Bool, String) {
+        if let manifest = readManifest() {
+            let report = WidgetPackageManifestValidator.validate(manifest, package: self)
+            return report.isValid
+                ? (true, "")
+                : (false, report.errors.map(\.message).joined(separator: "\n"))
+        }
+        guard !readonly else { return (true, "") }
+        return writeManifest(.legacy(name: name, metadata: readMetadata()))
+    }
+
     func previewImageURL() -> URL? {
-        let meta = readMetadata()
-        let name = meta?.preview ?? "preview.png"
+        let name = readManifest()?.preview ?? readMetadata()?.preview ?? "preview.png"
         let url = self.path.appendingPathComponent(name)
         return FileManager.default.fileExists(atPath: url.path) ? url : nil
     }

@@ -15,7 +15,19 @@ struct ScriptModel : Identifiable {
 
     init(package: ScriptWidgetPackage) {
         self.package = package
-        self.metadata = package.readMetadata()
+        if let manifest = package.readManifest() {
+            self.metadata = ScriptMetadata(
+                description: manifest.description,
+                category: manifest.category,
+                tags: manifest.tags,
+                difficulty: nil,
+                icon: manifest.icon,
+                preview: manifest.preview,
+                featured: nil
+            )
+        } else {
+            self.metadata = package.readMetadata()
+        }
     }
 
     var name: String {

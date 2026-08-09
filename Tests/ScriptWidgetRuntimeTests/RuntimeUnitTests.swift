@@ -697,3 +697,143 @@ final class DescribeExceptionTests: XCTestCase {
         XCTAssertTrue(description.contains("boom problem"), "unexpected description: \(description)")
     }
 }
+
+final class WidgetPackageManifestTests: XCTestCase {
+    private var temporaryDirectories: [URL] = []
+
+    override func tearDown() {
+        temporaryDirectories.forEach { try? FileManager.default.removeItem(at: $0) }
+        temporaryDirectories.removeAll()
+        super.tearDown()
+    }
+
+    private func makePackage() throws -> ScriptWidgetPackage {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ManifestTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        temporaryDirectories.append(directory)
+        let package = ScriptWidgetPackage(path: directory)
+        XCTAssertTrue(package.writeMainFile(content: "<Text>Package 2.0</Text>").0)
+        return package
+    }
+
+    func testManifestRoundTripsAndValidates() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "My Widget")
+        manifest.permissions = [.network, .storage]
+        manifest.networkDomains = ["api.example.com", "*.example.org"]
+
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        XCTAssertEqual(package.readManifest(), manifest)
+        XCTAssertTrue(WidgetPackageManifestValidator.validate(manifest, package: package).isValid)
+    }
+
+    func testNetworkDomainsRequirePermissionAndValidHosts() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "Unsafe Widget")
+        manifest.networkDomains = ["https://example.com/path"]
+
+        let codes = Set(WidgetPackageManifestValidator.validate(manifest, package: package).errors.map(\.code))
+        XCTAssertTrue(codes.contains("undeclared_network"))
+        XCTAssertTrue(codes.contains("invalid_network_domain"))
+    }
+
+    func testManifestReaderRejectsUnknownFields() throws {
+        let package = try makePackage()
+        let json = """
+        {"formatVersion":2,"id":"com.example.widget","name":"Widget","version":"1.0.0","runtimeVersion":"1.0","entry":"main.jsx","supportedFamilies":["systemSmall"],"permissions":[],"networkDomains":[],"permisisons":["network"]}
+        """
+        try Data(json.utf8).write(to: package.manifestPath)
+        XCTAssertNil(package.readManifest())
+    }
+
+    func testRejectsUnsupportedRuntimeAndEscapingEntry() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "Bad Widget")
+        manifest.runtimeVersion = "99.0"
+        manifest.entry = "../outside.jsx"
+
+        let codes = Set(WidgetPackageManifestValidator.validate(manifest, package: package).errors.map(\.code))
+        XCTAssertTrue(codes.contains("unsupported_runtime"))
+        XCTAssertTrue(codes.contains("invalid_entry"))
+    }
+
+    func testArchivePreflightRejectsTraversalPath() throws {
+        let archive = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Traversal-\(UUID().uuidString).swt")
+        temporaryDirectories.append(archive)
+        try makeStoredZIP(entryName: "../escape.txt", contents: Data("owned".utf8)).write(to: archive)
+
+        XCTAssertEqual(
+            ScriptPackageArchivePreflight.validate(archive),
+            "Archive contains an unsafe or non-UTF-8 path."
+        )
+    }
+
+    func testArchivePreflightRejectsCaseCollidingPaths() throws {
+        let archive = FileManager.default.temporaryDirectory
+            .appendingPathComponent("Collision-\(UUID().uuidString).swt")
+        temporaryDirectories.append(archive)
+        let first = makeStoredZIP(entryName: "Widget/main.jsx", contents: Data("one".utf8))
+        let second = makeStoredZIP(entryName: "widget/MAIN.jsx", contents: Data("two".utf8))
+        try mergeStoredZIPs(first, second).write(to: archive)
+
+        XCTAssertEqual(
+            ScriptPackageArchivePreflight.validate(archive),
+            "Archive contains duplicate or case-colliding paths."
+        )
+    }
+
+    private func makeStoredZIP(entryName: String, contents: Data) -> Data {
+        let name = Data(entryName.utf8)
+        var local = Data()
+        local.appendLE(UInt32(0x04034B50)); local.appendLE(UInt16(20)); local.appendLE(UInt16(0)); local.appendLE(UInt16(0))
+        local.appendLE(UInt16(0)); local.appendLE(UInt16(0)); local.appendLE(UInt32(0))
+        local.appendLE(UInt32(contents.count)); local.appendLE(UInt32(contents.count)); local.appendLE(UInt16(name.count)); local.appendLE(UInt16(0))
+        local.append(name); local.append(contents)
+
+        var central = Data()
+        central.appendLE(UInt32(0x02014B50)); central.appendLE(UInt16(20)); central.appendLE(UInt16(20)); central.appendLE(UInt16(0)); central.appendLE(UInt16(0))
+        central.appendLE(UInt16(0)); central.appendLE(UInt16(0)); central.appendLE(UInt32(0))
+        central.appendLE(UInt32(contents.count)); central.appendLE(UInt32(contents.count)); central.appendLE(UInt16(name.count)); central.appendLE(UInt16(0)); central.appendLE(UInt16(0))
+        central.appendLE(UInt16(0)); central.appendLE(UInt16(0)); central.appendLE(UInt32(0)); central.appendLE(UInt32(0)); central.append(name)
+
+        var result = local
+        result.append(central)
+        result.appendLE(UInt32(0x06054B50)); result.appendLE(UInt16(0)); result.appendLE(UInt16(0)); result.appendLE(UInt16(1)); result.appendLE(UInt16(1))
+        result.appendLE(UInt32(central.count)); result.appendLE(UInt32(local.count)); result.appendLE(UInt16(0))
+        return result
+    }
+
+    private func mergeStoredZIPs(_ first: Data, _ second: Data) -> Data {
+        let firstEOCD = first.count - 22
+        let secondEOCD = second.count - 22
+        let firstCentralOffset = Int(first.uint32LEForTest(at: firstEOCD + 16))
+        let secondCentralOffset = Int(second.uint32LEForTest(at: secondEOCD + 16))
+        let firstLocal = first.prefix(firstCentralOffset)
+        let secondLocal = second.prefix(secondCentralOffset)
+        let firstCentral = Data(first[firstCentralOffset..<firstEOCD])
+        var secondCentral = Data(second[secondCentralOffset..<secondEOCD])
+        secondCentral.replaceUInt32LEForTest(at: 42, with: UInt32(firstLocal.count))
+        var result = Data(firstLocal); result.append(secondLocal); result.append(firstCentral); result.append(secondCentral)
+        result.appendLE(UInt32(0x06054B50)); result.appendLE(UInt16(0)); result.appendLE(UInt16(0)); result.appendLE(UInt16(2)); result.appendLE(UInt16(2))
+        result.appendLE(UInt32(firstCentral.count + secondCentral.count)); result.appendLE(UInt32(firstLocal.count + secondLocal.count)); result.appendLE(UInt16(0))
+        return result
+    }
+}
+
+private extension Data {
+    mutating func appendLE<T: FixedWidthInteger>(_ value: T) {
+        var littleEndian = value.littleEndian
+        Swift.withUnsafeBytes(of: &littleEndian) { append(contentsOf: $0) }
+    }
+
+    func uint32LEForTest(at index: Int) -> UInt32 {
+        UInt32(self[index]) | UInt32(self[index + 1]) << 8 | UInt32(self[index + 2]) << 16 | UInt32(self[index + 3]) << 24
+    }
+
+    mutating func replaceUInt32LEForTest(at index: Int, with value: UInt32) {
+        var encoded = Data(); encoded.appendLE(value)
+        replaceSubrange(index..<(index + 4), with: encoded)
+    }
+}
