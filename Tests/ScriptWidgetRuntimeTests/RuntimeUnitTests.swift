@@ -385,6 +385,44 @@ final class RuntimePerformanceTraceTests: XCTestCase {
     }
 }
 
+final class StudioDraftStoreTests: XCTestCase {
+    private var directory: URL!
+    private var store: StudioDraftStore!
+
+    override func setUp() {
+        super.setUp()
+        directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("StudioDraftStore-\(UUID().uuidString)", isDirectory: true)
+        store = StudioDraftStore(directory: directory)
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: directory)
+        store = nil
+        directory = nil
+        super.tearDown()
+    }
+
+    func testDraftRecoversWhenBaseFileIsUnchanged() {
+        store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "unsaved")
+        XCTAssertEqual(
+            store.recover(documentID: "/widget/main.jsx", currentContent: "saved")?.content,
+            "unsaved"
+        )
+    }
+
+    func testExternalOrICloudChangePreventsStaleDraftRestore() {
+        store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "unsaved")
+        XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "changed elsewhere"))
+    }
+
+    func testSavingBaselineRemovesDraft() {
+        store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "unsaved")
+        store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "saved")
+        XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "saved"))
+    }
+}
+
 final class CompiledArtifactTests: XCTestCase {
     private var package: ScriptWidgetPackage!
 

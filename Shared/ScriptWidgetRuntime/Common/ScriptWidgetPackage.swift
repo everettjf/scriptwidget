@@ -26,6 +26,75 @@ struct FileModel: Identifiable, Hashable {
     let path: URL
 }
 
+/// Crash-safe editor drafts. A draft is restored only while its base file hash
+/// still matches, so an iCloud or external edit always wins over stale local work.
+struct StudioDraftRecord: Codable, Equatable {
+    let documentID: String
+    let baseHash: String
+    let content: String
+    let updatedAt: Date
+}
+
+final class StudioDraftStore {
+    static let shared = StudioDraftStore()
+
+    private let directory: URL
+    private let queue = DispatchQueue(label: "scriptwidget.studio-drafts")
+
+    init(directory: URL? = nil) {
+        let base = directory ?? FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0]
+        self.directory = base.appendingPathComponent("ScriptWidgetStudioDrafts", isDirectory: true)
+    }
+
+    func save(documentID: String, baseContent: String, content: String, date: Date = Date()) {
+        guard content != baseContent else {
+            remove(documentID: documentID)
+            return
+        }
+        let record = StudioDraftRecord(
+            documentID: documentID,
+            baseHash: Self.hash(baseContent),
+            content: content,
+            updatedAt: date
+        )
+        queue.sync {
+            do {
+                try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+                try JSONEncoder().encode(record).write(to: recordURL(documentID), options: .atomic)
+            } catch {
+                NSLog("ScriptWidget Studio draft persistence failed: %@", error.localizedDescription)
+            }
+        }
+    }
+
+    func recover(documentID: String, currentContent: String) -> StudioDraftRecord? {
+        queue.sync {
+            guard
+                let data = try? Data(contentsOf: recordURL(documentID)),
+                let record = try? JSONDecoder().decode(StudioDraftRecord.self, from: data),
+                record.documentID == documentID,
+                record.baseHash == Self.hash(currentContent),
+                record.content != currentContent
+            else { return nil }
+            return record
+        }
+    }
+
+    func remove(documentID: String) {
+        queue.sync {
+            try? FileManager.default.removeItem(at: recordURL(documentID))
+        }
+    }
+
+    private func recordURL(_ documentID: String) -> URL {
+        directory.appendingPathComponent(Self.hash(documentID) + ".json")
+    }
+
+    private static func hash(_ value: String) -> String {
+        SHA256.hash(data: Data(value.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+}
+
 /// iCloud availability of a single ubiquitous (or local) file. Surfaced so the
 /// UI can tell "downloading from iCloud" apart from a real failure (issue #6).
 enum ICloudItemState: Equatable {
@@ -464,9 +533,10 @@ struct ScriptWidgetPackage {
                 try self.makePackageDirectory()
             }
             
-            try data.write(to: fullPath)
+            try data.write(to: fullPath, options: .atomic)
             
             try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: fullPath.path)
+            syncBuildCache(fullPath: fullPath, content: content)
             
         } catch {
             return (false, "Failed write code to path :\(fullPath) error: \(error)")

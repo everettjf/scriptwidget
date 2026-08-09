@@ -44,6 +44,16 @@ For real iCloud I/O, connect and trust a signed-in iPad, then set `SCRIPTWIDGET_
 - Preview refresh: debounce 300–500 ms; stale generations must never replace a newer preview.
 - Widget timeline: peak resident memory below the platform extension limit with at least 20% headroom.
 
+The editor budgets are enforced by repeated CodeMirror state creation and edit transactions for 100 KiB and 1 MiB JSX documents. Runtime tests enforce cached execution and bounded trace history. Physical-device Instruments evidence remains mandatory for end-to-end typing, preview, cold-launch, and resident-memory measurements.
+
+## Recovery and synchronization
+
+- Source writes are atomic and immediately refresh the local build cache.
+- Studio records a debounced crash-recovery draft before autosave completes.
+- A draft is restored only if the underlying file hash is unchanged. If iCloud or another device changed the file, the stale draft is ignored instead of overwriting newer content.
+- Successful manual save, autosave, or Copilot Apply removes the recovery draft.
+- The iPad/iCloud automation covers deterministic cache and placeholder behavior; signed-in device destinations enable real round-trip and two-device convergence tests.
+
 ## Security and privacy review
 
 - Script file access is package-relative and rejects traversal/symlink escape.

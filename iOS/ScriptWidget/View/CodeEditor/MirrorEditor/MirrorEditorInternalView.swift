@@ -53,6 +53,7 @@ class MirrorEditorInternalView: WKWebView {
     private enum StudioMessage {
         static let ready = "studio.ready"
         static let documentOpen = "document.open"
+        static let documentChanged = "document.changed"
         static let documentSave = "document.save"
         static let documentReplace = "document.replace"
         static let documentSetReadOnly = "document.setReadOnly"
@@ -73,6 +74,7 @@ class MirrorEditorInternalView: WKWebView {
     
     var lastSaveContent = ""
     private var currentDocumentID: String?
+    private var draftWorkItem: DispatchWorkItem?
     
     var action: MirrorEditorInternalActionProvider?
     
@@ -127,8 +129,16 @@ class MirrorEditorInternalView: WKWebView {
                     return
                 }
                 self?.lastSaveContent = value
+                if let documentID = self?.currentDocumentID {
+                    StudioDraftStore.shared.remove(documentID: documentID)
+                }
             }
 
+            callback?(["result": "ok"])
+        })
+
+        self.bridge?.register(handlerName: StudioMessage.documentChanged, handler: { [weak self] _, callback in
+            self?.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         })
         
@@ -167,6 +177,7 @@ class MirrorEditorInternalView: WKWebView {
         print("de-init editor")
         isTearingDown = true
         pendingActions.removeAll()
+        draftWorkItem?.cancel()
         self.stopLoading()
         
         for cancellable in self.cancellables {
@@ -204,6 +215,9 @@ class MirrorEditorInternalView: WKWebView {
                     return
                 }
                 self.lastSaveContent = value
+                if let documentID = self.currentDocumentID {
+                    StudioDraftStore.shared.remove(documentID: documentID)
+                }
             }
             
             print("save succeed")
@@ -277,8 +291,28 @@ class MirrorEditorInternalView: WKWebView {
             guard result == "ok" || result == nil else { return }
             if self.action?.onWrite?(content) == true {
                 self.lastSaveContent = content
+                if let documentID = self.currentDocumentID {
+                    StudioDraftStore.shared.remove(documentID: documentID)
+                }
             }
         }
+    }
+
+    private func scheduleDraftSnapshot() {
+        draftWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, let documentID = self.currentDocumentID else { return }
+            self.editorGetValue { succeed, content in
+                guard succeed else { return }
+                StudioDraftStore.shared.save(
+                    documentID: documentID,
+                    baseContent: self.lastSaveContent,
+                    content: content
+                )
+            }
+        }
+        draftWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
     }
     
     
@@ -347,7 +381,10 @@ class MirrorEditorInternalView: WKWebView {
     
     func reloadCurrentScript() {
         if let onRead = action?.onRead {
-            let content = onRead()
+            let fileContent = onRead()
+            let content = currentDocumentID.flatMap {
+                StudioDraftStore.shared.recover(documentID: $0, currentContent: fileContent)?.content
+            } ?? fileContent
             
             callStudio(
                 handlerName: StudioMessage.documentOpen,
@@ -357,7 +394,7 @@ class MirrorEditorInternalView: WKWebView {
                     "readOnly": action?.onIsReadOnly?() ?? false,
                 ]
             )
-            lastSaveContent = content
+            lastSaveContent = fileContent
         }
     }
     

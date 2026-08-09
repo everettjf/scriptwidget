@@ -105,14 +105,11 @@ struct AIGenerateView: View {
                 showReview = true
             }
         }
-        .background(
-            NavigationLink(isActive: $showReview) {
-                AIReviewView(session: session) {
-                    presentationMode.wrappedValue.dismiss()
-                }
-            } label: { EmptyView() }
-            .hidden()
-        )
+        .navigationDestination(isPresented: $showReview) {
+            AIReviewView(session: session) {
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 
     private var header: some View {

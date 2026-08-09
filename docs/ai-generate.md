@@ -25,7 +25,7 @@
 
 | 项 | 决定 |
 |---|---|
-| 存储 | `UserDefaults(suiteName: "group.everettjf.scriptwidget")`（第一期）。Keychain 迁移留作后续 |
+| 存储 | 非敏感 Profile 配置存入 App Group `UserDefaults`；API Key、OAuth access/refresh token 存入系统 Keychain |
 | OpenAI 客户端 | [SwiftOpenAI](https://github.com/jamesrochabrun/SwiftOpenAI) |
 | 默认模型 | `gpt-4o-mini`，用户可自填任意 SwiftOpenAI 支持的 model id |
 | 默认 base URL | `https://api.openai.com/v1`，用户可自填（兼容 Azure / DeepSeek / 本地 vLLM 等） |
@@ -100,7 +100,7 @@ enum AISettingsKey {
 
 - 默认值集中在 `AISettings.default` 静态常量里。
 - `AISettings.isConfigured: Bool { !apiKey.isEmpty }`。
-- **注意**：第一期 UserDefaults 明文存储，**在 UI 上显式告知用户**"key 明文存在本机，请勿在共享设备上配置"。TODO: 下一期迁 Keychain。
+- **凭据安全**：Profile JSON 不编码 `apiKey`。API Key 与 OAuth 凭据按 Profile/Account ID 分开存入 Keychain；删除 Profile 时同步删除对应凭据。
 
 ### 4.2 AI 设置页 `SettingAIView`
 
@@ -401,7 +401,7 @@ macOS/ScriptWidgetMac.xcodeproj/project.pbxproj
 
 ## 6. 安全 / 隐私 / 成本
 
-- **Key 存储**：第一期 UserDefaults 明文。设置页必须有一段红色/橙色说明文字。TODO comment 写清楚"迁 Keychain"。
+- **Key 存储**：API Key 与 OAuth 凭据必须保留在 Keychain；App Group `UserDefaults` 仅保存非敏感配置。
 - **网络**：只向用户配置的 `baseURL` 发请求。禁止默认值之外的任何 hardcoded endpoint。
 - **数据最小化**：prompt 只包含用户输入 + 我们的系统提示 + 当轮错误信息。不上传用户已有 widgets、设备标识、位置、健康数据等。
 - **成本可感**：

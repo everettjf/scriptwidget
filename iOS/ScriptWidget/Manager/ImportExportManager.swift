@@ -29,7 +29,7 @@ class ExportManager {
         // Export each script to the temporary directory
         for (index, script) in scripts.enumerated() {
             let scriptPath = tempDir.appendingPathComponent(script.name)
-            let succeed = sharedScriptManager.exportScript(model: script, toPath: scriptPath)
+            _ = sharedScriptManager.exportScript(model: script, toPath: scriptPath)
             
             // Update progress with script name
             let progress = Float(index + 1) / totalScripts
@@ -111,7 +111,7 @@ class ImportManager {
             }
             
             // Import the script using your ScriptManager
-            let success = await sharedScriptManager.importScript(fromPath: file)
+            let success = sharedScriptManager.importScript(fromPath: file)
             if !success {
                 print("Failed to import script: \(fileName)")
             }

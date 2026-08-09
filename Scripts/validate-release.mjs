@@ -30,6 +30,26 @@ if (!generatedDocs.includes(`schema v${schema.schemaVersion}`) || !generatedDocs
   failures.push("runtime docs do not match schema/runtime version");
 }
 
+const iosInfo = await readFile(join(root, "iOS/ScriptWidget/Info.plist"), "utf8");
+for (const key of ["NSHealthShareUsageDescription", "NSHealthUpdateUsageDescription", "NSLocationWhenInUseUsageDescription"]) {
+  if (!iosInfo.includes(`<key>${key}</key>`)) failures.push(`iOS Info.plist is missing ${key}`);
+}
+
+const aiSettings = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AISettings.swift"), "utf8");
+if (!aiSettings.includes("apiKey is intentionally omitted") || !aiSettings.includes("AIKeychain.live")) {
+  failures.push("AI credentials must remain Keychain-backed and omitted from UserDefaults JSON");
+}
+
+const packageSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift"), "utf8");
+if (!packageSource.includes("write(to: fullPath, options: .atomic)")) {
+  failures.push("script source saves must remain atomic");
+}
+
+const releaseDocs = await readFile(join(root, "docs/release-readiness.md"), "utf8");
+for (const command of ["./Scripts/release-readiness.sh", "./Scripts/device-matrix.sh", "./Scripts/ipad-icloud-tests.sh"]) {
+  if (!releaseDocs.includes(command)) failures.push(`release documentation is missing ${command}`);
+}
+
 async function walk(directory) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {

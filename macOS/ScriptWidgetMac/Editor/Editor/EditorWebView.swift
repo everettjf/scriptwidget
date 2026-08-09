@@ -44,6 +44,7 @@ final class EditorInternalWebView: WKWebView {
     private enum StudioMessage {
         static let ready = "studio.ready"
         static let documentOpen = "document.open"
+        static let documentChanged = "document.changed"
         static let documentSave = "document.save"
         static let documentSetReadOnly = "document.setReadOnly"
         static let editorGetState = "editor.getState"
@@ -59,6 +60,7 @@ final class EditorInternalWebView: WKWebView {
     private var currentDocumentID: String?
     private var lastSavedContent = ""
     private var hasLoadedEditor = false
+    private var draftWorkItem: DispatchWorkItem?
 
     required init?(coder: NSCoder) {
         super.init(coder: coder)
@@ -98,6 +100,7 @@ final class EditorInternalWebView: WKWebView {
 
     deinit {
         stopLoading()
+        draftWorkItem?.cancel()
         pendingActions.removeAll()
         bridge?.reset()
         bridge = nil
@@ -146,6 +149,11 @@ final class EditorInternalWebView: WKWebView {
 
             callback?(save(content: content) ? ["result": "ok"] : ["result": "failed"])
         }
+
+        bridge?.register(handlerName: StudioMessage.documentChanged) { [weak self] _, callback in
+            self?.scheduleDraftSnapshot()
+            callback?(["result": "ok"])
+        }
     }
 
     private func openCurrentDocument() {
@@ -154,14 +162,34 @@ final class EditorInternalWebView: WKWebView {
         guard let content = result.0 else { return }
 
         lastSavedContent = content
+        let recovered = currentDocumentID.flatMap {
+            StudioDraftStore.shared.recover(documentID: $0, currentContent: content)?.content
+        } ?? content
         callStudio(
             handlerName: StudioMessage.documentOpen,
             payload: [
-                "content": content,
+                "content": recovered,
                 "version": 0,
                 "readOnly": model.package.readonly,
             ]
         )
+    }
+
+    private func scheduleDraftSnapshot() {
+        draftWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, let documentID = self.currentDocumentID else { return }
+            self.readSnapshot { [weak self] snapshot in
+                guard let self, let snapshot else { return }
+                StudioDraftStore.shared.save(
+                    documentID: documentID,
+                    baseContent: self.lastSavedContent,
+                    content: snapshot.content
+                )
+            }
+        }
+        draftWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25, execute: workItem)
     }
 
     private func setReadOnly(_ readOnly: Bool) {
@@ -230,6 +258,9 @@ final class EditorInternalWebView: WKWebView {
         }
 
         lastSavedContent = content
+        if let currentDocumentID {
+            StudioDraftStore.shared.remove(documentID: currentDocumentID)
+        }
         NotificationCenter.default.post(name: PreviewService.updateNotification, object: scriptModel.package)
         return true
     }
