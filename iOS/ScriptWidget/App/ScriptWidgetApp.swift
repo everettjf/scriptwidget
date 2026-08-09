@@ -11,6 +11,10 @@ import WidgetKit
 @main
 struct ScriptWidgetApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
+
+    init() {
+        ScriptWidgetPrecompiler.install()
+    }
     
     var body: some Scene {
         WindowGroup {

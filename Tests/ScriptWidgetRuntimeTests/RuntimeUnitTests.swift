@@ -20,6 +20,7 @@
 
 import XCTest
 import JavaScriptCore
+import ImageIO
 // Both the iOS and macOS apps build with module name "ScriptWidget"
 // (the macOS target "ScriptWidgetMac" ships PRODUCT_NAME = ScriptWidget).
 @testable import ScriptWidget
@@ -168,6 +169,44 @@ final class RuntimeContractTests: XCTestCase {
             XCTAssertNil(ScriptWidgetRuntimeContract.validateSource(source), relativePath)
         }
     }
+
+    func testElementTreeAcceptsReasonableContent() {
+        let children = (0..<20).map {
+            ScriptWidgetRuntimeElement(tagString: "text", props: ["index": $0], children: ["row"])
+        }
+        let root = ScriptWidgetRuntimeElement(tagString: "vstack", props: nil, children: children)
+        XCTAssertNil(ScriptWidgetRuntimeContract.validateElementTree(root))
+    }
+
+    func testElementTreeRejectsNodeBomb() {
+        let children = (0..<ScriptWidgetRuntimeContract.maximumElementNodes).map { _ in
+            ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: nil)
+        }
+        let root = ScriptWidgetRuntimeElement(tagString: "vstack", props: nil, children: children)
+        XCTAssertNotNil(ScriptWidgetRuntimeContract.validateElementTree(root))
+    }
+
+    func testElementTreeRejectsExcessiveDepthAndCycles() {
+        let root = ScriptWidgetRuntimeElement(tagString: "root", props: nil, children: nil)
+        var cursor = root
+        for _ in 0...ScriptWidgetRuntimeContract.maximumElementDepth {
+            let child = ScriptWidgetRuntimeElement(tagString: "child", props: nil, children: nil)
+            cursor.children = [child]
+            cursor = child
+        }
+        XCTAssertNotNil(ScriptWidgetRuntimeContract.validateElementTree(root))
+
+        let cycle = ScriptWidgetRuntimeElement(tagString: "cycle", props: nil, children: nil)
+        cycle.children = [cycle]
+        XCTAssertNotNil(ScriptWidgetRuntimeContract.validateElementTree(cycle))
+    }
+
+    func testElementTreeRejectsPropertyBomb() {
+        var props: [AnyHashable: Any] = [:]
+        for index in 0...ScriptWidgetRuntimeContract.maximumPropsPerElement { props["p\(index)"] = index }
+        let root = ScriptWidgetRuntimeElement(tagString: "text", props: props, children: nil)
+        XCTAssertNotNil(ScriptWidgetRuntimeContract.validateElementTree(root))
+    }
 }
 
 final class RuntimeSecurityTests: XCTestCase {
@@ -194,6 +233,15 @@ final class RuntimeSecurityTests: XCTestCase {
         XCTAssertNotNil(ScriptWidgetFetchPolicy.validationError(for: URL(string: "http://172.20.0.2")!))
     }
 
+    func testFetchTimeoutAndStreamingLimitsAreClamped() {
+        XCTAssertEqual(ScriptWidgetFetchPolicy.normalizedTimeout(nil), 5)
+        XCTAssertEqual(ScriptWidgetFetchPolicy.normalizedTimeout(-20), 1)
+        XCTAssertEqual(ScriptWidgetFetchPolicy.normalizedTimeout(500), 10)
+        XCTAssertTrue(ScriptWidgetFetchPolicy.canAppend(currentBytes: 100, incomingBytes: 200, limit: 300))
+        XCTAssertFalse(ScriptWidgetFetchPolicy.canAppend(currentBytes: 100, incomingBytes: 201, limit: 300))
+        XCTAssertFalse(ScriptWidgetFetchPolicy.canAppend(currentBytes: 0, incomingBytes: 301, limit: 300))
+    }
+
     func testPublishedResourceBudgetsRemainBounded() {
         XCTAssertLessThanOrEqual(ScriptWidgetRuntimeContract.maximumSourceBytes, 512 * 1_024)
         XCTAssertLessThanOrEqual(ScriptWidgetFetchManager.maximumResponseBytes, 2 * 1_024 * 1_024)
@@ -203,6 +251,13 @@ final class RuntimeSecurityTests: XCTestCase {
 }
 
 final class TranspileCacheTests: XCTestCase {
+
+    override func tearDown() {
+        ScriptWidgetTranspileCache.memoryCostLimit = 4 * 1_024 * 1_024
+        ScriptWidgetTranspileCache.memoryCountLimit = 16
+        ScriptWidgetTranspileCache.removeAllMemory()
+        super.tearDown()
+    }
 
     func testKeyIsDeterministic() {
         let a = ScriptWidgetTranspileCache.key(for: "source-abc", babelFingerprint: "fp1")
@@ -236,6 +291,206 @@ final class TranspileCacheTests: XCTestCase {
         let f2 = ScriptWidgetTranspileCache.fingerprint(of: "babel-bundle-bytes")
         XCTAssertFalse(f1.isEmpty)
         XCTAssertEqual(f1, f2)
+    }
+
+    func testMemoryCacheHasExplicitBounds() {
+        ScriptWidgetTranspileCache.memoryCostLimit = 1_024
+        ScriptWidgetTranspileCache.memoryCountLimit = 2
+        XCTAssertEqual(ScriptWidgetTranspileCache.memoryCostLimit, 1_024)
+        XCTAssertEqual(ScriptWidgetTranspileCache.memoryCountLimit, 2)
+    }
+
+    func testDiskCacheTrimKeepsNewestEntriesWithinBothBounds() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("TranspileTrim-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        for index in 0..<5 {
+            let url = directory.appendingPathComponent("entry-\(index)")
+            try Data(repeating: UInt8(index), count: 10).write(to: url)
+            try FileManager.default.setAttributes([.modificationDate: Date(timeIntervalSince1970: TimeInterval(index))], ofItemAtPath: url.path)
+        }
+
+        ScriptWidgetTranspileCache.trim(directory: directory, maximumBytes: 25, maximumEntries: 3)
+        let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted()
+        XCTAssertEqual(names, ["entry-3", "entry-4"])
+    }
+}
+
+final class RuntimePerformanceTraceTests: XCTestCase {
+    override func setUp() {
+        super.setUp()
+        ScriptWidgetRuntimeTrace.resetForTesting()
+    }
+
+    func testTracePublishesBoundedDurationsAndCounters() {
+        let trace = ScriptWidgetRuntimeTrace(operation: "unit-test")
+        let value: Int = trace.measure("phase") { 42 }
+        trace.increment("bytes", by: 128)
+        trace.finish()
+
+        XCTAssertEqual(value, 42)
+        let snapshot = ScriptWidgetRuntimeTrace.recentSnapshots().last
+        XCTAssertEqual(snapshot?.operation, "unit-test")
+        XCTAssertEqual(snapshot?.counters["bytes"], 128)
+        XCTAssertNotNil(snapshot?.durations["phase"])
+        XCTAssertGreaterThanOrEqual(snapshot?.durations["total"] ?? -1, 0)
+    }
+
+    func testTraceHistoryIsBounded() {
+        for index in 0..<140 {
+            ScriptWidgetRuntimeTrace(operation: "run-\(index)").finish()
+        }
+        XCTAssertEqual(ScriptWidgetRuntimeTrace.recentSnapshots().count, 100)
+        XCTAssertEqual(ScriptWidgetRuntimeTrace.recentSnapshots().first?.operation, "run-40")
+    }
+}
+
+final class CompiledArtifactTests: XCTestCase {
+    private var package: ScriptWidgetPackage!
+
+    override func setUp() {
+        super.setUp()
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("CompiledArtifact-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        package = ScriptWidgetPackage(path: directory)
+        ScriptWidgetCompiledArtifactStore.remove(package: package)
+    }
+
+    override func tearDown() {
+        ScriptWidgetCompiledArtifactStore.remove(package: package)
+        try? FileManager.default.removeItem(at: package.path)
+        package = nil
+        super.tearDown()
+    }
+
+    func testArtifactRoundTripValidatesEveryHash() throws {
+        let source = "$render(<text>compiled</text>);"
+        let javaScript = "async function $main(){return 1;}"
+        XCTAssertTrue(ScriptWidgetCompiledArtifactStore.save(package: package, source: source, javaScript: javaScript))
+        let artifact = try XCTUnwrap(ScriptWidgetCompiledArtifactStore.load(package: package, source: source))
+        XCTAssertEqual(artifact.javaScript, javaScript)
+        XCTAssertEqual(artifact.manifest.formatVersion, ScriptWidgetBuildManifest.formatVersion)
+        XCTAssertEqual(artifact.manifest.compilerFingerprint, ScriptWidgetCompiler.fingerprint)
+        XCTAssertEqual(artifact.manifest.sourceBytes, source.utf8.count)
+        XCTAssertNil(ScriptWidgetCompiledArtifactStore.load(package: package, source: source + "// changed"))
+    }
+
+    func testCorruptCompiledBytesAreRejected() throws {
+        let source = "$render(<text>safe</text>);"
+        XCTAssertTrue(ScriptWidgetCompiledArtifactStore.save(package: package, source: source, javaScript: "valid"))
+        let directory = try XCTUnwrap(ScriptWidgetCompiledArtifactStore.artifactDirectory(package: package))
+        try Data("tampered".utf8).write(to: directory.appendingPathComponent(ScriptWidgetCompiledArtifactStore.javaScriptName))
+        XCTAssertNil(ScriptWidgetCompiledArtifactStore.load(package: package, source: source))
+        XCTAssertNil(ScriptWidgetCompiledArtifactStore.loadLastKnownGood(package: package))
+    }
+
+    func testLastKnownGoodRemainsAvailableAcrossSourceRevision() throws {
+        let original = "$render(<text>stable</text>);"
+        XCTAssertTrue(ScriptWidgetCompiledArtifactStore.save(package: package, source: original, javaScript: "stable-js"))
+        XCTAssertNil(ScriptWidgetCompiledArtifactStore.load(package: package, source: original + " broken"))
+        XCTAssertEqual(ScriptWidgetCompiledArtifactStore.loadLastKnownGood(package: package)?.javaScript, "stable-js")
+    }
+
+    func testMomentCapabilityInferenceIsConservative() {
+        XCTAssertEqual(ScriptWidgetCompiledArtifactStore.inferredLibraries(source: "moment().endOf('year')"), ["moment"])
+        XCTAssertEqual(ScriptWidgetCompiledArtifactStore.inferredLibraries(source: "moment.utc()"), ["moment"])
+        XCTAssertTrue(ScriptWidgetCompiledArtifactStore.inferredLibraries(source: "new Date()").isEmpty)
+    }
+
+    func testPrecompilerProducesExecutableArtifact() throws {
+        let source = "$render(<text>ready</text>);"
+        let result = ScriptWidgetPrecompiler.compileNow(package: package, source: source)
+        guard case .success(let artifact) = result else {
+            return XCTFail("precompile failed: \(result)")
+        }
+        XCTAssertTrue(artifact.javaScript.contains("$main"))
+        XCTAssertNotNil(ScriptWidgetCompiledArtifactStore.load(package: package, source: source))
+    }
+}
+
+final class ExecutionSessionTests: XCTestCase {
+    func testSessionRejectsWorkAfterCancellation() {
+        let session = ScriptWidgetExecutionSession()
+        XCTAssertTrue(session.isActive)
+        session.cancel(.superseded)
+        XCTAssertFalse(session.isActive)
+        XCTAssertEqual(session.cancellation, .superseded)
+        let task = URLSession.shared.dataTask(with: URL(string: "https://example.com")!)
+        XCTAssertFalse(session.register(task))
+    }
+
+    func testNetworkConcurrencyBudgetIsEnforced() {
+        let session = ScriptWidgetExecutionSession()
+        var tasks: [URLSessionDataTask] = []
+        for index in 0..<ScriptWidgetExecutionSession.maximumConcurrentNetworkRequests {
+            let task = URLSession.shared.dataTask(with: URL(string: "https://example.com/\(index)")!)
+            tasks.append(task)
+            XCTAssertTrue(session.register(task))
+        }
+        let overflow = URLSession.shared.dataTask(with: URL(string: "https://example.com/overflow")!)
+        XCTAssertFalse(session.register(overflow))
+        session.complete(tasks[0])
+        XCTAssertTrue(session.register(overflow))
+        session.cancel(.explicit)
+    }
+
+    func testFinishIsIdempotentAndPreservesFirstReason() {
+        let session = ScriptWidgetExecutionSession()
+        session.cancel(.timeout)
+        session.finish()
+        XCTAssertEqual(session.cancellation, .timeout)
+    }
+}
+
+final class ImagePipelineTests: XCTestCase {
+    override func tearDown() {
+        ScriptWidgetImagePipeline.removeAll()
+        super.tearDown()
+    }
+
+    func testImageIsDownsampledToBoundedPixelSize() throws {
+        let data = try makePNG(width: 512, height: 256)
+        let image = try XCTUnwrap(ScriptWidgetImagePipeline.image(data: data, maximumPixelSize: 64))
+#if os(macOS)
+        let representation = try XCTUnwrap(image.representations.first)
+        // NSImage creates a Retina representation for the bounded thumbnail.
+        XCTAssertLessThanOrEqual(max(representation.pixelsWide, representation.pixelsHigh), 128)
+#else
+        let cgImage = try XCTUnwrap(image.cgImage)
+        XCTAssertLessThanOrEqual(max(cgImage.width, cgImage.height), 64)
+#endif
+    }
+
+    func testOversizedInputIsRejectedBeforeDecode() {
+        let data = Data(repeating: 0, count: ScriptWidgetImagePipeline.maximumInputBytes + 1)
+        XCTAssertNil(ScriptWidgetImagePipeline.image(data: data))
+    }
+
+    func testInvalidImageDataIsRejected() {
+        XCTAssertNil(ScriptWidgetImagePipeline.image(data: Data("not-an-image".utf8)))
+    }
+
+    private func makePNG(width: Int, height: Int) throws -> Data {
+        let colorSpace = CGColorSpaceCreateDeviceRGB()
+        let context = try XCTUnwrap(CGContext(
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: width * 4,
+            space: colorSpace,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        ))
+        context.setFillColor(CGColor(red: 0.2, green: 0.4, blue: 0.8, alpha: 1))
+        context.fill(CGRect(x: 0, y: 0, width: width, height: height))
+        let cgImage = try XCTUnwrap(context.makeImage())
+        let data = NSMutableData()
+        let destination = try XCTUnwrap(CGImageDestinationCreateWithData(data, "public.png" as CFString, 1, nil))
+        CGImageDestinationAddImage(destination, cgImage, nil)
+        XCTAssertTrue(CGImageDestinationFinalize(destination))
+        return data as Data
     }
 }
 

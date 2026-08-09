@@ -24,6 +24,8 @@ class ScriptCodePreviewDataObject : ObservableObject {
     let previewQueue: DispatchQueue
     
     var cancelledByDeinit = false
+    private var previewGeneration = 0
+    private var pendingLayoutWorkItem: DispatchWorkItem?
     
     init(model: ScriptModel, filePath: URL, widgetSizeType: Int, scriptParameter: String) {
         self.model = model
@@ -41,6 +43,8 @@ class ScriptCodePreviewDataObject : ObservableObject {
     
     deinit {
         cancelledByDeinit = true
+        pendingLayoutWorkItem?.cancel()
+        runtime?.cancel(.explicit)
         print("PreviewView data object deinit :\(Unmanaged.passUnretained(self).toOpaque())")
     }
     
@@ -68,7 +72,11 @@ class ScriptCodePreviewDataObject : ObservableObject {
             print("PreviewView data layout elements cancelled by deinit :\(Unmanaged.passUnretained(self).toOpaque())")
             return
         }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) { [weak self] in
+        previewGeneration += 1
+        let generation = previewGeneration
+        pendingLayoutWorkItem?.cancel()
+        runtime?.cancel(.superseded)
+        let workItem = DispatchWorkItem { [weak self] in
             guard let self = self else {
                 print("PreviewView data layout elements cancelled by deinit : weak nil")
                 return
@@ -77,27 +85,33 @@ class ScriptCodePreviewDataObject : ObservableObject {
                 print("PreviewView data layout elements cancelled by deinit :\(Unmanaged.passUnretained(self).toOpaque())")
                 return
             }
-            self.internalLayoutElements()
+            guard generation == self.previewGeneration else { return }
+            self.internalLayoutElements(generation: generation)
         }
+        pendingLayoutWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5, execute: workItem)
     }
     
-    func internalLayoutElements() {
+    func internalLayoutElements(generation: Int) {
         print("PreviewView data internal layout element :\(Unmanaged.passUnretained(self).toOpaque())")
-        self.runScript { [weak self] result in
+        self.runScript(generation: generation) { [weak self] result in
+            guard let self, generation == self.previewGeneration else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                self?.loadScriptConsoleLogs()
-                self?.systemLog("FINISH")
+                guard generation == self.previewGeneration else { return }
+                self.loadScriptConsoleLogs()
+                self.systemLog("FINISH")
             }
             if result {
                 print("succeed preview")
                 
-                self?.setPreviewStatus("Finish :)")
+                self.setPreviewStatus("Finish :)")
             } else {
                 print("failed preview")
-                self?.setPreviewStatus("Error 0_0")
+                self.setPreviewStatus("Error 0_0")
                 DispatchQueue.main.async {
-                    let info = self?.lastErrorMessage ?? "#Failed#"
-                    self?.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
+                    guard generation == self.previewGeneration else { return }
+                    let info = self.lastErrorMessage ?? "#Failed#"
+                    self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: [info])
                 }
             }
         }
@@ -109,8 +123,9 @@ class ScriptCodePreviewDataObject : ObservableObject {
         }
     }
     
-    func runScript(_ completion: @escaping (Bool) -> Void) {
+    func runScript(generation: Int, _ completion: @escaping (Bool) -> Void) {
         self.previewQueue.async {
+            guard generation == self.previewGeneration, !self.cancelledByDeinit else { return }
             self.setPreviewStatus("Running...")
             print("start preview")
 
@@ -146,6 +161,10 @@ class ScriptCodePreviewDataObject : ObservableObject {
             // Keep the runtime alive in both success and failure paths
             // so loadScriptConsoleLogs() can still read this run's logs
             // off its JSContext.
+            guard generation == self.previewGeneration else {
+                runtime.cancel(.superseded)
+                return
+            }
             self.runtime = runtime
 
             if let element = result.0 {

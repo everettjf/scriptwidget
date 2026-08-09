@@ -10,6 +10,10 @@ import JavaScriptCore
 import Combine
 import CryptoKit
 import os
+import Darwin
+#if os(iOS)
+import UIKit
+#endif
 
 /// Leveled logging for the runtime and widget targets, replacing scattered
 /// `print` calls. Interpolations are marked `.public` so messages are not
@@ -19,6 +23,152 @@ enum SWLog {
     static func debug(_ message: String) { logger.debug("\(message, privacy: .public)") }
     static func info(_ message: String) { logger.info("\(message, privacy: .public)") }
     static func error(_ message: String) { logger.error("\(message, privacy: .public)") }
+}
+
+/// Lightweight, process-local performance telemetry for the script pipeline.
+/// The signposts are visible in Instruments while the bounded snapshots make
+/// deterministic performance assertions possible in XCTest without parsing a
+/// trace file.
+final class ScriptWidgetRuntimeTrace {
+    struct Snapshot: Equatable {
+        let operation: String
+        let durations: [String: Double]
+        let counters: [String: Int]
+    }
+
+    private static let signpostLog = OSLog(subsystem: "everettjf.scriptwidget", category: "runtime.performance")
+    private static let snapshotsLock = NSLock()
+    private static var snapshots: [Snapshot] = []
+    private static let maximumSnapshots = 100
+
+    private let operation: String
+    private let startedAt = ContinuousClock.now
+    private var durations: [String: Double] = [:]
+    private var counters: [String: Int] = [:]
+    private let lock = NSLock()
+
+    init(operation: String) {
+        self.operation = operation
+        if let resident = Self.residentMemoryBytes() { counters["resident.start.bytes"] = resident }
+        os_signpost(.begin, log: Self.signpostLog, name: "RuntimeExecution", "%{public}@", operation as NSString)
+    }
+
+    @discardableResult
+    func measure<T>(_ phase: String, _ work: () throws -> T) rethrows -> T {
+        let start = ContinuousClock.now
+        os_signpost(.begin, log: Self.signpostLog, name: "RuntimePhase", "%{public}@", phase as NSString)
+        defer {
+            let elapsed = Self.milliseconds(start.duration(to: .now))
+            lock.lock()
+            durations[phase, default: 0] += elapsed
+            lock.unlock()
+            os_signpost(.end, log: Self.signpostLog, name: "RuntimePhase", "%{public}@ %.3f ms", phase as NSString, elapsed)
+        }
+        return try work()
+    }
+
+    func increment(_ counter: String, by value: Int = 1) {
+        lock.lock()
+        counters[counter, default: 0] += value
+        lock.unlock()
+    }
+
+    func finish() {
+        lock.lock()
+        durations["total"] = Self.milliseconds(startedAt.duration(to: .now))
+        if let resident = Self.residentMemoryBytes() { counters["resident.end.bytes"] = resident }
+        let snapshot = Snapshot(operation: operation, durations: durations, counters: counters)
+        lock.unlock()
+
+        Self.snapshotsLock.lock()
+        Self.snapshots.append(snapshot)
+        if Self.snapshots.count > Self.maximumSnapshots {
+            Self.snapshots.removeFirst(Self.snapshots.count - Self.maximumSnapshots)
+        }
+        Self.snapshotsLock.unlock()
+        os_signpost(.end, log: Self.signpostLog, name: "RuntimeExecution", "%{public}@", operation as NSString)
+    }
+
+    static func recentSnapshots() -> [Snapshot] {
+        snapshotsLock.lock()
+        defer { snapshotsLock.unlock() }
+        return snapshots
+    }
+
+    static func resetForTesting() {
+        snapshotsLock.lock()
+        snapshots.removeAll(keepingCapacity: true)
+        snapshotsLock.unlock()
+    }
+
+    private static func milliseconds(_ duration: Duration) -> Double {
+        let components = duration.components
+        return Double(components.seconds) * 1_000 + Double(components.attoseconds) / 1_000_000_000_000_000
+    }
+
+    private static func residentMemoryBytes() -> Int? {
+        var info = mach_task_basic_info()
+        var count = mach_msg_type_number_t(MemoryLayout<mach_task_basic_info_data_t>.size) / 4
+        let result = withUnsafeMutablePointer(to: &info) {
+            $0.withMemoryRebound(to: integer_t.self, capacity: Int(count)) {
+                task_info(mach_task_self_, task_flavor_t(MACH_TASK_BASIC_INFO), $0, &count)
+            }
+        }
+        return result == KERN_SUCCESS ? Int(info.resident_size) : nil
+    }
+}
+
+/// Immutable bundled support scripts are shared within a process. Keeping this
+/// cache small avoids repeatedly allocating the 57 KiB compatibility library,
+/// while deliberately excluding Babel's multi-megabyte bundle from permanent
+/// memory unless a cache miss actually requires compilation.
+enum ScriptWidgetSupportScriptCache {
+    private static let cache = NSCache<NSString, NSString>()
+
+    static func read(_ fileName: String, loader: () -> String?) -> String? {
+        if let cached = cache.object(forKey: fileName as NSString) {
+            return cached as String
+        }
+        guard let value = loader() else { return nil }
+        if fileName != "core.js" {
+            cache.setObject(value as NSString, forKey: fileName as NSString, cost: value.utf8.count)
+            cache.totalCostLimit = 512 * 1_024
+            cache.countLimit = 8
+        }
+        return value
+    }
+
+    static func removeAll() {
+        cache.removeAllObjects()
+    }
+}
+
+enum ScriptWidgetMemoryPressure {
+    private static let lock = NSLock()
+    private static var installed = false
+    private static var observer: NSObjectProtocol?
+
+    static func install() {
+        lock.lock()
+        defer { lock.unlock() }
+        guard !installed else { return }
+        installed = true
+#if os(iOS)
+        observer = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: nil
+        ) { _ in
+            releaseCaches()
+        }
+#endif
+    }
+
+    static func releaseCaches() {
+        ScriptWidgetSupportScriptCache.removeAll()
+        ScriptWidgetTranspileCache.removeAllMemory()
+        ScriptWidgetImagePipeline.removeAll()
+    }
 }
 
 enum ScriptWidgetError: Error {
@@ -72,6 +222,9 @@ enum ScriptWidgetRuntimeContract {
     static let maximumSourceBytes = 512 * 1_024
     static let maximumTranspiledBytes = 2 * 1_024 * 1_024
     static let executionTimeout: DispatchTimeInterval = .seconds(5)
+    static let maximumElementNodes = 1_000
+    static let maximumElementDepth = 64
+    static let maximumPropsPerElement = 128
 
     static let globalAPIs = [
         "$component", "$console", "$device", "$dynamic_island", "$element",
@@ -101,8 +254,40 @@ enum ScriptWidgetRuntimeContract {
                 "sourceBytes": maximumSourceBytes,
                 "transpiledBytes": maximumTranspiledBytes,
                 "executionMilliseconds": 5_000,
+                "elementNodes": maximumElementNodes,
+                "elementDepth": maximumElementDepth,
+                "propsPerElement": maximumPropsPerElement,
             ],
         ]
+    }
+
+    static func validateElementTree(_ root: ScriptWidgetRuntimeElement) -> ScriptWidgetError? {
+        var count = 0
+        var activePath: Set<ObjectIdentifier> = []
+
+        func visit(_ element: ScriptWidgetRuntimeElement, depth: Int) -> ScriptWidgetError? {
+            guard depth <= maximumElementDepth else {
+                return .resourceLimit("Element tree exceeds the maximum depth of \(maximumElementDepth)")
+            }
+            count += 1
+            guard count <= maximumElementNodes else {
+                return .resourceLimit("Element tree exceeds the \(maximumElementNodes)-node limit")
+            }
+            guard element.getProps().count <= maximumPropsPerElement else {
+                return .resourceLimit("Element has more than \(maximumPropsPerElement) properties")
+            }
+            let identifier = ObjectIdentifier(element)
+            guard activePath.insert(identifier).inserted else {
+                return .resourceLimit("Element tree contains a cycle")
+            }
+            defer { activePath.remove(identifier) }
+            for child in element.childrenAsElements() {
+                if let error = visit(child, depth: depth + 1) { return error }
+            }
+            return nil
+        }
+
+        return visit(root, depth: 1)
     }
 }
 
@@ -165,12 +350,89 @@ struct ScriptWidgetDynamicIslandRuntimeElement {
     }
 }
 
+enum ScriptWidgetCompiler {
+    /// Bump whenever the wrapper or Babel preset changes. Keeping this value in
+    /// the manifest lets Widget processes validate compiled output without
+    /// reading and hashing the 2.7 MiB Babel bundle on every cold launch.
+    static let fingerprint = ScriptWidgetBuildContract.compilerFingerprint
+
+    static func wrappedSource(_ source: String, callFunction: String = "") -> String {
+        var result = "async function $main() { try {"
+        result += source
+        if !callFunction.isEmpty { result += "await \(callFunction)();" }
+        result += "} catch(e){ console.error(e); $error(`${e}`) } }"
+        return result
+    }
+
+    static func compile(_ source: String, babelContent: String) -> Result<String, ScriptWidgetError> {
+        guard let context = JSContext() else {
+            return .failure(.internalError("Unable to create compiler context"))
+        }
+        var exceptionInfo: String?
+        context.exceptionHandler = { _, exception in
+            exceptionInfo = ScriptWidgetRuntime.describeException(exception)
+        }
+        context.evaluateScript(babelContent)
+        context.evaluateScript("""
+            function ScriptWidgetTransform(input) {
+                return Babel.transform(input, { presets: ['scriptwidget'] }).code
+            }
+            """)
+        guard let output = context.objectForKeyedSubscript("ScriptWidgetTransform")?
+            .call(withArguments: [source])?.toString() else {
+            return .failure(.transformError(exceptionInfo ?? "Transform result is nil"))
+        }
+        if let exceptionInfo { return .failure(.scriptException(exceptionInfo)) }
+        if let error = ScriptWidgetRuntimeContract.validateTranspiled(output) { return .failure(error) }
+        return .success(output)
+    }
+}
+
+enum ScriptWidgetPrecompiler {
+    private static let queue = DispatchQueue(label: "scriptwidget.precompiler", qos: .utility)
+
+    static func install() {
+        ScriptWidgetPrecompileCoordinator.install { package, source in
+            schedule(package: package, source: source)
+        }
+    }
+
+    static func schedule(package: ScriptWidgetPackage, source: String) {
+        queue.async {
+            _ = compileNow(package: package, source: source)
+        }
+    }
+
+    @discardableResult
+    static func compileNow(package: ScriptWidgetPackage, source: String) -> Result<ScriptWidgetCompiledArtifact, ScriptWidgetError> {
+        if let existing = ScriptWidgetCompiledArtifactStore.load(package: package, source: source) {
+            return .success(existing)
+        }
+        guard let babel = ScriptManager.readBundleFile(bundle: "support", fileName: "core.js") else {
+            return .failure(.internalError("Babel file not found"))
+        }
+        let wrapped = ScriptWidgetCompiler.wrappedSource(source)
+        switch ScriptWidgetCompiler.compile(wrapped, babelContent: babel) {
+        case .failure(let error):
+            // The previous valid artifact is deliberately preserved.
+            return .failure(error)
+        case .success(let output):
+            guard ScriptWidgetCompiledArtifactStore.save(package: package, source: source, javaScript: output),
+                  let artifact = ScriptWidgetCompiledArtifactStore.load(package: package, source: source) else {
+                return .failure(.internalError("Unable to persist compiled artifact"))
+            }
+            return .success(artifact)
+        }
+    }
+}
+
 class ScriptWidgetRuntime {
     
     private let runtimeContext = JSContext()!
     
     private var environments : [String:String]
     private var package : ScriptWidgetPackage
+    private var performanceTrace: ScriptWidgetRuntimeTrace?
     
     init(package: ScriptWidgetPackage, environments: [String:String]) {
         self.package = package
@@ -178,6 +440,8 @@ class ScriptWidgetRuntime {
         // APIs like $file/$console read per-execution state from the
         // owning JSContext.
         runtimeContext.scriptWidgetRunningState = ScriptWidgetRunningState(package: package)
+        ScriptWidgetMemoryPressure.install()
+        ScriptWidgetPrecompiler.install()
     }
 
     /// Per-execution state attached to this runtime's JSContext. Use
@@ -185,87 +449,119 @@ class ScriptWidgetRuntime {
     var runningState: ScriptWidgetRunningState? {
         runtimeContext.scriptWidgetRunningState
     }
+
+    func cancel(_ reason: ScriptWidgetExecutionCancellation = .explicit) {
+        runningState?.executionSession.cancel(reason)
+    }
     
     public func setEnvironment(_ key: String, _ value: String) {
         self.environments[key] = value
     }
     
     private func readSupportScript(_ fileName: String) -> String? {
-        return ScriptManager.readBundleFile(bundle: "support", fileName: fileName)
+        return ScriptWidgetSupportScriptCache.read(fileName) {
+            ScriptManager.readBundleFile(bundle: "support", fileName: fileName)
+        }
+    }
+
+    private func evaluateCompatibilityLibraries(for javaScript: String) {
+        guard ScriptWidgetCompiledArtifactStore.inferredLibraries(source: javaScript).contains("moment"),
+              let momentJS = readSupportScript("moment.min.js") else {
+            performanceTrace?.increment("library.moment.skipped")
+            return
+        }
+        performanceTrace?.measure("library.moment.evaluate") {
+            runtimeContext.evaluateScript(momentJS)
+        }
+        performanceTrace?.increment("library.moment.loaded")
+    }
+
+    private func installBaseAPIs() {
+        performanceTrace?.measure("runtime.api.install") {
+            runtimeContext["Promise"] = ScriptWidgetRuntimePromise.self
+            runtimeContext["fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
+            runtimeContext["$fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
+            runtimeContext["$console"] = ScriptWidgetRuntimeConsole.self
+            runtimeContext["console"] = ScriptWidgetRuntimeConsole.self
+            runtimeContext["$element"] = ScriptWidgetRuntimeElement.self
+            runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
+            runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
+            runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
+            runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
+            runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
+            runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
+            runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
+            runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
+
+            let environment = environments
+            let getenv: @convention(block) (String) -> String = { key in environment[key] ?? "" }
+            runtimeContext["$getenv"] = unsafeBitCast(getenv, to: JSValue.self)
+        }
     }
     
     private func transform(_ paramJSX: String, wrapMain: Bool, callAsynFunctionName: String = "") -> AnyPublisher<String, ScriptWidgetError> {
         if let error = ScriptWidgetRuntimeContract.validateSource(paramJSX) {
             return Fail(error: error).eraseToAnyPublisher()
         }
-        // async/await support
-        var JSX = ""
-        if wrapMain {
-            JSX += "async function $main() { try {"
-            JSX += paramJSX
-            if !callAsynFunctionName.isEmpty {
-                // call function
-                JSX += "await \(callAsynFunctionName)();"
-            }
-            JSX += "} catch(e){ console.error(e); $error(`${e}`) } }"
-        } else {
-            JSX = paramJSX
-        }
+        let JSX = wrapMain
+            ? ScriptWidgetCompiler.wrappedSource(paramJSX, callFunction: callAsynFunctionName)
+            : paramJSX
         return Future<String, ScriptWidgetError> { promise in
-            guard let babelContent = self.readSupportScript("core.js") else {
-                promise(.failure(.internalError("Babel file not found")))
+            let sourceHashStart = ContinuousClock.now
+
+            if wrapMain, callAsynFunctionName.isEmpty,
+               let artifact = ScriptWidgetCompiledArtifactStore.load(package: self.package, source: paramJSX) {
+                self.performanceTrace?.increment("compiled.artifact.hit")
+                self.performanceTrace?.increment("source.bytes", by: paramJSX.utf8.count)
+                self.performanceTrace?.increment("transpiled.bytes", by: artifact.javaScript.utf8.count)
+                promise(.success(artifact.javaScript))
                 return
             }
+            self.performanceTrace?.increment("compiled.artifact.miss")
 
             // Babel transform output is deterministic for a given input + bundle,
             // so reuse a cached result instead of re-running Babel on every widget
             // refresh (widget processes are short-lived, hence the disk backing).
-            let cacheKey = ScriptWidgetTranspileCache.key(for: JSX, babelFingerprint: ScriptWidgetTranspileCache.fingerprint(of: babelContent))
-            if let cached = ScriptWidgetTranspileCache.get(cacheKey) {
+            let cacheKey = ScriptWidgetTranspileCache.key(for: JSX, babelFingerprint: ScriptWidgetCompiler.fingerprint)
+            self.performanceTrace?.increment("source.bytes", by: JSX.utf8.count)
+            self.performanceTrace?.increment("source.hash.nanoseconds", by: Int(sourceHashStart.duration(to: .now).components.attoseconds / 1_000_000_000))
+            let cachedOutput = self.performanceTrace?.measure("transpile.cache.lookup", {
+                ScriptWidgetTranspileCache.get(cacheKey)
+            }) ?? ScriptWidgetTranspileCache.get(cacheKey)
+            if let cached = cachedOutput {
+                self.performanceTrace?.increment("transpile.cache.memory-or-disk-hit")
                 promise(.success(cached))
                 return
             }
+            self.performanceTrace?.increment("transpile.cache.miss")
 
-            let transformContext = JSContext()!
-            
-            var exceptionInfo: String?
-            transformContext.exceptionHandler = { context, exception in
-                let described = ScriptWidgetRuntime.describeException(exception)
-                SWLog.error("transform exception : \(described)")
-                exceptionInfo = described
-            }
-            transformContext.evaluateScript(babelContent)
-            
-            transformContext.evaluateScript("""
-                        function ScriptWidgetTransform(input) {
-                            var output = Babel.transform(input, { presets: ['scriptwidget'] }).code
-                            return output
-                        }
-                    """)
-            
-            guard let result = transformContext.objectForKeyedSubscript("ScriptWidgetTransform")?
-                    .call(withArguments: [JSX]) else {
-                promise(.failure(.transformError("Transform result is nil")))
+            guard let babelContent = self.performanceTrace?.measure("compiler.bundle.read", {
+                self.readSupportScript("core.js")
+            }) ?? self.readSupportScript("core.js") else {
+                promise(.failure(.internalError("Babel file not found")))
                 return
             }
-            
-            guard let jsOutput = result.toString() else {
-                promise(.failure(.transformError("Transform result is not string : \(result)")))
+
+            let compileResult = self.performanceTrace?.measure("transpile.execute", {
+                ScriptWidgetCompiler.compile(JSX, babelContent: babelContent)
+            }) ?? ScriptWidgetCompiler.compile(JSX, babelContent: babelContent)
+            guard case .success(let jsOutput) = compileResult else {
+                if wrapMain, callAsynFunctionName.isEmpty,
+                   let fallback = ScriptWidgetCompiledArtifactStore.loadLastKnownGood(package: self.package) {
+                    self.performanceTrace?.increment("compiled.artifact.last-known-good")
+                    promise(.success(fallback.javaScript))
+                } else if case .failure(let error) = compileResult {
+                    promise(.failure(error))
+                }
                 return
             }
-            if let error = ScriptWidgetRuntimeContract.validateTranspiled(jsOutput) {
-                promise(.failure(error))
-                return
-            }
-            
-            // check javascript exception
-            if let exceptionInfo = exceptionInfo {
-                promise(.failure(.scriptException(exceptionInfo)))
-                return
-            }
-            
+
             // success
+            self.performanceTrace?.increment("transpiled.bytes", by: jsOutput.utf8.count)
             ScriptWidgetTranspileCache.set(cacheKey, jsOutput)
+            if wrapMain, callAsynFunctionName.isEmpty {
+                _ = ScriptWidgetCompiledArtifactStore.save(package: self.package, source: paramJSX, javaScript: jsOutput)
+            }
             promise(.success(jsOutput))
         }
         .eraseToAnyPublisher()
@@ -318,6 +614,13 @@ class ScriptWidgetRuntime {
 extension ScriptWidgetRuntime {
     
     func executeJSXSyncForWidget(_ JSX: String) -> (ScriptWidgetRuntimeElement? , ScriptWidgetError?) {
+        let trace = ScriptWidgetRuntimeTrace(operation: "widget")
+        performanceTrace = trace
+        defer {
+            runningState?.executionSession.finish()
+            trace.finish()
+            performanceTrace = nil
+        }
         var resultError: ScriptWidgetError?
         var resultElement: ScriptWidgetRuntimeElement?
         
@@ -325,31 +628,27 @@ extension ScriptWidgetRuntime {
         var cancellables: [AnyCancellable] = []
 
         DispatchQueue.global().async {
-            
+
             let cancelable = self.internalExecuteJSXForWidget(JSX)
                 .sink { (completion) in
                     switch completion {
                     case .finished:
-                        print("script run finished")
-                        
                         sem.signal()
                         
                     case .failure(let error):
-                        print("failed : \(error)")
+                        SWLog.error("widget execution failed: \(error)")
                         resultError = error
                         
                         sem.signal()
                     }
                 } receiveValue: { (element) in
-                    print("-------------------------------------------")
-                    print(element)
-                    print("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
                     resultElement = element
                 }
             cancellables.append(cancelable)
         }
         
         guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            runningState?.executionSession.cancel(.timeout)
             cancellables.removeAll()
             return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
         }
@@ -360,9 +659,6 @@ extension ScriptWidgetRuntime {
     private func internalExecuteJSXForWidget(_ JSX: String) -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> {
         return transform(JSX, wrapMain: true)
             .flatMap { JavaScript -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> in
-                print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[")
-                print(JavaScript)
-
                 return self.internalExecuteJavaScriptForWidget(JavaScript)
             }
             .eraseToAnyPublisher()
@@ -384,37 +680,12 @@ extension ScriptWidgetRuntime {
                 return
             }
                         
-            // Inject ScriptWidgetRuntime JavaScript Object
-            self.runtimeContext["Promise"] = ScriptWidgetRuntimePromise.self
-            self.runtimeContext["fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
-            self.runtimeContext["$fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
+            self.installBaseAPIs()
 
-            self.runtimeContext["$console"] = ScriptWidgetRuntimeConsole.self
-            self.runtimeContext["console"] = ScriptWidgetRuntimeConsole.self
-            
-            self.runtimeContext["$element"] = ScriptWidgetRuntimeElement.self
-            self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
-            self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
-            self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
-            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
-            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
-            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
-            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
-            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
-
-            let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
-                if let value = self?.environments[key] {
-                    return value
-                }
-                return ""
-            }
-            self.runtimeContext["$getenv"] = unsafeBitCast(custom_getenv, to: JSValue.self)
-            
             let semaphore = DispatchSemaphore(value: 0)
             var resultElement: ScriptWidgetRuntimeElement?
             
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                print("root element = \(rootElement)")
                 resultElement = rootElement
                 semaphore.signal()
             }
@@ -476,9 +747,6 @@ extension ScriptWidgetRuntime {
                         }
                     }, receiveValue: { JavaScriptContent in
                         // execute
-                        print("//////////////////////////////////////////////")
-                        print(JavaScriptContent)
-                        print("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
                         self?.runtimeContext.evaluateScript(JavaScriptContent)
                     })
                 
@@ -487,15 +755,16 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$import"] = unsafeBitCast(importJS, to: JSValue.self)
             
             // Execute support js
-            self.runtimeContext.evaluateScript(supportJS)
-            
-            // moment.min.js
-            if let momentJS = self.readSupportScript("moment.min.js") {
-                self.runtimeContext.evaluateScript(momentJS)
+            self.performanceTrace?.measure("runtime.support.evaluate") {
+                self.runtimeContext.evaluateScript(supportJS)
             }
             
+            self.evaluateCompatibilityLibraries(for: JavaScript)
+
             // Execute target code
-            self.runtimeContext.evaluateScript(JavaScript)
+            self.performanceTrace?.measure("runtime.user.evaluate") {
+                self.runtimeContext.evaluateScript(JavaScript)
+            }
                         
             // Check render
             guard let mainEntry = self.runtimeContext.objectForKeyedSubscript("$main") else {
@@ -532,6 +801,10 @@ extension ScriptWidgetRuntime {
                     promise(.failure(.scriptError("Transform result is not Element : \(String(describing: resultElement))")))
                     return
                 }
+                if let validationError = ScriptWidgetRuntimeContract.validateElementTree(element) {
+                    promise(.failure(validationError))
+                    return
+                }
                 
                 // success
                 promise(.success(element))
@@ -546,6 +819,13 @@ extension ScriptWidgetRuntime {
 extension ScriptWidgetRuntime {
     
     func executeJSXSyncForDynamicIsland(_ JSX: String) -> (ScriptWidgetDynamicIslandRuntimeElement? , ScriptWidgetError?) {
+        let trace = ScriptWidgetRuntimeTrace(operation: "dynamic-island")
+        performanceTrace = trace
+        defer {
+            runningState?.executionSession.finish()
+            trace.finish()
+            performanceTrace = nil
+        }
         var resultError: ScriptWidgetError?
         var resultElement: ScriptWidgetDynamicIslandRuntimeElement?
         
@@ -569,15 +849,13 @@ extension ScriptWidgetRuntime {
                         sem.signal()
                     }
                 } receiveValue: { (element) in
-                    print("-------------------------------------------")
-                    print(element)
-                    print("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
                     resultElement = element
                 }
             cancellables.append(cancelable)
         }
         
         guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            runningState?.executionSession.cancel(.timeout)
             cancellables.removeAll()
             return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
         }
@@ -588,9 +866,6 @@ extension ScriptWidgetRuntime {
     private func internalExecuteJSXForDynamicIsland(_ JSX: String) -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> {
         return transform(JSX, wrapMain: true)
             .flatMap { JavaScript -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> in
-                print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[")
-                print(JavaScript)
-
                 return self.internalExecuteJavaScriptForDynamicIsland(JavaScript)
             }
             .eraseToAnyPublisher()
@@ -612,38 +887,13 @@ extension ScriptWidgetRuntime {
                 return
             }
                         
-            // Inject ScriptWidgetRuntime JavaScript Object
-            self.runtimeContext["Promise"] = ScriptWidgetRuntimePromise.self
-            self.runtimeContext["fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
-            self.runtimeContext["$fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
-
-            self.runtimeContext["$console"] = ScriptWidgetRuntimeConsole.self
-            self.runtimeContext["console"] = ScriptWidgetRuntimeConsole.self
-            
-            self.runtimeContext["$element"] = ScriptWidgetRuntimeElement.self
-            self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
-            self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
-            self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
-            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
-            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
-            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
-            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
-            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
-
-            let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
-                if let value = self?.environments[key] {
-                    return value
-                }
-                return ""
-            }
-            self.runtimeContext["$getenv"] = unsafeBitCast(custom_getenv, to: JSValue.self)
+            self.installBaseAPIs()
             
             let semaphore = DispatchSemaphore(value: 0)
             var resultElement: ScriptWidgetDynamicIslandRuntimeElement?
             
             // ignore for dynamic island
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                print("ignore $render for dynamic island : root element = \(rootElement)")
                 semaphore.signal()
             }
             self.runtimeContext["$render"] = unsafeBitCast(renderWidget, to: JSValue.self)
@@ -723,9 +973,6 @@ extension ScriptWidgetRuntime {
                         }
                     }, receiveValue: { JavaScriptContent in
                         // execute
-                        print("//////////////////////////////////////////////")
-                        print(JavaScriptContent)
-                        print("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
                         self?.runtimeContext.evaluateScript(JavaScriptContent)
                     })
                 
@@ -734,15 +981,16 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$import"] = unsafeBitCast(importJS, to: JSValue.self)
             
             // Execute support js
-            self.runtimeContext.evaluateScript(supportJS)
-            
-            // moment.min.js
-            if let momentJS = self.readSupportScript("moment.min.js") {
-                self.runtimeContext.evaluateScript(momentJS)
+            self.performanceTrace?.measure("runtime.support.evaluate") {
+                self.runtimeContext.evaluateScript(supportJS)
             }
             
+            self.evaluateCompatibilityLibraries(for: JavaScript)
+
             // Execute target code
-            self.runtimeContext.evaluateScript(JavaScript)
+            self.performanceTrace?.measure("runtime.user.evaluate") {
+                self.runtimeContext.evaluateScript(JavaScript)
+            }
                         
             // Check render
             guard let mainEntry = self.runtimeContext.objectForKeyedSubscript("$main") else {
@@ -779,6 +1027,19 @@ extension ScriptWidgetRuntime {
                     promise(.failure(.scriptError("Transform result is not Element : \(String(describing: resultElement))")))
                     return
                 }
+                let roots = [
+                    element.expanded.leading,
+                    element.expanded.trailing,
+                    element.expanded.center,
+                    element.expanded.bottom,
+                    element.compactLeading,
+                    element.compactTrailing,
+                    element.minimal,
+                ].compactMap { $0 }
+                if let validationError = roots.compactMap({ ScriptWidgetRuntimeContract.validateElementTree($0) }).first {
+                    promise(.failure(validationError))
+                    return
+                }
                 
                 // success
                 promise(.success(element))
@@ -792,6 +1053,13 @@ extension ScriptWidgetRuntime {
 extension ScriptWidgetRuntime {
     
     func executeJSXSyncForFunction(_ JSX: String, _ functionName: String) -> (String? , ScriptWidgetError?) {
+        let trace = ScriptWidgetRuntimeTrace(operation: "function")
+        performanceTrace = trace
+        defer {
+            runningState?.executionSession.finish()
+            trace.finish()
+            performanceTrace = nil
+        }
         var resultError: ScriptWidgetError?
         var resultElement: String?
         
@@ -804,26 +1072,22 @@ extension ScriptWidgetRuntime {
                 .sink { (completion) in
                     switch completion {
                     case .finished:
-                        print("script run finished")
-                        
                         sem.signal()
                         
                     case .failure(let error):
-                        print("failed : \(error)")
+                        SWLog.error("function execution failed: \(error)")
                         resultError = error
                         
                         sem.signal()
                     }
                 } receiveValue: { (element) in
-                    print("-------------------------------------------")
-                    print(element)
-                    print("]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]")
                     resultElement = element
                 }
             cancellables.append(cancelable)
         }
         
         guard sem.wait(timeout: .now() + ScriptWidgetRuntimeContract.executionTimeout) == .success else {
+            runningState?.executionSession.cancel(.timeout)
             cancellables.removeAll()
             return (nil, .resourceLimit("Script exceeded the 5-second execution limit"))
         }
@@ -834,9 +1098,6 @@ extension ScriptWidgetRuntime {
     private func internalExecuteJSXForFunction(_ JSX: String, _ functionName: String) -> AnyPublisher<String, ScriptWidgetError> {
         return transform(JSX, wrapMain: true, callAsynFunctionName: functionName)
             .flatMap { JavaScript -> AnyPublisher<String, ScriptWidgetError> in
-                print("[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[")
-                print(JavaScript)
-
                 return self.internalExecuteJavaScriptForFunction(JavaScript)
             }
             .eraseToAnyPublisher()
@@ -856,36 +1117,11 @@ extension ScriptWidgetRuntime {
                 return
             }
                         
-            // Inject ScriptWidgetRuntime JavaScript Object
-            self.runtimeContext["Promise"] = ScriptWidgetRuntimePromise.self
-            self.runtimeContext["fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
-            self.runtimeContext["$fetch"] = unsafeBitCast(custom_fetch, to: JSValue.self)
-
-            self.runtimeContext["$console"] = ScriptWidgetRuntimeConsole.self
-            self.runtimeContext["console"] = ScriptWidgetRuntimeConsole.self
-            
-            self.runtimeContext["$element"] = ScriptWidgetRuntimeElement.self
-            self.runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
-            self.runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
-            self.runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
-            self.runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
-            self.runtimeContext["$health"] = ScriptWidgetRuntimeHealth.self
-            self.runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
-            self.runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
-            self.runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
-
-            let custom_getenv:@convention(block) (String)-> String = { [weak self] (key) in
-                if let value = self?.environments[key] {
-                    return value
-                }
-                return ""
-            }
-            self.runtimeContext["$getenv"] = unsafeBitCast(custom_getenv, to: JSValue.self)
+            self.installBaseAPIs()
             
             let semaphore = DispatchSemaphore(value: 0)
             
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                print("not support in function calling mode = \(rootElement)")
                 semaphore.signal()
             }
             self.runtimeContext["$render"] = unsafeBitCast(renderWidget, to: JSValue.self)
@@ -938,9 +1174,6 @@ extension ScriptWidgetRuntime {
                         }
                     }, receiveValue: { JavaScriptContent in
                         // execute
-                        print("//////////////////////////////////////////////")
-                        print(JavaScriptContent)
-                        print("\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\")
                         self?.runtimeContext.evaluateScript(JavaScriptContent)
                     })
                 
@@ -949,15 +1182,16 @@ extension ScriptWidgetRuntime {
             self.runtimeContext["$import"] = unsafeBitCast(importJS, to: JSValue.self)
             
             // Execute support js
-            self.runtimeContext.evaluateScript(supportJS)
-            
-            // moment.min.js
-            if let momentJS = self.readSupportScript("moment.min.js") {
-                self.runtimeContext.evaluateScript(momentJS)
+            self.performanceTrace?.measure("runtime.support.evaluate") {
+                self.runtimeContext.evaluateScript(supportJS)
             }
             
+            self.evaluateCompatibilityLibraries(for: JavaScript)
+
             // Execute target code
-            self.runtimeContext.evaluateScript(JavaScript)
+            self.performanceTrace?.measure("runtime.user.evaluate") {
+                self.runtimeContext.evaluateScript(JavaScript)
+            }
                         
             // Check render
             guard let mainEntry = self.runtimeContext.objectForKeyedSubscript("$main") else {
@@ -1006,8 +1240,25 @@ enum ScriptWidgetTranspileCache {
     private static let formatVersion = "1"
 
     private static let queue = DispatchQueue(label: "scriptwidget.transpilecache")
-    private static var memory: [String: String] = [:]
+    private static let memory = NSCache<NSString, NSString>()
     private static var babelFingerprintCache: String?
+    static let maximumDiskBytes = 32 * 1_024 * 1_024
+    static let maximumDiskEntries = 256
+
+    static var memoryCostLimit: Int {
+        get { memory.totalCostLimit }
+        set { memory.totalCostLimit = max(0, newValue) }
+    }
+
+    static var memoryCountLimit: Int {
+        get { memory.countLimit }
+        set { memory.countLimit = max(0, newValue) }
+    }
+
+    private static func configureMemoryIfNeeded() {
+        if memory.totalCostLimit == 0 { memory.totalCostLimit = 4 * 1_024 * 1_024 }
+        if memory.countLimit == 0 { memory.countLimit = 16 }
+    }
 
     private static let directory: URL? = {
         guard let base = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: appGroupIdentifier) else {
@@ -1038,21 +1289,53 @@ enum ScriptWidgetTranspileCache {
     }
 
     static func get(_ key: String) -> String? {
-        if let value = queue.sync(execute: { memory[key] }) {
-            return value
+        configureMemoryIfNeeded()
+        if let value = memory.object(forKey: key as NSString) {
+            return value as String
         }
         guard let file = directory?.appendingPathComponent(key),
               let data = try? Data(contentsOf: file),
               let value = String(data: data, encoding: .utf8) else {
             return nil
         }
-        queue.sync { memory[key] = value }
+        try? FileManager.default.setAttributes([.modificationDate: Date()], ofItemAtPath: file.path)
+        memory.setObject(value as NSString, forKey: key as NSString, cost: value.utf8.count)
         return value
     }
 
     static func set(_ key: String, _ value: String) {
-        queue.sync { memory[key] = value }
+        configureMemoryIfNeeded()
+        memory.setObject(value as NSString, forKey: key as NSString, cost: value.utf8.count)
         guard let file = directory?.appendingPathComponent(key) else { return }
         try? Data(value.utf8).write(to: file, options: .atomic)
+        trim(directory: file.deletingLastPathComponent(), maximumBytes: maximumDiskBytes, maximumEntries: maximumDiskEntries)
+    }
+
+    static func removeAllMemory() {
+        memory.removeAllObjects()
+    }
+
+    /// LRU-style bounded disk storage. This is deliberately synchronous with a
+    /// cache write so a widget extension cannot leave unbounded state behind if
+    /// it is suspended immediately afterwards.
+    static func trim(directory: URL, maximumBytes: Int, maximumEntries: Int) {
+        guard maximumBytes >= 0, maximumEntries >= 0,
+              let urls = try? FileManager.default.contentsOfDirectory(
+                at: directory,
+                includingPropertiesForKeys: [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey],
+                options: [.skipsHiddenFiles]
+              ) else { return }
+        var entries = urls.compactMap { url -> (URL, Date, Int)? in
+            guard let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .fileSizeKey, .isRegularFileKey]),
+                  values.isRegularFile == true else { return nil }
+            return (url, values.contentModificationDate ?? .distantPast, max(0, values.fileSize ?? 0))
+        }.sorted { $0.1 > $1.1 }
+        var total = entries.reduce(0) { $0 + $1.2 }
+        while entries.count > maximumEntries || total > maximumBytes {
+            let oldest = entries.removeLast()
+            if (try? FileManager.default.removeItem(at: oldest.0)) != nil {
+                total -= oldest.2
+            }
+        }
     }
 }

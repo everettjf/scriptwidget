@@ -135,6 +135,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
             cancellable.cancel()
         }
         pendingRender?.cancel()
+        runtime?.cancel(.explicit)
     }
     
     func changeWidgetSizeType(_ newWidgetSizeType : Int) {
@@ -151,6 +152,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
 
     private func scheduleRender(immediate: Bool = false) {
         pendingRender?.cancel()
+        runtime?.cancel(.superseded)
         renderGeneration += 1
         let generation = renderGeneration
         let size = widgetSizeType
@@ -163,7 +165,10 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
             guard let self else { return }
             let output = Self.render(package: package, widgetSizeType: size, scriptParameter: parameter)
             DispatchQueue.main.async { [weak self] in
-                guard let self, generation == renderGeneration else { return }
+                guard let self, generation == renderGeneration else {
+                    output.runtime.cancel(.superseded)
+                    return
+                }
                 runtime = output.runtime
                 rootElement = output.rootElement
                 lastErrorMessage = output.errorMessage

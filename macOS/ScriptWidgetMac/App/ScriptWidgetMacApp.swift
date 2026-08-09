@@ -13,6 +13,10 @@ struct ScriptWidgetMacApp: App {
 
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
+    init() {
+        ScriptWidgetPrecompiler.install()
+    }
+
     var body: some Scene {
         WindowGroup {
             if let outputDirectory = BatchPreviewConfiguration.outputDirectory {

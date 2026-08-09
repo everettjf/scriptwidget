@@ -19,12 +19,15 @@ import JavaScriptCore
 
 @objc public class ScriptWidgetRuntimeElement: NSObject, ScriptWidgetRuntimeElementExports, Identifiable {
     dynamic var tag: JSValue
-    dynamic var props: [AnyHashable:Any]?
+    dynamic var props: [AnyHashable:Any]? {
+        didSet { parsedProps.removeAll(keepingCapacity: true) }
+    }
     dynamic var children: [Any]?
     var depth = 0
     
     public let id = UUID()
     var tagString: String?
+    private var parsedProps: [String: Any] = [:]
 
     required init(tag: JSValue, props: [AnyHashable:Any]?, children: [Any]?) {
         self.tag = tag
@@ -104,25 +107,36 @@ import JavaScriptCore
     }
     
     public func getPropBool(_ key: String) -> Bool? {
+        if let cached = parsedProps["bool:\(key)"] as? Bool { return cached }
         guard let props = self.props else { return nil }
-        if let value = props[key] as? Bool { return value }
+        if let value = props[key] as? Bool {
+            parsedProps["bool:\(key)"] = value
+            return value
+        }
         
         if let value = props[key] as? String {
             if value == "true" || value == "yes" {
+                parsedProps["bool:\(key)"] = true
                 return true
             }
             if value == "false" || value == "no" {
+                parsedProps["bool:\(key)"] = false
                 return false
             }
         }
         return nil
     }
     public func getPropInt(_ key: String) -> Int? {
+        if let cached = parsedProps["int:\(key)"] as? Int { return cached }
         guard let props = self.props else { return nil }
-        if let value = props[key] as? Int { return value }
+        if let value = props[key] as? Int {
+            parsedProps["int:\(key)"] = value
+            return value
+        }
         
         if let value = props[key] as? String {
             if let intValue = Int(value) {
+                parsedProps["int:\(key)"] = intValue
                 return intValue
             }
         }
@@ -130,10 +144,15 @@ import JavaScriptCore
     }
     
     public func getPropDouble(_ key: String) -> Double? {
+        if let cached = parsedProps["double:\(key)"] as? Double { return cached }
         guard let props = self.props else { return nil }
-        if let value = props[key] as? Double { return value }
+        if let value = props[key] as? Double {
+            parsedProps["double:\(key)"] = value
+            return value
+        }
         if let value = props[key] as? String {
             if let doubleValue = Double(value) {
+                parsedProps["double:\(key)"] = doubleValue
                 return doubleValue
             }
         }

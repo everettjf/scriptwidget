@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import CryptoKit
 #if os(macOS)
 import AppKit
 #else
@@ -72,6 +73,141 @@ struct ScriptFileReadResult {
     let message: String
 
     var succeeded: Bool { content != nil }
+}
+
+struct ScriptWidgetBuildManifest: Codable, Equatable {
+    static let formatVersion = 2
+
+    let formatVersion: Int
+    let runtimeAPIVersion: String
+    let compilerFingerprint: String
+    let sourceHash: String
+    let compiledHash: String
+    let sourceBytes: Int
+    let compiledBytes: Int
+    let libraries: [String]
+    let createdAt: Date
+}
+
+enum ScriptWidgetBuildContract {
+    static let runtimeAPIVersion = "1.0"
+    static let compilerFingerprint = "scriptwidget-babel-v2"
+}
+
+/// Common-layer indirection keeps Share Extension independent of JavaScriptCore
+/// compiler sources. Runtime-capable hosts install the handler on first use;
+/// all hosts can still save/import packages and the first render remains a
+/// safe compilation fallback.
+enum ScriptWidgetPrecompileCoordinator {
+    private static let lock = NSLock()
+    private static var handler: ((ScriptWidgetPackage, String) -> Void)?
+
+    static func install(_ value: @escaping (ScriptWidgetPackage, String) -> Void) {
+        lock.lock()
+        handler = value
+        lock.unlock()
+    }
+
+    static func schedule(package: ScriptWidgetPackage, source: String) {
+        lock.lock()
+        let current = handler
+        lock.unlock()
+        current?(package, source)
+    }
+}
+
+struct ScriptWidgetCompiledArtifact {
+    let javaScript: String
+    let manifest: ScriptWidgetBuildManifest
+}
+
+/// Versioned, atomic last-known-good compiled output. The source remains the
+/// authority; a compiled artifact is accepted only when every hash and runtime
+/// contract field matches.
+enum ScriptWidgetCompiledArtifactStore {
+    static let directoryName = "__Compiled"
+    static let manifestName = "build-manifest.json"
+    static let javaScriptName = "main.js"
+
+    static func sourceHash(_ source: String) -> String { hash(Data(source.utf8)) }
+    static func compiledHash(_ source: String) -> String { hash(Data(source.utf8)) }
+
+    static func inferredLibraries(source: String) -> [String] {
+        // Compatibility dependency discovery is intentionally conservative:
+        // comments may produce a harmless false positive, while member access
+        // and calls cover existing Moment templates without changing API 1.0.
+        let patterns = ["moment(", "moment."]
+        return patterns.contains(where: source.contains) ? ["moment"] : []
+    }
+
+    static func load(package: ScriptWidgetPackage, source: String) -> ScriptWidgetCompiledArtifact? {
+        guard let artifact = loadLastKnownGood(package: package),
+              artifact.manifest.sourceHash == sourceHash(source),
+              artifact.manifest.sourceBytes == source.utf8.count else { return nil }
+        return artifact
+    }
+
+    /// Returns only a fully self-consistent prior artifact. Callers may use it
+    /// after a new source revision fails to compile, preserving a working widget
+    /// without ever executing partially-written or hash-mismatched bytes.
+    static func loadLastKnownGood(package: ScriptWidgetPackage) -> ScriptWidgetCompiledArtifact? {
+        guard let directory = artifactDirectory(package: package),
+              let manifestData = try? Data(contentsOf: directory.appendingPathComponent(manifestName)),
+              let manifest = try? JSONDecoder().decode(ScriptWidgetBuildManifest.self, from: manifestData),
+              manifest.formatVersion == ScriptWidgetBuildManifest.formatVersion,
+              manifest.runtimeAPIVersion == ScriptWidgetBuildContract.runtimeAPIVersion,
+              manifest.compilerFingerprint == ScriptWidgetBuildContract.compilerFingerprint,
+              let javaScript = try? String(contentsOf: directory.appendingPathComponent(javaScriptName), encoding: .utf8),
+              manifest.compiledBytes == javaScript.utf8.count,
+              manifest.compiledHash == compiledHash(javaScript) else {
+            return nil
+        }
+        return ScriptWidgetCompiledArtifact(javaScript: javaScript, manifest: manifest)
+    }
+
+    @discardableResult
+    static func save(package: ScriptWidgetPackage, source: String, javaScript: String) -> Bool {
+        guard let directory = artifactDirectory(package: package) else { return false }
+        let manifest = ScriptWidgetBuildManifest(
+            formatVersion: ScriptWidgetBuildManifest.formatVersion,
+            runtimeAPIVersion: ScriptWidgetBuildContract.runtimeAPIVersion,
+            compilerFingerprint: ScriptWidgetBuildContract.compilerFingerprint,
+            sourceHash: sourceHash(source),
+            compiledHash: compiledHash(javaScript),
+            sourceBytes: source.utf8.count,
+            compiledBytes: javaScript.utf8.count,
+            libraries: inferredLibraries(source: source),
+            createdAt: Date()
+        )
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [
+                .protectionKey: FileProtectionType.none
+            ])
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.sortedKeys]
+            try Data(javaScript.utf8).write(to: directory.appendingPathComponent(javaScriptName), options: .atomic)
+            try encoder.encode(manifest).write(to: directory.appendingPathComponent(manifestName), options: .atomic)
+            return true
+        } catch {
+            print("compiled artifact write failed: \(error.localizedDescription)")
+            return false
+        }
+    }
+
+    static func remove(package: ScriptWidgetPackage) {
+        guard let directory = artifactDirectory(package: package) else { return }
+        try? FileManager.default.removeItem(at: directory)
+    }
+
+    static func artifactDirectory(package: ScriptWidgetPackage) -> URL? {
+        ScriptManager.getSandboxBuildDirectoryURL()?
+            .appendingPathComponent(package.name, isDirectory: true)
+            .appendingPathComponent(directoryName, isDirectory: true)
+    }
+
+    private static func hash(_ data: Data) -> String {
+        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+    }
 }
 
 struct ScriptWidgetPackage {
@@ -339,7 +475,10 @@ struct ScriptWidgetPackage {
     }
     
     func writeMainFile(content: String) -> (Bool,String) {
-        return self.writeFile(fullPath: self.jsxPath, content: content)
+        let result = self.writeFile(fullPath: self.jsxPath, content: content)
+        guard result.0 else { return result }
+        ScriptWidgetPrecompileCoordinator.schedule(package: self, source: content)
+        return result
     }
     
     func writeFile(relativePath: String, content: String) -> (Bool,String) {

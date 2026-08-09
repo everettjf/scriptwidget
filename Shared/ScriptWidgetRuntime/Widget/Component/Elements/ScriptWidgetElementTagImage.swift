@@ -7,6 +7,81 @@
 
 import Foundation
 import SwiftUI
+import ImageIO
+
+#if os(macOS)
+typealias ScriptWidgetPlatformImage = NSImage
+#else
+typealias ScriptWidgetPlatformImage = UIImage
+#endif
+
+enum ScriptWidgetImagePipeline {
+    static let maximumInputBytes = 8 * 1_024 * 1_024
+    static let maximumPixelCount = 16_000_000
+    static let defaultMaximumPixelSize = 1_024
+    static let cacheCostLimit = 24 * 1_024 * 1_024
+
+    private static let cache: NSCache<NSString, ScriptWidgetPlatformImage> = {
+        let value = NSCache<NSString, ScriptWidgetPlatformImage>()
+        value.totalCostLimit = cacheCostLimit
+        value.countLimit = 32
+        return value
+    }()
+
+    static func image(at url: URL, maximumPixelSize: Int = defaultMaximumPixelSize) -> ScriptWidgetPlatformImage? {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path),
+              let fileSize = attributes[.size] as? NSNumber,
+              fileSize.intValue <= maximumInputBytes else { return nil }
+        let key = "\(url.path)|\(maximumPixelSize)" as NSString
+        if let cached = cache.object(forKey: key) { return cached }
+        guard let source = CGImageSourceCreateWithURL(url as CFURL, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = downsample(source: source, maximumPixelSize: maximumPixelSize) else { return nil }
+        cache.setObject(image, forKey: key, cost: decodedCost(image))
+        return image
+    }
+
+    static func image(data: Data, cacheKey: String? = nil, maximumPixelSize: Int = defaultMaximumPixelSize) -> ScriptWidgetPlatformImage? {
+        guard data.count <= maximumInputBytes else { return nil }
+        let key = cacheKey.map { "\($0)|\(maximumPixelSize)" as NSString }
+        if let key, let cached = cache.object(forKey: key) { return cached }
+        guard let source = CGImageSourceCreateWithData(data as CFData, [kCGImageSourceShouldCache: false] as CFDictionary),
+              let image = downsample(source: source, maximumPixelSize: maximumPixelSize) else { return nil }
+        if let key { cache.setObject(image, forKey: key, cost: decodedCost(image)) }
+        return image
+    }
+
+    static func removeAll() { cache.removeAllObjects() }
+
+    private static func downsample(source: CGImageSource, maximumPixelSize: Int) -> ScriptWidgetPlatformImage? {
+        guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
+              let width = properties[kCGImagePropertyPixelWidth] as? NSNumber,
+              let height = properties[kCGImagePropertyPixelHeight] as? NSNumber,
+              width.intValue > 0, height.intValue > 0,
+              width.intValue <= maximumPixelCount / max(1, height.intValue) else { return nil }
+        let options: [CFString: Any] = [
+            kCGImageSourceCreateThumbnailFromImageAlways: true,
+            kCGImageSourceCreateThumbnailWithTransform: true,
+            kCGImageSourceThumbnailMaxPixelSize: max(1, maximumPixelSize),
+            kCGImageSourceShouldCacheImmediately: true,
+        ]
+        guard let cgImage = CGImageSourceCreateThumbnailAtIndex(source, 0, options as CFDictionary) else { return nil }
+#if os(macOS)
+        return NSImage(cgImage: cgImage, size: NSSize(width: cgImage.width, height: cgImage.height))
+#else
+        return UIImage(cgImage: cgImage)
+#endif
+    }
+
+    private static func decodedCost(_ image: ScriptWidgetPlatformImage) -> Int {
+#if os(macOS)
+        guard let representation = image.representations.first else { return 0 }
+        return representation.pixelsWide * representation.pixelsHigh * 4
+#else
+        guard let cgImage = image.cgImage else { return 0 }
+        return cgImage.bytesPerRow * cgImage.height
+#endif
+    }
+}
 
 
 struct FileSyncImage: View {
@@ -18,13 +93,7 @@ struct FileSyncImage: View {
 #endif
     init(fileUrl: URL) {
         self.fileUrl = fileUrl
-        if let fileData = try? Data(contentsOf: self.fileUrl) {
-#if os(macOS)
-            self.fileImage = NSImage(data: fileData)
-#else
-            self.fileImage = UIImage(data: fileData)
-#endif
-        }
+        self.fileImage = ScriptWidgetImagePipeline.image(at: fileUrl)
     }
     
     var body: some View {
@@ -46,37 +115,20 @@ struct FileSyncImage: View {
 
 struct WebSyncImage: View {
     let webUrl: URL
-#if os(macOS)
-    private var image: NSImage?
-#else
-    private var image: UIImage?
-#endif
-    
-    init(webUrl: URL) {
-        self.webUrl = webUrl
-        
-        do {
-            let fileData = try Data(contentsOf: self.webUrl)
-#if os(macOS)
-            self.image = NSImage(data: fileData)
-#else
-            self.image = UIImage(data: fileData)
-#endif
-        } catch {
-            print("web sync image error : \(error)")
-        }
-    }
+
     var body: some View {
-        if let image = self.image {
-#if os(macOS)
-            Image(nsImage: image)
-                .resizable()
-#else
-            Image(uiImage: image)
-                .resizable()
-#endif
-        } else {
-            Image(systemName: "questionmark.circle")
+        AsyncImage(url: webUrl) { phase in
+            switch phase {
+            case .empty:
+                Image(systemName: "photo")
+                    .foregroundStyle(.secondary)
+            case .success(let image):
+                image.resizable()
+            case .failure:
+                Image(systemName: "questionmark.circle")
+            @unknown default:
+                Image(systemName: "questionmark.circle")
+            }
         }
     }
 }
@@ -126,15 +178,16 @@ class ScriptWidgetElementTagImage {
                 // image base64 url
                 let prefixIndex = imageUrlString.index(imageUrlString.startIndex, offsetBy: base64imagePngPrefix.count)
                 let base64String = String(imageUrlString.suffix(from: prefixIndex))
-                if let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
+                if base64String.utf8.count <= (ScriptWidgetImagePipeline.maximumInputBytes * 4 / 3 + 4),
+                   let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
 #if os(macOS)
-                    if let image = NSImage(data: base64Data){
+                    if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
                         return AnyView(Image(nsImage: image)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
 #else
-                    if let image = UIImage(data: base64Data){
+                    if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
                         return AnyView(Image(uiImage: image)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
@@ -145,15 +198,16 @@ class ScriptWidgetElementTagImage {
                 // image base64 url
                 let prefixIndex = imageUrlString.index(imageUrlString.startIndex, offsetBy: base64imageJpegPrefix.count)
                 let base64String = String(imageUrlString.suffix(from: prefixIndex))
-                if let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
+                if base64String.utf8.count <= (ScriptWidgetImagePipeline.maximumInputBytes * 4 / 3 + 4),
+                   let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
 #if os(macOS)
-                    if let image = NSImage(data: base64Data){
+                    if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
                         return AnyView(Image(nsImage: image)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
 #else
-                    if let image = UIImage(data: base64Data){
+                    if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
                         return AnyView(Image(uiImage: image)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
