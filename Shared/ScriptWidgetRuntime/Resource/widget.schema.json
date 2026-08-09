@@ -24,6 +24,10 @@
       "type": "array", "uniqueItems": true,
       "items": { "type": "string", "pattern": "^(?:\\*\\.)?[a-z0-9](?:[a-z0-9.-]*[a-z0-9])?$" }
     },
+    "plugins": {
+      "type": "array", "uniqueItems": true,
+      "items": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9.-]{2,127}$" }
+    },
     "description": { "type": "string" },
     "category": { "type": "string" },
     "tags": { "type": "array", "maxItems": 20, "items": { "type": "string" } },

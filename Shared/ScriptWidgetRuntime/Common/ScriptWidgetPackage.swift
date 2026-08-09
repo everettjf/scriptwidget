@@ -311,7 +311,7 @@ struct ScriptWidgetPackage {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let allowedKeys: Set<String> = [
             "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
-            "supportedFamilies", "permissions", "networkDomains", "description",
+            "supportedFamilies", "permissions", "networkDomains", "plugins", "description",
             "category", "tags", "icon", "preview", "author", "license"
         ]
         guard Set(object.keys).isSubset(of: allowedKeys) else { return nil }

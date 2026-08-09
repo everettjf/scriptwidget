@@ -18,6 +18,7 @@ My Widget/
   "name": "My Widget",
   "networkDomains": [],
   "permissions": [],
+  "plugins": [],
   "runtimeVersion": "1.0",
   "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"],
   "version": "1.0.0"
@@ -37,6 +38,7 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
 - `supportedFamilies`: one or more WidgetKit families.
 - `permissions`: declared capabilities: `network`, `location`, `health`, `storage`, or `files`.
 - `networkDomains`: lowercase host allowlist. It requires `network`; use exact hosts or a leading wildcard such as `*.example.com`.
+- `plugins`: optional Data Source Plugin identifiers. Every data-source request also requires `network` and a matching `networkDomains` entry.
 - Optional discovery fields: `description`, `category`, `tags`, `icon`, `preview`, `author`, and `license`.
 
 The Mac Studio Config panel edits and validates these values before saving. New widgets get a manifest automatically. A legacy package containing `main.jsx` and optional `meta.json` is migrated when it is imported or exported.
@@ -52,7 +54,7 @@ ScriptWidget treats every imported `.swt` as untrusted. Before extraction it che
 
 Extraction uses a unique temporary directory that is removed after every attempt. The extracted tree is checked again before copying. The archive filename does not control the installed project directory; the validated manifest name does.
 
-Permission declarations are surfaced for review during import. They are the contract used as runtime capabilities are made enforceable. Network calls are still subject to ScriptWidget's HTTPS and URL-session security policy; do not treat a declaration as a grant outside the app sandbox.
+Permission declarations are surfaced for review during import and enforced by the Package 2.0 runtime. Network calls require `network`, use HTTPS, and must match `networkDomains`. Legacy packages remain compatible but do not gain access to the new plugin API.
 
 ## Compatibility
 

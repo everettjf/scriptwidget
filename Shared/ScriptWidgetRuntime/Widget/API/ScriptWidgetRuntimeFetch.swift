@@ -65,6 +65,10 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
         if let body = request.httpBody, body.count > Self.maximumRequestBodyBytes {
             request.httpBody = nil
         }
+        return makeTask(request: request, completionHandler: completionHandler)
+    }
+
+    func makeTask(request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
         let task = session.dataTask(with: request)
         lock.lock()
         transfers[task.taskIdentifier] = Transfer(completion: completionHandler)
@@ -151,6 +155,38 @@ enum ScriptWidgetFetchPolicy {
     }
 }
 
+enum ScriptWidgetNetworkPolicy {
+    static func isValidDomainDeclaration(_ value: String) -> Bool {
+        let normalized = value.lowercased()
+        return value == normalized && !normalized.contains("://") && !normalized.contains("/") && !normalized.contains(":")
+            && !normalized.hasPrefix(".") && !normalized.hasSuffix(".")
+            && normalized.range(of: "^[a-z0-9*.-]+$", options: .regularExpression) != nil
+            && (!normalized.contains("*") || normalized.hasPrefix("*."))
+    }
+
+    static func host(_ host: String, matchesAny declarations: [String]) -> Bool {
+        let value = host.lowercased()
+        return declarations.contains { declaration in
+            let domain = declaration.lowercased()
+            if domain.hasPrefix("*.") {
+                let suffix = String(domain.dropFirst(2))
+                return value != suffix && value.hasSuffix("." + suffix)
+            }
+            return value == domain
+        }
+    }
+
+    static func packageAllows(_ url: URL, package: ScriptWidgetPackage) -> Bool {
+        guard let manifest = package.readManifest() else {
+            // Packages without widget.json are legacy-compatible. A present but
+            // malformed Package 2.0 manifest must fail closed.
+            return !FileManager.default.fileExists(atPath: package.manifestPath.path)
+        }
+        guard manifest.permissions.contains(.network), let host = url.host else { return false }
+        return self.host(host, matchesAny: manifest.networkDomains)
+    }
+}
+
 
 let sharedFetchManager = ScriptWidgetFetchManager()
 
@@ -169,6 +205,11 @@ let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> S
         }
         if let validationError = ScriptWidgetFetchPolicy.validationError(for: urlValue) {
             reject.call(withArguments: [validationError])
+            return
+        }
+        guard let state = JSContext.current()?.scriptWidgetRunningState,
+              ScriptWidgetNetworkPolicy.packageAllows(urlValue, package: state.package) else {
+            reject.call(withArguments: ["Network host is not declared in widget.json"])
             return
         }
         

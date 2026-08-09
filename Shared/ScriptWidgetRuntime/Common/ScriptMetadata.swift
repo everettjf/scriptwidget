@@ -79,6 +79,7 @@ struct WidgetPackageManifest: Codable, Equatable {
     var supportedFamilies: [WidgetPackageFamily]
     var permissions: [WidgetPackagePermission]
     var networkDomains: [String]
+    var plugins: [String]?
     var description: String?
     var category: String?
     var tags: [String]?
@@ -98,6 +99,7 @@ struct WidgetPackageManifest: Codable, Equatable {
             supportedFamilies: [.systemSmall, .systemMedium, .systemLarge],
             permissions: [],
             networkDomains: [],
+            plugins: [],
             description: metadata?.description,
             category: metadata?.category,
             tags: metadata?.tags,
@@ -190,6 +192,13 @@ enum WidgetPackageManifestValidator {
         }
         if manifest.permissions.contains(.network) && manifest.networkDomains.isEmpty {
             error("missing_network_domains", "Network access must declare at least one host.")
+        }
+        if let plugins = manifest.plugins {
+            if Set(plugins.map { $0.lowercased() }).count != plugins.count { error("duplicate_plugins", "plugins must contain unique identifiers.") }
+            for plugin in plugins where plugin.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{2,127}$", options: .regularExpression) == nil {
+                error("invalid_plugin", "Invalid plugin identifier: \(plugin).")
+            }
+            if !plugins.isEmpty && !manifest.permissions.contains(.network) { error("plugin_network", "Data source plugins require the network permission.") }
         }
         for domain in manifest.networkDomains {
             let normalized = domain.lowercased()

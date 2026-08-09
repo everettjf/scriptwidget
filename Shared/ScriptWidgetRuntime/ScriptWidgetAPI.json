@@ -58,7 +58,8 @@
   },
   "functions": {
     "fetch": { "documentation": "Perform a network request." },
-    "importJS": { "documentation": "Import a package-relative JavaScript file." }
+    "importJS": { "documentation": "Import a package-relative JavaScript file." },
+    "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
   },
   "environmentValues": ["widgetFamily", "scriptName", "scriptParameter"]
 }

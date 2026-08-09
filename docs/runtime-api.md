@@ -4,7 +4,9 @@ The public JavaScript/JSX host contract is versioned independently from the app.
 
 ## Global API
 
-Version 1.0 exposes `$component`, `$console`, `$device`, `$dynamic_island`, `$element`, `$error`, `$fetch`, `$file`, `$getenv`, `$health`, `$http`, `$import`, `$location`, `$render`, `$runtime`, `$storage`, `$system`, `console`, and `fetch`.
+Version 1.0 exposes `$component`, `$console`, `$dataSource`, `$device`, `$dynamic_island`, `$element`, `$error`, `$fetch`, `$file`, `$getenv`, `$health`, `$http`, `$import`, `$location`, `$render`, `$runtime`, `$storage`, `$system`, `console`, and `fetch`.
+
+`$dataSource.request(pluginID, operationID, parameters)` calls an installed declarative connector. It is available only to Package 2.0 widgets that declare the plugin identifier, `network` permission, and the connector host. See [Data Source Plugins](data-source-plugins.md).
 
 Removing or changing the meaning of a 1.0 global requires a new major API version. Additive properties may ship in a minor version.
 

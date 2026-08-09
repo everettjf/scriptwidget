@@ -753,6 +753,7 @@ Interactive widget toggle on iOS 17 and later.
 
 - `fetch`: Perform a network request.
 - `importJS`: Import a package-relative JavaScript file.
+- `$dataSource.request`: Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.
 
 ## Environment values
 

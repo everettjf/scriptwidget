@@ -1110,3 +1110,81 @@ private actor GalleryTestTransport: GalleryTransport {
         requests.last?.value(forHTTPHeaderField: field)
     }
 }
+
+final class DataSourcePluginTests: XCTestCase {
+    func testBuiltInPluginsValidate() {
+        XCTAssertEqual(DataSourcePluginManager.builtIns.count, 2)
+        for plugin in DataSourcePluginManager.builtIns {
+            XCTAssertTrue(DataSourcePluginValidator.validate(plugin).isValid, plugin.id)
+        }
+    }
+
+    func testRequestBuilderMapsPathQueryHeaderAndJSONBody() throws {
+        let plugin = DataSourcePluginManifest(
+            formatVersion: 1,
+            id: "dev.scriptwidget.test-source",
+            name: "Test Source",
+            version: "1.0.0",
+            summary: "Test",
+            symbol: "network",
+            author: "Tests",
+            license: "MIT",
+            minimumRuntimeVersion: ScriptWidgetBuildContract.runtimeAPIVersion,
+            baseURL: URL(string: "https://api.example.com")!,
+            hosts: ["api.example.com"],
+            operations: [.init(
+                id: "update",
+                title: "Update",
+                method: "POST",
+                path: "/users/{user}",
+                responseType: .json,
+                parameters: [
+                    .init(id: "user", label: "User", location: .path, required: true, defaultValue: nil),
+                    .init(id: "page", label: "Page", location: .query, required: false, defaultValue: "1"),
+                    .init(id: "X-Token", label: "Token", location: .header, required: true, defaultValue: nil),
+                    .init(id: "enabled", label: "Enabled", location: .jsonBody, required: true, defaultValue: nil)
+                ]
+            )]
+        )
+        let prepared = try DataSourceRequestBuilder.prepare(
+            plugin: plugin,
+            operationID: "update",
+            values: ["user": "hello world", "X-Token": "secret", "enabled": true]
+        )
+        XCTAssertEqual(prepared.request.url?.absoluteString, "https://api.example.com/users/hello%20world?page=1")
+        XCTAssertEqual(prepared.request.value(forHTTPHeaderField: "X-Token"), "secret")
+        let body = try XCTUnwrap(prepared.request.httpBody)
+        XCTAssertEqual((try JSONSerialization.jsonObject(with: body) as? [String: Bool])?["enabled"], true)
+    }
+
+    func testManifestDecoderFailsClosedAndRejectsHTTP() throws {
+        let builtIn = try XCTUnwrap(DataSourcePluginManager.builtIns.first)
+        let encoded = try JSONEncoder().encode(builtIn)
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: encoded) as? [String: Any])
+        object["unexpected"] = true
+        if case .success = DataSourcePluginValidator.decode(try JSONSerialization.data(withJSONObject: object)) {
+            XCTFail("Unknown plugin fields must fail closed")
+        }
+
+        var unsafe = builtIn
+        unsafe.baseURL = URL(string: "http://api.open-meteo.com")!
+        XCTAssertFalse(DataSourcePluginValidator.validate(unsafe).isValid)
+    }
+
+    func testNetworkPolicyMatchesExactAndWildcardHosts() {
+        XCTAssertTrue(ScriptWidgetNetworkPolicy.host("api.example.com", matchesAny: ["api.example.com"]))
+        XCTAssertTrue(ScriptWidgetNetworkPolicy.host("weather.example.com", matchesAny: ["*.example.com"]))
+        XCTAssertFalse(ScriptWidgetNetworkPolicy.host("example.com", matchesAny: ["*.example.com"]))
+        XCTAssertFalse(ScriptWidgetNetworkPolicy.host("example.com.evil.test", matchesAny: ["*.example.com"]))
+    }
+
+    func testMalformedPackageManifestFailsNetworkClosed() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("NetworkPolicy-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let package = ScriptWidgetPackage(path: root, readonly: false)
+        XCTAssertTrue(ScriptWidgetNetworkPolicy.packageAllows(URL(string: "https://example.com")!, package: package), "Legacy package remains compatible")
+        try Data("{not-json".utf8).write(to: package.manifestPath)
+        XCTAssertFalse(ScriptWidgetNetworkPolicy.packageAllows(URL(string: "https://example.com")!, package: package), "Malformed Package 2.0 must fail closed")
+    }
+}

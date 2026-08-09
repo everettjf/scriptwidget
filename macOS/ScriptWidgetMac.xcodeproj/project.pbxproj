@@ -46,6 +46,9 @@
 		A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201001000000000000000B0 /* AIWidgetSkills.swift */; };
 		A209000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000100000000000000B0 /* ScriptWidgetGallery.swift */; };
 		A209000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
+		A210000300000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A210000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
+		A210000400000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A210000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
+		A210000700000000000000B0 /* DataSourceLabView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A210000600000000000000B0 /* DataSourceLabView.swift */; };
 		A204000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000100000000000000B0 /* SettingAIView.swift */; };
 		A204000200000000000000B0 /* AIGenerateWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000200000000000000B0 /* AIGenerateWindowView.swift */; };
 		A204000300000000000000B0 /* SkillManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000300000000000000B0 /* SkillManagerView.swift */; };
@@ -293,6 +296,8 @@
 		A201001000000000000000B0 /* AIWidgetSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWidgetSkills.swift; sourceTree = "<group>"; };
 		A209000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
 		A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
+		A210000100000000000000B0 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
+		A210000600000000000000B0 /* DataSourceLabView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DataSourceLabView.swift; sourceTree = "<group>"; };
 		A203000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A203000200000000000000B0 /* AIGenerateWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateWindowView.swift; sourceTree = "<group>"; };
 		A203000300000000000000B0 /* SkillManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillManagerView.swift; sourceTree = "<group>"; };
@@ -487,6 +492,22 @@
 			path = ../Shared/ScriptWidgetRuntime/Gallery;
 			sourceTree = "<group>";
 		};
+		A210000500000000000000B0 /* Plugin */ = {
+			isa = PBXGroup;
+			children = (
+				A210000100000000000000B0 /* ScriptWidgetDataSources.swift */,
+			);
+			path = ../Shared/ScriptWidgetRuntime/Plugin;
+			sourceTree = "<group>";
+		};
+		A210000800000000000000B0 /* Plugin */ = {
+			isa = PBXGroup;
+			children = (
+				A210000600000000000000B0 /* DataSourceLabView.swift */,
+			);
+			path = Plugin;
+			sourceTree = "<group>";
+		};
 		A205000300000000000000B0 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -537,6 +558,7 @@
 			children = (
 				A205000100000000000000B0 /* AI */,
 				A209000500000000000000B0 /* Gallery */,
+				A210000500000000000000B0 /* Plugin */,
 				D1995D0429536BF000D1BD94 /* Resource */,
 				D1995CF429536BC700D1BD94 /* Common */,
 				D1995C5529536BB800D1BD94 /* Widget */,
@@ -825,6 +847,7 @@
 		F29117D6279101DE00B860B0 /* ScriptWidgetMac */ = {
 			isa = PBXGroup;
 			children = (
+				A210000800000000000000B0 /* Plugin */,
 				A205000200000000000000B0 /* AIGenerate */,
 				A205000300000000000000B0 /* Settings */,
 				A205000500000000000000B0 /* Skills */,
@@ -1139,6 +1162,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A210000700000000000000B0 /* DataSourceLabView.swift in Sources */,
 				A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */,
 				A202000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
@@ -1187,6 +1211,7 @@
 				D1995CBE29536BB800D1BD94 /* ScriptWidgetAttributeRotationEffectModifier.swift in Sources */,
 				F276BD5127ACE9B600E0ABE8 /* ImageAddView.swift in Sources */,
 				D1995CE429536BB800D1BD94 /* ScriptWidgetRuntimeFetch.swift in Sources */,
+				A210000300000000000000B0 /* ScriptWidgetDataSources.swift in Sources */,
 				D1995CD829536BB800D1BD94 /* ScriptWidgetElementTagZStack.swift in Sources */,
 				D1995C9429536BB800D1BD94 /* MineGaugeView.swift in Sources */,
 				F276BD4F27ACB9DA00E0ABE8 /* EditorPanelView.swift in Sources */,
@@ -1276,6 +1301,7 @@
 				5A89B79E2F0FB0B5008B90A2 /* SwingAnimationModifier.swift in Sources */,
 				D1995C9729536BB800D1BD94 /* ScriptWidgetElementColor.swift in Sources */,
 				D1995CE529536BB800D1BD94 /* ScriptWidgetRuntimeFetch.swift in Sources */,
+				A210000400000000000000B0 /* ScriptWidgetDataSources.swift in Sources */,
 				D1995CEB29536BB800D1BD94 /* ScriptWidgetRuntimeConsole.swift in Sources */,
 				5A89B79A2F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				D1995CC729536BB800D1BD94 /* ScriptWidgetAttributeForegroundModifier.swift in Sources */,

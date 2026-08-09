@@ -266,6 +266,7 @@ private struct WidgetConfigurationView: View {
 
     @State private var manifest: WidgetPackageManifest
     @State private var networkDomains: String
+    @State private var pluginIDs: String
     @State private var statusMessage: String?
 
     init(scriptModel: ScriptModel, configuration: StudioWidgetConfiguration) {
@@ -274,6 +275,7 @@ private struct WidgetConfigurationView: View {
         let value = scriptModel.package.effectiveManifest()
         _manifest = State(initialValue: value)
         _networkDomains = State(initialValue: value.networkDomains.joined(separator: "\n"))
+        _pluginIDs = State(initialValue: (value.plugins ?? []).joined(separator: "\n"))
     }
 
     var body: some View {
@@ -317,7 +319,7 @@ private struct WidgetConfigurationView: View {
                 ForEach(WidgetPackagePermission.allCases) { permission in
                     Toggle(permission.displayName, isOn: permissionBinding(permission))
                 }
-                Text("Permissions are declarations reviewed during import. Runtime enforcement is introduced capability by capability.")
+                Text("Package 2.0 permissions are enforced by the runtime. Data sources also require Network and an allowed host below.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -327,6 +329,15 @@ private struct WidgetConfigurationView: View {
                     .font(.system(.body, design: .monospaced))
                     .frame(minHeight: 72)
                 Text("One lowercase host per line, for example api.example.com or *.example.com. HTTPS URLs remain subject to the runtime network policy.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
+            Section("Data Source Plugins") {
+                TextEditor(text: $pluginIDs)
+                    .font(.system(.body, design: .monospaced))
+                    .frame(minHeight: 64)
+                Text("One installed plugin identifier per line. Open Data Source Lab (⇧⌘D) to inspect and test plugins.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -369,6 +380,10 @@ private struct WidgetConfigurationView: View {
         manifest.supportedFamilies = WidgetPackageFamily.allCases.filter(manifest.supportedFamilies.contains)
         manifest.permissions = WidgetPackagePermission.allCases.filter(manifest.permissions.contains)
         manifest.networkDomains = networkDomains
+            .split(whereSeparator: \.isNewline)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            .filter { !$0.isEmpty }
+        manifest.plugins = pluginIDs
             .split(whereSeparator: \.isNewline)
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }

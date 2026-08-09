@@ -7,6 +7,7 @@ const templateRoot = join(root, "Shared/ScriptWidgetRuntime/Resource/Script.bund
 const schema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json"), "utf8"));
 const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/widget.schema.json"), "utf8"));
 const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
+const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));
 const failures = [];
 const names = (await readdir(templateRoot)).sort();
 
@@ -42,6 +43,17 @@ if (packageSchema.properties?.formatVersion?.const !== 2 || packageSchema.proper
 }
 if (skillSchema.properties?.formatVersion?.const !== 1 || skillSchema.properties?.promptFile?.const !== "SKILL.md" || skillSchema.additionalProperties !== false) {
   failures.push("Skills 1.0 schema does not match the fail-closed runtime contract");
+}
+if (pluginSchema.properties?.formatVersion?.const !== 1 || pluginSchema.additionalProperties !== false) {
+  failures.push("Data Source Plugin 1.0 schema does not match the fail-closed runtime contract");
+}
+const pluginDocs = await readFile(join(root, "docs/data-source-plugins.md"), "utf8");
+for (const required of ["plugin.json", ".swplugin", "HTTPS-only", "2 MiB", "cannot read files"]) {
+  if (!pluginDocs.includes(required)) failures.push(`Data Source Plugin documentation is missing ${required}`);
+}
+const pluginSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Plugin/ScriptWidgetDataSources.swift"), "utf8");
+for (const guardrail of ["rejectUnknownFields", "ScriptPackageArchivePreflight", "maximumPackageBytes", "networkDomains", "permissions.contains(.network)"]) {
+  if (!pluginSource.includes(guardrail)) failures.push(`Data Source Plugin runtime is missing ${guardrail}`);
 }
 const skillDocs = await readFile(join(root, "docs/skills.md"), "utf8");
 for (const required of ["skill.json", "SKILL.md", ".swskill", "256 KiB", "cannot execute code"]) {

@@ -492,6 +492,7 @@ class ScriptWidgetRuntime {
             runtimeContext["$location"] = ScriptWidgetRuntimeLocation.self
             runtimeContext["$storage"] = ScriptWidgetRuntimeStorage.self
             runtimeContext["$runtime"] = ScriptWidgetRuntimeContract.javascriptDescriptor
+            runtimeContext["$dataSource"] = ScriptWidgetRuntimeDataSource.self
 
             let environment = environments
             let getenv: @convention(block) (String) -> String = { key in environment[key] ?? "" }

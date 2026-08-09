@@ -31,6 +31,8 @@ struct ScriptWidgetMacApp: App {
         .windowResizability(.contentMinSize)
         .windowToolbarStyle(.unified)
         .commands {
+            DataSourceLabCommands()
+
             CommandGroup(after: .newItem) {
                 Button("Generate Widget with AI...") {
                     NotificationCenter.default.post(name: AIGenerateWindowView.openRequestNotification, object: nil)
@@ -88,6 +90,12 @@ struct ScriptWidgetMacApp: App {
                 }
             }
         }
+
+        Window("Data Source Lab", id: "data-source-lab") {
+            DataSourceLabView()
+        }
+        .defaultPosition(.center)
+        .defaultSize(width: 1080, height: 700)
 
         Settings {
             ScriptWidgetMacSettingsView()
