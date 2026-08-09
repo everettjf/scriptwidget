@@ -102,16 +102,34 @@ final class PackageCacheTests: XCTestCase {
         XCTAssertTrue(libRead.1.contains("build cache"), "status was: \(libRead.1)")
     }
 
-    func testPrecacheSkipsBinaryAssets() {
-        // Precache only caches text the runtime loads; a .png is left alone
-        // (it would not be utf8-readable anyway) and is not counted.
+    func testPrecacheKeepsPackageImageAvailableAfterEviction() throws {
         let pkg = makeTempPackage()
         XCTAssertTrue(pkg.writeMainFile(content: "ONLY_TEXT").0)
-        // Drop a fake binary asset next to it.
-        try? Data([0x89, 0x50, 0x4E, 0x47]).write(to: pkg.path.appendingPathComponent("image.png"))
+        try? FileManager.default.createDirectory(at: pkg.imagePath, withIntermediateDirectories: true)
+        let imageURL = pkg.imagePath.appendingPathComponent("weather.png")
+        let imageData = Data([0x89, 0x50, 0x4E, 0x47, 0x01, 0x02])
+        try? imageData.write(to: imageURL)
 
         let cachedCount = sharedScriptManager.precachePackageFiles(pkg)
-        XCTAssertEqual(cachedCount, 1, "only main.jsx should be cached, not image.png")
+        XCTAssertEqual(cachedCount, 2, "main.jsx and its package image should be cached")
+
+        evict(imageURL)
+        let cachedImage = try XCTUnwrap(pkg.getImage("weather"))
+        XCTAssertEqual(try Data(contentsOf: cachedImage.path), imageData)
+    }
+
+    func testPrecacheKeepsPackageGifAvailableAfterEviction() throws {
+        let pkg = makeTempPackage()
+        try? FileManager.default.createDirectory(at: pkg.imagePath, withIntermediateDirectories: true)
+        let gifURL = pkg.imagePath.appendingPathComponent("animation.gif")
+        let gifData = Data("GIF89a".utf8)
+        try? gifData.write(to: gifURL)
+
+        XCTAssertEqual(sharedScriptManager.precachePackageFiles(pkg), 1)
+        evict(gifURL)
+
+        let cachedGIF = try XCTUnwrap(pkg.getGifFile("animation.gif"))
+        XCTAssertEqual(try Data(contentsOf: cachedGIF), gifData)
     }
 
     func testPrecacheCachesNestedFiles() {

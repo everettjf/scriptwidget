@@ -49,6 +49,7 @@ The editor budgets are enforced by repeated CodeMirror state creation and edit t
 ## Recovery and synchronization
 
 - Source writes are atomic and immediately refresh the local build cache.
+- While iCloud is reachable, the app proactively caches executable text and package image resources up to 25 MiB each. WidgetKit falls back to those local copies when cellular iCloud Drive is disabled or the primary ubiquitous files are evicted.
 - Studio records a debounced crash-recovery draft before autosave completes.
 - A draft is restored only if the underlying file hash is unchanged. If iCloud or another device changed the file, the stale draft is ignored instead of overwriting newer content.
 - Successful manual save, autosave, or Copilot Apply removes the recovery draft.

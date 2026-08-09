@@ -569,21 +569,23 @@ extension ScriptManager {
 // been successfully read at least once on this device — so a script synced from
 // another device that was never opened here had nothing to fall back to.
 //
-// These helpers proactively read (and thus cache) every script's text files
-// while iCloud is reachable, so later eviction still renders from the cache.
+// These helpers proactively cache every script's runtime files and bounded
+// image resources while iCloud is reachable, so later eviction still renders
+// the complete widget from the cache.
 extension ScriptManager {
 
-    /// File extensions whose contents are cached. Limited to text the runtime
-    /// loads (main.jsx, imports, JSON data); binary assets like images are read
-    /// directly and are not part of the render-blocking path.
-    private static let cacheableExtensions: Set<String> = ["jsx", "js", "json", "txt", "csv", "svg", "md"]
+    /// Text is required to execute the widget; common image formats are also
+    /// retained so an offline fallback does not render an incomplete layout.
+    private static let textCacheableExtensions: Set<String> = ["jsx", "js", "json", "txt", "csv", "svg", "md"]
+    private static let binaryCacheableExtensions: Set<String> = ["png", "jpg", "jpeg", "gif", "webp", "heic"]
+    private static let maximumCachedResourceBytes = 25 * 1024 * 1024
 
     /// How long a single precache pass will wait for one evicted iCloud file to
     /// download before moving on. Bounded so a slow/absent network can't stall
     /// the whole pass; remaining files are simply picked up on the next pass.
     private static let precacheDownloadTimeout: TimeInterval = 8
 
-    /// Read and locally cache one package's text files. A successful read writes
+    /// Read and locally cache one package's runtime files. A successful read writes
     /// the per-file build cache that `readFile` falls back to. For files that
     /// iCloud has evicted this requests the download and *waits* (bounded) for it
     /// to materialize before reading — so an evicted file is cached on this pass
@@ -595,7 +597,13 @@ extension ScriptManager {
         var cached = 0
         for fileURL in cacheableFileURLs(in: package.path) {
             guard ensureDownloaded(fileURL) else { continue }
-            if package.readFile(fullPath: fileURL).0 != nil {
+            let pathExtension = fileURL.pathExtension.lowercased()
+            if Self.textCacheableExtensions.contains(pathExtension),
+               package.readFile(fullPath: fileURL).0 != nil {
+                cached += 1
+            } else if Self.binaryCacheableExtensions.contains(pathExtension),
+                      resourceSize(fileURL) <= Self.maximumCachedResourceBytes,
+                      package.cacheResource(fullPath: fileURL) {
                 cached += 1
             }
         }
@@ -611,7 +619,7 @@ extension ScriptManager {
         }
     }
 
-    /// Logical URLs of cacheable text files under `root`, resolving iCloud
+    /// Logical URLs of cacheable runtime files under `root`, resolving iCloud
     /// placeholders (".main.jsx.icloud") back to their real names so evicted
     /// files are still discovered and downloaded.
     private func cacheableFileURLs(in root: URL) -> [URL] {
@@ -628,11 +636,17 @@ extension ScriptManager {
                 continue
             }
             let logical = Self.logicalURL(for: url)
-            if Self.cacheableExtensions.contains(logical.pathExtension.lowercased()) {
+            let pathExtension = logical.pathExtension.lowercased()
+            if Self.textCacheableExtensions.contains(pathExtension)
+                || Self.binaryCacheableExtensions.contains(pathExtension) {
                 result.append(logical)
             }
         }
         return result
+    }
+
+    private func resourceSize(_ url: URL) -> Int {
+        (try? url.resourceValues(forKeys: [.fileSizeKey]))?.fileSize ?? Int.max
     }
 
     /// Map an iCloud placeholder URL (".main.jsx.icloud") back to its logical

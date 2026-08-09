@@ -485,7 +485,8 @@ struct ScriptWidgetPackage {
         }
         let packageRootPath = self.path.standardizedFileURL.resolvingSymlinksInPath().path
         let fullPathValue = fullPath.standardizedFileURL.resolvingSymlinksInPath().path
-        guard fullPathValue.hasPrefix(packageRootPath) else {
+        let packageRootPrefix = packageRootPath.hasSuffix("/") ? packageRootPath : packageRootPath + "/"
+        guard fullPathValue == packageRootPath || fullPathValue.hasPrefix(packageRootPrefix) else {
             return nil
         }
         var relativePath = String(fullPathValue.dropFirst(packageRootPath.count))
@@ -500,10 +501,12 @@ struct ScriptWidgetPackage {
     }
 
     private func syncBuildCache(fullPath: URL, content: String) {
+        guard let data = content.data(using: .utf8) else { return }
+        syncBuildCache(fullPath: fullPath, data: data)
+    }
+
+    private func syncBuildCache(fullPath: URL, data: Data) {
         guard let cacheFilePath = buildCachePath(for: fullPath) else {
-            return
-        }
-        guard let data = content.data(using: .utf8) else {
             return
         }
         let directory = cacheFilePath.deletingLastPathComponent()
@@ -511,11 +514,35 @@ struct ScriptWidgetPackage {
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [
                 FileAttributeKey.protectionKey: FileProtectionType.none
             ])
-            try data.write(to: cacheFilePath)
+            try data.write(to: cacheFilePath, options: .atomic)
             try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: cacheFilePath.path)
         } catch {
             print("sync build cache failed: \(error)")
         }
+    }
+
+    /// Copies a package resource into the app-group cache used by widgets when
+    /// iCloud has evicted the primary file. The caller is responsible for
+    /// bounding which resource types and sizes are admitted.
+    @discardableResult
+    func cacheResource(fullPath: URL) -> Bool {
+        guard let data = try? Data(contentsOf: fullPath) else { return false }
+        syncBuildCache(fullPath: fullPath, data: data)
+        return buildCachePath(for: fullPath).map {
+            FileManager.default.fileExists(atPath: $0.path)
+        } ?? false
+    }
+
+    /// Returns the authoritative package file when present, otherwise its last
+    /// locally cached copy. This keeps package images and animations available
+    /// to WidgetKit while iCloud Drive is unavailable on cellular data.
+    func locallyAvailableFileURL(fullPath: URL) -> URL? {
+        if FileManager.default.fileExists(atPath: fullPath.path) {
+            return fullPath
+        }
+        guard let cached = buildCachePath(for: fullPath),
+              FileManager.default.fileExists(atPath: cached.path) else { return nil }
+        return cached
     }
     
     func makePackageDirectory() throws {
@@ -610,10 +637,8 @@ struct ScriptWidgetPackage {
     
     func getImage(_ imageName: String) -> ImageModel? {
         let imagePath = self.imagePath.appendingPathComponent(imageName).appendingPathExtension("png")
-        if !FileManager.default.fileExists(atPath: imagePath.path) {
-            return nil
-        }
-        return ImageModel(name: imageName, path: imagePath)
+        guard let availablePath = locallyAvailableFileURL(fullPath: imagePath) else { return nil }
+        return ImageModel(name: imageName, path: availablePath)
     }
     
     
@@ -625,16 +650,16 @@ struct ScriptWidgetPackage {
 
         // 1) Accept direct file name (with extension), e.g. "cat.gif" / "cat.GIF".
         let directPath = self.imagePath.appendingPathComponent(trimmedName)
-        if FileManager.default.fileExists(atPath: directPath.path),
-           directPath.pathExtension.lowercased() == "gif" {
-            return directPath
+        if directPath.pathExtension.lowercased() == "gif",
+           let availablePath = locallyAvailableFileURL(fullPath: directPath) {
+            return availablePath
         }
 
         // 2) Accept bare name, e.g. "cat" -> "cat.gif".
         if directPath.pathExtension.isEmpty {
             let appendedGifPath = directPath.appendingPathExtension("gif")
-            if FileManager.default.fileExists(atPath: appendedGifPath.path) {
-                return appendedGifPath
+            if let availablePath = locallyAvailableFileURL(fullPath: appendedGifPath) {
+                return availablePath
             }
         }
 
