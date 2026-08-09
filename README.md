@@ -186,6 +186,8 @@ the app group), with `main.jsx` as the entry point and an optional `image/` fold
 
 ## 📚 Documentation
 
+Start with the **[documentation hub](docs/README.md)** or build **[your first widget](docs/getting-started.md)** in ScriptWidget Studio.
+
 ### Core Concepts
 
 - **Entry point** - call `$render(<tree/>)` to draw the widget
