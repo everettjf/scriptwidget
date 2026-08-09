@@ -10,6 +10,8 @@ import SwiftUI
 struct EditorMainView: View {
     
     @SceneStorage("editorPanelLayoutMode") private var panelLayoutModeVertical = true
+    @State private var selectedFilePath = "main.jsx"
+    @State private var widgetConfiguration = StudioWidgetConfiguration()
     
     let scriptModel: ScriptModel
     
@@ -47,19 +49,33 @@ struct EditorMainView: View {
             Group {
                 if panelLayoutModeVertical {
                     HSplitView {
-                        EditorWebView(scriptModel: scriptModel)
-                            .frame(idealWidth: 640)
+                        FileListView(scriptModel: scriptModel, selectedFilePath: $selectedFilePath)
+                            .frame(minWidth: 190, idealWidth: 220, maxWidth: 300)
 
-                        EditorPanelView(scriptModel: scriptModel)
+                        EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath)
+                            .frame(minWidth: 420, idealWidth: 620)
+
+                        EditorPanelView(
+                            scriptModel: scriptModel,
+                            configuration: widgetConfiguration
+                        )
                             .frame(minWidth: 300, idealWidth: 360, maxWidth: 440)
                     }
                 } else {
-                    VSplitView {
-                        EditorWebView(scriptModel: scriptModel)
-                            .frame(idealHeight: 620)
+                    HSplitView {
+                        FileListView(scriptModel: scriptModel, selectedFilePath: $selectedFilePath)
+                            .frame(minWidth: 190, idealWidth: 220, maxWidth: 300)
 
-                        EditorPanelView(scriptModel: scriptModel)
-                            .frame(minHeight: 280, idealHeight: 380)
+                        VSplitView {
+                            EditorWebView(scriptModel: scriptModel, relativePath: selectedFilePath)
+                                .frame(minHeight: 360, idealHeight: 600)
+
+                            EditorPanelView(
+                                scriptModel: scriptModel,
+                                configuration: widgetConfiguration
+                            )
+                                .frame(minHeight: 280, idealHeight: 380)
+                        }
                     }
                 }
             }

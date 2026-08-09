@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Observation
 
 enum StudioPreviewFamily: Int, CaseIterable, Identifiable {
     case small
@@ -39,6 +40,15 @@ enum StudioPreviewCanvasMode: String, CaseIterable, Identifiable {
         case .all: return "All Sizes"
         }
     }
+}
+
+@MainActor
+@Observable
+final class StudioWidgetConfiguration {
+    var family: StudioPreviewFamily = .small
+    var canvasMode: StudioPreviewCanvasMode = .single
+    var parameter = ""
+    var debugMode = false
 }
 
 class PreviewWidgetSize {

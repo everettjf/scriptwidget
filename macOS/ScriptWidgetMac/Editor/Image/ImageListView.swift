@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import UniformTypeIdentifiers
 
 
 class ImageDataObject: ObservableObject {
@@ -46,7 +47,10 @@ struct ImageListView: View {
     @StateObject private var dataObject: ImageDataObject
     
     @State private var showingAddImage = false
+    @State private var showingAssetImporter = false
     @State private var previewingImage: ImageModel?
+    @State private var isDropTargeted = false
+    @State private var errorMessage: String?
     
     @State private var selectedImageName = ""
     
@@ -72,7 +76,12 @@ struct ImageListView: View {
                 Button {
                     showingAddImage = true
                 } label: {
-                    Label("Add Image", systemImage: "plus")
+                    Label("Crop Image", systemImage: "crop")
+                }
+                Button {
+                    showingAssetImporter = true
+                } label: {
+                    Label("Import Assets", systemImage: "square.and.arrow.down")
                 }
             }
             .padding(12)
@@ -157,10 +166,68 @@ struct ImageListView: View {
                 }
                 .padding(12)
             }
+            .overlay {
+                if isDropTargeted {
+                    RoundedRectangle(cornerRadius: 12)
+                        .stroke(Color.accentColor, style: StrokeStyle(lineWidth: 3, dash: [8]))
+                        .padding(8)
+                        .allowsHitTesting(false)
+                }
+            }
+            .dropDestination(for: URL.self, action: importDroppedAssets, isTargeted: { isDropTargeted = $0 })
         }
         .sheet(isPresented: $showingAddImage) {
             ImageAddView(scriptModel: scriptModel)
         }
+        .fileImporter(
+            isPresented: $showingAssetImporter,
+            allowedContentTypes: [.image, .gif],
+            allowsMultipleSelection: true,
+            onCompletion: importSelectedAssets
+        )
+        .alert("Asset Import Failed", isPresented: Binding(
+            get: { errorMessage != nil },
+            set: { if !$0 { errorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) { errorMessage = nil }
+        } message: {
+            Text(errorMessage ?? "Unknown error")
+        }
+    }
+
+    private func importSelectedAssets(_ result: Result<[URL], Error>) {
+        guard case .success(let urls) = result else {
+            if case .failure(let error) = result { errorMessage = error.localizedDescription }
+            return
+        }
+        _ = importAssets(urls)
+    }
+
+    private func importDroppedAssets(_ urls: [URL], _ location: CGPoint) -> Bool {
+        importAssets(urls)
+    }
+
+    @discardableResult
+    private func importAssets(_ urls: [URL]) -> Bool {
+        let allowed = ["png", "jpg", "jpeg", "gif", "webp", "heic"]
+        var importedAny = false
+        for url in urls where allowed.contains(url.pathExtension.lowercased()) {
+            let accessed = url.startAccessingSecurityScopedResource()
+            defer { if accessed { url.stopAccessingSecurityScopedResource() } }
+            let result = scriptModel.package.importProjectFile(from: url)
+            guard result.0 else {
+                errorMessage = result.1
+                return false
+            }
+            importedAny = true
+        }
+        if importedAny {
+            dataObject.reload()
+            NotificationCenter.default.post(name: ImageDataObject.refreshNotification, object: nil)
+        } else {
+            errorMessage = "Choose PNG, JPEG, GIF, WebP, or HEIC files."
+        }
+        return importedAny
     }
 }
 

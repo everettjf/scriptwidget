@@ -423,6 +423,71 @@ final class StudioDraftStoreTests: XCTestCase {
     }
 }
 
+final class ProjectFileImportTests: XCTestCase {
+    private var packageDirectory: URL!
+    private var sourceDirectory: URL!
+    private var package: ScriptWidgetPackage!
+
+    override func setUp() {
+        super.setUp()
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ProjectFileImportTests-\(UUID().uuidString)", isDirectory: true)
+        packageDirectory = root.appendingPathComponent("Widget", isDirectory: true)
+        sourceDirectory = root.appendingPathComponent("Source", isDirectory: true)
+        try? FileManager.default.createDirectory(at: packageDirectory, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(at: sourceDirectory, withIntermediateDirectories: true)
+        package = ScriptWidgetPackage(path: packageDirectory)
+    }
+
+    override func tearDown() {
+        try? FileManager.default.removeItem(at: packageDirectory.deletingLastPathComponent())
+        package = nil
+        packageDirectory = nil
+        sourceDirectory = nil
+        super.tearDown()
+    }
+
+    func testTextImportUsesPackageRootAndDeduplicatesWithoutOverwrite() throws {
+        let source = sourceDirectory.appendingPathComponent("helpers.js")
+        try "first".write(to: source, atomically: true, encoding: .utf8)
+
+        XCTAssertEqual(package.importProjectFile(from: source).1, "helpers.js")
+        try "second".write(to: source, atomically: true, encoding: .utf8)
+        XCTAssertEqual(package.importProjectFile(from: source).1, "helpers-2.js")
+
+        XCTAssertEqual(package.readFile(relativePath: "helpers.js").0, "first")
+        XCTAssertEqual(package.readFile(relativePath: "helpers-2.js").0, "second")
+    }
+
+    func testImageImportUsesRuntimeImageDirectory() throws {
+        let source = sourceDirectory.appendingPathComponent("weather.png")
+        let payload = Data([0x89, 0x50, 0x4E, 0x47])
+        try payload.write(to: source)
+
+        XCTAssertEqual(package.importProjectFile(from: source).1, "image/weather.png")
+        XCTAssertEqual(try Data(contentsOf: packageDirectory.appendingPathComponent("image/weather.png")), payload)
+    }
+
+    func testImportedJPEGResolvesByBareRuntimeImageName() throws {
+        let source = sourceDirectory.appendingPathComponent("forecast.jpg")
+        let payload = Data([0xFF, 0xD8, 0xFF, 0xD9])
+        try payload.write(to: source)
+
+        XCTAssertTrue(package.importProjectFile(from: source).0)
+        let image = try XCTUnwrap(package.getImage("forecast"))
+        XCTAssertEqual(image.path.pathExtension.lowercased(), "jpg")
+        XCTAssertEqual(try Data(contentsOf: image.path), payload)
+    }
+
+    func testImportRejectsResourceOverConfiguredLimit() throws {
+        let source = sourceDirectory.appendingPathComponent("large.json")
+        try Data(repeating: 0x41, count: 16).write(to: source)
+        let result = package.importProjectFile(from: source, maximumBytes: 8)
+        XCTAssertFalse(result.0)
+        XCTAssertFalse(package.isFileExist(relativePath: "large.json"))
+    }
+}
+
 final class CompiledArtifactTests: XCTestCase {
     private var package: ScriptWidgetPackage!
 

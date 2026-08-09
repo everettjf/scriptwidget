@@ -2,6 +2,18 @@
 
 ScriptWidget Studio is the macOS development environment for ScriptWidget. It is the primary place to create, edit, preview, debug, and manage widgets that sync through iCloud to iPhone, iPad, and Mac.
 
+## Project workspace
+
+The macOS editor uses a persistent three-pane workspace:
+
+- **Project** shows the complete package as a hierarchical file tree. Select JSX, JavaScript, JSON, text, Markdown, or CSS files to edit them without reloading Studio. The current document is saved before another file opens.
+- **Editor** keeps one CodeMirror session and crash-recovery draft per document.
+- **Preview / Assets / Config / Copilot** provides runtime output and project tools alongside the editor.
+
+Use the Project `+` menu to create a text file or import multiple files. Imported project names are de-duplicated instead of overwriting an existing file. Images selected from Finder are placed in the runtime `image/` directory automatically.
+
+The Assets panel accepts multiple images from the file picker or by dragging them from Finder. PNG, JPEG, GIF, WebP, and HEIC resources up to 25 MiB are supported. The Config panel controls preview family, single/all-size canvas, runtime debug mode, and the widget parameter for the current Studio session. Package-level persisted metadata is defined by `widget.json` in Package 2.0.
+
 The same Studio editor, AI Copilot, Skills, diagnostics, and preview semantics are available on iPhone and iPad. iPad uses a side-by-side editor and Studio panel in regular-width layouts; iPhone presents Preview and Copilot as focused sheets.
 
 ## Create a widget

@@ -251,18 +251,15 @@ final class PreviewDiagnosticStore: @unchecked Sendable {
 struct PreviewView: View {
     
     let scriptModel: ScriptModel
+    @Bindable var configuration: StudioWidgetConfiguration
     @StateObject private var data: ScriptCodeRunnerDataObject
     
-    @State private var widgetSizeType = 0
-    @State private var canvasMode: StudioPreviewCanvasMode = .single
     @State private var outputTab = StudioOutputTab.problems
-    @State private var isDebugMode = false
-    
-    @State private var scriptParameter = ""
     @State private var scriptParameterApplied = ""
     
-    init(scriptModel: ScriptModel) {
+    init(scriptModel: ScriptModel, configuration: StudioWidgetConfiguration) {
         self.scriptModel = scriptModel
+        self.configuration = configuration
         _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
             file: scriptModel.package,
             widgetSizeType: 0,
@@ -288,15 +285,15 @@ struct PreviewView: View {
             context:
                 ScriptWidgetElementContext(
                     runtime: data.runtime ,
-                    debugMode: isDebugMode,
+                    debugMode: configuration.debugMode,
                     scriptName: scriptModel.name,
                     scriptParameter: scriptParameterApplied,
                     package: self.scriptModel.package
                 )
         )
             .frame(
-                width: PreviewWidgetSize.size(self.widgetSizeType).width,
-                height: PreviewWidgetSize.size(self.widgetSizeType).height
+                width: configuration.family.size.width,
+                height: configuration.family.size.height
             )
             .clipShape(.rect(cornerRadius: 12))
     }
@@ -316,38 +313,38 @@ struct PreviewView: View {
     private var previewToolbar: some View {
         VStack(spacing: 8) {
             HStack {
-                Picker("Canvas", selection: $canvasMode) {
+                Picker("Canvas", selection: $configuration.canvasMode) {
                     ForEach(StudioPreviewCanvasMode.allCases) { mode in
                         Text(mode.title).tag(mode)
                     }
                 }
                 .pickerStyle(.segmented)
 
-                if canvasMode == .single {
-                    Picker("Family", selection: $widgetSizeType) {
+                if configuration.canvasMode == .single {
+                    Picker("Family", selection: $configuration.family) {
                         ForEach(StudioPreviewFamily.allCases) { family in
-                            Text(family.title).tag(family.rawValue)
+                            Text(family.title).tag(family)
                         }
                     }
                     .pickerStyle(.segmented)
-                    .onChange(of: widgetSizeType) { _, value in
-                        data.changeWidgetSizeType(value)
+                    .onChange(of: configuration.family) { _, value in
+                        data.changeWidgetSizeType(value.rawValue)
                     }
                 }
 
-                Toggle("Debug", isOn: $isDebugMode)
+                Toggle("Debug", isOn: $configuration.debugMode)
                     .toggleStyle(.switch)
                     .controlSize(.small)
             }
 
             HStack {
-                TextField("Widget parameter", text: $scriptParameter)
+                TextField("Widget parameter", text: $configuration.parameter)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { applyParameter() }
                 Button("Apply") { applyParameter() }
                 Spacer()
                 Button("Snapshot", systemImage: "photo") { saveSnapshot() }
-                    .disabled(canvasMode == .all)
+                    .disabled(configuration.canvasMode == .all)
             }
         }
         .padding(10)
@@ -356,14 +353,14 @@ struct PreviewView: View {
     @ViewBuilder
     private var previewCanvas: some View {
         ScrollView([.horizontal, .vertical]) {
-            if canvasMode == .single {
+            if configuration.canvasMode == .single {
                 ZStack {
                     Rectangle().fill(Color.secondary.opacity(0.12))
                     preview
                 }
                 .frame(
-                    minWidth: PreviewWidgetSize.size(widgetSizeType).width + 36,
-                    minHeight: PreviewWidgetSize.size(widgetSizeType).height + 36
+                    minWidth: configuration.family.size.width + 36,
+                    minHeight: configuration.family.size.height + 36
                 )
             } else {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 390), spacing: 20)], spacing: 20) {
@@ -372,7 +369,7 @@ struct PreviewView: View {
                             family: family,
                             scriptModel: scriptModel,
                             scriptParameter: scriptParameterApplied,
-                            isDebugMode: isDebugMode
+                            isDebugMode: configuration.debugMode
                         )
                     }
                 }
@@ -406,7 +403,7 @@ struct PreviewView: View {
     }
 
     private func applyParameter() {
-        scriptParameterApplied = scriptParameter
+        scriptParameterApplied = configuration.parameter
         data.changeWidgetParameter(scriptParameterApplied)
         NotificationCenter.default.post(name: PreviewService.updateNotification, object: scriptModel.package)
     }
@@ -521,7 +518,7 @@ private struct StudioPreviewTile: View {
 
 struct PreviewView_Previews: PreviewProvider {
     static var previews: some View {
-        PreviewView(scriptModel: globalScriptModel)
+        PreviewView(scriptModel: globalScriptModel, configuration: StudioWidgetConfiguration())
             .frame(width: 300, height: 600, alignment: .topLeading)
     }
 }

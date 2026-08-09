@@ -23,7 +23,7 @@ struct ScriptWidgetMacApp: App {
                 BatchPreviewView(outputDirectory: outputDirectory)
             } else {
                 ContentView()
-                    .frame(minWidth: 760, minHeight: 520)
+                    .frame(minWidth: 980, minHeight: 620)
             }
         }
         .defaultPosition(.center)

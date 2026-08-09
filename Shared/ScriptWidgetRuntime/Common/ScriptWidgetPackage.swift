@@ -14,16 +14,18 @@ import UIKit
 #endif
 
 struct ImageModel : Identifiable {
-    let id = UUID()
     let name: String
     let path: URL
+
+    var id: String { path.standardizedFileURL.path }
 }
 
 struct FileModel: Identifiable, Hashable {
-    let id = UUID()
     let name: String
     let relativePath: String
     let path: URL
+
+    var id: String { relativePath }
 }
 
 /// Crash-safe editor drafts. A draft is restored only while its base file hash
@@ -584,6 +586,59 @@ struct ScriptWidgetPackage {
         }
         return self.writeFile(fullPath: fullPath, content: content)
     }
+
+    /// Imports a user-selected project file into the package root. Names are
+    /// de-duplicated instead of overwriting existing work, and the destination
+    /// is resolved through the same package-boundary guard as script writes.
+    func importProjectFile(from sourceURL: URL, maximumBytes: Int = 25 * 1024 * 1024) -> (Bool, String) {
+        guard !readonly else { return (false, "Package is readonly") }
+        guard let values = try? sourceURL.resourceValues(forKeys: [.fileSizeKey]),
+              let size = values.fileSize,
+              size <= maximumBytes else {
+            return (false, "The selected file exceeds the 25 MiB project limit")
+        }
+        guard let data = try? Data(contentsOf: sourceURL) else {
+            return (false, "The selected file could not be read")
+        }
+
+        let originalName = sourceURL.lastPathComponent
+        let stem = sourceURL.deletingPathExtension().lastPathComponent
+        let pathExtension = sourceURL.pathExtension
+        let isImageResource = ["png", "jpg", "jpeg", "gif", "webp", "heic"].contains(pathExtension.lowercased())
+        let relativeDirectory = isImageResource ? "image" : ""
+        var candidateName = originalName
+        var suffix = 2
+        func relativePath(for name: String) -> String {
+            relativeDirectory.isEmpty ? name : relativeDirectory + "/" + name
+        }
+        while isFileExist(relativePath: relativePath(for: candidateName)) {
+            candidateName = pathExtension.isEmpty ? "\(stem)-\(suffix)" : "\(stem)-\(suffix).\(pathExtension)"
+            suffix += 1
+        }
+        let importedRelativePath = relativePath(for: candidateName)
+        guard let destination = resolvedPackageURL(relativePath: importedRelativePath) else {
+            return (false, "Invalid project filename")
+        }
+        do {
+            try makePackageDirectory()
+            try FileManager.default.createDirectory(
+                at: destination.deletingLastPathComponent(),
+                withIntermediateDirectories: true,
+                attributes: [.protectionKey: FileProtectionType.none]
+            )
+            try data.write(to: destination, options: .atomic)
+            try FileManager.default.setAttributes(
+                [.protectionKey: FileProtectionType.none],
+                ofItemAtPath: destination.path
+            )
+            if ["jsx", "js", "json", "txt", "csv", "svg", "md"].contains(pathExtension.lowercased()) {
+                syncBuildCache(fullPath: destination, data: data)
+            }
+            return (true, importedRelativePath)
+        } catch {
+            return (false, error.localizedDescription)
+        }
+    }
     
     func renameFile(relativePath: String, destRelativePath: String) -> (Bool, String) {
         guard let destFullPath = resolvedPackageURL(relativePath: destRelativePath),
@@ -636,9 +691,21 @@ struct ScriptWidgetPackage {
     }
     
     func getImage(_ imageName: String) -> ImageModel? {
-        let imagePath = self.imagePath.appendingPathComponent(imageName).appendingPathExtension("png")
-        guard let availablePath = locallyAvailableFileURL(fullPath: imagePath) else { return nil }
-        return ImageModel(name: imageName, path: availablePath)
+        let trimmedName = imageName.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedName.isEmpty else { return nil }
+        let requested = imagePath.appendingPathComponent(trimmedName)
+        let candidates: [URL]
+        if requested.pathExtension.isEmpty {
+            candidates = ["png", "jpg", "jpeg", "webp", "heic"].map {
+                requested.appendingPathExtension($0)
+            }
+        } else {
+            candidates = [requested]
+        }
+        guard let availablePath = candidates.lazy.compactMap({ locallyAvailableFileURL(fullPath: $0) }).first else {
+            return nil
+        }
+        return ImageModel(name: availablePath.deletingPathExtension().lastPathComponent, path: availablePath)
     }
     
     

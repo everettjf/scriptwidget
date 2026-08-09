@@ -54,10 +54,12 @@ final class EditorInternalWebView: WKWebView {
 
     private var bridge: WKWebViewJavascriptBridge?
     private var scriptModel: ScriptModel?
+    private var currentRelativePath = "main.jsx"
     private var isEditorReady = false
     private var pendingActions: [() -> Void] = []
     private var cancellables = Set<AnyCancellable>()
     private var currentDocumentID: String?
+    private var requestedDocumentID: String?
     private var lastSavedContent = ""
     private var hasLoadedEditor = false
     private var draftWorkItem: DispatchWorkItem?
@@ -112,19 +114,39 @@ final class EditorInternalWebView: WKWebView {
         load(URLRequest(url: editorWebServiceURL()))
     }
 
-    func updateScript(_ model: ScriptModel) {
-        scriptModel = model
-        let documentID = model.package.jsxPath.standardizedFileURL.path
+    func updateDocument(_ model: ScriptModel, relativePath: String) {
+        let resolvedRelativePath = relativePath.isEmpty ? "main.jsx" : relativePath
+        guard let documentURL = model.package.resolvedPackageURL(relativePath: resolvedRelativePath) else { return }
+        let documentID = documentURL.standardizedFileURL.path
+        requestedDocumentID = documentID
 
         guard currentDocumentID != documentID else {
+            scriptModel = model
             if isEditorReady {
                 setReadOnly(model.package.readonly)
             }
             return
         }
 
-        currentDocumentID = documentID
-        runWhenReady { [weak self] in self?.openCurrentDocument() }
+        let activateDocument = { [weak self] in
+            guard let self else { return }
+            guard self.requestedDocumentID == documentID else { return }
+            self.scriptModel = model
+            self.currentRelativePath = resolvedRelativePath
+            self.currentDocumentID = documentID
+            self.openCurrentDocument()
+        }
+
+        runWhenReady { [weak self] in
+            guard let self else { return }
+            if self.currentDocumentID == nil {
+                activateDocument()
+            } else {
+                self.saveCurrentContent { saved in
+                    if saved { activateDocument() }
+                }
+            }
+        }
     }
 
     private func registerBridgeHandlers() {
@@ -158,7 +180,7 @@ final class EditorInternalWebView: WKWebView {
 
     private func openCurrentDocument() {
         guard let model = scriptModel else { return }
-        let result = model.package.readMainFile()
+        let result = model.package.readFile(relativePath: currentRelativePath)
         guard let content = result.0 else { return }
 
         lastSavedContent = content
@@ -196,15 +218,21 @@ final class EditorInternalWebView: WKWebView {
         callStudio(handlerName: StudioMessage.documentSetReadOnly, payload: ["readOnly": readOnly])
     }
 
-    private func saveCurrentContent() {
-        guard isEditorReady else { return }
+    private func saveCurrentContent(completion: ((Bool) -> Void)? = nil) {
+        guard isEditorReady else {
+            completion?(false)
+            return
+        }
         callStudio(handlerName: StudioMessage.editorGetState) { [weak self] response in
             guard
                 let self,
                 let state = response as? [String: Any],
                 let content = state["content"] as? String
-            else { return }
-            _ = save(content: content)
+            else {
+                completion?(false)
+                return
+            }
+            completion?(save(content: content))
         }
     }
 
@@ -251,7 +279,9 @@ final class EditorInternalWebView: WKWebView {
         guard content != lastSavedContent else { return true }
         guard let scriptModel else { return false }
 
-        let result = scriptModel.package.writeMainFile(content: content)
+        let result = currentRelativePath == "main.jsx"
+            ? scriptModel.package.writeMainFile(content: content)
+            : scriptModel.package.writeFile(relativePath: currentRelativePath, content: content)
         guard result.0 else {
             print("Studio save failed: \(result.1)")
             return false
@@ -303,21 +333,22 @@ final class EditorInternalWebView: WKWebView {
 
 struct EditorWebView: NSViewRepresentable {
     let scriptModel: ScriptModel
+    let relativePath: String
 
     func makeNSView(context: Context) -> EditorInternalWebView {
         let webView = EditorInternalWebView()
         webView.loadEditorIfNeeded()
-        webView.updateScript(scriptModel)
+        webView.updateDocument(scriptModel, relativePath: relativePath)
         return webView
     }
 
     func updateNSView(_ view: EditorInternalWebView, context: Context) {
-        view.updateScript(scriptModel)
+        view.updateDocument(scriptModel, relativePath: relativePath)
     }
 }
 
 struct EditorWebView_Previews: PreviewProvider {
     static var previews: some View {
-        EditorWebView(scriptModel: globalScriptModel)
+        EditorWebView(scriptModel: globalScriptModel, relativePath: "main.jsx")
     }
 }

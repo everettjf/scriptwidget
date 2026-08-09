@@ -23,11 +23,12 @@ struct EditorPanelTabLabel: View {
 
 struct EditorPanelView: View {
     let scriptModel: ScriptModel
+    let configuration: StudioWidgetConfiguration
     
     var body: some View {
         TabView {
             VStack {
-                PreviewView(scriptModel: scriptModel)
+                PreviewView(scriptModel: scriptModel, configuration: configuration)
             }
             .tabItem({ EditorPanelTabLabel(imageName: "play.rectangle", label: "Preview") })
             
@@ -36,10 +37,8 @@ struct EditorPanelView: View {
             }
             .tabItem({ EditorPanelTabLabel(imageName: "photo.on.rectangle", label: "Images") })
             
-            VStack {
-                FileListView(scriptModel: scriptModel)
-            }
-            .tabItem({ EditorPanelTabLabel(imageName: "doc.on.doc", label: "Files") })
+            WidgetConfigurationView(scriptModel: scriptModel, configuration: configuration)
+                .tabItem({ EditorPanelTabLabel(imageName: "slider.horizontal.3", label: "Config") })
 
             StudioCopilotView(scriptModel: scriptModel)
                 .tabItem({ EditorPanelTabLabel(imageName: "sparkles", label: "Copilot") })
@@ -244,6 +243,51 @@ private struct StudioCopilotView: View {
 
 struct EditorPanelView_Previews: PreviewProvider {
     static var previews: some View {
-        EditorPanelView(scriptModel: globalScriptModel)
+        EditorPanelView(
+            scriptModel: globalScriptModel,
+            configuration: StudioWidgetConfiguration()
+        )
+    }
+}
+
+private struct WidgetConfigurationView: View {
+    let scriptModel: ScriptModel
+    @Bindable var configuration: StudioWidgetConfiguration
+
+    var body: some View {
+        Form {
+            Section("Preview") {
+                Picker("Family", selection: $configuration.family) {
+                    ForEach(StudioPreviewFamily.allCases) { family in
+                        Text(family.title).tag(family)
+                    }
+                }
+                Picker("Canvas", selection: $configuration.canvasMode) {
+                    ForEach(StudioPreviewCanvasMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
+                Toggle("Runtime debug output", isOn: $configuration.debugMode)
+                TextField("Widget parameter", text: $configuration.parameter)
+            }
+
+            Section("Project") {
+                LabeledContent("Package", value: scriptModel.name)
+                LabeledContent("Entry point", value: "main.jsx")
+                LabeledContent("Location", value: scriptModel.package.path.path)
+                    .lineLimit(2)
+                    .textSelection(.enabled)
+                Button("Reveal in Finder", systemImage: "finder") {
+                    MacKitUtil.revealInFinder(scriptModel.package.path.path)
+                }
+            }
+
+            Section {
+                Text("Package metadata, permissions, supported families, and network domains will be saved in widget.json during Package 2.0.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
     }
 }
