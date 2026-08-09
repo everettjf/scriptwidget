@@ -17,6 +17,7 @@ struct AIGenerateView: View {
     @State private var profiles: [AIProfile] = []
     @State private var activeProfileID: String = ""
     @State private var selectedSkillIDs: Set<String> = []
+    @State private var skills: [AIWidgetSkill] = AIWidgetSkills.builtIns
 
     private let placeholderPrompt = "e.g. Show the current weather for my location, with a minimalist dark background."
 
@@ -94,9 +95,15 @@ struct AIGenerateView: View {
         }
         .navigationTitle("Generate")
         .navigationBarTitleDisplayMode(.inline)
-        .onAppear(perform: loadProfiles)
+        .onAppear {
+            loadProfiles()
+            skills = AIWidgetSkillManager.shared.allSkills()
+        }
         .onReceive(NotificationCenter.default.publisher(for: AISettingsStore.changedNotification)) { _ in
             loadProfiles()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
+            skills = AIWidgetSkillManager.shared.allSkills()
         }
         .onChange(of: session.phase) { newPhase in
             if case .done = newPhase {
@@ -179,7 +186,7 @@ struct AIGenerateView: View {
                 .font(.caption)
                 .foregroundStyle(.secondary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 145))], alignment: .leading, spacing: 8) {
-                ForEach(AIWidgetSkills.all) { skill in
+                ForEach(skills) { skill in
                     Toggle(isOn: skillBinding(skill.id)) {
                         Label(skill.title, systemImage: skill.symbol)
                             .font(.caption)

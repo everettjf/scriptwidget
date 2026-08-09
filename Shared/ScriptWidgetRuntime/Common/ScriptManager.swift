@@ -89,8 +89,8 @@ enum ScriptPackageArchivePreflight {
             }
             let flags = data.uint16LE(at: cursor + 8)
             let method = data.uint16LE(at: cursor + 10)
-            let compressed = data.uint32LE(at: cursor + 20)
-            let uncompressed = data.uint32LE(at: cursor + 24)
+            let compressed32 = data.uint32LE(at: cursor + 20)
+            let uncompressed32 = data.uint32LE(at: cursor + 24)
             let nameLength = Int(data.uint16LE(at: cursor + 28))
             let extraLength = Int(data.uint16LE(at: cursor + 30))
             let commentLength = Int(data.uint16LE(at: cursor + 32))
@@ -99,9 +99,13 @@ enum ScriptPackageArchivePreflight {
             guard nameLength > 0, entryEnd <= data.count else {
                 return "Archive contains a truncated filename."
             }
-            guard compressed != UInt32.max, uncompressed != UInt32.max else {
-                return "ZIP64 packages are not supported."
-            }
+            guard let sizes = resolvedSizes(
+                compressed32: compressed32,
+                uncompressed32: uncompressed32,
+                extra: data.subdata(in: (cursor + 46 + nameLength)..<(cursor + 46 + nameLength + extraLength))
+            ) else { return "Archive contains malformed ZIP64 size metadata." }
+            let compressed = sizes.compressed
+            let uncompressed = sizes.uncompressed
             guard flags & 0x1 == 0 else { return "Encrypted package entries are not supported." }
             guard method == 0 || method == 8 else { return "Unsupported ZIP compression method \(method)." }
             let nameData = data.subdata(in: (cursor + 46)..<(cursor + 46 + nameLength))
@@ -118,10 +122,10 @@ enum ScriptPackageArchivePreflight {
                 return "Symbolic links are not allowed in ScriptWidget packages."
             }
             if !name.hasSuffix("/") {
-                guard uncompressed <= ScriptPackageArchivePolicy.maximumFileBytes else {
+                guard uncompressed <= UInt64(ScriptPackageArchivePolicy.maximumFileBytes) else {
                     return "Package file \(name) exceeds 25 MiB."
                 }
-                expandedBytes += UInt64(uncompressed)
+                expandedBytes += uncompressed
                 guard expandedBytes <= UInt64(ScriptPackageArchivePolicy.maximumExpandedBytes) else {
                     return "Expanded package exceeds 64 MiB."
                 }
@@ -144,6 +148,35 @@ enum ScriptPackageArchivePreflight {
         let parts = name.split(separator: "/", omittingEmptySubsequences: true)
         guard !parts.isEmpty, parts.count <= ScriptPackageArchivePolicy.maximumPathDepth else { return false }
         return parts.allSatisfy { $0 != "." && $0 != ".." }
+    }
+
+    private static func resolvedSizes(compressed32: UInt32, uncompressed32: UInt32, extra: Data) -> (compressed: UInt64, uncompressed: UInt64)? {
+        var compressed = UInt64(compressed32)
+        var uncompressed = UInt64(uncompressed32)
+        guard compressed32 == UInt32.max || uncompressed32 == UInt32.max else { return (compressed, uncompressed) }
+
+        var cursor = 0
+        while cursor + 4 <= extra.count {
+            let identifier = extra.uint16LE(at: cursor)
+            let length = Int(extra.uint16LE(at: cursor + 2))
+            let end = cursor + 4 + length
+            guard end <= extra.count else { return nil }
+            if identifier == 0x0001 {
+                var valueCursor = cursor + 4
+                if uncompressed32 == UInt32.max {
+                    guard valueCursor + 8 <= end else { return nil }
+                    uncompressed = extra.uint64LE(at: valueCursor)
+                    valueCursor += 8
+                }
+                if compressed32 == UInt32.max {
+                    guard valueCursor + 8 <= end else { return nil }
+                    compressed = extra.uint64LE(at: valueCursor)
+                }
+                return (compressed, uncompressed)
+            }
+            cursor = end
+        }
+        return nil
     }
 
     private static func endOfCentralDirectory(in data: Data) -> Int? {
@@ -170,6 +203,13 @@ private extension Data {
             | (UInt32(self[index + 1]) << 8)
             | (UInt32(self[index + 2]) << 16)
             | (UInt32(self[index + 3]) << 24)
+    }
+
+    func uint64LE(at index: Int) -> UInt64 {
+        guard index >= 0, index + 8 <= count else { return 0 }
+        return (0..<8).reduce(UInt64(0)) { result, offset in
+            result | (UInt64(self[index + offset]) << UInt64(offset * 8))
+        }
     }
 }
 

@@ -28,6 +28,7 @@ struct AIGenerateWindowView: View {
     @State private var profiles: [AIProfile] = []
     @State private var activeProfileID: String = ""
     @State private var selectedSkillIDs: Set<String> = []
+    @State private var skills: [AIWidgetSkill] = AIWidgetSkills.builtIns
 
     private var jsx: String { session.lastJSX ?? "" }
     private var hasResult: Bool {
@@ -60,9 +61,13 @@ struct AIGenerateWindowView: View {
             ensurePreviewPackage()
             prefillSaveNameIfNeeded()
             loadProfiles()
+            skills = AIWidgetSkillManager.shared.allSkills()
         }
         .onReceive(NotificationCenter.default.publisher(for: AISettingsStore.changedNotification)) { _ in
             loadProfiles()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
+            skills = AIWidgetSkillManager.shared.allSkills()
         }
         .onChange(of: jsx) {
             refreshPreviewPackage()
@@ -250,7 +255,7 @@ struct AIGenerateWindowView: View {
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 135))], alignment: .leading, spacing: 6) {
-                ForEach(AIWidgetSkills.all) { skill in
+                ForEach(skills) { skill in
                     Toggle(isOn: skillBinding(skill.id)) {
                         Label(skill.title, systemImage: skill.symbol)
                             .font(.caption)
@@ -259,6 +264,11 @@ struct AIGenerateWindowView: View {
                     .help(skill.summary)
                 }
             }
+            Button("Manage Skills…", systemImage: "slider.horizontal.3") {
+                NotificationCenter.default.post(name: SkillManagerOpenRequest.notification, object: nil)
+            }
+            .buttonStyle(.link)
+            .controlSize(.small)
         }
     }
 

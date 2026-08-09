@@ -8,6 +8,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
+- [Skills 1.0](skills.md) — reusable AI guidance, authoring, safe sharing, and package format.
 - [Package 2.0](package-format.md) — `widget.json`, compatibility, and secure imports.
 
 ## Build and ship

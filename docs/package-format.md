@@ -46,7 +46,7 @@ The Mac Studio Config panel edits and validates these values before saving. New 
 ScriptWidget treats every imported `.swt` as untrusted. Before extraction it checks the ZIP central directory and rejects:
 
 - absolute paths, `..` traversal, backslashes, drive-style paths, invalid UTF-8, and excessive nesting;
-- symbolic links, encrypted entries, multi-disk archives, ZIP64, and unsupported compression methods;
+- symbolic links, encrypted entries, multi-disk archives, malformed ZIP64 metadata, and unsupported compression methods;
 - archives over 32 MiB, more than 500 entries, a file over 25 MiB, or more than 64 MiB expanded;
 - malformed central directories and suspicious zero-byte compression claims.
 

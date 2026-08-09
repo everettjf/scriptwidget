@@ -5,6 +5,7 @@ const root = new URL("../", import.meta.url).pathname;
 const templateRoot = join(root, "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template");
 const schema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json"), "utf8"));
 const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/widget.schema.json"), "utf8"));
+const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
 const failures = [];
 const names = (await readdir(templateRoot)).sort();
 
@@ -33,6 +34,13 @@ if (!generatedDocs.includes(`schema v${schema.schemaVersion}`) || !generatedDocs
 if (packageSchema.properties?.formatVersion?.const !== 2 || packageSchema.properties?.runtimeVersion?.const !== "1.0") {
   failures.push("Package 2.0 schema does not match the runtime contract");
 }
+if (skillSchema.properties?.formatVersion?.const !== 1 || skillSchema.properties?.promptFile?.const !== "SKILL.md" || skillSchema.additionalProperties !== false) {
+  failures.push("Skills 1.0 schema does not match the fail-closed runtime contract");
+}
+const skillDocs = await readFile(join(root, "docs/skills.md"), "utf8");
+for (const required of ["skill.json", "SKILL.md", ".swskill", "256 KiB", "cannot execute code"]) {
+  if (!skillDocs.includes(required)) failures.push(`Skills documentation is missing ${required}`);
+}
 const packageDocs = await readFile(join(root, "docs/package-format.md"), "utf8");
 for (const required of ["widget.json", "32 MiB", "64 MiB", "symbolic links", "legacy package"]) {
   if (!packageDocs.includes(required)) failures.push(`package documentation is missing ${required}`);
@@ -56,6 +64,10 @@ const managerSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Comm
 for (const guardrail of ["ScriptPackageArchivePreflight", "maximumExpandedBytes", "isSymbolicLinkKey", "WidgetPackageManifestValidator"]) {
   if (!managerSource.includes(guardrail)) failures.push(`secure package import is missing ${guardrail}`);
 }
+const skillSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AIWidgetSkills.swift"), "utf8");
+for (const guardrail of ["maximumPackageBytes", "ScriptPackageArchivePreflight", 'Set(children) == ["skill.json", "SKILL.md"]', "maximumInstructionBytes"]) {
+  if (!skillSource.includes(guardrail)) failures.push(`secure Skill import is missing ${guardrail}`);
+}
 
 const releaseDocs = await readFile(join(root, "docs/release-readiness.md"), "utf8");
 for (const command of ["./Scripts/release-readiness.sh", "./Scripts/device-matrix.sh", "./Scripts/ipad-icloud-tests.sh"]) {
@@ -74,7 +86,7 @@ async function walk(directory) {
 for (const path of await walk(root)) {
   if (!/\.(swift|js|jsx|mjs|html)$/.test(path)) continue;
   const contents = await readFile(path, "utf8");
-  if (path !== new URL(import.meta.url).pathname && /monaco-editor|Monaco editor/.test(contents)) {
+  if (relative(root, path).toLowerCase() !== "scripts/validate-release.mjs" && /monaco-editor|Monaco editor/.test(contents)) {
     failures.push(`${relative(root, path)}: legacy Monaco editor reference`);
   }
 }

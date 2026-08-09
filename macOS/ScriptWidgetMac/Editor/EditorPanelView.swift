@@ -59,6 +59,7 @@ private struct StudioCopilotView: View {
     @State private var showingOriginal = false
     @State private var showingProposal = true
     @State private var selectedSkillIDs: Set<String> = []
+    @State private var skills: [AIWidgetSkill] = AIWidgetSkills.builtIns
 
     private var changeSummary: AICopilotChangeSummary {
         .compare(original: originalCode, proposed: proposedCode)
@@ -85,7 +86,7 @@ private struct StudioCopilotView: View {
 
                     ScrollView(.horizontal, showsIndicators: false) {
                         HStack(spacing: 6) {
-                            ForEach(AIWidgetSkills.all) { skill in
+                            ForEach(skills) { skill in
                                 Toggle(isOn: skillBinding(skill.id)) {
                                     Label(skill.title, systemImage: skill.symbol)
                                         .font(.caption)
@@ -96,6 +97,11 @@ private struct StudioCopilotView: View {
                             }
                         }
                     }
+
+                    Button("Manage Skills…", systemImage: "slider.horizontal.3") {
+                        NotificationCenter.default.post(name: SkillManagerOpenRequest.notification, object: nil)
+                    }
+                    .controlSize(.small)
 
                     HStack {
                         Button("Propose Change", systemImage: "wand.and.stars") {
@@ -130,6 +136,10 @@ private struct StudioCopilotView: View {
         }
         .onChange(of: session.phase) { _, phase in
             consume(phase: phase)
+        }
+        .onAppear { skills = AIWidgetSkillManager.shared.allSkills() }
+        .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
+            skills = AIWidgetSkillManager.shared.allSkills()
         }
     }
 

@@ -238,6 +238,7 @@ private struct ScriptCodeCopilotView: View {
     @State private var proposedCode = ""
     @State private var statusMessage: String?
     @State private var selectedSkillIDs: Set<String> = []
+    @State private var skills: [AIWidgetSkill] = AIWidgetSkills.builtIns
     @State private var showingOriginal = false
     @State private var showingProposal = true
 
@@ -261,7 +262,7 @@ private struct ScriptCodeCopilotView: View {
                 Text("Skills")
                     .font(.headline)
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 145))], alignment: .leading, spacing: 8) {
-                    ForEach(AIWidgetSkills.all) { skill in
+                    ForEach(skills) { skill in
                         Toggle(isOn: skillBinding(skill.id)) {
                             Label(skill.title, systemImage: skill.symbol)
                                 .font(.caption)
@@ -302,6 +303,10 @@ private struct ScriptCodeCopilotView: View {
         }
         .onReceive(session.$phase) { phase in
             consume(phase: phase)
+        }
+        .onAppear { skills = AIWidgetSkillManager.shared.allSkills() }
+        .onReceive(NotificationCenter.default.publisher(for: AIWidgetSkillManager.changedNotification)) { _ in
+            skills = AIWidgetSkillManager.shared.allSkills()
         }
     }
 

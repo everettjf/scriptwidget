@@ -64,6 +64,88 @@ final class AICopilotPromptTests: XCTestCase {
     }
 }
 
+final class AIWidgetSkillTests: XCTestCase {
+    private var temporaryDirectories: [URL] = []
+
+    override func tearDown() {
+        for directory in temporaryDirectories { try? FileManager.default.removeItem(at: directory) }
+        temporaryDirectories.removeAll()
+        super.tearDown()
+    }
+
+    func testManifestValidationAcceptsValidSkillAndRejectsInvalidFields() {
+        var manifest = AIWidgetSkillManifest.newSkill(name: "Weather Expert")
+        XCTAssertTrue(AIWidgetSkillValidator.validate(manifest: manifest, instruction: "Prefer concise forecasts.").isValid)
+
+        manifest.version = "latest"
+        manifest.promptFile = "prompt.txt"
+        let issueIDs = Set(AIWidgetSkillValidator.validate(manifest: manifest, instruction: "  ").issues.map(\.id))
+        XCTAssertTrue(issueIDs.isSuperset(of: ["invalid_version", "invalid_prompt_file", "empty_instruction"]))
+    }
+
+    func testPackageRoundTripAndUnknownManifestKeyRejection() throws {
+        let directory = makeTemporaryDirectory()
+        let package = AIWidgetSkillPackage(directory: directory.appendingPathComponent("weather", isDirectory: true))
+        let manifest = AIWidgetSkillManifest.newSkill(name: "Weather Expert")
+        XCTAssertTrue(package.save(manifest: manifest, instruction: "Prefer concise forecasts.").0)
+        XCTAssertEqual(package.load()?.0, manifest)
+        XCTAssertEqual(package.load()?.1, "Prefer concise forecasts.")
+
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: package.manifestURL)) as? [String: Any])
+        object["executable"] = "payload.sh"
+        try JSONSerialization.data(withJSONObject: object).write(to: package.manifestURL)
+        XCTAssertNil(package.load(), "Unknown manifest capabilities must fail closed")
+    }
+
+    func testManagerCreateSaveDuplicateDeleteLifecycle() throws {
+        let manager = AIWidgetSkillManager(directory: makeTemporaryDirectory())
+        let created = manager.create(name: "Release Reviewer")
+        XCTAssertTrue(created.0)
+        let skillID = created.1
+        var package = try XCTUnwrap(manager.package(for: skillID))
+        var manifest = try XCTUnwrap(package.load()?.0)
+        manifest.summary = "Checks a widget before release."
+        XCTAssertTrue(manager.save(skillID: skillID, manifest: manifest, instruction: "Check fallbacks and accessibility.").0)
+
+        let skill = try XCTUnwrap(manager.allSkills().first { $0.id == skillID })
+        let duplicate = manager.duplicate(skill)
+        XCTAssertTrue(duplicate.0)
+        XCTAssertNotEqual(duplicate.1, skillID)
+        XCTAssertTrue(manager.delete(skillID: skillID).0)
+        package = AIWidgetSkillPackage(directory: package.directory)
+        XCTAssertNil(package.load())
+    }
+
+    func testExportImportRoundTripAndDuplicateRejection() throws {
+        let sourceManager = AIWidgetSkillManager(directory: makeTemporaryDirectory())
+        let created = sourceManager.create(name: "Layout Coach")
+        XCTAssertTrue(created.0)
+        let archive = makeTemporaryDirectory().appendingPathComponent("layout.swskill")
+        XCTAssertTrue(sourceManager.export(skillID: created.1, to: archive).0)
+
+        let destinationManager = AIWidgetSkillManager(directory: makeTemporaryDirectory())
+        let imported = destinationManager.importSkill(from: archive)
+        XCTAssertTrue(imported.succeeded, imported.message)
+        XCTAssertEqual(imported.skillID, created.1)
+        XCTAssertFalse(destinationManager.importSkill(from: archive).succeeded)
+    }
+
+    func testOversizedArchiveIsRejectedBeforeExtraction() throws {
+        let archive = makeTemporaryDirectory().appendingPathComponent("oversized.swskill")
+        try Data(repeating: 0, count: AIWidgetSkillValidator.maximumPackageBytes + 1).write(to: archive)
+        let result = AIWidgetSkillManager(directory: makeTemporaryDirectory()).importSkill(from: archive)
+        XCTAssertFalse(result.succeeded)
+        XCTAssertTrue(result.message.contains("256 KiB"))
+    }
+
+    private func makeTemporaryDirectory() -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("AIWidgetSkillTests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        temporaryDirectories.append(url)
+        return url
+    }
+}
+
 final class ScriptWidgetRuntimeElementTests: XCTestCase {
 
     private func makeElement() -> ScriptWidgetRuntimeElement {
