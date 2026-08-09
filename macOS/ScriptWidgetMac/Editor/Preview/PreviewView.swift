@@ -109,8 +109,9 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
     private var renderGeneration = 0
     
     @Published var rootElement : ScriptWidgetRuntimeElement
+    @Published private(set) var lastErrorMessage: String?
+    @Published private(set) var logs: [String] = []
     var runtime: ScriptWidgetRuntime?
-    var lastErrorMessage: String?
 
 
     init(file: ScriptWidgetPackage, widgetSizeType: Int, scriptParameter: String) {
@@ -172,6 +173,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
                 runtime = output.runtime
                 rootElement = output.rootElement
                 lastErrorMessage = output.errorMessage
+                logs = output.logs
                 ScriptCodePreviewConsoleDataObject.replaceLogs(["$START"] + output.logs + ["$FINISH"])
             }
         }
@@ -186,9 +188,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
     ) -> RenderOutput {
         let sourceResult = package.readMainFile()
         let source = sourceResult.0 ?? ""
-        let widgetSize = ["small", "medium", "large"].indices.contains(widgetSizeType)
-            ? ["small", "medium", "large"][widgetSizeType]
-            : "small"
+        let widgetSize = StudioPreviewFamily(rawValue: widgetSizeType)?.runtimeValue ?? "small"
         let runtime = ScriptWidgetRuntime(package: package, environments: [
             "widget-size": widgetSize,
             "widget-param": scriptParameter,
@@ -231,6 +231,8 @@ struct PreviewView: View {
     @StateObject private var data: ScriptCodeRunnerDataObject
     
     @State private var widgetSizeType = 0
+    @State private var canvasMode: StudioPreviewCanvasMode = .single
+    @State private var outputTab = StudioOutputTab.problems
     @State private var isDebugMode = false
     
     @State private var scriptParameter = ""
@@ -249,6 +251,14 @@ struct PreviewView: View {
         content
     }
     
+    private enum StudioOutputTab: String, CaseIterable, Identifiable {
+        case problems
+        case console
+
+        var id: String { rawValue }
+        var title: String { rawValue.capitalized }
+    }
+
     var preview: some View {
         ScriptWidgetElementView(
             element: data.rootElement,
@@ -269,95 +279,219 @@ struct PreviewView: View {
     }
     
     var content: some View {
-        
-        VStack(alignment: .leading) {
-            
-            ZStack {
-                Rectangle()
-                    .fill(Color.secondary)
-                    .opacity(0.2)
-                
-                preview
-            }
-            .frame(height: PreviewWidgetSize.size(self.widgetSizeType).height + 5)
-            
-            
-            Section {
-                HStack {
-                    Picker(selection: $widgetSizeType) {
-                        Text("Small").tag(0)
-                        Text("Medium").tag(1)
-                        Text("Large").tag(2)
-                    } label: {
-                        Text("Preview Size")
+        VStack(alignment: .leading, spacing: 0) {
+            previewToolbar
+            Divider()
+            previewCanvas
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            Divider()
+            outputPanel
+                .frame(minHeight: 120, idealHeight: 170, maxHeight: 240)
+        }
+    }
+
+    private var previewToolbar: some View {
+        VStack(spacing: 8) {
+            HStack {
+                Picker("Canvas", selection: $canvasMode) {
+                    ForEach(StudioPreviewCanvasMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
                     }
-                    .pickerStyle(SegmentedPickerStyle())
+                }
+                .pickerStyle(.segmented)
+
+                if canvasMode == .single {
+                    Picker("Family", selection: $widgetSizeType) {
+                        ForEach(StudioPreviewFamily.allCases) { family in
+                            Text(family.title).tag(family.rawValue)
+                        }
+                    }
+                    .pickerStyle(.segmented)
                     .onChange(of: widgetSizeType) { _, value in
-                        print("preview size changed : \(value)")
-
-                        self.data.changeWidgetSizeType(value)
+                        data.changeWidgetSizeType(value)
                     }
                 }
-                .padding(.top, 5)
-                
-                HStack {
-                    Toggle(isOn: $isDebugMode) {
-                        Text("Debug Border")
-                    }.toggleStyle(SwitchToggleStyle())
 
-                    Spacer()
+                Toggle("Debug", isOn: $isDebugMode)
+                    .toggleStyle(.switch)
+                    .controlSize(.small)
+            }
 
-                    Button {
-                        guard let image = preview.snapshot() else {
-                            print("Failed snapshot")
-                            MacKitUtil.alertWarn(title: "Tip", message: "Failed snapshot")
-                            return
-                        }
-                        print("Succeed snapshot")
-                        
-                        MacKitUtil.selectDirectory(title: "Save snapshot to ?") { path in
-                            guard let path = path else {
-                                // cancelled
-                                return
-                            }
-                            var targetPath = path.appendingPathComponent("snapshot.png")
-                            var index = 0
-                            while true {
-                                if !FileManager.default.fileExists(atPath: targetPath.path) {
-                                    break
-                                }
-                                
-                                // file existed
-                                index += 1
-                                targetPath = path.appendingPathComponent("snapshot\(index).png")
-                            }
-                            print("target path : \(targetPath)")
-                            
-                            MacKitUtil.saveImage(image, atUrl: targetPath)
-                            
-                            MacKitUtil.alertInfo(title: "Tip", message: "Succeed save snapshot to : \(targetPath.path)")
-                        }
-                        
-                    } label: {
-                        Text("Snapshot")
-                        Image(systemName: "photo")
-                    }
+            HStack {
+                TextField("Widget parameter", text: $scriptParameter)
+                    .textFieldStyle(.roundedBorder)
+                    .onSubmit { applyParameter() }
+                Button("Apply") { applyParameter() }
+                Spacer()
+                Button("Snapshot", systemImage: "photo") { saveSnapshot() }
+                    .disabled(canvasMode == .all)
+            }
+        }
+        .padding(10)
+    }
 
+    @ViewBuilder
+    private var previewCanvas: some View {
+        ScrollView([.horizontal, .vertical]) {
+            if canvasMode == .single {
+                ZStack {
+                    Rectangle().fill(Color.secondary.opacity(0.12))
+                    preview
                 }
-                
-                
-                HStack {
-                    TextField("Parameter", text: $scriptParameter)
-                    Button("Apply") {
-                        self.scriptParameterApplied = self.scriptParameter
-                        self.data.changeWidgetParameter(self.scriptParameterApplied)
+                .frame(
+                    minWidth: PreviewWidgetSize.size(widgetSizeType).width + 36,
+                    minHeight: PreviewWidgetSize.size(widgetSizeType).height + 36
+                )
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 390), spacing: 20)], spacing: 20) {
+                    ForEach(StudioPreviewFamily.allCases) { family in
+                        StudioPreviewTile(
+                            family: family,
+                            scriptModel: scriptModel,
+                            scriptParameter: scriptParameterApplied,
+                            isDebugMode: isDebugMode
+                        )
                     }
+                }
+                .padding(20)
+            }
+        }
+        .background(Color(nsColor: .windowBackgroundColor))
+    }
+
+    private var outputPanel: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Picker("Output", selection: $outputTab) {
+                ForEach(StudioOutputTab.allCases) { tab in
+                    Text(tab.title).tag(tab)
                 }
             }
-            .padding(.leading)
-            .padding(.trailing)
-            
-            ScriptCodePreviewConsoleView()
+            .pickerStyle(.segmented)
+            .frame(maxWidth: 240)
+            .padding(8)
+
+            Divider()
+
+            switch outputTab {
+            case .problems:
+                StudioProblemsView(errorMessage: data.lastErrorMessage)
+            case .console:
+                ScriptCodePreviewConsoleView()
+            }
+        }
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private func applyParameter() {
+        scriptParameterApplied = scriptParameter
+        data.changeWidgetParameter(scriptParameterApplied)
+        NotificationCenter.default.post(name: PreviewService.updateNotification, object: scriptModel.package)
+    }
+
+    private func saveSnapshot() {
+        guard let image = preview.snapshot() else {
+            MacKitUtil.alertWarn(title: "Snapshot Failed", message: "The preview could not be captured.")
+            return
+        }
+        MacKitUtil.selectDirectory(title: "Save snapshot") { path in
+            guard let path else { return }
+            var targetPath = path.appendingPathComponent("snapshot.png")
+            var index = 0
+            while FileManager.default.fileExists(atPath: targetPath.path) {
+                index += 1
+                targetPath = path.appendingPathComponent("snapshot\(index).png")
+            }
+            MacKitUtil.saveImage(image, atUrl: targetPath)
+        }
+    }
+}
+
+private struct StudioProblemsView: View {
+    let errorMessage: String?
+
+    var body: some View {
+        Group {
+            if let errorMessage, !errorMessage.isEmpty {
+                ScrollView {
+                    Label {
+                        Text(errorMessage)
+                            .font(.system(.footnote, design: .monospaced))
+                            .textSelection(.enabled)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } icon: {
+                        Image(systemName: "xmark.octagon.fill")
+                            .foregroundStyle(.red)
+                    }
+                    .padding(10)
+                }
+            } else {
+                ContentUnavailableView(
+                    "No Problems",
+                    systemImage: "checkmark.circle",
+                    description: Text("The latest preview completed without a runtime error.")
+                )
+            }
+        }
+    }
+}
+
+private struct StudioPreviewTile: View {
+    let family: StudioPreviewFamily
+    let scriptModel: ScriptModel
+    let scriptParameter: String
+    let isDebugMode: Bool
+
+    @StateObject private var data: ScriptCodeRunnerDataObject
+
+    init(
+        family: StudioPreviewFamily,
+        scriptModel: ScriptModel,
+        scriptParameter: String,
+        isDebugMode: Bool
+    ) {
+        self.family = family
+        self.scriptModel = scriptModel
+        self.scriptParameter = scriptParameter
+        self.isDebugMode = isDebugMode
+        _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
+            file: scriptModel.package,
+            widgetSizeType: family.rawValue,
+            scriptParameter: scriptParameter
+        ))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text(family.title).font(.headline)
+                Spacer()
+                if data.lastErrorMessage != nil {
+                    Label("Failed", systemImage: "xmark.octagon.fill")
+                        .foregroundStyle(.red)
+                } else {
+                    Label("Ready", systemImage: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
+            }
+            .font(.caption)
+
+            ScriptWidgetElementView(
+                element: data.rootElement,
+                context: ScriptWidgetElementContext(
+                    runtime: data.runtime,
+                    debugMode: isDebugMode,
+                    scriptName: scriptModel.name,
+                    scriptParameter: scriptParameter,
+                    package: scriptModel.package
+                )
+            )
+            .frame(width: family.size.width, height: family.size.height)
+            .clipShape(.rect(cornerRadius: 12))
+        }
+        .padding(12)
+        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .onChange(of: scriptParameter) { _, value in
+            data.changeWidgetParameter(value)
         }
     }
 }

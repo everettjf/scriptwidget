@@ -8,13 +8,13 @@
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS-lightgrey?style=flat-square&logo=apple)](https://developer.apple.com)
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
 
-**Create native widgets for iOS & macOS using JavaScript and JSX**
+**Create native widgets for iPhone, iPad, and Mac using JavaScript, JSX, and AI**
 
 [English](README.md) | [中文](README_CN.md)
 
 </div>
 
-> ✨ *Build iOS/macOS widgets without Swift. Just JavaScript, JSX, and creativity.*
+> ✨ *Build iPhone, iPad, and Mac widgets in ScriptWidget Studio—without writing Swift.*
 
 ---
 
@@ -39,7 +39,8 @@ Think of it as "React Native for Widgets" - but simpler and more flexible.
 | 📱 **Interactive Widgets** | Tap, swipe, and interact with widgets |
 | 🎨 **Custom Styling** | Full control over appearance |
 | 📦 **Template Gallery** | Pre-built templates to get started |
-| 🔄 **Live Preview** | See changes instantly in Xcode |
+| 🧰 **ScriptWidget Studio** | Build on Mac with CodeMirror, diagnostics, console, and multi-size preview |
+| ✨ **AI Generation** | Generate, run, diagnose, and refine widgets with an OpenAI-compatible model |
 
 ---
 
@@ -145,8 +146,8 @@ $render(
 
 ### Prerequisites
 
-- **Xcode** 14+ (for iOS 16+ / macOS 13+)
-- **macOS** 13+ (Ventura or later)
+- **Xcode** 27+
+- **macOS** 26+
 - **iOS** 16+ (for iOS widgets)
 
 ### Build from Source
@@ -174,7 +175,7 @@ npm run build
 
 ### Create Your Own Widget
 
-1. Run the app and create a new script from the in-app editor
+1. Open **ScriptWidget Studio** on Mac (or ScriptWidget on iPhone/iPad) and create a script from a template, AI prompt, or blank project
 2. Write your widget in `main.jsx` and call `$render(...)` with a JSX tree
 3. Use the live preview to iterate, then add the widget from the Home Screen
 
@@ -227,8 +228,8 @@ the app group), with `main.jsx` as the entry point and an optional `image/` fold
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 13+ (Mac) |
-| **watchOS** | 🔄 Planned | Future release |
-| **visionOS** | 🔄 Planned | Future release |
+| **watchOS** | — | Not in the current roadmap |
+| **visionOS** | — | Not in the current roadmap |
 
 ---
 

@@ -26,6 +26,7 @@ struct ScriptWidgetMacApp: App {
                     .frame(minWidth: 760, minHeight: 520)
             }
         }
+        .defaultPosition(.center)
         .defaultSize(width: 1180, height: 760)
         .windowResizability(.contentMinSize)
         .windowToolbarStyle(.unified)
