@@ -61,6 +61,12 @@ struct ScriptWidgetMacApp: App {
             }
 
             CommandGroup(replacing: .help) {
+                Button("Five-Minute Tutorial...") {
+                    NotificationCenter.default.post(name: MacOnboardingOpenRequest.notification, object: nil)
+                }.keyboardShortcut("?", modifiers: [.command, .shift])
+
+                Divider()
+
                 Button("Discord") {
                     NSWorkspace.shared.open(URL(string: "https://discord.gg/eGzEaP6TzR")!)
                 }

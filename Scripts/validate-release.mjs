@@ -41,6 +41,10 @@ const skillDocs = await readFile(join(root, "docs/skills.md"), "utf8");
 for (const required of ["skill.json", "SKILL.md", ".swskill", "256 KiB", "cannot execute code"]) {
   if (!skillDocs.includes(required)) failures.push(`Skills documentation is missing ${required}`);
 }
+const tutorialDocs = await readFile(join(root, "docs/five-minute-tutorial.md"), "utf8");
+for (const required of ["five-step", "Create Tutorial Widget", "⌘S", "⌘R", "Edit Widgets", "Update iCloud Scripts"]) {
+  if (!tutorialDocs.includes(required)) failures.push(`five-minute tutorial documentation is missing ${required}`);
+}
 const packageDocs = await readFile(join(root, "docs/package-format.md"), "utf8");
 for (const required of ["widget.json", "32 MiB", "64 MiB", "symbolic links", "legacy package"]) {
   if (!packageDocs.includes(required)) failures.push(`package documentation is missing ${required}`);
@@ -67,6 +71,10 @@ for (const guardrail of ["ScriptPackageArchivePreflight", "maximumExpandedBytes"
 const skillSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/AI/AIWidgetSkills.swift"), "utf8");
 for (const guardrail of ["maximumPackageBytes", "ScriptPackageArchivePreflight", 'Set(children) == ["skill.json", "SKILL.md"]', "maximumInstructionBytes"]) {
   if (!skillSource.includes(guardrail)) failures.push(`secure Skill import is missing ${guardrail}`);
+}
+const onboardingSource = await readFile(join(root, "macOS/ScriptWidgetMac/Onboarding/FirstRunOnboardingView.swift"), "utf8");
+for (const requirement of ["currentVersion", "shouldPresent", "Create Tutorial Widget", "MacTutorialStep.allCases", "interactiveDismissDisabled"]) {
+  if (!onboardingSource.includes(requirement)) failures.push(`Mac onboarding is missing ${requirement}`);
 }
 
 const releaseDocs = await readFile(join(root, "docs/release-readiness.md"), "utf8");

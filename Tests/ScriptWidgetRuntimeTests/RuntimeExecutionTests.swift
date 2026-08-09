@@ -71,6 +71,19 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertEqual(collectText(element!).contains("Hello"), true)
     }
 
+    #if os(macOS)
+    func testFiveMinuteTutorialWidgetRendersOfflineInEveryCoreFamily() {
+        for family in ["small", "medium", "large"] {
+            let runtime = makeRuntime(environments: ["widget-size": family, "widget-param": ""])
+            let (element, error) = runtime.executeJSXSyncForWidget(tutorialWidgetSource)
+            XCTAssertNil(error, "\(family): \(String(describing: error?.displayMessage))")
+            let text = element.map(collectText) ?? ""
+            XCTAssertTrue(text.contains("Hello, ScriptWidget!"), text)
+            XCTAssertTrue(text.contains(family), text)
+        }
+    }
+    #endif
+
     func testNestedLayoutWithPropsRenders() {
         let jsx = """
         $render(

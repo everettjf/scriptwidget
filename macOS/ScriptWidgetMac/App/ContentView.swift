@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var store = SharedAppStore()
     @State private var showingSkills = false
+    @State private var showingOnboarding = false
     
     var body: some View {
         NavigationSplitView {
@@ -25,8 +26,20 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: SkillManagerOpenRequest.notification)) { _ in
             showingSkills = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: MacOnboardingOpenRequest.notification)) { _ in
+            MacOnboardingProgressStore().restart()
+            showingOnboarding = true
+        }
+        .onAppear {
+            if MacOnboardingProgressStore().shouldPresent {
+                showingOnboarding = true
+            }
+        }
         .sheet(isPresented: $showingSkills) {
             SkillManagerView()
+        }
+        .sheet(isPresented: $showingOnboarding) {
+            FirstRunOnboardingView()
         }
     }
 }

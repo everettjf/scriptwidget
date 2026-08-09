@@ -49,6 +49,7 @@
 		A204000300000000000000B0 /* SkillManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000300000000000000B0 /* SkillManagerView.swift */; };
 		A206000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A206000200000000000000B0 /* SwiftOpenAI */; };
 		A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = A207000100000000000000B0 /* EditorSchemeHandler.swift */; };
+		A208000200000000000000B0 /* FirstRunOnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A208000100000000000000B0 /* FirstRunOnboardingView.swift */; };
 		A621B963FD9840DB82F74813 /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */; };
 		A990D65181507F3AA8EB7951 /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0DAACB8F5182390731F6DFE7 /* ScriptWidgetElementTagExtras.swift */; };
 		C43EFB088718FE26BF9B393F /* PackageCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7CF0C59766F5837DEC033FB9 /* PackageCacheTests.swift */; };
@@ -292,6 +293,7 @@
 		A203000200000000000000B0 /* AIGenerateWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateWindowView.swift; sourceTree = "<group>"; };
 		A203000300000000000000B0 /* SkillManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillManagerView.swift; sourceTree = "<group>"; };
 		A207000100000000000000B0 /* EditorSchemeHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditorSchemeHandler.swift; sourceTree = "<group>"; };
+		A208000100000000000000B0 /* FirstRunOnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FirstRunOnboardingView.swift; sourceTree = "<group>"; };
 		CD9F1F298DF5C4FAED8AAD43 /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
 		D1995C5729536BB800D1BD94 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		D1995C5829536BB800D1BD94 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
@@ -486,6 +488,14 @@
 				A203000300000000000000B0 /* SkillManagerView.swift */,
 			);
 			path = Skills;
+			sourceTree = "<group>";
+		};
+		A208000300000000000000B0 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				A208000100000000000000B0 /* FirstRunOnboardingView.swift */,
+			);
+			path = Onboarding;
 			sourceTree = "<group>";
 		};
 		A205000400000000000000B0 /* Eval */ = {
@@ -804,6 +814,7 @@
 				A205000200000000000000B0 /* AIGenerate */,
 				A205000300000000000000B0 /* Settings */,
 				A205000500000000000000B0 /* Skills */,
+				A208000300000000000000B0 /* Onboarding */,
 				F2461643279F87B900C3D90F /* SwiftUIMacKit */,
 				F246163C279E18CE00C3D90F /* Common */,
 				F2F90FC227970DEA003095A9 /* Create */,
@@ -1117,6 +1128,7 @@
 				A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */,
 				A202000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
+				A208000200000000000000B0 /* FirstRunOnboardingView.swift in Sources */,
 				A202000A00000000000000B0 /* AIKeychain.swift in Sources */,
 				A202000B00000000000000B0 /* AILocalOAuthServer.swift in Sources */,
 				A202000C00000000000000B0 /* AIOpenAIOAuth.swift in Sources */,

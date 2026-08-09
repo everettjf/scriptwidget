@@ -146,6 +146,52 @@ final class AIWidgetSkillTests: XCTestCase {
     }
 }
 
+#if os(macOS)
+final class MacOnboardingProgressStoreTests: XCTestCase {
+    private var suiteNames: [String] = []
+
+    override func tearDown() {
+        for name in suiteNames { UserDefaults.standard.removePersistentDomain(forName: name) }
+        suiteNames.removeAll()
+        super.tearDown()
+    }
+
+    func testFreshInstallPresentsAtWelcomeAndCompletingSuppressesIt() throws {
+        let store = MacOnboardingProgressStore(defaults: makeDefaults())
+        XCTAssertTrue(store.shouldPresent)
+        XCTAssertEqual(store.currentStep, .welcome)
+
+        store.complete()
+        XCTAssertFalse(store.shouldPresent)
+        XCTAssertEqual(store.currentStep, .welcome)
+    }
+
+    func testProgressResumesAndReplayRestartsWithoutLosingCompletion() throws {
+        let defaults = makeDefaults()
+        let store = MacOnboardingProgressStore(defaults: defaults)
+        store.save(step: .preview)
+        XCTAssertEqual(MacOnboardingProgressStore(defaults: defaults).currentStep, .preview)
+
+        store.complete()
+        store.restart()
+        XCTAssertEqual(store.currentStep, .welcome)
+        XCTAssertFalse(store.shouldPresent, "Replaying from Help must not turn onboarding back into a first-launch prompt")
+    }
+
+    func testTutorialHasFiveStableOrderedSteps() {
+        XCTAssertEqual(MacTutorialStep.allCases.map(\.rawValue), [0, 1, 2, 3, 4])
+        XCTAssertEqual(MacTutorialStep.allCases.count, 5)
+    }
+
+    private func makeDefaults() -> UserDefaults {
+        let name = "MacOnboardingProgressStoreTests.\(UUID().uuidString)"
+        suiteNames.append(name)
+        UserDefaults.standard.removePersistentDomain(forName: name)
+        return UserDefaults(suiteName: name)!
+    }
+}
+#endif
+
 final class ScriptWidgetRuntimeElementTests: XCTestCase {
 
     private func makeElement() -> ScriptWidgetRuntimeElement {
