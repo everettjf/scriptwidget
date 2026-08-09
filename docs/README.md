@@ -10,6 +10,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
 - [Skills 1.0](skills.md) — reusable AI guidance, authoring, safe sharing, and package format.
+- [Widget & Skills Gallery](gallery.md) — discover, verify, install, update, and submit community packages.
 - [Package 2.0](package-format.md) — `widget.json`, compatibility, and secure imports.
 
 ## Build and ship

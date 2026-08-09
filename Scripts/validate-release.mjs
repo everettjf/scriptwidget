@@ -1,5 +1,6 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
+import { createHash } from "node:crypto";
 
 const root = new URL("../", import.meta.url).pathname;
 const templateRoot = join(root, "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template");
@@ -75,6 +76,38 @@ for (const guardrail of ["maximumPackageBytes", "ScriptPackageArchivePreflight",
 const onboardingSource = await readFile(join(root, "macOS/ScriptWidgetMac/Onboarding/FirstRunOnboardingView.swift"), "utf8");
 for (const requirement of ["currentVersion", "shouldPresent", "Create Tutorial Widget", "MacTutorialStep.allCases", "interactiveDismissDisabled"]) {
   if (!onboardingSource.includes(requirement)) failures.push(`Mac onboarding is missing ${requirement}`);
+}
+
+const galleryIndex = JSON.parse(await readFile(join(root, "Gallery/index.json"), "utf8"));
+const gallerySchema = JSON.parse(await readFile(join(root, "Gallery/gallery.schema.json"), "utf8"));
+if (galleryIndex.schemaVersion !== 1 || gallerySchema.properties?.schemaVersion?.const !== 1 || gallerySchema.additionalProperties !== false) {
+  failures.push("Gallery 1.0 index/schema contract is invalid");
+}
+if (!Array.isArray(galleryIndex.items) || galleryIndex.items.length < 2) failures.push("Gallery must ship widget and Skill seeds");
+const galleryIDs = new Set();
+for (const item of galleryIndex.items ?? []) {
+  if (galleryIDs.has(item.id)) failures.push(`Gallery duplicate id: ${item.id}`);
+  galleryIDs.add(item.id);
+  const expectedPrefix = `https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/`;
+  for (const file of item.files ?? []) {
+    if (!file.url.startsWith(expectedPrefix)) { failures.push(`${item.id}/${file.path}: untrusted Gallery URL`); continue; }
+    const localPath = join(root, "Gallery", file.url.slice(expectedPrefix.length));
+    try {
+      const data = await readFile(localPath);
+      if (data.length !== file.bytes) failures.push(`${item.id}/${file.path}: byte count mismatch`);
+      if (createHash("sha256").update(data).digest("hex") !== file.sha256) failures.push(`${item.id}/${file.path}: SHA-256 mismatch`);
+    } catch { failures.push(`${item.id}/${file.path}: indexed file missing`); }
+  }
+}
+const galleryKinds = new Set((galleryIndex.items ?? []).map(item => item.kind));
+if (!galleryKinds.has("widget") || !galleryKinds.has("skill")) failures.push("Gallery seeds must include both kinds");
+const galleryDocs = await readFile(join(root, "docs/gallery.md"), "utf8");
+for (const required of ["trust root", "SHA-256", "If-None-Match", "256 KiB", "curator", "cannot execute code"]) {
+  if (!galleryDocs.includes(required)) failures.push(`Gallery documentation is missing ${required}`);
+}
+const gallerySource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Gallery/ScriptWidgetGallery.swift"), "utf8");
+for (const guardrail of ["rejectUnknownFields", "raw.githubusercontent.com", "If-None-Match", "contentFingerprint", "replaceDirectory"]) {
+  if (!gallerySource.includes(guardrail)) failures.push(`Gallery runtime is missing ${guardrail}`);
 }
 
 const releaseDocs = await readFile(join(root, "docs/release-readiness.md"), "utf8");

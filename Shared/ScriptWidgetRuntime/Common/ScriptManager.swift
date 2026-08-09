@@ -221,8 +221,14 @@ class ScriptManager {
     let isUsingiCloud: Bool
     let isBuild: Bool
     
-    init(isBuild: Bool) {
+    init(isBuild: Bool, scriptDirectoryOverride: URL? = nil) {
         self.isBuild = isBuild
+        if let scriptDirectoryOverride {
+            self.scriptDirectory = scriptDirectoryOverride
+            self.isUsingiCloud = false
+            self.makeSureRootExist()
+            return
+        }
         if isBuild {
             if let buildDir = Self.getSandboxBuildDirectoryURL() {
                 self.scriptDirectory = buildDir

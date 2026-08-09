@@ -10,6 +10,7 @@ import SwiftUI
 struct ContentView: View {
     @StateObject private var store = SharedAppStore()
     @State private var showingSkills = false
+    @State private var showingGallery = false
     @State private var showingOnboarding = false
     
     var body: some View {
@@ -26,6 +27,9 @@ struct ContentView: View {
         .onReceive(NotificationCenter.default.publisher(for: SkillManagerOpenRequest.notification)) { _ in
             showingSkills = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: GalleryOpenRequest.notification)) { _ in
+            showingGallery = true
+        }
         .onReceive(NotificationCenter.default.publisher(for: MacOnboardingOpenRequest.notification)) { _ in
             MacOnboardingProgressStore().restart()
             showingOnboarding = true
@@ -37,6 +41,9 @@ struct ContentView: View {
         }
         .sheet(isPresented: $showingSkills) {
             SkillManagerView()
+        }
+        .sheet(isPresented: $showingGallery) {
+            ScriptWidgetGalleryView()
         }
         .sheet(isPresented: $showingOnboarding) {
             FirstRunOnboardingView()

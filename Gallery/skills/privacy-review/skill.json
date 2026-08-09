@@ -1,0 +1,15 @@
+{
+  "author": "ScriptWidget Community",
+  "formatVersion": 1,
+  "id": "app.scriptwidget.gallery.privacy-review",
+  "minimumRuntimeVersion": "1.0",
+  "name": "Privacy Review",
+  "promptFile": "SKILL.md",
+  "summary": "Review a widget for minimal data access and clear fallbacks.",
+  "symbol": "hand.raised.fill",
+  "tags": [
+    "privacy",
+    "review"
+  ],
+  "version": "1.0.0"
+}

@@ -1,0 +1,69 @@
+{
+  "generatedAt": "2026-08-09T20:00:00Z",
+  "items": [
+    {
+      "author": "ScriptWidget Community",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 398,
+          "path": "main.jsx",
+          "sha256": "3cfbab7dd3ccc446aac59023f6de602ed3b269bdd586f609185d28299335edb9",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hello-card/main.jsx"
+        },
+        {
+          "bytes": 644,
+          "path": "widget.json",
+          "sha256": "a09eee61c31f023fe5116248a0700b6e98e5f4d2a16fc644dc230f1984610051",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hello-card/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.gallery.hello-card",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Gallery Hello Card",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/hello-card",
+      "summary": "A polished offline starter that demonstrates a responsive Gallery install.",
+      "symbol": "sparkles.rectangle.stack",
+      "tags": [
+        "starter",
+        "offline"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget Community",
+      "featured": true,
+      "files": [
+        {
+          "bytes": 380,
+          "path": "skill.json",
+          "sha256": "a39e6222e3dd99fca17437f8df176e4ac2dce24124f182ae6369d6a0acbfbee8",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/skills/privacy-review/skill.json"
+        },
+        {
+          "bytes": 477,
+          "path": "SKILL.md",
+          "sha256": "94fdf8df56b4343b0915441d652abb58e852d58cea83c86aae262114e63281b5",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/skills/privacy-review/SKILL.md"
+        }
+      ],
+      "id": "app.scriptwidget.gallery.privacy-review",
+      "kind": "skill",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Privacy Review",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/skills/privacy-review",
+      "summary": "Review a widget for minimal data access and clear fallbacks.",
+      "symbol": "hand.raised.fill",
+      "tags": [
+        "privacy",
+        "review"
+      ],
+      "version": "1.0.0"
+    }
+  ],
+  "repository": "https://github.com/everettjf/scriptwidget",
+  "schemaVersion": 1
+}

@@ -31,6 +31,10 @@ Before submitting, run `./Scripts/release-readiness.sh` on a compatible Mac. Liv
 
 Put the entry point under `Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/<Name>/main.jsx`, avoid secrets and private endpoints, provide useful fallback UI, and verify every bundled template test passes.
 
+## Submitting to the Gallery
+
+Community widgets and Skills are reviewed through the versioned `Gallery/index.json`; the app does not install arbitrary GitHub archives. Follow the [Gallery submission and curator guide](docs/gallery.md), commit the exact package files, update byte sizes and SHA-256 hashes, and run `./Scripts/release-readiness.sh`. Treat all index, source URL, package path, permission, network, and Prompt changes as security-sensitive review surface.
+
 ## Community standards
 
 Be respectful, assume good intent, and focus review on the work. Security vulnerabilities should be reported privately according to [SECURITY.md](SECURITY.md), not posted as public issues.

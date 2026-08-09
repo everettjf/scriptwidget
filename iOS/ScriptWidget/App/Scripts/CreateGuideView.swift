@@ -33,6 +33,7 @@ struct CreateGuideView: View {
 
     @State private var showingAIGenerate = false
     @State private var showingAIConfigAlert = false
+    @State private var showingGallery = false
     @State private var selectedCategory: ScriptCategory? = nil
     @State private var searchText: String = ""
 
@@ -40,7 +41,7 @@ struct CreateGuideView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    aiRow
+                    quickStartRows
                         .padding(.horizontal)
 
                     if !searchText.isEmpty {
@@ -83,6 +84,9 @@ struct CreateGuideView: View {
             .navigationDestination(isPresented: $showingAIGenerate) {
                 AIGenerateView()
             }
+            .sheet(isPresented: $showingGallery) {
+                ScriptWidgetGalleryView()
+            }
             .alert("Configure AI First", isPresented: $showingAIConfigAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
@@ -106,6 +110,35 @@ struct CreateGuideView: View {
     }
 
     // MARK: - Subviews
+
+    private var quickStartRows: some View {
+        VStack(spacing: 10) {
+            aiRow
+            Button {
+                showingGallery = true
+            } label: {
+                HStack(spacing: 12) {
+                    Image(systemName: "square.grid.2x2")
+                        .font(.title2)
+                        .foregroundColor(.white)
+                        .frame(width: 44, height: 44)
+                        .background(Color.indigo.gradient)
+                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Community Gallery").font(.headline).foregroundColor(.primary)
+                        Text("Install verified widgets and reusable AI Skills.").font(.caption).foregroundColor(.secondary)
+                    }
+                    Spacer()
+                    Image(systemName: "chevron.right").font(.caption).foregroundColor(.secondary)
+                }
+                .padding(12)
+                .background(Color.indigo.opacity(0.08))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+        }
+    }
 
     private var aiRow: some View {
         Button {

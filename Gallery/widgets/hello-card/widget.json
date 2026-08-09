@@ -1,0 +1,27 @@
+{
+  "author": {
+    "name": "ScriptWidget Community",
+    "url": "https://github.com/everettjf/scriptwidget"
+  },
+  "category": "starter",
+  "description": "A polished offline starter that demonstrates a responsive Gallery install.",
+  "entry": "main.jsx",
+  "formatVersion": 2,
+  "icon": "sparkles.rectangle.stack",
+  "id": "app.scriptwidget.gallery.hello-card",
+  "license": "MIT",
+  "name": "Gallery Hello Card",
+  "networkDomains": [],
+  "permissions": [],
+  "runtimeVersion": "1.0",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "tags": [
+    "starter",
+    "offline"
+  ],
+  "version": "1.0.0"
+}

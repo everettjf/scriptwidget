@@ -965,3 +965,148 @@ private extension Data {
         replaceSubrange(index..<(index + 4), with: encoded)
     }
 }
+
+final class GalleryTests: XCTestCase {
+    private var temporaryDirectories: [URL] = []
+
+    override func tearDown() {
+        temporaryDirectories.forEach { try? FileManager.default.removeItem(at: $0) }
+        temporaryDirectories.removeAll()
+        super.tearDown()
+    }
+
+    func testRepositoryGalleryIndexAndHashesValidate() throws {
+        let data = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
+        let index = try XCTUnwrap(try GalleryIndexValidator.decode(data).get())
+        XCTAssertEqual(index.items.count, 2)
+        for item in index.items {
+            for file in item.files {
+                let marker = "/Gallery/"
+                let remotePath = try XCTUnwrap(file.url.path.range(of: marker).map { String(file.url.path[$0.upperBound...]) })
+                let localData = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/").appendingPathComponent(remotePath))
+                XCTAssertEqual(localData.count, file.bytes)
+                XCTAssertEqual(GalleryInstaller.sha256(localData), file.sha256)
+            }
+        }
+    }
+
+    func testIndexRejectsUnknownFieldsAndUnsafePaths() throws {
+        let source = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: source) as? [String: Any])
+        object["futureField"] = true
+        if case .success = GalleryIndexValidator.decode(try JSONSerialization.data(withJSONObject: object)) {
+            XCTFail("Unknown fields must fail closed")
+        }
+
+        let index = try GalleryIndexValidator.decode(source).get()
+        let original = try XCTUnwrap(index.items.first)
+        let badFile = GalleryFile(path: "../main.jsx", url: original.files[0].url, sha256: original.files[0].sha256, bytes: original.files[0].bytes)
+        let badItem = GalleryItem(id: original.id, kind: original.kind, name: original.name, version: original.version, summary: original.summary, symbol: original.symbol, author: original.author, license: original.license, tags: original.tags, minimumRuntimeVersion: original.minimumRuntimeVersion, sourceURL: original.sourceURL, featured: original.featured, files: [badFile, original.files[1]])
+        XCTAssertFalse(GalleryIndexValidator.validate(.init(schemaVersion: 1, generatedAt: Date(), repository: index.repository, items: [badItem])).isValid)
+    }
+
+    func testClientUsesETagAndFallsBackToVerifiedOfflineCache() async throws {
+        let source = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
+        let indexURL = GalleryClient.defaultIndexURL
+        let transport = GalleryTestTransport(responses: [
+            .success((source, response(url: indexURL, status: 200, headers: ["ETag": "gallery-v1"]))),
+            .success((Data(), response(url: indexURL, status: 304))),
+            .failure(GalleryError.network("offline"))
+        ])
+        let directory = makeTemporaryDirectory()
+        let client = GalleryClient(indexURL: indexURL, transport: transport, cache: .init(directory: directory), now: Date.init)
+
+        let online = try await client.load(forceRefresh: true)
+        XCTAssertFalse(online.isOffline)
+        let revalidated = try await client.load(forceRefresh: true)
+        XCTAssertFalse(revalidated.isOffline)
+        XCTAssertEqual(online.index, revalidated.index)
+        let offline = try await client.load(forceRefresh: true)
+        XCTAssertTrue(offline.isOffline)
+        XCTAssertEqual(online.index, offline.index)
+        let conditionalHeader = await transport.lastRequestHeader("If-None-Match")
+        XCTAssertEqual(conditionalHeader, "gallery-v1")
+    }
+
+    func testInstallerVerifiesAndInstallsWidgetAndSkillTransactionally() async throws {
+        let indexData = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))
+        let index = try GalleryIndexValidator.decode(indexData).get()
+        var responses: [URL: Result<(Data, HTTPURLResponse), Error>] = [:]
+        for item in index.items {
+            for file in item.files {
+                let marker = "/Gallery/"
+                let remotePath = try XCTUnwrap(file.url.path.range(of: marker).map { String(file.url.path[$0.upperBound...]) })
+                let data = try Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/").appendingPathComponent(remotePath))
+                responses[file.url] = .success((data, response(url: file.url, status: 200)))
+            }
+        }
+        let root = makeTemporaryDirectory()
+        let registry = GalleryInstallationRegistry(fileURL: root.appendingPathComponent("registry.json"))
+        let installer = GalleryInstaller(
+            transport: GalleryTestTransport(mappedResponses: responses),
+            registry: registry,
+            scriptManager: ScriptManager(isBuild: false, scriptDirectoryOverride: root.appendingPathComponent("Scripts")),
+            skillManager: AIWidgetSkillManager(directory: root.appendingPathComponent("Skills")),
+            buildAfterInstall: false
+        )
+
+        for item in index.items {
+            let record = try await installer.install(item)
+            XCTAssertEqual(record.itemID, item.id)
+            XCTAssertEqual(installer.state(for: item), .installed)
+        }
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Scripts/Gallery Hello Card/main.jsx").path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: root.appendingPathComponent("Skills/privacy-review/SKILL.md").path))
+    }
+
+    func testChangedFingerprintAtSameVersionOffersUpdate() throws {
+        let root = makeTemporaryDirectory()
+        let registry = GalleryInstallationRegistry(fileURL: root.appendingPathComponent("registry.json"))
+        let item = try XCTUnwrap(try GalleryIndexValidator.decode(Data(contentsOf: repositoryRoot.appendingPathComponent("Gallery/index.json"))).get().items.first)
+        try registry.save(.init(itemID: item.id, kind: item.kind, version: item.version, localIdentifier: "Local", contentFingerprint: "different", installedAt: Date()))
+        XCTAssertEqual(registry.state(for: item), .updateAvailable(current: item.version))
+    }
+
+    private var repositoryRoot: URL {
+        URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+    }
+
+    private func makeTemporaryDirectory() -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent("GalleryTests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        temporaryDirectories.append(url)
+        return url
+    }
+
+    private func response(url: URL, status: Int, headers: [String: String]? = nil) -> HTTPURLResponse {
+        HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)!
+    }
+}
+
+private actor GalleryTestTransport: GalleryTransport {
+    private var queuedResponses: [Result<(Data, HTTPURLResponse), Error>]
+    private var mappedResponses: [URL: Result<(Data, HTTPURLResponse), Error>]
+    private(set) var requests: [URLRequest] = []
+
+    init(responses: [Result<(Data, HTTPURLResponse), Error>] = [], mappedResponses: [URL: Result<(Data, HTTPURLResponse), Error>] = [:]) {
+        queuedResponses = responses
+        self.mappedResponses = mappedResponses
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        let result: Result<(Data, HTTPURLResponse), Error>
+        requests.append(request)
+        if !queuedResponses.isEmpty {
+            result = queuedResponses.removeFirst()
+        } else if let url = request.url, let mapped = mappedResponses[url] {
+            result = mapped
+        } else {
+            result = .failure(GalleryError.network("No test response"))
+        }
+        return try result.get()
+    }
+
+    func lastRequestHeader(_ field: String) -> String? {
+        requests.last?.value(forHTTPHeaderField: field)
+    }
+}

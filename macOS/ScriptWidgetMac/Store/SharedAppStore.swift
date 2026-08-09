@@ -24,6 +24,9 @@ class SharedAppStore: ObservableObject {
         NotificationCenter.default.addObserver(forName: SharedAppStore.scriptCreateNotification, object: nil, queue: OperationQueue.main) { (noti) in
             self.reloadUserScripts()
         }
+        NotificationCenter.default.addObserver(forName: GalleryInstaller.changedNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
+            self?.reloadUserScripts()
+        }
     }
     
     func reloadUserScripts() {

@@ -50,6 +50,8 @@
 		A102000E00000000000000B0 /* AIEvalRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000E00000000000000B0 /* AIEvalRunner.swift */; };
 		A102000F00000000000000B0 /* AIEvalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000F00000000000000B0 /* AIEvalReport.swift */; };
 		A102001000000000000000B0 /* AIWidgetSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101001000000000000000B0 /* AIWidgetSkills.swift */; };
+		A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000100000000000000B0 /* ScriptWidgetGallery.swift */; };
+		A109000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
 		A104000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000100000000000000B0 /* SettingAIView.swift */; };
 		A104000200000000000000B0 /* AIGenerateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000200000000000000B0 /* AIGenerateView.swift */; };
 		A104000300000000000000B0 /* AIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000300000000000000B0 /* AIReviewView.swift */; };
@@ -424,6 +426,8 @@
 		A101000E00000000000000B0 /* AIEvalRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalRunner.swift; sourceTree = "<group>"; };
 		A101000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
 		A101001000000000000000B0 /* AIWidgetSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWidgetSkills.swift; sourceTree = "<group>"; };
+		A109000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
+		A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
 		A103000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A103000200000000000000B0 /* AIGenerateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateView.swift; sourceTree = "<group>"; };
 		A103000300000000000000B0 /* AIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReviewView.swift; sourceTree = "<group>"; };
@@ -758,6 +762,15 @@
 				A103000300000000000000B0 /* AIReviewView.swift */,
 			);
 			path = AIGenerate;
+			sourceTree = "<group>";
+		};
+		A109000500000000000000B0 /* Gallery */ = {
+			isa = PBXGroup;
+			children = (
+				A109000100000000000000B0 /* ScriptWidgetGallery.swift */,
+				A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */,
+			);
+			path = ../Shared/ScriptWidgetRuntime/Gallery;
 			sourceTree = "<group>";
 		};
 		A105000300000000000000B0 /* Eval */ = {
@@ -1103,6 +1116,7 @@
 			isa = PBXGroup;
 			children = (
 				A105000100000000000000B0 /* AI */,
+				A109000500000000000000B0 /* Gallery */,
 				F291198E2793039700B860B0 /* Resource */,
 				F29118FF2793035E00B860B0 /* Widget */,
 				F29118EA2793034D00B860B0 /* Common */,
@@ -1710,6 +1724,8 @@
 			files = (
 				A102000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A102001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
+				A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */,
+				A109000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */,
 				A102000A00000000000000B0 /* AIKeychain.swift in Sources */,
 				A102000B00000000000000B0 /* AILocalOAuthServer.swift in Sources */,
 				A102000C00000000000000B0 /* AIOpenAIOAuth.swift in Sources */,

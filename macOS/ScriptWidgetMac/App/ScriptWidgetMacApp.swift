@@ -40,6 +40,10 @@ struct ScriptWidgetMacApp: App {
                     NotificationCenter.default.post(name: SkillManagerOpenRequest.notification, object: nil)
                 }.keyboardShortcut("k", modifiers: [.command, .shift])
 
+                Button("Widget & Skills Gallery...") {
+                    NotificationCenter.default.post(name: GalleryOpenRequest.notification, object: nil)
+                }.keyboardShortcut("g", modifiers: [.command, .shift])
+
                 Button("Save") {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
                         NotificationCenter.default.post(name: EditorService.saveNotification, object: nil, userInfo: nil)

@@ -30,6 +30,10 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
         NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptDeleteNotification, object: nil, queue: OperationQueue.main) { (noti) in
             self.reload()
         }
+
+        NotificationCenter.default.addObserver(forName: GalleryInstaller.changedNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
+            self?.reload()
+        }
         
     }
     

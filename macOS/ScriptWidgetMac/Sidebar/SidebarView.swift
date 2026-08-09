@@ -124,6 +124,12 @@ struct SidebarView: View {
                     Label("Generate with AI", systemImage: "sparkles")
                 }
 
+                Button {
+                    NotificationCenter.default.post(name: GalleryOpenRequest.notification, object: nil)
+                } label: {
+                    Label("Community Gallery", systemImage: "square.grid.2x2")
+                }
+
             }
 
             Section("Scripts") {

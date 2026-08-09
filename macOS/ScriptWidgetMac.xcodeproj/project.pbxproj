@@ -44,6 +44,8 @@
 		A202000E00000000000000B0 /* AIEvalRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201000E00000000000000B0 /* AIEvalRunner.swift */; };
 		A202000F00000000000000B0 /* AIEvalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201000F00000000000000B0 /* AIEvalReport.swift */; };
 		A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201001000000000000000B0 /* AIWidgetSkills.swift */; };
+		A209000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000100000000000000B0 /* ScriptWidgetGallery.swift */; };
+		A209000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
 		A204000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000100000000000000B0 /* SettingAIView.swift */; };
 		A204000200000000000000B0 /* AIGenerateWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000200000000000000B0 /* AIGenerateWindowView.swift */; };
 		A204000300000000000000B0 /* SkillManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A203000300000000000000B0 /* SkillManagerView.swift */; };
@@ -289,6 +291,8 @@
 		A201000E00000000000000B0 /* AIEvalRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalRunner.swift; sourceTree = "<group>"; };
 		A201000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
 		A201001000000000000000B0 /* AIWidgetSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWidgetSkills.swift; sourceTree = "<group>"; };
+		A209000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
+		A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
 		A203000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A203000200000000000000B0 /* AIGenerateWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateWindowView.swift; sourceTree = "<group>"; };
 		A203000300000000000000B0 /* SkillManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SkillManagerView.swift; sourceTree = "<group>"; };
@@ -474,6 +478,15 @@
 			path = AIGenerate;
 			sourceTree = "<group>";
 		};
+		A209000500000000000000B0 /* Gallery */ = {
+			isa = PBXGroup;
+			children = (
+				A209000100000000000000B0 /* ScriptWidgetGallery.swift */,
+				A209000200000000000000B0 /* ScriptWidgetGalleryView.swift */,
+			);
+			path = ../Shared/ScriptWidgetRuntime/Gallery;
+			sourceTree = "<group>";
+		};
 		A205000300000000000000B0 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
@@ -523,6 +536,7 @@
 			isa = PBXGroup;
 			children = (
 				A205000100000000000000B0 /* AI */,
+				A209000500000000000000B0 /* Gallery */,
 				D1995D0429536BF000D1BD94 /* Resource */,
 				D1995CF429536BC700D1BD94 /* Common */,
 				D1995C5529536BB800D1BD94 /* Widget */,
@@ -1128,6 +1142,8 @@
 				A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */,
 				A202000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A202001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
+				A209000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */,
+				A209000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */,
 				A208000200000000000000B0 /* FirstRunOnboardingView.swift in Sources */,
 				A202000A00000000000000B0 /* AIKeychain.swift in Sources */,
 				A202000B00000000000000B0 /* AILocalOAuthServer.swift in Sources */,
