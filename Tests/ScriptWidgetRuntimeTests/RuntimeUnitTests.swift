@@ -25,6 +25,30 @@ import ImageIO
 // (the macOS target "ScriptWidgetMac" ships PRODUCT_NAME = ScriptWidget).
 @testable import ScriptWidget
 
+final class AICopilotPromptTests: XCTestCase {
+    func testCopilotPromptIncludesCodeInstructionAndDiagnostic() {
+        let prompt = PromptBuilder.userPromptCopilot(
+            currentCode: "$render(<text>old</text>);",
+            instruction: "Use a blue background",
+            runtimeDiagnostic: "scriptException: boom"
+        )
+        XCTAssertTrue(prompt.contains("$render(<text>old</text>);"))
+        XCTAssertTrue(prompt.contains("Use a blue background"))
+        XCTAssertTrue(prompt.contains("scriptException: boom"))
+        XCTAssertTrue(prompt.contains("FULL updated JSX"), prompt)
+    }
+
+    func testCopilotChangeSummaryCountsReplacementsAndAddedLines() {
+        let summary = AICopilotChangeSummary.compare(
+            original: "one\ntwo",
+            proposed: "one\nchanged\nthree"
+        )
+        XCTAssertEqual(summary.originalLines, 2)
+        XCTAssertEqual(summary.proposedLines, 3)
+        XCTAssertEqual(summary.changedLines, 2)
+    }
+}
+
 final class ScriptWidgetRuntimeElementTests: XCTestCase {
 
     private func makeElement() -> ScriptWidgetRuntimeElement {

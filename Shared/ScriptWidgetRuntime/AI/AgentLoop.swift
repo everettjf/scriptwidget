@@ -27,6 +27,7 @@ struct AgentLoopRequest {
     enum Mode {
         case fresh(userDescription: String)
         case refine(currentCode: String, refineInstruction: String)
+        case copilot(currentCode: String, instruction: String, runtimeDiagnostic: String?)
     }
     let mode: Mode
     let size: AIWidgetSize
@@ -58,6 +59,16 @@ final class AgentLoop {
             latestCode = nil
         case .refine(let currentCode, let instruction):
             firstUserMessage = AIMessage(role: .user, content: PromptBuilder.userPromptRefine(currentCode: currentCode, refineInstruction: instruction))
+            latestCode = currentCode
+        case .copilot(let currentCode, let instruction, let runtimeDiagnostic):
+            firstUserMessage = AIMessage(
+                role: .user,
+                content: PromptBuilder.userPromptCopilot(
+                    currentCode: currentCode,
+                    instruction: instruction,
+                    runtimeDiagnostic: runtimeDiagnostic
+                )
+            )
             latestCode = currentCode
         }
 

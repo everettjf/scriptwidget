@@ -80,6 +80,26 @@ struct AIMessage {
     let content: String
 }
 
+struct AICopilotChangeSummary: Equatable {
+    let originalLines: Int
+    let proposedLines: Int
+    let changedLines: Int
+
+    static func compare(original: String, proposed: String) -> AICopilotChangeSummary {
+        let before = original.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let after = proposed.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        let sharedCount = min(before.count, after.count)
+        let replacements = (0..<sharedCount).reduce(into: 0) { count, index in
+            if before[index] != after[index] { count += 1 }
+        }
+        return AICopilotChangeSummary(
+            originalLines: before.count,
+            proposedLines: after.count,
+            changedLines: replacements + abs(before.count - after.count)
+        )
+    }
+}
+
 enum PromptBuilder {
     static func systemPrompt(reference: AIReferenceSnapshot) -> String {
         let rules = """
@@ -168,6 +188,38 @@ enum PromptBuilder {
         \(refineInstruction)
 
         Return the FULL updated JSX only. No markdown, no explanation.
+        """
+    }
+
+    static func userPromptCopilot(
+        currentCode: String,
+        instruction: String,
+        runtimeDiagnostic: String?
+    ) -> String {
+        let diagnosticBlock: String
+        if let runtimeDiagnostic, !runtimeDiagnostic.isEmpty {
+            diagnosticBlock = """
+
+            The latest local ScriptWidget runtime diagnostic is:
+            \(runtimeDiagnostic)
+            """
+        } else {
+            diagnosticBlock = ""
+        }
+        return """
+        You are editing an existing ScriptWidget project in ScriptWidget Studio.
+
+        Current code:
+        ```jsx
+        \(currentCode)
+        ```
+        \(diagnosticBlock)
+
+        User request:
+        \(instruction)
+
+        Preserve working behavior that is unrelated to the request. Use only documented
+        ScriptWidget APIs. Return the FULL updated JSX only, with no markdown or explanation.
         """
     }
 

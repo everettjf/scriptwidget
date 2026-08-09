@@ -174,6 +174,10 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
                 rootElement = output.rootElement
                 lastErrorMessage = output.errorMessage
                 logs = output.logs
+                PreviewDiagnosticStore.shared.record(
+                    output.errorMessage,
+                    for: package.path.standardizedFileURL.path
+                )
                 ScriptCodePreviewConsoleDataObject.replaceLogs(["$START"] + output.logs + ["$FINISH"])
             }
         }
@@ -223,6 +227,25 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
 
 class PreviewService {
     public static let updateNotification = Notification.Name("PreviewService_UpdateNotification")
+}
+
+final class PreviewDiagnosticStore: @unchecked Sendable {
+    static let shared = PreviewDiagnosticStore()
+
+    private let lock = NSLock()
+    private var diagnostics: [String: String] = [:]
+
+    func record(_ diagnostic: String?, for packagePath: String) {
+        lock.lock()
+        defer { lock.unlock() }
+        diagnostics[packagePath] = diagnostic
+    }
+
+    func diagnostic(for packagePath: String) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return diagnostics[packagePath]
+    }
 }
 
 struct PreviewView: View {

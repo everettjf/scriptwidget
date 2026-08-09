@@ -11,6 +11,33 @@ import WebKit
 
 final class EditorService {
     static let saveNotification = Notification.Name("EditorService_SaveNotification")
+    fileprivate static let snapshotRequestNotification = Notification.Name("EditorService_SnapshotRequestNotification")
+    fileprivate static let replaceDocumentNotification = Notification.Name("EditorService_ReplaceDocumentNotification")
+
+    static func requestSnapshot(_ completion: @escaping (EditorDocumentSnapshot?) -> Void) {
+        NotificationCenter.default.post(
+            name: snapshotRequestNotification,
+            object: EditorSnapshotRequest(completion: completion)
+        )
+    }
+
+    static func replaceDocument(with content: String) {
+        NotificationCenter.default.post(name: replaceDocumentNotification, object: content)
+    }
+}
+
+struct EditorDocumentSnapshot: Equatable {
+    let content: String
+    let version: Int
+    let selection: Range<Int>
+}
+
+private final class EditorSnapshotRequest {
+    let completion: (EditorDocumentSnapshot?) -> Void
+
+    init(completion: @escaping (EditorDocumentSnapshot?) -> Void) {
+        self.completion = completion
+    }
 }
 
 final class EditorInternalWebView: WKWebView {
@@ -50,6 +77,22 @@ final class EditorInternalWebView: WKWebView {
         NotificationCenter.default.publisher(for: EditorService.saveNotification)
             .receive(on: DispatchQueue.main)
             .sink { [weak self] _ in self?.saveCurrentContent() }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: EditorService.snapshotRequestNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let request = notification.object as? EditorSnapshotRequest else { return }
+                self?.readSnapshot(completion: request.completion)
+            }
+            .store(in: &cancellables)
+
+        NotificationCenter.default.publisher(for: EditorService.replaceDocumentNotification)
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] notification in
+                guard let content = notification.object as? String else { return }
+                self?.replaceDocument(with: content)
+            }
             .store(in: &cancellables)
     }
 
@@ -133,6 +176,44 @@ final class EditorInternalWebView: WKWebView {
                 let state = response as? [String: Any],
                 let content = state["content"] as? String
             else { return }
+            _ = save(content: content)
+        }
+    }
+
+    private func readSnapshot(completion: @escaping (EditorDocumentSnapshot?) -> Void) {
+        guard isEditorReady else {
+            completion(nil)
+            return
+        }
+        callStudio(handlerName: StudioMessage.editorGetState) { response in
+            guard
+                let state = response as? [String: Any],
+                let content = state["content"] as? String
+            else {
+                completion(nil)
+                return
+            }
+            let version = state["version"] as? Int ?? 0
+            let selectionPayload = state["selection"] as? [String: Any]
+            let from = selectionPayload?["from"] as? Int ?? 0
+            let to = selectionPayload?["to"] as? Int ?? from
+            completion(EditorDocumentSnapshot(
+                content: content,
+                version: version,
+                selection: min(from, to)..<max(from, to)
+            ))
+        }
+    }
+
+    private func replaceDocument(with content: String) {
+        guard isEditorReady, scriptModel?.package.readonly == false else { return }
+        callStudio(
+            handlerName: "document.replace",
+            payload: ["content": content, "version": 0]
+        ) { [weak self] response in
+            guard let self else { return }
+            let result = (response as? [String: Any])?["result"] as? String
+            guard result == "ok" else { return }
             _ = save(content: content)
         }
     }

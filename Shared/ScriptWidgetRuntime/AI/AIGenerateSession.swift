@@ -84,6 +84,24 @@ final class AIGenerateSession: ObservableObject {
         kickoff(request: request, initialJSX: trimmedCode)
     }
 
+    func copilot(currentCode: String, instruction: String, runtimeDiagnostic: String?) {
+        let trimmedCode = currentCode.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedInstruction = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedCode.isEmpty, !trimmedInstruction.isEmpty else { return }
+        let settings = AISettingsStore.shared.load()
+        let request = AgentLoopRequest(
+            mode: .copilot(
+                currentCode: trimmedCode,
+                instruction: trimmedInstruction,
+                runtimeDiagnostic: runtimeDiagnostic
+            ),
+            size: size,
+            settings: settings,
+            maxIterations: settings.maxIterations
+        )
+        kickoff(request: request, initialJSX: trimmedCode)
+    }
+
     func cancel() {
         currentTask?.cancel()
     }

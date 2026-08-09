@@ -40,9 +40,180 @@ struct EditorPanelView: View {
                 FileListView(scriptModel: scriptModel)
             }
             .tabItem({ EditorPanelTabLabel(imageName: "doc.on.doc", label: "Files") })
+
+            StudioCopilotView(scriptModel: scriptModel)
+                .tabItem({ EditorPanelTabLabel(imageName: "sparkles", label: "Copilot") })
         }
         .padding(.top, 4)
         .background(Color(nsColor: .controlBackgroundColor))
+    }
+}
+
+private struct StudioCopilotView: View {
+    let scriptModel: ScriptModel
+
+    @StateObject private var session = AIGenerateSession()
+    @State private var instruction = ""
+    @State private var originalCode = ""
+    @State private var proposedCode = ""
+    @State private var statusMessage: String?
+    @State private var showingOriginal = false
+    @State private var showingProposal = true
+
+    private var changeSummary: AICopilotChangeSummary {
+        .compare(original: originalCode, proposed: proposedCode)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("AI Copilot", systemImage: "sparkles")
+                        .font(.headline)
+
+                    Text("Ask Studio to improve the current widget. Changes are validated locally and shown for review before they are applied.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+
+                    TextEditor(text: $instruction)
+                        .font(.body)
+                        .frame(minHeight: 90)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 6)
+                                .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
+                        }
+
+                    HStack {
+                        Button("Propose Change", systemImage: "wand.and.stars") {
+                            beginCopilotRequest(fixCurrentError: false)
+                        }
+                        .buttonStyle(.borderedProminent)
+
+                        Button("Fix Runtime Error", systemImage: "wrench.and.screwdriver") {
+                            beginCopilotRequest(fixCurrentError: true)
+                        }
+                    }
+                    .disabled(session.isRunning || scriptModel.package.readonly)
+
+                    if session.isRunning {
+                        AIGenerateProgressView(session: session)
+                        Button("Cancel", role: .cancel) { session.cancel() }
+                    }
+
+                    if let statusMessage {
+                        Text(statusMessage)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
+
+                    if !proposedCode.isEmpty {
+                        Divider()
+                        proposalReview
+                    }
+                }
+                .padding(12)
+            }
+        }
+        .onChange(of: session.phase) { _, phase in
+            consume(phase: phase)
+        }
+    }
+
+    private var proposalReview: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Text("Review Proposal").font(.headline)
+                Spacer()
+                Text("\(changeSummary.changedLines) changed lines")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(.secondary)
+            }
+
+            DisclosureGroup("Original · \(changeSummary.originalLines) lines", isExpanded: $showingOriginal) {
+                codeBlock(originalCode)
+            }
+            DisclosureGroup("Proposed · \(changeSummary.proposedLines) lines", isExpanded: $showingProposal) {
+                codeBlock(proposedCode)
+            }
+
+            HStack {
+                Button("Reject", role: .destructive) {
+                    proposedCode = ""
+                    statusMessage = "Proposal rejected; the editor was not changed."
+                }
+                Spacer()
+                Button("Apply to Editor", systemImage: "checkmark") {
+                    EditorService.replaceDocument(with: proposedCode)
+                    originalCode = proposedCode
+                    proposedCode = ""
+                    statusMessage = "Applied and saved. Use editor Undo to restore the previous version."
+                }
+                .buttonStyle(.borderedProminent)
+            }
+        }
+    }
+
+    private func codeBlock(_ code: String) -> some View {
+        ScrollView(.horizontal) {
+            Text(code)
+                .font(.system(.caption, design: .monospaced))
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(8)
+        }
+        .frame(maxHeight: 180)
+        .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: 6))
+    }
+
+    private func beginCopilotRequest(fixCurrentError: Bool) {
+        let trimmed = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+        let diagnostic = PreviewDiagnosticStore.shared.diagnostic(
+            for: scriptModel.package.path.standardizedFileURL.path
+        )
+        let requestText: String
+        if fixCurrentError {
+            requestText = trimmed.isEmpty ? "Fix the current runtime error while preserving the widget design." : trimmed
+        } else {
+            guard !trimmed.isEmpty else {
+                statusMessage = "Describe the change you want first."
+                return
+            }
+            requestText = trimmed
+        }
+
+        EditorService.requestSnapshot { snapshot in
+            guard let snapshot else {
+                statusMessage = "The editor is not ready yet."
+                return
+            }
+            originalCode = snapshot.content
+            proposedCode = ""
+            statusMessage = diagnostic == nil && fixCurrentError
+                ? "No current runtime error was recorded; asking AI to inspect the code."
+                : nil
+            session.copilot(
+                currentCode: snapshot.content,
+                instruction: requestText,
+                runtimeDiagnostic: diagnostic
+            )
+        }
+    }
+
+    private func consume(phase: AIGenerateSession.Phase) {
+        switch phase {
+        case .done(let jsx):
+            proposedCode = jsx
+            statusMessage = "Proposal passed the local ScriptWidget runtime."
+        case .exhausted(let lastJSX, let error):
+            proposedCode = lastJSX ?? ""
+            statusMessage = "The AI reached its iteration limit: \(error ?? "unknown runtime error")"
+        case .failed(let message):
+            statusMessage = message
+        case .cancelled:
+            statusMessage = "Request cancelled."
+        default:
+            break
+        }
     }
 }
 

@@ -10,6 +10,15 @@ ScriptWidget Studio is the macOS development environment for ScriptWidget. It is
 4. Check **Problems** for the latest runtime failure and **Console** for script output.
 5. Press **Command-R** to run or **Command-S** to save and refresh.
 
+## AI Copilot
+
+Open the **Copilot** tab beside the editor, describe a focused change, and choose **Propose Change**. Studio sends the current document and the latest local runtime diagnostic as context, then shows the original and proposed JSX before anything is changed.
+
+- **Apply** replaces the editor document, saves it, and refreshes preview. The CodeMirror transaction remains available to Undo.
+- **Reject** discards the proposal without touching the document.
+- **Fix Runtime Error** asks Copilot to repair the latest error shown by the preview.
+- Review generated code before applying it, especially networking, imported packages, and data handling.
+
 ## Studio workspace
 
 - **Scripts** lists user widgets stored in the shared ScriptWidget location.
@@ -17,6 +26,7 @@ ScriptWidget Studio is the macOS development environment for ScriptWidget. It is
 - **Preview** can render one family or a multi-size canvas.
 - **Problems** presents the latest transform or runtime diagnostic.
 - **Console** contains output emitted by the script runtime.
+- **Copilot** proposes reviewable edits against the live document and runtime diagnostic.
 - **Images** and **Files** manage package resources.
 
 ## Platform scope
