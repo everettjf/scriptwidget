@@ -19,6 +19,12 @@ Open the **Copilot** tab beside the editor, describe a focused change, and choos
 - **Fix Runtime Error** asks Copilot to repair the latest error shown by the preview.
 - Review generated code before applying it, especially networking, imported packages, and data handling.
 
+## Skills
+
+Skills are reusable, version-controlled expert instructions that can be combined with a Generate or Copilot request. Studio currently includes Responsive Layout, Accessible Design, Resilient Data, Visual Polish, and Runtime Debugger.
+
+Select only the skills relevant to the request. Skills shape the prompt but do not execute code, access credentials, grant network access, or change ScriptWidget's runtime security boundaries. The built-in catalog lives in source control so contributors can review and improve every instruction.
+
 ## Studio workspace
 
 - **Scripts** lists user widgets stored in the shared ScriptWidget location.

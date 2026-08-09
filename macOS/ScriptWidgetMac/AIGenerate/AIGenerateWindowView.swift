@@ -27,6 +27,7 @@ struct AIGenerateWindowView: View {
     @State private var previewPackage: ScriptWidgetPackage?
     @State private var profiles: [AIProfile] = []
     @State private var activeProfileID: String = ""
+    @State private var selectedSkillIDs: Set<String> = []
 
     private var jsx: String { session.lastJSX ?? "" }
     private var hasResult: Bool {
@@ -106,6 +107,7 @@ struct AIGenerateWindowView: View {
                     .border(Color.secondary.opacity(0.3))
 
                 examplesSection
+                skillsSection
 
                 if profiles.count > 1 {
                     HStack {
@@ -133,7 +135,7 @@ struct AIGenerateWindowView: View {
                 }
 
                 Button {
-                    session.start(userDescription: prompt)
+                    session.start(userDescription: AIWidgetSkills.augment(prompt, selectedIDs: selectedSkillIDs))
                 } label: {
                     HStack {
                         Image(systemName: "sparkles")
@@ -237,6 +239,37 @@ struct AIGenerateWindowView: View {
                 }
             }
         }
+    }
+
+    private var skillsSection: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            Text("Skills")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            Text("Add reusable expert instructions to this generation.")
+                .font(.caption2)
+                .foregroundStyle(.tertiary)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 135))], alignment: .leading, spacing: 6) {
+                ForEach(AIWidgetSkills.all) { skill in
+                    Toggle(isOn: skillBinding(skill.id)) {
+                        Label(skill.title, systemImage: skill.symbol)
+                            .font(.caption)
+                    }
+                    .toggleStyle(.button)
+                    .help(skill.summary)
+                }
+            }
+        }
+    }
+
+    private func skillBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { selectedSkillIDs.contains(id) },
+            set: { enabled in
+                if enabled { selectedSkillIDs.insert(id) }
+                else { selectedSkillIDs.remove(id) }
+            }
+        )
     }
 
     @ViewBuilder

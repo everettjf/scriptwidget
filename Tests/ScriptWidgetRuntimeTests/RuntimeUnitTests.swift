@@ -26,6 +26,21 @@ import ImageIO
 @testable import ScriptWidget
 
 final class AICopilotPromptTests: XCTestCase {
+    func testSkillsAugmentPromptDeterministically() {
+        let prompt = AIWidgetSkills.augment(
+            "Build a calendar",
+            selectedIDs: ["accessible-design", "responsive-layout"]
+        )
+        XCTAssertTrue(prompt.contains("Build a calendar"))
+        XCTAssertTrue(prompt.contains("Responsive Layout"))
+        XCTAssertTrue(prompt.contains("Accessible Design"))
+        XCTAssertFalse(prompt.contains("Runtime Debugger"))
+    }
+
+    func testNoSelectedSkillsPreservesPrompt() {
+        XCTAssertEqual(AIWidgetSkills.augment("hello", selectedIDs: []), "hello")
+    }
+
     func testCopilotPromptIncludesCodeInstructionAndDiagnostic() {
         let prompt = PromptBuilder.userPromptCopilot(
             currentCode: "$render(<text>old</text>);",

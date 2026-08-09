@@ -59,6 +59,7 @@ private struct StudioCopilotView: View {
     @State private var statusMessage: String?
     @State private var showingOriginal = false
     @State private var showingProposal = true
+    @State private var selectedSkillIDs: Set<String> = []
 
     private var changeSummary: AICopilotChangeSummary {
         .compare(original: originalCode, proposed: proposedCode)
@@ -82,6 +83,20 @@ private struct StudioCopilotView: View {
                             RoundedRectangle(cornerRadius: 6)
                                 .stroke(Color(nsColor: .separatorColor), lineWidth: 1)
                         }
+
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(AIWidgetSkills.all) { skill in
+                                Toggle(isOn: skillBinding(skill.id)) {
+                                    Label(skill.title, systemImage: skill.symbol)
+                                        .font(.caption)
+                                }
+                                .toggleStyle(.button)
+                                .controlSize(.small)
+                                .help(skill.summary)
+                            }
+                        }
+                    }
 
                     HStack {
                         Button("Propose Change", systemImage: "wand.and.stars") {
@@ -193,7 +208,7 @@ private struct StudioCopilotView: View {
                 : nil
             session.copilot(
                 currentCode: snapshot.content,
-                instruction: requestText,
+                instruction: AIWidgetSkills.augment(requestText, selectedIDs: selectedSkillIDs),
                 runtimeDiagnostic: diagnostic
             )
         }
@@ -214,6 +229,16 @@ private struct StudioCopilotView: View {
         default:
             break
         }
+    }
+
+    private func skillBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { selectedSkillIDs.contains(id) },
+            set: { enabled in
+                if enabled { selectedSkillIDs.insert(id) }
+                else { selectedSkillIDs.remove(id) }
+            }
+        )
     }
 }
 

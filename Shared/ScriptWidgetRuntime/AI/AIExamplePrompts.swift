@@ -97,3 +97,66 @@ enum AIExamplePrompts {
         ),
     ]
 }
+
+/// Reusable, composable instructions that make generation behavior explicit.
+/// Skills are intentionally local and version controlled: they never execute code,
+/// access credentials, or widen runtime permissions.
+struct AIWidgetSkill: Identifiable, Hashable {
+    let id: String
+    let title: String
+    let symbol: String
+    let summary: String
+    let instruction: String
+}
+
+enum AIWidgetSkills {
+    static let all: [AIWidgetSkill] = [
+        AIWidgetSkill(
+            id: "responsive-layout",
+            title: "Responsive Layout",
+            symbol: "rectangle.3.group",
+            summary: "Adapt one script to every widget family.",
+            instruction: "Use $getenv(\"widget-size\") to create intentional small, medium, and large layouts. Keep the information hierarchy readable in every family."
+        ),
+        AIWidgetSkill(
+            id: "accessible-design",
+            title: "Accessible Design",
+            symbol: "accessibility",
+            summary: "Improve contrast, hierarchy, and legibility.",
+            instruction: "Use strong text/background contrast, avoid color as the only signal, keep important text legible, and prefer concise labels."
+        ),
+        AIWidgetSkill(
+            id: "resilient-data",
+            title: "Resilient Data",
+            symbol: "network.badge.shield.half.filled",
+            summary: "Handle network and missing-data failures.",
+            instruction: "When data is remote or optional, validate it and render a useful fallback state. Never expose secrets or invent unsupported runtime APIs."
+        ),
+        AIWidgetSkill(
+            id: "visual-polish",
+            title: "Visual Polish",
+            symbol: "paintbrush.pointed",
+            summary: "Apply a coherent native visual system.",
+            instruction: "Create a restrained native-looking visual system with consistent spacing, typography, color, and alignment. Avoid decorative clutter."
+        ),
+        AIWidgetSkill(
+            id: "runtime-debugger",
+            title: "Runtime Debugger",
+            symbol: "ladybug",
+            summary: "Repair errors with the smallest safe change.",
+            instruction: "Prioritize the supplied runtime diagnostic. Make the smallest correction that fixes it, preserve unrelated behavior, and use only documented ScriptWidget APIs."
+        ),
+    ]
+
+    static func augment(_ prompt: String, selectedIDs: Set<String>) -> String {
+        let selected = all.filter { selectedIDs.contains($0.id) }
+        guard !selected.isEmpty else { return prompt }
+        let instructions = selected.map { "- \($0.title): \($0.instruction)" }.joined(separator: "\n")
+        return """
+        \(prompt)
+
+        Apply these ScriptWidget skills:
+        \(instructions)
+        """
+    }
+}
