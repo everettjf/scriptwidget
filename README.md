@@ -7,6 +7,7 @@
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS-lightgrey?style=flat-square&logo=apple)](https://developer.apple.com)
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
+[![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **Create native widgets for iPhone, iPad, and Mac using JavaScript, JSX, and AI**
 
@@ -24,7 +25,7 @@ ScriptWidget is a powerful widget development platform that lets you create nati
 
 Think of it as "React Native for Widgets" - but simpler and more flexible.
 
-![ScriptWidget Demo](screenshot.png)
+![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
 ---
 
@@ -39,6 +40,7 @@ Think of it as "React Native for Widgets" - but simpler and more flexible.
 | 📱 **Interactive Widgets** | Tap, swipe, and interact with widgets |
 | 🎨 **Custom Styling** | Full control over appearance |
 | 📦 **Template Gallery** | Pre-built templates to get started |
+| 🌐 **Community Gallery** | Verified, one-click Widget and AI Skill installs |
 | 🧰 **ScriptWidget Studio** | Build on Mac with CodeMirror, diagnostics, console, and multi-size preview |
 | ✨ **AI Generation** | Generate, run, diagnose, and refine widgets with an OpenAI-compatible model |
 
@@ -80,6 +82,7 @@ ScriptWidget/
 ├── Shared/
 │   └── ScriptWidgetRuntime/   # Core runtime: JavaScriptCore host, JSX→SwiftUI
 │       ├── Common/            # Script storage & package management
+│       ├── Gallery/           # Verified GitHub catalog, cache & installer
 │       ├── Widget/Runtime/    # JS engine setup, Babel transform, execution
 │       ├── Widget/API/        # JS APIs ($device, $file, $storage, ...)
 │       ├── Widget/Component/  # Element → SwiftUI view mapping
@@ -92,6 +95,7 @@ ScriptWidget/
 │   ├── ScriptWidgetMac/       # macOS app
 │   └── ScriptWidgetMacWidget/ # macOS widget
 ├── Editor/editorfe/           # React + CodeMirror editor frontend
+├── Gallery/                   # Curated Widget & Skills Gallery index
 ├── Resource/                  # Marketing assets, screenshots
 └── README.md
 ```
@@ -216,7 +220,7 @@ Start with the **[documentation hub](docs/README.md)** or build **[your first wi
 
 <div align="center">
 
-![Widget Gallery](gallery.png)
+![Widget Gallery](Resource/WidgetDemoScreenshots/_contact-sheet-2.jpg)
 
 *Sample widgets created with ScriptWidget*
 
@@ -246,6 +250,9 @@ Contributions are welcome! Please read our [Contributing Guide](CONTRIBUTING.md)
 - 🔧 Submit pull requests
 - 📝 Write documentation
 - 🎨 Share your widgets
+- 🧠 Share focused AI Skills
+
+See the [public roadmap](ROADMAP.md), [governance model](GOVERNANCE.md), and [Gallery submission guide](docs/gallery.md). Every pull request runs the same release-readiness checks used locally.
 
 ---
 

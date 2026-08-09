@@ -2,6 +2,8 @@
 
 Thank you for helping make native widget creation accessible to everyone. Contributions to the runtime, ScriptWidget Studio, templates, tests, and documentation are welcome.
 
+Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). Maintainer roles and project decisions are described in [Governance](GOVERNANCE.md), current priorities in the [Roadmap](ROADMAP.md), and notable user-visible work in the [Changelog](CHANGELOG.md).
+
 ## Before you start
 
 - Search existing issues and discussions before opening a duplicate.

@@ -10,6 +10,11 @@ const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRun
 const failures = [];
 const names = (await readdir(templateRoot)).sort();
 
+for (const communityFile of ["README_CN.md", "CODE_OF_CONDUCT.md", "GOVERNANCE.md", "CHANGELOG.md", ".github/CODEOWNERS", ".github/dependabot.yml", ".github/ISSUE_TEMPLATE/gallery_submission.yml"]) {
+  try { await stat(join(root, communityFile)); }
+  catch { failures.push(`missing community health file: ${communityFile}`); }
+}
+
 if (names.length < 60) failures.push(`expected at least 60 templates, found ${names.length}`);
 for (const name of names) {
   const directory = join(templateRoot, name);

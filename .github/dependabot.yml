@@ -1,0 +1,27 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /Editor/editorfe
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      editor-development:
+        dependency-type: development
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+  - package-ecosystem: swift
+    directory: /iOS
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5
+
+  - package-ecosystem: swift
+    directory: /macOS
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 5

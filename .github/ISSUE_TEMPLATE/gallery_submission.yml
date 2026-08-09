@@ -1,0 +1,53 @@
+name: Gallery submission
+description: Propose a reviewed Widget or AI Skill for the curated Gallery.
+title: "[Gallery]: "
+labels: [gallery]
+body:
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Package kind
+      options: [Widget, Skill]
+    validations:
+      required: true
+  - type: input
+    id: identifier
+    attributes:
+      label: Stable package identifier and version
+      placeholder: app.example.widget · 1.0.0
+    validations:
+      required: true
+  - type: textarea
+    id: outcome
+    attributes:
+      label: User outcome
+      description: Explain who this helps, what it does, and why it belongs in the curated Gallery.
+    validations:
+      required: true
+  - type: textarea
+    id: trust
+    attributes:
+      label: Data, network, permissions, AI, and privacy
+      description: List every network domain and permission, stored data, sensitive input, AI behavior, and fallback. Write “none” where applicable.
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification evidence
+      description: Include platforms/families tested, screenshots for Widgets, Prompt examples for Skills, and the release-readiness result.
+    validations:
+      required: true
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Submission confirmations
+      options:
+        - label: I have the right to submit all source, assets, names, and license information.
+          required: true
+        - label: The committed index sizes and SHA-256 values were calculated from the exact committed files.
+          required: true
+        - label: No credentials, personal data, trackers, obfuscated behavior, or undeclared network access are included.
+          required: true
+        - label: I read and followed docs/gallery.md and ran ./Scripts/release-readiness.sh.
+          required: true

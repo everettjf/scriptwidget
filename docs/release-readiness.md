@@ -17,6 +17,7 @@ This document is the ship gate for iOS 16+ and macOS 26+. A release candidate is
 - Runtime execution stays below the checked performance budgets in `RuntimePerformanceTests`.
 - CI runs the same entry point; no separate “CI-only” validation logic is allowed.
 - CI also runs the full shared test target on an iPad Simulator; real iCloud tests remain opt-in because hosted runners have no signed-in Apple ID.
+- Local documentation links/images, Gallery file sizes and SHA-256 hashes, and required community-health files validate in the same gate.
 
 ## Device matrix
 

@@ -19,6 +19,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Studio architecture](scriptwidget-studio-plan.md) — editor and bridge design.
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.
+- [Roadmap](../ROADMAP.md), [governance](../GOVERNANCE.md), and [changelog](../CHANGELOG.md) — direction, decisions, and shipped work.
 
 ## Supported platforms
 
