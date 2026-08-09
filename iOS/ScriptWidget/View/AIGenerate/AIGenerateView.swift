@@ -16,6 +16,7 @@ struct AIGenerateView: View {
     @State private var showReview = false
     @State private var profiles: [AIProfile] = []
     @State private var activeProfileID: String = ""
+    @State private var selectedSkillIDs: Set<String> = []
 
     private let placeholderPrompt = "e.g. Show the current weather for my location, with a minimalist dark background."
 
@@ -44,6 +45,7 @@ struct AIGenerateView: View {
                 }
 
                 examplesSection
+                skillsSection
 
                 if profiles.count > 1 {
                     HStack {
@@ -71,7 +73,7 @@ struct AIGenerateView: View {
                 .pickerStyle(.menu)
 
                 Button {
-                    session.start(userDescription: prompt)
+                    session.start(userDescription: AIWidgetSkills.augment(prompt, selectedIDs: selectedSkillIDs))
                 } label: {
                     HStack {
                         Image(systemName: "sparkles")
@@ -170,5 +172,35 @@ struct AIGenerateView: View {
                 .padding(.vertical, 2)
             }
         }
+    }
+
+    private var skillsSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Skills")
+                .font(.subheadline.weight(.medium))
+            Text("Combine reusable expert instructions with your request.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 145))], alignment: .leading, spacing: 8) {
+                ForEach(AIWidgetSkills.all) { skill in
+                    Toggle(isOn: skillBinding(skill.id)) {
+                        Label(skill.title, systemImage: skill.symbol)
+                            .font(.caption)
+                    }
+                    .toggleStyle(.button)
+                    .accessibilityHint(skill.summary)
+                }
+            }
+        }
+    }
+
+    private func skillBinding(_ id: String) -> Binding<Bool> {
+        Binding(
+            get: { selectedSkillIDs.contains(id) },
+            set: { enabled in
+                if enabled { selectedSkillIDs.insert(id) }
+                else { selectedSkillIDs.remove(id) }
+            }
+        )
     }
 }

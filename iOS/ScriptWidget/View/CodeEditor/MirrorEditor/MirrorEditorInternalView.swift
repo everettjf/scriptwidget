@@ -12,6 +12,29 @@ import Combine
 
 class MirrorEditorService {
     static let saveNotification = Notification.Name("MirrorEditorSaveNotification")
+    fileprivate static let snapshotNotification = Notification.Name("MirrorEditorSnapshotNotification")
+    fileprivate static let replaceDocumentNotification = Notification.Name("MirrorEditorReplaceDocumentNotification")
+
+    static func requestSnapshot(completion: @escaping (MirrorEditorDocumentSnapshot?) -> Void) {
+        NotificationCenter.default.post(
+            name: snapshotNotification,
+            object: MirrorEditorSnapshotRequest(completion: completion)
+        )
+    }
+
+    static func replaceDocument(with content: String) {
+        NotificationCenter.default.post(name: replaceDocumentNotification, object: content)
+    }
+}
+
+struct MirrorEditorDocumentSnapshot {
+    let content: String
+    let version: Int
+    let selection: Range<Int>
+}
+
+private struct MirrorEditorSnapshotRequest {
+    let completion: (MirrorEditorDocumentSnapshot?) -> Void
 }
 
 
@@ -31,6 +54,7 @@ class MirrorEditorInternalView: WKWebView {
         static let ready = "studio.ready"
         static let documentOpen = "document.open"
         static let documentSave = "document.save"
+        static let documentReplace = "document.replace"
         static let documentSetReadOnly = "document.setReadOnly"
         static let editorInsert = "editor.insert"
         static let editorFormat = "editor.format"
@@ -123,6 +147,20 @@ class MirrorEditorInternalView: WKWebView {
             self?.saveCurrentContent()
         }
         self.cancellables.append(saveNoti)
+
+        let snapshotNotification = NotificationCenter.default.publisher(for: MirrorEditorService.snapshotNotification)
+            .sink { [weak self] notification in
+                guard let request = notification.object as? MirrorEditorSnapshotRequest else { return }
+                self?.readSnapshot(completion: request.completion)
+            }
+        self.cancellables.append(snapshotNotification)
+
+        let replaceNotification = NotificationCenter.default.publisher(for: MirrorEditorService.replaceDocumentNotification)
+            .sink { [weak self] notification in
+                guard let content = notification.object as? String else { return }
+                self?.replaceDocument(with: content)
+            }
+        self.cancellables.append(replaceNotification)
     }
     
     deinit {
@@ -205,6 +243,42 @@ class MirrorEditorInternalView: WKWebView {
             
             callback(true, value)
         })
+    }
+
+    private func readSnapshot(completion: @escaping (MirrorEditorDocumentSnapshot?) -> Void) {
+        guard !isTearingDown else {
+            completion(nil)
+            return
+        }
+        callStudio(handlerName: StudioMessage.editorGetState) { responseData in
+            guard
+                let data = responseData as? [String: Any],
+                let content = data["content"] as? String
+            else {
+                completion(nil)
+                return
+            }
+            let version = data["version"] as? Int ?? 0
+            let selection = data["selection"] as? [String: Any]
+            let from = selection?["from"] as? Int ?? 0
+            let to = selection?["to"] as? Int ?? from
+            completion(MirrorEditorDocumentSnapshot(content: content, version: version, selection: from..<to))
+        }
+    }
+
+    private func replaceDocument(with content: String) {
+        guard !isTearingDown, action?.onIsReadOnly?() != true else { return }
+        callStudio(
+            handlerName: StudioMessage.documentReplace,
+            payload: ["content": content, "version": 0]
+        ) { [weak self] response in
+            guard let self else { return }
+            let result = (response as? [String: Any])?["result"] as? String
+            guard result == "ok" || result == nil else { return }
+            if self.action?.onWrite?(content) == true {
+                self.lastSaveContent = content
+            }
+        }
     }
     
     

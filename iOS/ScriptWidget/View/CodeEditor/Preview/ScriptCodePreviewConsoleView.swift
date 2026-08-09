@@ -51,15 +51,32 @@ struct ScriptCodePreviewConsoleView : View {
     @ObservedObject var data:ScriptCodePreviewConsoleDataObject
     
     var body: some View {
-        List {
-            ForEach(data.consoleOutputs) { item in
-                Text(item.data)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .multilineTextAlignment(.leading)
-                    .font(.footnote)
-                    .onTapGesture(count: 2) {
-                        UIPasteboard.general.string = item.data
-                    }
+        VStack(alignment: .leading, spacing: 8) {
+            HStack {
+                Text("\(data.consoleOutputs.count) messages")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Button("Copy All", systemImage: "doc.on.doc") {
+                    UIPasteboard.general.string = data.consoleOutputs.map(\.data).joined(separator: "\n")
+                }
+                .disabled(data.consoleOutputs.isEmpty)
+                Button("Clear", systemImage: "trash") {
+                    data.consoleOutputs.removeAll()
+                }
+                .disabled(data.consoleOutputs.isEmpty)
+            }
+            List {
+                ForEach(data.consoleOutputs) { item in
+                    Text(item.data)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .multilineTextAlignment(.leading)
+                        .font(.footnote.monospaced())
+                        .textSelection(.enabled)
+                        .contextMenu {
+                            Button("Copy") { UIPasteboard.general.string = item.data }
+                        }
+                }
             }
         }
     }

@@ -19,7 +19,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
     @Published var filePath: URL
     
     var runtime: ScriptWidgetRuntime?
-    var lastErrorMessage: String?
+    @Published private(set) var lastErrorMessage: String?
 
     let previewQueue: DispatchQueue
     
@@ -169,8 +169,9 @@ class ScriptCodePreviewDataObject : ObservableObject {
 
             if let element = result.0 {
                 // succeed
-                self.lastErrorMessage = nil
                 DispatchQueue.main.async {
+                    self.lastErrorMessage = nil
+                    ScriptCodePreviewDiagnosticStore.shared.record(nil, for: self.model.package.path)
                     self.rootElement = element
 
                     completion(true)
@@ -179,8 +180,11 @@ class ScriptCodePreviewDataObject : ObservableObject {
                 // error
                 if let error = result.1 {
                     let message = error.diagnosticMessage
-                    self.lastErrorMessage = message
                     self.systemLog(message)
+                    DispatchQueue.main.async {
+                        self.lastErrorMessage = message
+                        ScriptCodePreviewDiagnosticStore.shared.record(message, for: self.model.package.path)
+                    }
                 }
                 DispatchQueue.main.async {
                     completion(false)
@@ -208,5 +212,24 @@ class ScriptCodePreviewDataObject : ObservableObject {
         DispatchQueue.main.async {
             ScriptCodePreviewConsoleDataObject.addLog("$" + str)
         }
+    }
+}
+
+final class ScriptCodePreviewDiagnosticStore: @unchecked Sendable {
+    static let shared = ScriptCodePreviewDiagnosticStore()
+
+    private let lock = NSLock()
+    private var diagnostics: [String: String] = [:]
+
+    func record(_ diagnostic: String?, for packageURL: URL) {
+        lock.lock()
+        diagnostics[packageURL.standardizedFileURL.path] = diagnostic
+        lock.unlock()
+    }
+
+    func diagnostic(for packageURL: URL) -> String? {
+        lock.lock()
+        defer { lock.unlock() }
+        return diagnostics[packageURL.standardizedFileURL.path]
     }
 }

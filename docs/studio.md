@@ -2,6 +2,8 @@
 
 ScriptWidget Studio is the macOS development environment for ScriptWidget. It is the primary place to create, edit, preview, debug, and manage widgets that sync through iCloud to iPhone, iPad, and Mac.
 
+The same Studio editor, AI Copilot, Skills, diagnostics, and preview semantics are available on iPhone and iPad. iPad uses a side-by-side editor and Studio panel in regular-width layouts; iPhone presents Preview and Copilot as focused sheets.
+
 ## Create a widget
 
 1. Choose **New from Template**, **Generate with AI**, or **Blank Widget**.
@@ -33,6 +35,8 @@ Select only the skills relevant to the request. Skills shape the prompt but do n
 - **Problems** presents the latest transform or runtime diagnostic.
 - **Console** contains output emitted by the script runtime.
 - **Copilot** proposes reviewable edits against the live document and runtime diagnostic.
+
+On iPhone and iPad, external keyboards support **Command-S** to save, **Command-R** to preview, and **Command-Shift-K** to open Copilot on compact layouts.
 - **Images** and **Files** manage package resources.
 
 ## Platform scope

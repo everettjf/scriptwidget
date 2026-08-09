@@ -16,6 +16,7 @@ struct ScriptCodePreviewView: View {
     
     @State private var scriptParameter = ""
     @State private var scriptParameterApplied = ""
+    @State private var outputTab = 0
     @FocusState private var scriptParameterIsFocused: Bool
     
     @StateObject private var consoleData = ScriptCodePreviewConsoleDataObject()
@@ -23,12 +24,14 @@ struct ScriptCodePreviewView: View {
     @StateObject private var state: ScriptCodePreviewDataObject
     
     @Binding var filePath: URL
+    let showsCloseButton: Bool
     
-    init(model: ScriptModel, filePath: Binding<URL>) {
+    init(model: ScriptModel, filePath: Binding<URL>, showsCloseButton: Bool = true) {
 //        print("PreviewView init model-id: \(model.id)  file-path: \(filePath.wrappedValue)")
         
         _filePath = filePath
         _state = StateObject(wrappedValue: ScriptCodePreviewDataObject(model: model, filePath: filePath.wrappedValue, widgetSizeType: 0, scriptParameter: ""))
+        self.showsCloseButton = showsCloseButton
     }
 
     var body: some View {
@@ -50,12 +53,22 @@ struct ScriptCodePreviewView: View {
             }
             .padding(.bottom, 5)
             
-            ZStack {
-                Color(.secondarySystemGroupedBackground)
-                
-                preview
+            Group {
+                if widgetSizeType == 7 {
+                    ScriptCodeAllSizesPreview(
+                        model: state.model,
+                        filePath: state.filePath,
+                        scriptParameter: scriptParameterApplied,
+                        isDebugMode: isDebugMode
+                    )
+                } else {
+                    ZStack {
+                        Color(.secondarySystemGroupedBackground)
+                        preview
+                    }
+                    .frame(minHeight: WidgetSizeHelper.size(Int32(widgetSizeType)).height + 48)
+                }
             }
-            .frame(minHeight: WidgetSizeHelper.size(Int32(widgetSizeType)).height + 48)
             .overlay(alignment: .bottomTrailing) {
                 Text(previewSizeLabel)
                     .font(.caption2.monospaced())
@@ -67,8 +80,28 @@ struct ScriptCodePreviewView: View {
                 Section("Config") {
                     config
                 }
-                Section("Log") {
-                    ScriptCodePreviewConsoleView(data: consoleData)
+                Section {
+                    Picker("Output", selection: $outputTab) {
+                        Text("Problems").tag(0)
+                        Text("Console").tag(1)
+                    }
+                    .pickerStyle(.segmented)
+
+                    if outputTab == 0 {
+                        if let problem = state.lastErrorMessage {
+                            Label(problem, systemImage: "exclamationmark.triangle.fill")
+                                .foregroundStyle(.red)
+                                .textSelection(.enabled)
+                        } else {
+                            Label("No runtime problems", systemImage: "checkmark.circle")
+                                .foregroundStyle(.secondary)
+                        }
+                    } else {
+                        ScriptCodePreviewConsoleView(data: consoleData)
+                            .frame(minHeight: 120)
+                    }
+                } header: {
+                    Text("Diagnostics")
                 }
             }
             .formStyle(.grouped)
@@ -89,11 +122,10 @@ struct ScriptCodePreviewView: View {
             
             Spacer()
             
-            Button (action: {
-                dismiss()
-            }, label: {
-                Image(systemName: "xmark")
-            })
+            if showsCloseButton {
+                Button("Close", systemImage: "xmark") { dismiss() }
+                    .labelStyle(.iconOnly)
+            }
         }
         .padding(.horizontal)
         .padding(.vertical, 10)
@@ -132,11 +164,13 @@ struct ScriptCodePreviewView: View {
                 Text("AccessoryInline").tag(4)
                 Text("AccessoryCircular").tag(5)
                 Text("AccessoryRectangular").tag(6)
+                Text("All Sizes").tag(7)
             }
             .onChange(of: widgetSizeType) { value in
                 print("preview size changed : \(value)")
-
-                self.state.changeWidgetSizeType(value)
+                if value != 7 {
+                    self.state.changeWidgetSizeType(value)
+                }
             }
             Toggle(isOn: $isDebugMode) {
                 Label("Debug Borders", systemImage: "square.dashed")
@@ -159,12 +193,85 @@ struct ScriptCodePreviewView: View {
     }
 
     private var previewSizeLabel: String {
+        if widgetSizeType == 7 { return "Small · Medium · Large" }
         let size = WidgetSizeHelper.size(Int32(widgetSizeType))
         return "\(Int(size.width)) × \(Int(size.height))"
     }
     
     
     
+}
+
+private struct ScriptCodeAllSizesPreview: View {
+    let model: ScriptModel
+    let filePath: URL
+    let scriptParameter: String
+    let isDebugMode: Bool
+
+    var body: some View {
+        ScrollView([.horizontal, .vertical]) {
+            HStack(alignment: .top, spacing: 20) {
+                ForEach([0, 1, 2], id: \.self) { sizeType in
+                    ScriptCodePreviewCard(
+                        model: model,
+                        filePath: filePath,
+                        sizeType: sizeType,
+                        scriptParameter: scriptParameter,
+                        isDebugMode: isDebugMode
+                    )
+                }
+            }
+            .padding(24)
+        }
+        .background(Color(.secondarySystemGroupedBackground))
+        .frame(minHeight: 430)
+        .accessibilityLabel("All widget sizes preview")
+    }
+}
+
+private struct ScriptCodePreviewCard: View {
+    @StateObject private var state: ScriptCodePreviewDataObject
+    let sizeType: Int
+    let scriptParameter: String
+    let isDebugMode: Bool
+
+    init(model: ScriptModel, filePath: URL, sizeType: Int, scriptParameter: String, isDebugMode: Bool) {
+        self.sizeType = sizeType
+        self.scriptParameter = scriptParameter
+        self.isDebugMode = isDebugMode
+        _state = StateObject(wrappedValue: ScriptCodePreviewDataObject(
+            model: model,
+            filePath: filePath,
+            widgetSizeType: sizeType,
+            scriptParameter: scriptParameter
+        ))
+    }
+
+    var body: some View {
+        let size = WidgetSizeHelper.size(Int32(sizeType))
+        VStack(spacing: 8) {
+            Text(["Small", "Medium", "Large"][sizeType])
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.secondary)
+            ScriptWidgetElementView(
+                element: state.rootElement,
+                context: ScriptWidgetElementContext(
+                    runtime: state.runtime,
+                    debugMode: isDebugMode,
+                    scriptName: state.model.package.name,
+                    scriptParameter: scriptParameter,
+                    package: state.model.package
+                )
+            )
+            .frame(width: size.width, height: size.height)
+            .background(Color(.systemBackground))
+            .clipShape(.rect(cornerRadius: 16))
+            .shadow(color: .black.opacity(0.12), radius: 12, y: 6)
+        }
+        .onChange(of: scriptParameter) { value in
+            state.changeWidgetParameter(value)
+        }
+    }
 }
 
 struct ScriptCodePreviewView_Previews: PreviewProvider {
