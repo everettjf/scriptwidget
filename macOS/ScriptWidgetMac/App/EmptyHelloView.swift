@@ -52,13 +52,11 @@ struct EmptyHelloView: View {
 
     private var hero: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Image(systemName: "sparkles.square.filled.on.square")
-                .font(.system(size: 52))
-                .foregroundStyle(
-                    LinearGradient(colors: [.purple, .blue],
-                                   startPoint: .topLeading,
-                                   endPoint: .bottomTrailing)
-                )
+            Image(nsImage: NSApplication.shared.applicationIconImage)
+                .resizable()
+                .scaledToFit()
+                .frame(width: 88, height: 88)
+                .accessibilityLabel("ScriptWidget app icon")
             Text("Build widgets with JavaScript")
                 .font(.title).bold()
             Text("Pick a template, preview it instantly on your desktop, then add it anywhere widgets go.")
