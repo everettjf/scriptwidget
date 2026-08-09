@@ -50,7 +50,56 @@ enum ScriptWidgetImagePipeline {
         return image
     }
 
+    /// WidgetKit archives a view shortly after its timeline entry is delivered;
+    /// an AsyncImage completion is therefore not guaranteed to be observed. For
+    /// remote images, resolve bounded bytes before constructing the Image while
+    /// retaining the same downsampling and memory-cache path as local images.
+    static func synchronousRemoteImage(
+        at url: URL,
+        timeout: TimeInterval = 2.5,
+        fetch: ((URL, TimeInterval) -> Data?)? = nil
+    ) -> ScriptWidgetPlatformImage? {
+        guard ScriptWidgetFetchPolicy.validationError(for: url) == nil else { return nil }
+        let cacheKey = "remote|\(url.absoluteString)"
+        if let cached = cache.object(forKey: "\(cacheKey)|\(defaultMaximumPixelSize)" as NSString) {
+            return cached
+        }
+        let boundedTimeout = min(3, max(0.25, timeout))
+        let data: Data?
+        if let fetch {
+            data = fetch(url, boundedTimeout)
+        } else {
+            data = synchronouslyFetchBoundedData(at: url, timeout: boundedTimeout)
+        }
+        guard let data, data.count <= ScriptWidgetFetchManager.maximumResponseBytes else { return nil }
+        return image(data: data, cacheKey: cacheKey)
+    }
+
     static func removeAll() { cache.removeAllObjects() }
+
+    private static func synchronouslyFetchBoundedData(at url: URL, timeout: TimeInterval) -> Data? {
+        let semaphore = DispatchSemaphore(value: 0)
+        let lock = NSLock()
+        var result: Data?
+        let task = sharedFetchManager.makeTask(
+            httpMethod: "GET",
+            url: url,
+            params: ["timeoutInterval": timeout]
+        ) { data, _, error in
+            lock.lock()
+            if error == nil { result = data }
+            lock.unlock()
+            semaphore.signal()
+        }
+        task.resume()
+        guard semaphore.wait(timeout: .now() + timeout + 0.25) == .success else {
+            task.cancel()
+            return nil
+        }
+        lock.lock()
+        defer { lock.unlock() }
+        return result
+    }
 
     private static func downsample(source: CGImageSource, maximumPixelSize: Int) -> ScriptWidgetPlatformImage? {
         guard let properties = CGImageSourceCopyPropertiesAtIndex(source, 0, nil) as? [CFString: Any],
@@ -115,20 +164,26 @@ struct FileSyncImage: View {
 
 struct WebSyncImage: View {
     let webUrl: URL
+#if os(macOS)
+    private let image: NSImage?
+#else
+    private let image: UIImage?
+#endif
+
+    init(webUrl: URL) {
+        self.webUrl = webUrl
+        self.image = ScriptWidgetImagePipeline.synchronousRemoteImage(at: webUrl)
+    }
 
     var body: some View {
-        AsyncImage(url: webUrl) { phase in
-            switch phase {
-            case .empty:
-                Image(systemName: "photo")
-                    .foregroundStyle(.secondary)
-            case .success(let image):
-                image.resizable()
-            case .failure:
-                Image(systemName: "questionmark.circle")
-            @unknown default:
-                Image(systemName: "questionmark.circle")
-            }
+        if let image {
+#if os(macOS)
+            Image(nsImage: image).resizable()
+#else
+            Image(uiImage: image).resizable()
+#endif
+        } else {
+            Image(systemName: "questionmark.circle")
         }
     }
 }

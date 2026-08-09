@@ -472,6 +472,50 @@ final class ImagePipelineTests: XCTestCase {
         XCTAssertNil(ScriptWidgetImagePipeline.image(data: Data("not-an-image".utf8)))
     }
 
+    func testRemoteImageIsResolvedSynchronouslyAndDownsampled() throws {
+        let data = try makePNG(width: 2_048, height: 1_024)
+        var fetchCount = 0
+        let url = URL(string: "https://example.com/widget-image.png")!
+        let image = try XCTUnwrap(ScriptWidgetImagePipeline.synchronousRemoteImage(at: url, timeout: 99) { receivedURL, timeout in
+            fetchCount += 1
+            XCTAssertEqual(receivedURL, url)
+            XCTAssertEqual(timeout, 3)
+            return data
+        })
+        XCTAssertEqual(fetchCount, 1)
+#if os(macOS)
+        let representation = try XCTUnwrap(image.representations.first)
+        XCTAssertLessThanOrEqual(max(representation.pixelsWide, representation.pixelsHigh), 2_048)
+#else
+        let cgImage = try XCTUnwrap(image.cgImage)
+        XCTAssertLessThanOrEqual(max(cgImage.width, cgImage.height), ScriptWidgetImagePipeline.defaultMaximumPixelSize)
+#endif
+    }
+
+    func testRemoteImageUsesSynchronousMemoryCache() throws {
+        let data = try makePNG(width: 64, height: 64)
+        let url = URL(string: "https://example.com/cached-widget-image.png")!
+        XCTAssertNotNil(ScriptWidgetImagePipeline.synchronousRemoteImage(at: url) { _, _ in data })
+        var secondFetchCalled = false
+        XCTAssertNotNil(ScriptWidgetImagePipeline.synchronousRemoteImage(at: url) { _, _ in
+            secondFetchCalled = true
+            return nil
+        })
+        XCTAssertFalse(secondFetchCalled)
+    }
+
+    func testRemoteImageRejectsPrivateHostsAndOversizedResponses() throws {
+        var fetchCalled = false
+        XCTAssertNil(ScriptWidgetImagePipeline.synchronousRemoteImage(at: URL(string: "http://localhost/image.png")!) { _, _ in
+            fetchCalled = true
+            return try? self.makePNG(width: 10, height: 10)
+        })
+        XCTAssertFalse(fetchCalled)
+
+        let oversized = Data(repeating: 0, count: ScriptWidgetFetchManager.maximumResponseBytes + 1)
+        XCTAssertNil(ScriptWidgetImagePipeline.synchronousRemoteImage(at: URL(string: "https://example.com/too-large.png")!) { _, _ in oversized })
+    }
+
     private func makePNG(width: Int, height: Int) throws -> Data {
         let colorSpace = CGColorSpaceCreateDeviceRGB()
         let context = try XCTUnwrap(CGContext(
