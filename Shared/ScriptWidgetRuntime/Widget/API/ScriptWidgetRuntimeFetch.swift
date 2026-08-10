@@ -17,6 +17,7 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
         var data = Data()
         var response: URLResponse?
         let completion: (Data?, URLResponse?, Error?) -> Void
+        let redirectValidator: ((URL) -> Bool)?
     }
     private let lock = NSLock()
     private var transfers: [Int: Transfer] = [:]
@@ -68,10 +69,14 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
         return makeTask(request: request, completionHandler: completionHandler)
     }
 
-    func makeTask(request: URLRequest, completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSessionDataTask {
+    func makeTask(
+        request: URLRequest,
+        redirectValidator: ((URL) -> Bool)? = nil,
+        completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void
+    ) -> URLSessionDataTask {
         let task = session.dataTask(with: request)
         lock.lock()
-        transfers[task.taskIdentifier] = Transfer(completion: completionHandler)
+        transfers[task.taskIdentifier] = Transfer(completion: completionHandler, redirectValidator: redirectValidator)
         lock.unlock()
         return task
     }
@@ -111,7 +116,12 @@ final class ScriptWidgetFetchManager: NSObject, URLSessionDataDelegate, URLSessi
     }
 
     func urlSession(_ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse, newRequest request: URLRequest, completionHandler: @escaping (URLRequest?) -> Void) {
-        guard let url = request.url, ScriptWidgetFetchPolicy.validationError(for: url) == nil else {
+        lock.lock()
+        let redirectValidator = transfers[task.taskIdentifier]?.redirectValidator
+        lock.unlock()
+        guard let url = request.url,
+              ScriptWidgetFetchPolicy.validationError(for: url) == nil,
+              redirectValidator?(url) ?? true else {
             completionHandler(nil)
             finish(taskIdentifier: task.taskIdentifier, error: resourceError("Redirect target is not allowed"))
             return
@@ -189,6 +199,37 @@ enum ScriptWidgetNetworkPolicy {
 
 
 let sharedFetchManager = ScriptWidgetFetchManager()
+
+enum ScriptWidgetPushRegistration {
+    static func register(token: Data, package: ScriptWidgetPackage) {
+        guard let manifest = package.readManifest(),
+              let push = manifest.pushUpdates,
+              let url = URL(string: push.registrationURL),
+              url.scheme?.lowercased() == "https",
+              ScriptWidgetFetchPolicy.validationError(for: url) == nil,
+              ScriptWidgetNetworkPolicy.packageAllows(url, package: package) else { return }
+
+        let payload: [String: String] = [
+            "token": token.map { String(format: "%02x", $0) }.joined(),
+            "packageID": manifest.id,
+            "channel": push.channel,
+        ]
+        guard let body = try? JSONSerialization.data(withJSONObject: payload), body.count <= 8 * 1_024 else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.httpBody = body
+        request.timeoutInterval = 5
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let task = sharedFetchManager.makeTask(
+            request: request,
+            redirectValidator: { redirectedURL in
+                redirectedURL.scheme?.lowercased() == "https" && ScriptWidgetNetworkPolicy.packageAllows(redirectedURL, package: package)
+            },
+            completionHandler: { _, _, _ in }
+        )
+        task.resume()
+    }
+}
 
 
 let internal_fetch:@convention(block) (String, String, [AnyHashable : Any]?)-> ScriptWidgetRuntimePromise = { (httpMethod, url,params) in

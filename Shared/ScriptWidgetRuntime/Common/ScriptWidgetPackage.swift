@@ -391,12 +391,20 @@ struct ScriptWidgetPackage {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let allowedKeys: Set<String> = [
             "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
-            "supportedFamilies", "permissions", "networkDomains", "plugins", "description",
+            "supportedFamilies", "permissions", "networkDomains", "plugins", "controls", "pushUpdates", "description",
             "category", "tags", "icon", "preview", "author", "license"
         ]
         guard Set(object.keys).isSubset(of: allowedKeys) else { return nil }
         if let author = object["author"] as? [String: Any],
            !Set(author.keys).isSubset(of: ["name", "url"]) {
+            return nil
+        }
+        if let controls = object["controls"] as? [[String: Any]] {
+            let allowedControlKeys: Set<String> = ["id", "type", "title", "subtitle", "systemImage", "action", "stateKey"]
+            guard controls.allSatisfy({ Set($0.keys).isSubset(of: allowedControlKeys) }) else { return nil }
+        }
+        if let pushUpdates = object["pushUpdates"] as? [String: Any],
+           !Set(pushUpdates.keys).isSubset(of: ["registrationURL", "channel"]) {
             return nil
         }
         return try? JSONDecoder().decode(WidgetPackageManifest.self, from: data)

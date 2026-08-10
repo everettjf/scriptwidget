@@ -18,12 +18,23 @@ struct ScriptWidgetWidgetElementRootView: View {
     let scriptName: String
     let scriptParameter: String
 
-    init(widgetFamily: WidgetFamily, entry: ScriptWidgetTimelineProvider.Entry) {
+    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, entry: ScriptWidgetTimelineProvider.Entry) {
         self.widgetFamily = widgetFamily
         self.scriptName = entry.configuration.Script ?? ""
         self.scriptParameter = entry.configuration.Parameter ?? ""
         
-        self.data = ScriptWidgetDataObject(scriptName: self.scriptName, scriptParameter: self.scriptParameter, widgetFamily: self.widgetFamily)
+        let renderingModeValue: String
+        switch renderingMode {
+        case .accented: renderingModeValue = "accented"
+        case .vibrant: renderingModeValue = "vibrant"
+        default: renderingModeValue = "fullColor"
+        }
+        self.data = ScriptWidgetDataObject(
+            scriptName: self.scriptName,
+            scriptParameter: self.scriptParameter,
+            widgetFamily: self.widgetFamily,
+            widgetRenderingMode: renderingModeValue
+        )
         NSLog("!! will run script sync")
         self.data.runScriptSync()
     }

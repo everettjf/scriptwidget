@@ -8,6 +8,7 @@
 import Foundation
 import AppIntents
 
+@available(macOS 14.0, *)
 struct ScriptWidgetAppIntent: WidgetConfigurationIntent {
 
     static var title: LocalizedStringResource = "Script"
@@ -34,4 +35,3 @@ struct ScriptWidgetAppIntent: WidgetConfigurationIntent {
         Summary()
     }
 }
-

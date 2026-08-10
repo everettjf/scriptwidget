@@ -291,7 +291,7 @@ Widget packages, Gallery content, Skills, and Data Source Plugins are treated as
 - Skills are prompt-only and cannot execute code, access secrets, or grant runtime permissions.
 - Data Source Plugins are declarative request mappings and cannot load arbitrary native code.
 
-See [Package 2.0](docs/package-format.md), [Skills 1.0](docs/skills.md), [Gallery](docs/gallery.md), and [Data Source Plugins](docs/data-source-plugins.md) for the complete contracts.
+See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widgetkit-modern-features.md), [Skills 1.0](docs/skills.md), [Gallery](docs/gallery.md), and [Data Source Plugins](docs/data-source-plugins.md) for the complete contracts.
 
 ---
 

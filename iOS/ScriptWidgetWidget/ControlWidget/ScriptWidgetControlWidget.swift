@@ -1,36 +1,40 @@
-//
-//  ScriptWidgetControlWidget.swift
-//  ScriptWidgetWidget
-
-import Foundation
 import SwiftUI
 import WidgetKit
 
 @available(iOSApplicationExtension 18.0, *)
-struct ScriptWidgetControlWidget: ControlWidget {
-  var body: some ControlWidgetConfiguration {
-//    StaticControlConfiguration(kind: "ScriptWidget") {
-//      ControlWidgetButton(action: ScriptWidgetControlAppIntent()) {
-//        Label("Click Script Widget", systemImage: "gamecontroller")
-//      }
-//    }
-      
+struct ScriptWidgetButtonControlWidget: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        AppIntentControlConfiguration(
+            kind: "ScriptWidget.Button",
+            provider: ScriptWidgetButtonControlProvider()
+        ) { value in
+            ControlWidgetButton(action: RunScriptWidgetControlIntent(controlID: value.id)) {
+                Label(value.title, systemImage: value.systemImage)
+            }
+        }
+        .displayName("ScriptWidget Button")
+        .description("Run an action declared by a ScriptWidget package.")
+        .promptsForUserConfiguration()
+    }
+}
 
-      AppIntentControlConfiguration(
-        kind: "ScriptWidget",
-        provider: ConfigurableProvider()
-      ) { timerState in
-        ControlWidgetToggle(
-          timerState.timer.name,
-          isOn: timerState.isRunning,
-          action: ToggleTimerIntent(timer: timerState.timer),
-          valueLabel: { isOn in
-            Label(isOn ? "Running" : "Stopped", systemImage: "timer")
-          }
-        )
-      }
-      .displayName("Productivity Timer")
-      .description("Start and stop a productivity timer.")
-      .promptsForUserConfiguration()
-  }
+@available(iOSApplicationExtension 18.0, *)
+struct ScriptWidgetControlWidget: ControlWidget {
+    var body: some ControlWidgetConfiguration {
+        AppIntentControlConfiguration(
+            kind: "ScriptWidget.Toggle",
+            provider: ScriptWidgetToggleControlProvider()
+        ) { value in
+            ControlWidgetToggle(
+                value.title,
+                isOn: value.isOn,
+                action: SetScriptWidgetControlValueIntent(controlID: value.id)
+            ) { isOn in
+                Label(isOn ? "On" : "Off", systemImage: value.systemImage)
+            }
+        }
+        .displayName("ScriptWidget Toggle")
+        .description("Change state with an action declared by a ScriptWidget package.")
+        .promptsForUserConfiguration()
+    }
 }

@@ -15,6 +15,12 @@ struct ScriptLiveActivityAttributes: ActivityAttributes {
     
     public struct ContentState: Codable, Hashable {
         var scriptState: String
+        var updatedAt: Date
+
+        init(scriptState: String = "", updatedAt: Date = Date()) {
+            self.scriptState = scriptState
+            self.updatedAt = updatedAt
+        }
     }
     
     var scriptName: String

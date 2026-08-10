@@ -13,6 +13,10 @@ struct ScriptWidgetControlAppIntent: AppIntent {
   static var title: LocalizedStringResource = "ScriptWidget control app intent"
   static var description = IntentDescription("ScriptWidget control app intent description")
   static var isDiscoverable: Bool { false }
+  #if compiler(>=6.4)
+  @available(iOS 27.0, *)
+  static var allowedExecutionTargets: ExecutionTargets { .widgetKitExtension }
+  #endif
 
   init() {
   }

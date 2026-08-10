@@ -36,6 +36,17 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
 - `runtimeVersion`: required ScriptWidget runtime API; currently exactly `1.0`.
 - `entry`: a relative `.js` or `.jsx` file inside the package.
 - `supportedFamilies`: one or more WidgetKit families.
+  iOS, iPadOS, and macOS 27 add `systemExtraLargePortrait`; packages may
+  include it while retaining other families as fallbacks on older systems.
+- `controls`: up to eight declarative Control Center buttons or toggles. Each
+  control declares a stable `id`, an SF Symbol `systemImage`, and a JavaScript
+  `action` function. Toggles also require `stateKey` and the `storage`
+  permission; the new value is available to the action as
+  `$getenv("control-value")`.
+- `pushUpdates`: optional self-hosted WidgetKit push registration. The object
+  contains an HTTPS `registrationURL` on a declared `networkDomains` host and a
+  non-secret `channel`. ScriptWidget posts the WidgetKit token, package ID, and
+  channel when the token changes; packages never receive the token in JSX.
 - `permissions`: declared capabilities: `network`, `location`, `health`, `storage`, or `files`.
 - `networkDomains`: lowercase host allowlist. It requires `network`; use exact hosts or a leading wildcard such as `*.example.com`.
 - `plugins`: optional Data Source Plugin identifiers. Every data-source request also requires `network` and a matching `networkDomains` entry.

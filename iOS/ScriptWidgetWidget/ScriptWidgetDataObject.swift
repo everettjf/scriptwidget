@@ -21,10 +21,13 @@ class ScriptWidgetDataObject : ObservableObject {
     
     var cancellables: [AnyCancellable] = []
     
-    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily) {
+    let widgetRenderingMode: String
+
+    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor") {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.widgetFamily = widgetFamily
+        self.widgetRenderingMode = widgetRenderingMode
         
         self.package = sharedScriptManager.getScriptPackage(packageName: self.scriptName)
         
@@ -91,6 +94,7 @@ class ScriptWidgetDataObject : ObservableObject {
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : widgetSizeString,
             "widget-param": scriptParameter,
+            "widget-rendering-mode": widgetRenderingMode,
         ])
         
         let result = runtime.executeJSXSyncForWidget(JSX)

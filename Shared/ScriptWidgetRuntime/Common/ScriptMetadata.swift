@@ -27,6 +27,7 @@ enum WidgetPackageFamily: String, Codable, CaseIterable, Identifiable {
     case systemMedium
     case systemLarge
     case systemExtraLarge
+    case systemExtraLargePortrait
     case accessoryCircular
     case accessoryRectangular
     case accessoryInline
@@ -39,6 +40,7 @@ enum WidgetPackageFamily: String, Codable, CaseIterable, Identifiable {
         case .systemMedium: "System Medium"
         case .systemLarge: "System Large"
         case .systemExtraLarge: "System Extra Large"
+        case .systemExtraLargePortrait: "System Extra Large Portrait"
         case .accessoryCircular: "Accessory Circular"
         case .accessoryRectangular: "Accessory Rectangular"
         case .accessoryInline: "Accessory Inline"
@@ -63,6 +65,26 @@ struct WidgetPackageAuthor: Codable, Equatable {
     var url: String?
 }
 
+enum WidgetPackageControlType: String, Codable, CaseIterable {
+    case button
+    case toggle
+}
+
+struct WidgetPackageControl: Codable, Equatable, Identifiable {
+    var id: String
+    var type: WidgetPackageControlType
+    var title: String
+    var subtitle: String?
+    var systemImage: String
+    var action: String
+    var stateKey: String?
+}
+
+struct WidgetPackagePushUpdates: Codable, Equatable {
+    var registrationURL: String
+    var channel: String
+}
+
 /// Public, versioned contract for a shareable ScriptWidget project. `meta.json`
 /// remains readable for legacy packages, while every newly created/exported
 /// package receives this authoritative `widget.json` manifest.
@@ -80,6 +102,8 @@ struct WidgetPackageManifest: Codable, Equatable {
     var permissions: [WidgetPackagePermission]
     var networkDomains: [String]
     var plugins: [String]?
+    var controls: [WidgetPackageControl]?
+    var pushUpdates: WidgetPackagePushUpdates?
     var description: String?
     var category: String?
     var tags: [String]?
@@ -100,6 +124,8 @@ struct WidgetPackageManifest: Codable, Equatable {
             permissions: [],
             networkDomains: [],
             plugins: [],
+            controls: [],
+            pushUpdates: nil,
             description: metadata?.description,
             category: metadata?.category,
             tags: metadata?.tags,
@@ -200,6 +226,55 @@ enum WidgetPackageManifestValidator {
             }
             if !plugins.isEmpty && !manifest.permissions.contains(.network) { error("plugin_network", "Data source plugins require the network permission.") }
         }
+        if let controls = manifest.controls {
+            if controls.count > 8 { error("too_many_controls", "A package may declare at most 8 controls.") }
+            if Set(controls.map { $0.id.lowercased() }).count != controls.count {
+                error("duplicate_controls", "Control identifiers must be unique.")
+            }
+            for control in controls {
+                if control.id.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$", options: .regularExpression) == nil {
+                    error("invalid_control_id", "Invalid control identifier: \(control.id).")
+                }
+                if control.title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || control.title.count > 40 {
+                    error("invalid_control_title", "Control titles must contain 1–40 characters.")
+                }
+                if control.systemImage.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$", options: .regularExpression) == nil {
+                    error("invalid_control_image", "Control systemImage must be an SF Symbols name.")
+                }
+                if control.action.range(of: "^[A-Za-z_$][A-Za-z0-9_$]{0,63}$", options: .regularExpression) == nil {
+                    error("invalid_control_action", "Control action must be a JavaScript function identifier.")
+                }
+                if control.type == .toggle {
+                    guard let stateKey = control.stateKey,
+                          stateKey.range(of: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", options: .regularExpression) != nil else {
+                        error("invalid_control_state", "Toggle controls require a valid stateKey.")
+                        continue
+                    }
+                    if !manifest.permissions.contains(.storage) {
+                        error("control_storage", "Toggle controls require the storage permission.")
+                    }
+                } else if control.stateKey != nil {
+                    error("button_control_state", "Button controls must not declare stateKey.")
+                }
+            }
+        }
+        if let push = manifest.pushUpdates {
+            if !manifest.permissions.contains(.network) {
+                error("push_network", "pushUpdates requires the network permission.")
+            }
+            if let url = URL(string: push.registrationURL),
+               url.scheme?.lowercased() == "https",
+               let host = url.host,
+               isPublicHost(host),
+               matchesDeclaredHost(host, declarations: manifest.networkDomains) {
+                // Validated above.
+            } else {
+                error("invalid_push_url", "pushUpdates.registrationURL must be a public HTTPS URL on a declared network domain.")
+            }
+            if push.channel.range(of: "^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$", options: .regularExpression) == nil {
+                error("invalid_push_channel", "pushUpdates.channel must be a stable 1–128 character identifier.")
+            }
+        }
         for domain in manifest.networkDomains {
             let normalized = domain.lowercased()
             if domain != normalized
@@ -228,6 +303,30 @@ enum WidgetPackageManifestValidator {
             error("invalid_preview", "preview escapes the package directory.")
         }
         return WidgetPackageValidationReport(issues: issues)
+    }
+
+    private static func matchesDeclaredHost(_ host: String, declarations: [String]) -> Bool {
+        let value = host.lowercased()
+        return declarations.contains { declaration in
+            if declaration.hasPrefix("*.") {
+                let suffix = String(declaration.dropFirst(2))
+                return value != suffix && value.hasSuffix("." + suffix)
+            }
+            return value == declaration
+        }
+    }
+
+    private static func isPublicHost(_ host: String) -> Bool {
+        let value = host.lowercased()
+        if value == "localhost" || value == "::1" || value.hasSuffix(".local") ||
+            value.hasPrefix("127.") || value.hasPrefix("10.") || value.hasPrefix("192.168.") {
+            return false
+        }
+        let parts = value.split(separator: ".")
+        if parts.count == 4, parts.first == "172", let second = Int(parts[1]), (16...31).contains(second) {
+            return false
+        }
+        return true
     }
 }
 

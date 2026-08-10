@@ -25,6 +25,7 @@ Arrange children vertically.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
 
@@ -49,6 +50,7 @@ Arrange children horizontally.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
 
@@ -73,6 +75,7 @@ Overlay children.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 
 ### `<VGrid>`
@@ -96,6 +99,7 @@ Vertical lazy grid.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
 | `spacing` | `number` | No |  |
@@ -121,6 +125,7 @@ Horizontal lazy grid.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
 | `spacing` | `number` | No |  |
@@ -146,6 +151,7 @@ Display text content.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
 
@@ -170,6 +176,7 @@ Display a formatted date.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `date` | `date|number` | Yes |  |
 | `style` | `enum` | No | Values: `time`, `date`, `relative`, `offset`, `timer` |
@@ -195,6 +202,7 @@ Display a bundled, remote, or SF Symbol image.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | No |  |
 | `name` | `string` | No |  |
@@ -203,6 +211,7 @@ Display a bundled, remote, or SF Symbol image.
 | `src` | `url` | No | Deprecated: Use url. |
 | `ratio` | `number` | No |  |
 | `mode` | `enum` | No | Values: `fit`, `fill` |
+| `accentedRenderingMode` | `enum` | No | Control how the image is rendered in tinted and clear widget appearances. Values: `accented`, `desaturated`, `accentedDesaturated`, `fullColor` |
 
 ### `<Gif>`
 
@@ -225,6 +234,7 @@ Display a GIF from the package.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `file` | `string` | Yes |  |
 
@@ -249,6 +259,7 @@ Flexible layout space.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `minLength` | `number` | No |  |
 
@@ -273,6 +284,7 @@ Rectangle shape.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
 | `stroke` | `string` | No |  |
@@ -298,6 +310,7 @@ Filled rounded rectangle.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `radius` | `number` | No |  |
 
@@ -322,6 +335,7 @@ Capsule shape.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
 | `stroke` | `string` | No |  |
@@ -347,6 +361,7 @@ Ellipse shape.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
 | `stroke` | `string` | No |  |
@@ -372,6 +387,7 @@ Circle shape.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
 | `stroke` | `string` | No |  |
@@ -397,6 +413,7 @@ Display a gauge or instrument.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `string` | No |  |
 | `value` | `number` | No |  |
@@ -433,6 +450,7 @@ Render chart data.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `enum` | No | Values: `bar`, `bar-x`, `bar-y`, `bar-gantt`, `line`, `point`, `line-point`, `area`, `rect`, `rule-x` |
 | `data` | `json` | Yes |  |
@@ -462,6 +480,7 @@ Open a URL when selected.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `url` | `url` | Yes |  |
 
@@ -486,6 +505,7 @@ Horizontal or vertical separator.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
 | `axis` | `enum` | No | Values: `horizontal`, `vertical` |
@@ -511,6 +531,7 @@ Fixed-length line.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
 | `length` | `number` | No |  |
@@ -537,6 +558,7 @@ SF Symbol icon.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | Yes |  |
 | `size` | `number` | No |  |
@@ -562,6 +584,7 @@ Text paired with an SF Symbol.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
 | `systemName` | `string` | Yes |  |
@@ -587,6 +610,7 @@ Linear or circular progress.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
 | `total` | `number` | No |  |
@@ -616,6 +640,7 @@ Circular progress ring.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
 | `thickness` | `number` | No |  |
@@ -642,6 +667,7 @@ Compact status badge.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
 | `radius` | `number` | No |  |
@@ -667,6 +693,7 @@ Outlined metadata chip.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
 | `radius` | `number` | No |  |
@@ -693,6 +720,7 @@ Title, value, and subtitle statistic.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
 | `value` | `string` | Yes |  |
@@ -720,6 +748,7 @@ Interactive widget button on iOS 17 and later.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `action` | `enum` | No | Values: `reload` |
 | `onClick` | `function` | No |  |
@@ -745,6 +774,7 @@ Interactive widget toggle on iOS 17 and later.
 | `rotation3d` | `string` | No | 3D rotation description. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
 | `animation` | `string` | No | Timeline-driven animation description. |
+| `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `on` | `boolean` | Yes |  |
 | `onClick` | `function` | Yes |  |
@@ -760,4 +790,7 @@ Interactive widget toggle on iOS 17 and later.
 - `widgetFamily`
 - `scriptName`
 - `scriptParameter`
+- `widget-rendering-mode`
+- `live-activity-state`
+- `live-activity-surface`
 

@@ -12,14 +12,16 @@ import WidgetKit
 class ScriptDynamicIslandCreator {
     let scriptName: String
     let scriptParameter: String
+    let scriptState: String
     let package: ScriptWidgetPackage
     
     var rootElement : ScriptWidgetDynamicIslandRuntimeElement
     var runtime: ScriptWidgetRuntime?
     
-    init(scriptName: String, scriptParameter: String) {
+    init(scriptName: String, scriptParameter: String, scriptState: String) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
+        self.scriptState = scriptState
         
         self.package = buildScriptManager.getScriptPackage(packageName: self.scriptName)
         
@@ -43,6 +45,8 @@ class ScriptDynamicIslandCreator {
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : "dynamic-island",
             "widget-param": scriptParameter,
+            "live-activity-state": scriptState,
+            "live-activity-surface": "dynamicIsland",
         ])
         
         let result = runtime.executeJSXSyncForDynamicIsland(JSX)

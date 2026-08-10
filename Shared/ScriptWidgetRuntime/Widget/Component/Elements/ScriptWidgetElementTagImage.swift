@@ -8,6 +8,7 @@
 import Foundation
 import SwiftUI
 import ImageIO
+import WidgetKit
 
 #if os(macOS)
 typealias ScriptWidgetPlatformImage = NSImage
@@ -133,29 +134,48 @@ enum ScriptWidgetImagePipeline {
 }
 
 
+struct ScriptWidgetAccentedImage: View {
+    let image: Image
+    let mode: String?
+
+    @ViewBuilder var body: some View {
+        if #available(iOS 18.0, macOS 15.0, *), let mode {
+            switch mode {
+            case "accented": image.widgetAccentedRenderingMode(.accented)
+            case "desaturated": image.widgetAccentedRenderingMode(.desaturated)
+            case "accentedDesaturated": image.widgetAccentedRenderingMode(.accentedDesaturated)
+            case "fullColor": image.widgetAccentedRenderingMode(.fullColor)
+            default: image
+            }
+        } else {
+            image
+        }
+    }
+}
+
 struct FileSyncImage: View {
     let fileUrl: URL
+    let accentedRenderingMode: String?
 #if os(macOS)
     private var fileImage: NSImage?
 #else
     private var fileImage: UIImage?
 #endif
-    init(fileUrl: URL) {
+    init(fileUrl: URL, accentedRenderingMode: String?) {
         self.fileUrl = fileUrl
+        self.accentedRenderingMode = accentedRenderingMode
         self.fileImage = ScriptWidgetImagePipeline.image(at: fileUrl)
     }
     
     var body: some View {
         if let fileImage = self.fileImage {
 #if os(macOS)
-            Image(nsImage: fileImage)
-                .resizable()
+            ScriptWidgetAccentedImage(image: Image(nsImage: fileImage).resizable(), mode: accentedRenderingMode)
 #else
-            Image(uiImage: fileImage)
-                .resizable()
+            ScriptWidgetAccentedImage(image: Image(uiImage: fileImage).resizable(), mode: accentedRenderingMode)
 #endif
         } else {
-            Image(systemName: "questionmark.circle")
+            ScriptWidgetAccentedImage(image: Image(systemName: "questionmark.circle"), mode: accentedRenderingMode)
         }
     }
 }
@@ -164,26 +184,28 @@ struct FileSyncImage: View {
 
 struct WebSyncImage: View {
     let webUrl: URL
+    let accentedRenderingMode: String?
 #if os(macOS)
     private let image: NSImage?
 #else
     private let image: UIImage?
 #endif
 
-    init(webUrl: URL) {
+    init(webUrl: URL, accentedRenderingMode: String?) {
         self.webUrl = webUrl
+        self.accentedRenderingMode = accentedRenderingMode
         self.image = ScriptWidgetImagePipeline.synchronousRemoteImage(at: webUrl)
     }
 
     var body: some View {
         if let image {
 #if os(macOS)
-            Image(nsImage: image).resizable()
+            ScriptWidgetAccentedImage(image: Image(nsImage: image).resizable(), mode: accentedRenderingMode)
 #else
-            Image(uiImage: image).resizable()
+            ScriptWidgetAccentedImage(image: Image(uiImage: image).resizable(), mode: accentedRenderingMode)
 #endif
         } else {
-            Image(systemName: "questionmark.circle")
+            ScriptWidgetAccentedImage(image: Image(systemName: "questionmark.circle"), mode: accentedRenderingMode)
         }
     }
 }
@@ -192,11 +214,12 @@ struct WebSyncImage: View {
 
 class ScriptWidgetElementTagImage {
     static func buildView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
+        let accentedRenderingMode = element.getPropString("accentedRenderingMode")
         
         // systemName : SF Symbols
         if let systemName = element.getPropString("systemName") {
             return AnyView(
-                Image(systemName: systemName)
+                ScriptWidgetAccentedImage(image: Image(systemName: systemName), mode: accentedRenderingMode)
                     .modifier(ScriptWidgetAttributeImageModifier(element, context))
                     .modifier(ScriptWidgetAttributeFontModifier(element))
                     .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
@@ -208,7 +231,7 @@ class ScriptWidgetElementTagImage {
             // first try local image
             if let image = context.package.getImage(imageName) {
                 return AnyView(
-                    FileSyncImage(fileUrl: image.path)
+                    FileSyncImage(fileUrl: image.path, accentedRenderingMode: accentedRenderingMode)
                         .modifier(ScriptWidgetAttributeImageModifier(element, context))
                         .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
                 )
@@ -237,13 +260,13 @@ class ScriptWidgetElementTagImage {
                    let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
 #if os(macOS)
                     if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
-                        return AnyView(Image(nsImage: image)
+                        return AnyView(ScriptWidgetAccentedImage(image: Image(nsImage: image), mode: accentedRenderingMode)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
 #else
                     if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
-                        return AnyView(Image(uiImage: image)
+                        return AnyView(ScriptWidgetAccentedImage(image: Image(uiImage: image), mode: accentedRenderingMode)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
@@ -257,13 +280,13 @@ class ScriptWidgetElementTagImage {
                    let base64Data = Data(base64Encoded: base64String, options: .ignoreUnknownCharacters) {
 #if os(macOS)
                     if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
-                        return AnyView(Image(nsImage: image)
+                        return AnyView(ScriptWidgetAccentedImage(image: Image(nsImage: image), mode: accentedRenderingMode)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
 #else
                     if let image = ScriptWidgetImagePipeline.image(data: base64Data, cacheKey: imageUrlString){
-                        return AnyView(Image(uiImage: image)
+                        return AnyView(ScriptWidgetAccentedImage(image: Image(uiImage: image), mode: accentedRenderingMode)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context)))
                     }
@@ -273,7 +296,7 @@ class ScriptWidgetElementTagImage {
                 // normal url
                 if let imageUrl = URL(string: imageUrlString) {
                     return AnyView(
-                        WebSyncImage(webUrl: imageUrl)
+                        WebSyncImage(webUrl: imageUrl, accentedRenderingMode: accentedRenderingMode)
                             .modifier(ScriptWidgetAttributeImageModifier(element, context))
                             .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
                     )
@@ -283,7 +306,7 @@ class ScriptWidgetElementTagImage {
         
         // default
         return AnyView(
-            Image(systemName: "questionmark.circle")
+            ScriptWidgetAccentedImage(image: Image(systemName: "questionmark.circle"), mode: accentedRenderingMode)
                 .modifier(ScriptWidgetAttributeImageModifier(element, context))
                 .modifier(ScriptWidgetAttributeFontModifier(element))
                 .modifier(ScriptWidgetAttributeGeneralModifier(element, context))

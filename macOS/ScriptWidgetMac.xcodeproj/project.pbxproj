@@ -170,6 +170,8 @@
 		F05227C82AD1D7100014BE09 /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F05227C62AD1D7100014BE09 /* ButtonActionAppIntent.swift */; };
 		F090DD3E2AD23E9F00E14331 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F090DD3C2AD23E9F00E14331 /* ScriptWidgetAppIntent.swift */; };
 		F090DD3F2AD23E9F00E14331 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F090DD3D2AD23E9F00E14331 /* AppConfigFrequency.swift */; };
+		A27000112F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F090DD3C2AD23E9F00E14331 /* ScriptWidgetAppIntent.swift */; };
+		A27000122F270001008B90A2 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F090DD3D2AD23E9F00E14331 /* AppConfigFrequency.swift */; };
 		F0C613112AE9587A00877D9F /* Larabiefont Free.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0C613102AE9587A00877D9F /* Larabiefont Free.ttf */; };
 		F0C613122AE9587A00877D9F /* Larabiefont Free.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0C613102AE9587A00877D9F /* Larabiefont Free.ttf */; };
 		F0C613142AE9588500877D9F /* Monofonto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0C613132AE9588500877D9F /* Monofonto.ttf */; };
@@ -1166,6 +1168,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A27000112F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */,
+				A27000122F270001008B90A2 /* AppConfigFrequency.swift in Sources */,
 				A210000700000000000000B0 /* DataSourceLabView.swift in Sources */,
 				A207000200000000000000B0 /* EditorSchemeHandler.swift in Sources */,
 				A202000900000000000000B0 /* AIExamplePrompts.swift in Sources */,

@@ -103,6 +103,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
     let package: ScriptWidgetPackage
     private var widgetSizeType: Int
     private var scriptParameter: String
+    private var renderingMode: StudioPreviewRenderingMode
     private var cancellables = [Cancellable]()
     private let renderQueue = DispatchQueue(label: "com.everettjf.scriptwidget.studio-preview", qos: .userInitiated)
     private var pendingRender: DispatchWorkItem?
@@ -114,9 +115,15 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
     var runtime: ScriptWidgetRuntime?
 
 
-    init(file: ScriptWidgetPackage, widgetSizeType: Int, scriptParameter: String) {
+    init(
+        file: ScriptWidgetPackage,
+        widgetSizeType: Int,
+        scriptParameter: String,
+        renderingMode: StudioPreviewRenderingMode = .fullColor
+    ) {
         self.widgetSizeType = widgetSizeType
         self.scriptParameter = scriptParameter
+        self.renderingMode = renderingMode
         self.package = file
         self.rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Loading#"])
         scheduleRender(immediate: true)
@@ -151,6 +158,11 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
         scheduleRender()
     }
 
+    func changeRenderingMode(_ mode: StudioPreviewRenderingMode) {
+        renderingMode = mode
+        scheduleRender()
+    }
+
     private func scheduleRender(immediate: Bool = false) {
         pendingRender?.cancel()
         runtime?.cancel(.superseded)
@@ -158,13 +170,19 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
         let generation = renderGeneration
         let size = widgetSizeType
         let parameter = scriptParameter
+        let mode = renderingMode
 
         rootElement = ScriptWidgetRuntimeElement(tagString: "text", props: nil, children: ["#Loading#"])
         ScriptCodePreviewConsoleDataObject.replaceLogs(["$START"])
 
         let work = DispatchWorkItem { [weak self] in
             guard let self else { return }
-            let output = Self.render(package: package, widgetSizeType: size, scriptParameter: parameter)
+            let output = Self.render(
+                package: package,
+                widgetSizeType: size,
+                scriptParameter: parameter,
+                renderingMode: mode
+            )
             DispatchQueue.main.async { [weak self] in
                 guard let self, generation == renderGeneration else {
                     output.runtime.cancel(.superseded)
@@ -188,7 +206,8 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
     static func render(
         package: ScriptWidgetPackage,
         widgetSizeType: Int,
-        scriptParameter: String
+        scriptParameter: String,
+        renderingMode: StudioPreviewRenderingMode = .fullColor
     ) -> RenderOutput {
         let sourceResult = package.readMainFile()
         let source = sourceResult.0 ?? ""
@@ -196,6 +215,7 @@ final class ScriptCodeRunnerDataObject: ObservableObject {
         let runtime = ScriptWidgetRuntime(package: package, environments: [
             "widget-size": widgetSize,
             "widget-param": scriptParameter,
+            "widget-rendering-mode": renderingMode.runtimeValue,
         ])
 
         guard sourceResult.0 != nil else {
@@ -263,7 +283,8 @@ struct PreviewView: View {
         _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
             file: scriptModel.package,
             widgetSizeType: 0,
-            scriptParameter: ""
+            scriptParameter: "",
+            renderingMode: configuration.renderingMode
         ))
     }
     
@@ -335,6 +356,17 @@ struct PreviewView: View {
                 Toggle("Debug", isOn: $configuration.debugMode)
                     .toggleStyle(.switch)
                     .controlSize(.small)
+            }
+
+
+            Picker("Rendering", selection: $configuration.renderingMode) {
+                ForEach(StudioPreviewRenderingMode.allCases) { mode in
+                    Text(mode.title).tag(mode)
+                }
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: configuration.renderingMode) { _, value in
+                data.changeRenderingMode(value)
             }
 
             HStack {

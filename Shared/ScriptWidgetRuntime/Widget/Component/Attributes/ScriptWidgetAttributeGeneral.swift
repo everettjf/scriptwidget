@@ -7,6 +7,7 @@
 
 import Foundation
 import SwiftUI
+import WidgetKit
 
 struct ScriptWidgetAttributeGeneralModifier: ViewModifier {
     
@@ -33,6 +34,7 @@ struct ScriptWidgetAttributeGeneralModifier: ViewModifier {
             .modifier(ScriptWidgetAttributeRotationEffectModifier(element))
             .modifier(ScriptWidgetAttributeRotation3DEffectModifier(element))
             .modifier(ScriptWidgetAttributeShadowModifier(element))
+            .widgetAccentable(element.getPropBool("widgetAccentable") ?? false)
             .modifier(ScriptWidgetAttributeDebugModeModifier(Color.random, context))
     }
     

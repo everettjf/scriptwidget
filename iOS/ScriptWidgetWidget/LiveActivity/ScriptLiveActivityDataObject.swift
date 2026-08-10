@@ -13,6 +13,8 @@ import WidgetKit
 class ScriptLiveActivityDataObject: ObservableObject {
     let scriptName: String
     let scriptParameter: String
+    let scriptState: String
+    let surface: String
     let package: ScriptWidgetPackage
     
     @Published var rootElement : ScriptWidgetRuntimeElement
@@ -20,9 +22,11 @@ class ScriptLiveActivityDataObject: ObservableObject {
     
     var cancellables: [AnyCancellable] = []
     
-    init(scriptName: String, scriptParameter: String) {
+    init(scriptName: String, scriptParameter: String, scriptState: String, surface: String) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
+        self.scriptState = scriptState
+        self.surface = surface
         
         self.package = buildScriptManager.getScriptPackage(packageName: self.scriptName)
         
@@ -56,6 +60,8 @@ class ScriptLiveActivityDataObject: ObservableObject {
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : "live-activity",
             "widget-param": scriptParameter,
+            "live-activity-state": scriptState,
+            "live-activity-surface": surface,
         ])
         
         let result = runtime.executeJSXSyncForWidget(JSX)

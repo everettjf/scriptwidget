@@ -291,6 +291,11 @@ private struct WidgetConfigurationView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
+                Picker("Rendering", selection: $configuration.renderingMode) {
+                    ForEach(StudioPreviewRenderingMode.allCases) { mode in
+                        Text(mode.title).tag(mode)
+                    }
+                }
                 Toggle("Runtime debug output", isOn: $configuration.debugMode)
                 TextField("Widget parameter", text: $configuration.parameter)
             }

@@ -135,6 +135,8 @@
 		F0C613452AE9679C00877D9F /* Monofonto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0C613392AE9679C00877D9F /* Monofonto.ttf */; };
 		F0C7ECF82AD0759F0039D30D /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */; };
 		F0C7ECF92AD0759F0039D30D /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
+		A27000012F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */; };
+		A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
 		F2032A6A25D3EEE30070E068 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2B20D1825D3EAEA00B62DAC /* CloudKit.framework */; };
 		F205238727A58DDD00C6EB45 /* ResourceCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F205238627A58DDD00C6EB45 /* ResourceCodeView.swift */; };
 		F224FE5927A959E900617AF6 /* ImageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F224FE5827A959E900617AF6 /* ImageListView.swift */; };
@@ -1748,6 +1750,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A27000012F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */,
+				A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */,
 				A120000100000000000000B0 /* WebStudioServer.swift in Sources */,
 				A120000200000000000000B0 /* WebStudioServerView.swift in Sources */,
 				A102000900000000000000B0 /* AIExamplePrompts.swift in Sources */,

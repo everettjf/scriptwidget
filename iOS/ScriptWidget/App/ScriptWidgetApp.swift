@@ -20,6 +20,9 @@ struct ScriptWidgetApp: App {
         WindowGroup {
             ContentView()
                 .task {
+                    if #available(iOS 26.0, *) {
+                        await registerWidgetPushSubscriptions()
+                    }
 #if DEBUG
                     if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
                         WebStudioServer.shared.start()
@@ -48,6 +51,21 @@ struct ScriptWidgetApp: App {
                     
                     DeepLinkManager.openDeepLink(url: url)
                 })
+        }
+    }
+
+    @available(iOS 26.0, *)
+    private func registerWidgetPushSubscriptions() async {
+        guard let pushInfo = await WidgetCenter.shared.currentPushInfo,
+              let widgets = try? await WidgetCenter.shared.currentConfigurations() else { return }
+        let packageNames = Set(widgets.compactMap {
+            $0.widgetConfigurationIntent(of: ScriptWidgetAppIntent.self)?.Script
+        })
+        for packageName in packageNames {
+            ScriptWidgetPushRegistration.register(
+                token: pushInfo.token,
+                package: sharedScriptManager.getScriptPackage(packageName: packageName)
+            )
         }
     }
     

@@ -917,6 +917,72 @@ final class WidgetPackageManifestTests: XCTestCase {
         XCTAssertTrue(WidgetPackageManifestValidator.validate(manifest, package: package).isValid)
     }
 
+    func testWWDC26ManifestCapabilitiesRoundTripAndValidate() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "Modern Widget")
+        manifest.supportedFamilies.append(.systemExtraLargePortrait)
+        manifest.permissions = [.network, .storage]
+        manifest.networkDomains = ["push.example.com"]
+        manifest.controls = [
+            .init(
+                id: "refresh",
+                type: .button,
+                title: "Refresh",
+                subtitle: nil,
+                systemImage: "arrow.clockwise",
+                action: "refreshWidget",
+                stateKey: nil
+            ),
+            .init(
+                id: "focus",
+                type: .toggle,
+                title: "Focus",
+                subtitle: "Focus mode",
+                systemImage: "timer",
+                action: "setFocus",
+                stateKey: "focus.enabled"
+            ),
+        ]
+        manifest.pushUpdates = .init(
+            registrationURL: "https://push.example.com/widget/register",
+            channel: "modern-widget"
+        )
+
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        XCTAssertEqual(package.readManifest(), manifest)
+        XCTAssertTrue(WidgetPackageManifestValidator.validate(manifest, package: package).isValid)
+    }
+
+    func testControlAndPushCapabilitiesFailClosed() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "Unsafe Capabilities")
+        manifest.controls = [
+            .init(
+                id: "bad toggle",
+                type: .toggle,
+                title: "",
+                subtitle: nil,
+                systemImage: "../icon",
+                action: "run()",
+                stateKey: nil
+            ),
+        ]
+        manifest.pushUpdates = .init(
+            registrationURL: "https://127.0.0.1/register",
+            channel: "bad channel"
+        )
+
+        let codes = Set(WidgetPackageManifestValidator.validate(manifest, package: package).errors.map(\.code))
+        XCTAssertTrue(codes.contains("invalid_control_id"))
+        XCTAssertTrue(codes.contains("invalid_control_title"))
+        XCTAssertTrue(codes.contains("invalid_control_image"))
+        XCTAssertTrue(codes.contains("invalid_control_action"))
+        XCTAssertTrue(codes.contains("invalid_control_state"))
+        XCTAssertTrue(codes.contains("push_network"))
+        XCTAssertTrue(codes.contains("invalid_push_url"))
+        XCTAssertTrue(codes.contains("invalid_push_channel"))
+    }
+
     func testNetworkDomainsRequirePermissionAndValidHosts() throws {
         let package = try makePackage()
         var manifest = WidgetPackageManifest.newProject(name: "Unsafe Widget")

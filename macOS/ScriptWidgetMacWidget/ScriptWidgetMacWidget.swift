@@ -54,6 +54,7 @@ class ScriptWidgetDataObject : ObservableObject {
     let scriptName: String
     let scriptParameter: String
     let widgetFamily: WidgetFamily
+    let widgetRenderingMode: String
     let package: ScriptWidgetPackage
     
     @Published var rootElement : ScriptWidgetRuntimeElement
@@ -62,10 +63,11 @@ class ScriptWidgetDataObject : ObservableObject {
     
     var cancellables: [AnyCancellable] = []
     
-    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily) {
+    init(scriptName: String, scriptParameter: String, widgetFamily: WidgetFamily, widgetRenderingMode: String = "fullColor") {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.widgetFamily = widgetFamily
+        self.widgetRenderingMode = widgetRenderingMode
         self.runtime = nil
         self.package = sharedScriptManager.getScriptPackage(packageName: self.scriptName)
         
@@ -106,17 +108,28 @@ class ScriptWidgetDataObject : ObservableObject {
             return
         }
         
-        let widgetSizeString: String
+        let standardWidgetSizeString: String
         switch self.widgetFamily {
-        case .systemLarge: widgetSizeString = "large"
-        case .systemMedium: widgetSizeString = "medium"
-        case .systemSmall: widgetSizeString = "small"
-        case .systemExtraLarge: widgetSizeString = "extraLarge"
-        default: widgetSizeString = "small"
+        case .systemLarge: standardWidgetSizeString = "large"
+        case .systemMedium: standardWidgetSizeString = "medium"
+        case .systemSmall: standardWidgetSizeString = "small"
+        case .systemExtraLarge: standardWidgetSizeString = "extraLarge"
+        default: standardWidgetSizeString = "small"
         }
+        let widgetSizeString: String
+        #if compiler(>=6.4)
+            if #available(macOSApplicationExtension 27.0, *), self.widgetFamily == .systemExtraLargePortrait {
+                widgetSizeString = "extraLargePortrait"
+            } else {
+                widgetSizeString = standardWidgetSizeString
+            }
+        #else
+            widgetSizeString = standardWidgetSizeString
+        #endif
         let runtime = ScriptWidgetRuntime(package:self.package, environments: [
             "widget-size" : widgetSizeString,
             "widget-param": self.scriptParameter,
+            "widget-rendering-mode": widgetRenderingMode,
         ])
         
         let result = runtime.executeJSXSyncForWidget(JSX)
@@ -148,12 +161,13 @@ struct ScriptWidgetWidgetElementRootView: View {
     private let data: ScriptWidgetDataObject
     let widgetFamily: WidgetFamily
 
-    init(widgetFamily: WidgetFamily, entry: ScriptWidgetTimelineEntry) {
+    init(widgetFamily: WidgetFamily, renderingMode: WidgetRenderingMode, entry: ScriptWidgetTimelineEntry) {
         self.widgetFamily = widgetFamily
         let data = ScriptWidgetDataObject(
             scriptName: entry.configuration.Script ?? "",
             scriptParameter: entry.configuration.Parameter ?? "",
-            widgetFamily: self.widgetFamily
+            widgetFamily: self.widgetFamily,
+            widgetRenderingMode: renderingMode == .accented ? "accented" : (renderingMode == .vibrant ? "vibrant" : "fullColor")
         )
         data.runScriptSync()
         self.data = data
@@ -176,6 +190,7 @@ struct ScriptWidgetWidgetElementRootView: View {
 
 struct ScriptWidgetMacWidgetEntryView : View {
     @Environment(\.widgetFamily) var widgetFamily
+    @Environment(\.widgetRenderingMode) private var widgetRenderingMode
     var entry: ScriptWidgetTimelineEntry
     
     init(entry: ScriptWidgetTimelineEntry) {
@@ -186,7 +201,7 @@ struct ScriptWidgetMacWidgetEntryView : View {
             ScriptWidgetPlaceholderView()
                 .containerBackground(.background, for: .widget)
         } else {
-            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, entry: self.entry)
+            ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, entry: self.entry)
                 .containerBackground(.background, for: .widget)
         }
     }
@@ -197,9 +212,15 @@ struct ScriptWidgetMacWidget: Widget {
     let kind: String = "ScriptWidgetMacWidget"
 
     private var supportedFamilies: [WidgetFamily] {
-        [
+        var families: [WidgetFamily] = [
             .systemSmall, .systemMedium, .systemLarge, .systemExtraLarge,
         ]
+        #if compiler(>=6.4)
+            if #available(macOSApplicationExtension 27.0, *) {
+                families.append(.systemExtraLargePortrait)
+            }
+        #endif
+        return families
     }
 
     var body: some WidgetConfiguration {

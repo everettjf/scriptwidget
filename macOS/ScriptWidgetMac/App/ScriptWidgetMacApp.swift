@@ -7,6 +7,7 @@
 
 import SwiftUI
 import AppKit
+import WidgetKit
 
 @main
 struct ScriptWidgetMacApp: App {
@@ -24,6 +25,7 @@ struct ScriptWidgetMacApp: App {
             } else {
                 ContentView()
                     .frame(minWidth: 980, minHeight: 620)
+                    .task { await registerWidgetPushSubscriptions() }
             }
         }
         .defaultPosition(.center)
@@ -99,6 +101,20 @@ struct ScriptWidgetMacApp: App {
 
         Settings {
             ScriptWidgetMacSettingsView()
+        }
+    }
+
+    private func registerWidgetPushSubscriptions() async {
+        guard let pushInfo = await WidgetCenter.shared.currentPushInfo,
+              let widgets = try? await WidgetCenter.shared.currentConfigurations() else { return }
+        let packageNames = Set(widgets.compactMap {
+            $0.widgetConfigurationIntent(of: ScriptWidgetAppIntent.self)?.Script
+        })
+        for packageName in packageNames {
+            ScriptWidgetPushRegistration.register(
+                token: pushInfo.token,
+                package: sharedScriptManager.getScriptPackage(packageName: packageName)
+            )
         }
     }
 }

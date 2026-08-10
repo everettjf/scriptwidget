@@ -13,6 +13,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Widget & Skills Gallery](gallery.md) — discover, verify, install, update, and submit community packages.
 - [Data Source Plugins](data-source-plugins.md) — safe third-party API connectors and the Mac Data Source Lab.
 - [Package 2.0](package-format.md) — `widget.json`, compatibility, and secure imports.
+- [Modern WidgetKit features](widgetkit-modern-features.md) — rendering modes, Live Activities, controls, intents, and push updates.
 
 ## Build and ship
 

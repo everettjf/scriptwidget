@@ -8,6 +8,7 @@
 import Foundation
 import AppIntents
 
+@available(iOS 17.0, *)
 struct ScriptWidgetAppIntent: WidgetConfigurationIntent {
     static var title: LocalizedStringResource = "Script"
     static var description = IntentDescription("Choose script that will execute")

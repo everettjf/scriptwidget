@@ -46,6 +46,7 @@ struct ScriptWidgets: WidgetBundle {
     var body: some Widget {
         ScriptWidgetMainWidget()
         ScriptLiveActivityWidget()
+        ScriptWidgetButtonControlWidget()
         ScriptWidgetControlWidget()
     }
 }

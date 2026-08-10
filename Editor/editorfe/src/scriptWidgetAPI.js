@@ -26,6 +26,7 @@ export const scriptWidgetAPI = {
     "rotation3d": { "type": "string", "documentation": "3D rotation description." },
     "shadow": { "type": "string", "documentation": "Shadow color, radius, and offset description." },
     "animation": { "type": "string", "documentation": "Timeline-driven animation description." },
+    "widgetAccentable": { "type": "boolean", "documentation": "Group this view into the accent layer in tinted and vibrant widget appearances." },
     "linkurl": { "type": "url", "documentation": "Widget deep link URL." }
   },
   "components": {
@@ -36,7 +37,7 @@ export const scriptWidgetAPI = {
     "HGrid": { "documentation": "Horizontal lazy grid.", "children": true, "properties": { "columns": { "type": "string", "required": true }, "spacing": { "type": "number" }, "alignment": { "type": "enum", "values": ["top", "center", "bottom", "firstTextBaseline", "lastTextBaseline"] } } },
     "Text": { "documentation": "Display text content.", "children": false, "properties": { "text": { "type": "string" } } },
     "Date": { "documentation": "Display a formatted date.", "children": false, "properties": { "date": { "type": "date|number", "required": true }, "style": { "type": "enum", "values": ["time", "date", "relative", "offset", "timer"] } } },
-    "Image": { "documentation": "Display a bundled, remote, or SF Symbol image.", "children": false, "properties": { "systemName": { "type": "string" }, "name": { "type": "string" }, "id": { "type": "string", "deprecated": "Use name." }, "url": { "type": "url" }, "src": { "type": "url", "deprecated": "Use url." }, "ratio": { "type": "number" }, "mode": { "type": "enum", "values": ["fit", "fill"] } } },
+    "Image": { "documentation": "Display a bundled, remote, or SF Symbol image.", "children": false, "properties": { "systemName": { "type": "string" }, "name": { "type": "string" }, "id": { "type": "string", "deprecated": "Use name." }, "url": { "type": "url" }, "src": { "type": "url", "deprecated": "Use url." }, "ratio": { "type": "number" }, "mode": { "type": "enum", "values": ["fit", "fill"] }, "accentedRenderingMode": { "type": "enum", "values": ["accented", "desaturated", "accentedDesaturated", "fullColor"], "documentation": "Control how the image is rendered in tinted and clear widget appearances." } } },
     "Gif": { "documentation": "Display a GIF from the package.", "children": false, "properties": { "file": { "type": "string", "required": true } } },
     "Spacer": { "documentation": "Flexible layout space.", "children": false, "properties": { "minLength": { "type": "number" } } },
     "Rect": { "documentation": "Rectangle shape.", "children": false, "properties": { "trim": { "type": "number|string" }, "stroke": { "type": "string" } } },
@@ -64,5 +65,5 @@ export const scriptWidgetAPI = {
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
   },
-  "environmentValues": ["widgetFamily", "scriptName", "scriptParameter"]
+  "environmentValues": ["widgetFamily", "scriptName", "scriptParameter", "widget-rendering-mode", "live-activity-state", "live-activity-surface"]
 };

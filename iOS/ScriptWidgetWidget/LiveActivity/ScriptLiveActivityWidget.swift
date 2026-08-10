@@ -23,7 +23,11 @@ struct ScriptLiveActivityWidget: Widget {
     
     func createIsland(context: ActivityViewContext<ScriptLiveActivityAttributes>) -> DynamicIsland {
         
-        let creator = ScriptDynamicIslandCreator(scriptName: context.attributes.scriptName, scriptParameter: context.attributes.scriptParameter)
+        let creator = ScriptDynamicIslandCreator(
+            scriptName: context.attributes.scriptName,
+            scriptParameter: context.attributes.scriptParameter,
+            scriptState: context.state.scriptState
+        )
 
         creator.runScriptSync()
         
@@ -48,6 +52,7 @@ struct ScriptLiveActivityWidget: Widget {
             DynamicIslandExpandedRegion(.bottom) {
                 if let element = creator.rootElement.expanded.bottom {
                     ScriptWidgetElementView(element: element, context: context)
+                        .dynamicIsland(verticalPlacement: .belowIfTooWide)
                 }
             }
         } compactLeading: {
@@ -68,10 +73,18 @@ struct ScriptLiveActivityRootView: View {
     let scriptName: String
     let scriptParameter: String
     
-    init(scriptName: String, scriptParameter: String) {
+    let scriptState: String
+
+    init(scriptName: String, scriptParameter: String, scriptState: String) {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
-        self.data = ScriptLiveActivityDataObject(scriptName: scriptName, scriptParameter: scriptParameter)
+        self.scriptState = scriptState
+        self.data = ScriptLiveActivityDataObject(
+            scriptName: scriptName,
+            scriptParameter: scriptParameter,
+            scriptState: scriptState,
+            surface: "lockScreen"
+        )
         self.data.runScriptSync()
     }
     
@@ -97,7 +110,11 @@ struct LockScreenLiveActivityView: View {
     let context: ActivityViewContext<ScriptLiveActivityAttributes>
     
     var body: some View {
-        ScriptLiveActivityRootView(scriptName: context.attributes.scriptName, scriptParameter: context.attributes.scriptParameter)
+        ScriptLiveActivityRootView(
+            scriptName: context.attributes.scriptName,
+            scriptParameter: context.attributes.scriptParameter,
+            scriptState: context.state.scriptState
+        )
 //        .activitySystemActionForegroundColor(.indigo)
 //        .activityBackgroundTint(.cyan)
     }
