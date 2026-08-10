@@ -24,16 +24,10 @@ class ScriptWidgetElementContext {
     }
 }
 
-class ScriptWidgetElementViewStateObject: ObservableObject {
-    // reserved
-}
-
 struct ScriptWidgetElementView: View {
     
     let element: ScriptWidgetRuntimeElement
     let context: ScriptWidgetElementContext
-    
-    @ObservedObject var state = ScriptWidgetElementViewStateObject()
     
     init(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) {
         self.element = element
@@ -43,11 +37,9 @@ struct ScriptWidgetElementView: View {
     var body: some View {
 #if os(macOS)
         AnyView(ScriptWidgetElementView.buildView(element: element, context: context))
-            .environmentObject(state)
 #else
         AnyView(ScriptWidgetElementView.buildView(element: element, context: context))
                 .widgetURL(ScriptWidgetElementTagLink.getDestination("linkurl", element))
-                .environmentObject(state)
 #endif
     }
     

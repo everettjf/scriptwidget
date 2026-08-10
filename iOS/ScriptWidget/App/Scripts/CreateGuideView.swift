@@ -27,7 +27,7 @@ class CreateGuideDataObject: ObservableObject {
 
 
 struct CreateGuideView: View {
-    @ObservedObject var dataObject = CreateGuideDataObject()
+    @StateObject private var dataObject = CreateGuideDataObject()
 
     @Environment(\.presentationMode) var presentationMode
 

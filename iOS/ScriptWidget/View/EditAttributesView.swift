@@ -26,7 +26,7 @@ struct LabelTextField : View {
 
 struct EditAttributesView: View {
     @Environment(\.presentationMode) var presentationMode
-    @ObservedObject var keyboardHeightHelper = KeyboardHeightHelper()
+    @StateObject private var keyboardHeightHelper = KeyboardHeightHelper()
     @State private var isShowingDeleteAlert = false
     @State private var isShowingRenameFailedAlert = false
 

@@ -145,17 +145,18 @@ class ScriptWidgetDataObject : ObservableObject {
 }
 
 struct ScriptWidgetWidgetElementRootView: View {
-    @ObservedObject var data = ScriptWidgetDataObject(scriptName: "", scriptParameter: "", widgetFamily: .systemSmall)
-    var widgetFamily: WidgetFamily
+    private let data: ScriptWidgetDataObject
+    let widgetFamily: WidgetFamily
 
     init(widgetFamily: WidgetFamily, entry: ScriptWidgetTimelineEntry) {
         self.widgetFamily = widgetFamily
-        self.data = ScriptWidgetDataObject(
+        let data = ScriptWidgetDataObject(
             scriptName: entry.configuration.Script ?? "",
             scriptParameter: entry.configuration.Parameter ?? "",
             widgetFamily: self.widgetFamily
         )
-        self.data.runScriptSync()
+        data.runScriptSync()
+        self.data = data
     }
     
     @ViewBuilder

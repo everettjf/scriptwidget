@@ -13,7 +13,7 @@ import Combine
 
 
 struct ScriptWidgetWidgetElementRootView: View {
-    @ObservedObject var data: ScriptWidgetDataObject
+    private let data: ScriptWidgetDataObject
     let widgetFamily: WidgetFamily
     let scriptName: String
     let scriptParameter: String

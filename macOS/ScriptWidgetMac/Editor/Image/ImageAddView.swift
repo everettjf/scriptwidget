@@ -24,7 +24,7 @@ struct ImageAddView: View {
 
     let scriptModel: ScriptModel
     
-    @ObservedObject var dataObject = ImageAddDataObject()
+    @StateObject private var dataObject = ImageAddDataObject()
     @State private var croppedImage: NSImage?
 
     var body: some View {
