@@ -1011,6 +1011,100 @@ final class WidgetPackageManifestTests: XCTestCase {
     }
 }
 
+final class ScriptManagerLifecycleTests: XCTestCase {
+    private var temporaryDirectories: [URL] = []
+
+    override func tearDown() {
+        temporaryDirectories.forEach { try? FileManager.default.removeItem(at: $0) }
+        temporaryDirectories.removeAll()
+        super.tearDown()
+    }
+
+    private func makeDirectory(_ label: String) throws -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ScriptManagerTests-\(label)-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        temporaryDirectories.append(directory)
+        return directory
+    }
+
+    private func makeManager(_ label: String) throws -> ScriptManager {
+        ScriptManager(isBuild: true, scriptDirectoryOverride: try makeDirectory(label))
+    }
+
+    func testCreateListRenameDuplicateDeleteLifecycle() throws {
+        let manager = try makeManager("Lifecycle")
+
+        XCTAssertTrue(manager.createScript(
+            content: "$render(<text>Lifecycle</text>)",
+            recommendPackageName: "Lifecycle",
+            imageCopyPath: nil
+        ).0)
+        XCTAssertEqual(manager.listScripts().map(\.name), ["Lifecycle"])
+
+        let package = manager.getScriptPackage(packageName: "Lifecycle")
+        XCTAssertEqual(package.readMainFile().0, "$render(<text>Lifecycle</text>)")
+        XCTAssertEqual(package.readManifest()?.name, "Lifecycle")
+
+        XCTAssertTrue(manager.renameScript(srcPackageName: "Lifecycle", destPackageName: "Renamed").0)
+        XCTAssertFalse(manager.isExist(packageName: "Lifecycle"))
+        XCTAssertTrue(manager.isExist(packageName: "Renamed"))
+
+        let duplicate = manager.duplicateScript(sourcePackageName: "Renamed")
+        XCTAssertTrue(duplicate.0, duplicate.1)
+        XCTAssertEqual(duplicate.1, "Renamed Remix")
+        XCTAssertEqual(manager.listScripts().map(\.name), ["Renamed", "Renamed Remix"])
+
+        _ = manager.deleteScript(packageName: "Renamed")
+        XCTAssertFalse(manager.isExist(packageName: "Renamed"))
+        XCTAssertEqual(manager.listScripts().map(\.name), ["Renamed Remix"])
+    }
+
+    func testExportImportRoundTripDeduplicatesWithoutOverwrite() throws {
+        let source = try makeManager("ExportSource")
+        XCTAssertTrue(source.createScript(
+            content: "$render(<text>Exported</text>)",
+            recommendPackageName: "Round Trip",
+            imageCopyPath: nil
+        ).0)
+        let sourceModel = try XCTUnwrap(source.listScripts().first)
+        let archive = try makeDirectory("Archive").appendingPathComponent("round-trip.swt")
+        XCTAssertTrue(source.exportScript(model: sourceModel, toPath: archive))
+
+        let destination = try makeManager("ImportDestination")
+        let first = destination.importScriptPackage(fromPath: archive)
+        XCTAssertTrue(first.succeeded, first.message)
+        XCTAssertEqual(first.packageName, "Round Trip")
+        XCTAssertEqual(
+            destination.getScriptPackage(packageName: "Round Trip").readMainFile().0,
+            "$render(<text>Exported</text>)"
+        )
+
+        let second = destination.importScriptPackage(fromPath: archive)
+        XCTAssertTrue(second.succeeded, second.message)
+        XCTAssertEqual(second.packageName, "Round Trip (1)")
+        XCTAssertEqual(destination.listScripts().map(\.name), ["Round Trip", "Round Trip (1)"])
+        XCTAssertEqual(
+            destination.getScriptPackage(packageName: "Round Trip").readMainFile().0,
+            "$render(<text>Exported</text>)",
+            "A duplicate import must never overwrite the existing package"
+        )
+    }
+
+    func testMalformedArchiveFailsWithoutLeavingPartialPackage() throws {
+        let manager = try makeManager("Malformed")
+        let archive = try makeDirectory("MalformedArchive").appendingPathComponent("invalid.swt")
+        try Data("not a zip archive".utf8).write(to: archive)
+
+        let result = manager.importScriptPackage(fromPath: archive)
+
+        XCTAssertFalse(result.succeeded)
+        XCTAssertNil(result.packageName)
+        XCTAssertTrue(manager.listScripts().isEmpty)
+        XCTAssertEqual(manager.scriptCount(), 0)
+    }
+}
+
 private extension Data {
     mutating func appendLE<T: FixedWidthInteger>(_ value: T) {
         var littleEndian = value.littleEndian
