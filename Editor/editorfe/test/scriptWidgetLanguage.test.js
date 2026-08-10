@@ -10,7 +10,7 @@ function viewFor(source) {
   return { state: EditorState.create({ doc: source, extensions: [javascript({ jsx: true })] }) };
 }
 
-test("schema has unique component names and documented properties", () => {
+test("editor metadata has unique component names and documented properties", () => {
   const names = Object.keys(scriptWidgetAPI.components);
   assert.equal(new Set(names).size, names.length);
   assert.ok(names.length >= 25);
@@ -37,9 +37,9 @@ test("custom components are accepted by diagnostics", () => {
   assert.deepEqual(scriptWidgetDiagnostics(viewFor("<MyComponent custom />")), []);
 });
 
-test("schema components stay aligned with the native runtime switch", async () => {
+test("editor metadata stays aligned with the authoritative native runtime switch", async () => {
   const source = await readFile(new URL("../../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift", import.meta.url), "utf8");
   const runtimeTags = [...source.matchAll(/case "([a-z]+)"\s*:/g)].map((match) => match[1]).sort();
-  const schemaTags = Object.keys(scriptWidgetAPI.components).map((name) => name.toLowerCase()).sort();
-  assert.deepEqual(schemaTags, runtimeTags);
+  const metadataTags = Object.keys(scriptWidgetAPI.components).map((name) => name.toLowerCase()).sort();
+  assert.deepEqual(metadataTags, runtimeTags);
 });

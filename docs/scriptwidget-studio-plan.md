@@ -206,12 +206,14 @@ macOS 是当前收益最高且问题最明显的平台：
 
 这一阶段不引入复杂多文件工程、语言服务器或云端协作，先保证单脚本创作链路稳定。
 
-### 阶段 6：ScriptWidget API Schema 与智能能力
+### 阶段 6：ScriptWidget API 元数据与智能能力
 
-建立版本化的 `ScriptWidgetAPI.json`，作为编辑器、运行时测试和文档的单一数据源：
+原生 JSX 组件 `switch` 是运行时实现的权威来源。Studio 在
+`Editor/editorfe/src/scriptWidgetAPI.js` 中维护仅供补全和文档生成使用的静态元数据，
+并通过测试确保组件名称与原生 `switch` 对齐：
 
 ```text
-ScriptWidgetAPI.json
+scriptWidgetAPI.js
 ├── schema version
 ├── runtime version
 ├── components

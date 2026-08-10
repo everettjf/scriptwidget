@@ -1,6 +1,6 @@
-import api from "../../../Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json" with { type: "json" };
+import { scriptWidgetAPI } from "./scriptWidgetAPI.js";
 
-export const scriptWidgetAPI = api;
+export { scriptWidgetAPI };
 
 function componentSnippet(name, component) {
   const required = Object.entries(component.properties ?? {})
@@ -11,7 +11,7 @@ function componentSnippet(name, component) {
   return component.children ? `<${name}${attributes}>\n  \${}\n</${name}>` : `<${name}${attributes} />`;
 }
 
-export const scriptWidgetCompletionOptions = Object.entries(api.components).map(([label, component]) => ({
+export const scriptWidgetCompletionOptions = Object.entries(scriptWidgetAPI.components).map(([label, component]) => ({
   label,
   type: "class",
   detail: `ScriptWidget · ${Object.keys(component.properties ?? {}).length} properties`,
@@ -26,9 +26,9 @@ function activeOpeningTag(text) {
 }
 
 function propertyOptions(componentName, usedNames) {
-  const component = api.components[componentName];
+  const component = scriptWidgetAPI.components[componentName];
   if (!component) return [];
-  return Object.entries({ ...api.globalProperties, ...(component.properties ?? {}) })
+  return Object.entries({ ...scriptWidgetAPI.globalProperties, ...(component.properties ?? {}) })
     .filter(([name]) => !usedNames.has(name))
     .map(([label, property]) => ({
       label,
@@ -42,7 +42,7 @@ function propertyOptions(componentName, usedNames) {
 function enumValueOptions(text) {
   const match = text.match(/<([A-Za-z][\w]*)\b[^<>]*\b([A-Za-z][\w]*)\s*=\s*["']([^"']*)$/);
   if (!match) return null;
-  const definition = api.components[match[1]]?.properties?.[match[2]] ?? api.globalProperties[match[2]];
+  const definition = scriptWidgetAPI.components[match[1]]?.properties?.[match[2]] ?? scriptWidgetAPI.globalProperties[match[2]];
   if (!definition?.values) return null;
   return { typed: match[3], values: definition.values };
 }

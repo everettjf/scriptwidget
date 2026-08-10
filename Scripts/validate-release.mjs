@@ -1,10 +1,11 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
+import { scriptWidgetAPI } from "../Editor/editorfe/src/scriptWidgetAPI.js";
 
 const root = new URL("../", import.meta.url).pathname;
 const templateRoot = join(root, "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template");
-const schema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json"), "utf8"));
+const schema = scriptWidgetAPI;
 const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/widget.schema.json"), "utf8"));
 const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
 const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));

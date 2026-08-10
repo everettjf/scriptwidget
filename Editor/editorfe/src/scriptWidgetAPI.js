@@ -1,4 +1,7 @@
-{
+// Editor metadata for the native JSX components selected by
+// ScriptWidgetElementView's switch. The native switch remains the runtime
+// authority; tests verify that this metadata stays aligned with it.
+export const scriptWidgetAPI = {
   "schemaVersion": 1,
   "runtimeVersion": "26.6",
   "documentation": "Public JSX surface shared by ScriptWidget Runtime and Studio.",
@@ -62,4 +65,4 @@
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
   },
   "environmentValues": ["widgetFamily", "scriptName", "scriptParameter"]
-}
+};

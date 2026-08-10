@@ -1,6 +1,6 @@
 # ScriptWidget Runtime API
 
-> Generated from `ScriptWidgetAPI.json` schema v1, runtime 26.6. Do not edit by hand.
+> Generated from Studio's static API metadata (schema v1, runtime 26.6). The native runtime switch is authoritative. Do not edit by hand.
 
 ## Components
 

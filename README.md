@@ -277,7 +277,7 @@ Start with the **[documentation hub](docs/README.md)** or build **[your first wi
 | `$runtime` | Runtime API version and enforced resource limits |
 | `console` | Logging (`console.log` / `console.error`) |
 
-The machine-readable public contract lives in [`ScriptWidgetAPI.json`](Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json), and generated reference documentation is available in [Runtime API contract](docs/scriptwidget-runtime-api.md).
+The native JSX component switch is the runtime authority. Studio keeps static completion metadata in [`scriptWidgetAPI.js`](Editor/editorfe/src/scriptWidgetAPI.js), checks it against the native switch, and generates the [Runtime API reference](docs/scriptwidget-runtime-api.md) from it.
 
 ## 🔐 Security model
 

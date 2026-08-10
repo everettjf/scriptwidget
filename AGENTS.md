@@ -14,7 +14,7 @@ ScriptWidget lets users author native WidgetKit experiences with JavaScript and 
 - `Editor/editorfe/`: Vite frontend with CodeMirror 6. Built files are copied into both platform `StudioEditor.bundle` directories.
 - `Tests/ScriptWidgetRuntimeTests/`: shared runtime, execution, performance, package/cache, iCloud-state, Gallery, AI, and security tests.
 - `Gallery/`: curated Gallery 1.0 index, JSON Schema, widget seeds, and Skill seeds.
-- `docs/`: authoritative user and contributor documentation. Public machine-readable contracts live in `Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json` and `Shared/ScriptWidgetRuntime/Resource/*.schema.json`.
+- `docs/`: authoritative user and contributor documentation. The native JSX switch is the runtime authority; Studio completion metadata lives in `Editor/editorfe/src/scriptWidgetAPI.js`. Package contracts live in `Shared/ScriptWidgetRuntime/Resource/*.schema.json`.
 
 Widget packages live under `Scripts/<PackageName>/`. Package 2.0 uses `widget.json` plus a declared JS/JSX entry point (normally `main.jsx`) and optional nested source/resource files. `__Build/` is generated cache state, not authored source.
 
@@ -34,7 +34,7 @@ The app uses `iCloud.ScriptWidget` and `group.everettjf.scriptwidget`. Signed re
 
 ## Public Contracts and Compatibility
 
-- `ScriptWidgetAPI.json` is the editor/runtime documentation contract. After changing it, run `npm run docs` and `npm run release` in `Editor/editorfe`.
+- `scriptWidgetAPI.js` is static Studio completion/documentation metadata, not a runtime-loaded contract. Keep it aligned with the native JSX switch; after changing it, run `npm run docs` and `npm run release` in `Editor/editorfe`.
 - Package 2.0 is defined by `WidgetPackageManifest`, its validator, `widget.schema.json`, and `docs/package-format.md`. Unknown keys and unsupported versions fail closed. Preserve legacy `main.jsx`/`meta.json` reading unless an explicit migration removes it.
 - Skills 1.0 packages contain exactly `skill.json` and `SKILL.md`; Skills augment prompts only and never grant tools or runtime permissions.
 - Gallery 1.0 trusts only its configured GitHub raw-content root and verifies path, byte count, and SHA-256 before transactional installation.

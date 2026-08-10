@@ -1,13 +1,12 @@
-import { readFile, writeFile } from "node:fs/promises";
+import { writeFile } from "node:fs/promises";
+import { scriptWidgetAPI as api } from "../src/scriptWidgetAPI.js";
 
-const schemaURL = new URL("../../../Shared/ScriptWidgetRuntime/ScriptWidgetAPI.json", import.meta.url);
 const outputURL = new URL("../../../docs/scriptwidget-runtime-api.md", import.meta.url);
-const api = JSON.parse(await readFile(schemaURL, "utf8"));
 
 const lines = [
   "# ScriptWidget Runtime API",
   "",
-  `> Generated from \`ScriptWidgetAPI.json\` schema v${api.schemaVersion}, runtime ${api.runtimeVersion}. Do not edit by hand.`,
+  `> Generated from Studio's static API metadata (schema v${api.schemaVersion}, runtime ${api.runtimeVersion}). The native runtime switch is authoritative. Do not edit by hand.`,
   "",
   "## Components",
   "",
