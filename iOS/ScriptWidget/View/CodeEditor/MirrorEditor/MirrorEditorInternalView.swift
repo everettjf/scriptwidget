@@ -27,11 +27,7 @@ class MirrorEditorService {
     }
 }
 
-struct MirrorEditorDocumentSnapshot {
-    let content: String
-    let version: Int
-    let selection: Range<Int>
-}
+typealias MirrorEditorDocumentSnapshot = StudioDocumentSnapshot
 
 private struct MirrorEditorSnapshotRequest {
     let completion: (MirrorEditorDocumentSnapshot?) -> Void
@@ -50,20 +46,6 @@ struct MirrorEditorInternalActionProvider {
 }
 
 class MirrorEditorInternalView: WKWebView {
-    private enum StudioMessage {
-        static let ready = "studio.ready"
-        static let documentOpen = "document.open"
-        static let documentChanged = "document.changed"
-        static let documentSave = "document.save"
-        static let documentReplace = "document.replace"
-        static let documentSetReadOnly = "document.setReadOnly"
-        static let editorInsert = "editor.insert"
-        static let editorFormat = "editor.format"
-        static let editorGetState = "editor.getState"
-    }
-
-    private static let protocolVersion = 1
-    
     public var accessoryView: UIView?
     
     var bridge: WKWebViewJavascriptBridge?
@@ -72,7 +54,7 @@ class MirrorEditorInternalView: WKWebView {
     var cancellables = [Cancellable]()
     var isTearingDown = false
     
-    var lastSaveContent = ""
+    private let documentSession = StudioDocumentSession()
     private var currentDocumentID: String?
     private var draftWorkItem: DispatchWorkItem?
     
@@ -100,17 +82,17 @@ class MirrorEditorInternalView: WKWebView {
         // bridge
         self.bridge = WKWebViewJavascriptBridge(webView: self)
         
-        self.bridge?.register(handlerName: StudioMessage.ready, handler: { [weak self] (parameters, callback) in
+        self.bridge?.register(handlerName: StudioProtocol.ready, handler: { [weak self] (_, callback) in
             guard self?.isEditorReady == false else {
-                callback?(["result": "ok", "protocolVersion": Self.protocolVersion])
+                callback?(["result": "ok", "protocolVersion": StudioProtocol.version])
                 return
             }
             self?.isEditorReady = true
             self?.eventOnEditorReady()
-            callback?(["result": "ok", "protocolVersion": Self.protocolVersion])
+            callback?(["result": "ok", "protocolVersion": StudioProtocol.version])
         })
         
-        self.bridge?.register(handlerName: StudioMessage.documentSave, handler: { [weak self] (parameters, callback) in
+        self.bridge?.register(handlerName: StudioProtocol.documentSave, handler: { [weak self] (parameters, callback) in
             guard
                 let payload = parameters?["payload"] as? [String: Any],
                 let value = payload["content"] as? String
@@ -128,16 +110,13 @@ class MirrorEditorInternalView: WKWebView {
                     callback?(["result": "failed"])
                     return
                 }
-                self?.lastSaveContent = value
-                if let documentID = self?.currentDocumentID {
-                    StudioDraftStore.shared.remove(documentID: documentID)
-                }
+                self?.documentSession.markSaved(value)
             }
 
             callback?(["result": "ok"])
         })
 
-        self.bridge?.register(handlerName: StudioMessage.documentChanged, handler: { [weak self] _, callback in
+        self.bridge?.register(handlerName: StudioProtocol.documentChanged, handler: { [weak self] _, callback in
             self?.scheduleDraftSnapshot()
             callback?(["result": "ok"])
         })
@@ -204,7 +183,7 @@ class MirrorEditorInternalView: WKWebView {
             }
             
             
-            if self.lastSaveContent == value {
+            if !self.documentSession.needsSave(value) {
 //                print("content same, already saved")
                 return
             }
@@ -214,10 +193,7 @@ class MirrorEditorInternalView: WKWebView {
                 if !saveSucceed {
                     return
                 }
-                self.lastSaveContent = value
-                if let documentID = self.currentDocumentID {
-                    StudioDraftStore.shared.remove(documentID: documentID)
-                }
+                self.documentSession.markSaved(value)
             }
             
             print("save succeed")
@@ -226,17 +202,17 @@ class MirrorEditorInternalView: WKWebView {
     
     func editorInsert(value: String) {
         guard !isTearingDown else { return }
-        callStudio(handlerName: StudioMessage.editorInsert, payload: ["content": value])
+        callStudio(handlerName: StudioProtocol.editorInsert, payload: ["content": value])
     }
 
     func editorFormatCode() {
         guard !isTearingDown else { return }
-        callStudio(handlerName: StudioMessage.editorFormat)
+        callStudio(handlerName: StudioProtocol.editorFormat)
     }
 
     func editorSetReadOnly(_ readOnly: Bool) {
         guard !isTearingDown else { return }
-        callStudio(handlerName: StudioMessage.documentSetReadOnly, payload: ["readOnly": readOnly])
+        callStudio(handlerName: StudioProtocol.documentSetReadOnly, payload: ["readOnly": readOnly])
     }
     
     func editorGetValue(callback: @escaping (Bool, String) -> Void) {
@@ -244,7 +220,7 @@ class MirrorEditorInternalView: WKWebView {
             callback(false, "")
             return
         }
-        callStudio(handlerName: StudioMessage.editorGetState, callback: { responseData in
+        callStudio(handlerName: StudioProtocol.editorGetState, callback: { responseData in
             guard let data = responseData as? [String: Any] else {
                 callback(false, "")
                 return
@@ -264,36 +240,22 @@ class MirrorEditorInternalView: WKWebView {
             completion(nil)
             return
         }
-        callStudio(handlerName: StudioMessage.editorGetState) { responseData in
-            guard
-                let data = responseData as? [String: Any],
-                let content = data["content"] as? String
-            else {
-                completion(nil)
-                return
-            }
-            let version = data["version"] as? Int ?? 0
-            let selection = data["selection"] as? [String: Any]
-            let from = selection?["from"] as? Int ?? 0
-            let to = selection?["to"] as? Int ?? from
-            completion(MirrorEditorDocumentSnapshot(content: content, version: version, selection: from..<to))
+        callStudio(handlerName: StudioProtocol.editorGetState) { responseData in
+            completion(MirrorEditorDocumentSnapshot(state: responseData))
         }
     }
 
     private func replaceDocument(with content: String) {
         guard !isTearingDown, action?.onIsReadOnly?() != true else { return }
         callStudio(
-            handlerName: StudioMessage.documentReplace,
+            handlerName: StudioProtocol.documentReplace,
             payload: ["content": content, "version": 0]
         ) { [weak self] response in
             guard let self else { return }
             let result = (response as? [String: Any])?["result"] as? String
             guard result == "ok" || result == nil else { return }
             if self.action?.onWrite?(content) == true {
-                self.lastSaveContent = content
-                if let documentID = self.currentDocumentID {
-                    StudioDraftStore.shared.remove(documentID: documentID)
-                }
+                self.documentSession.markSaved(content)
             }
         }
     }
@@ -304,11 +266,8 @@ class MirrorEditorInternalView: WKWebView {
             guard let self, let documentID = self.currentDocumentID else { return }
             self.editorGetValue { succeed, content in
                 guard succeed else { return }
-                StudioDraftStore.shared.save(
-                    documentID: documentID,
-                    baseContent: self.lastSaveContent,
-                    content: content
-                )
+                guard self.currentDocumentID == documentID else { return }
+                self.documentSession.recordDraft(content)
             }
         }
         draftWorkItem = workItem
@@ -331,12 +290,7 @@ class MirrorEditorInternalView: WKWebView {
     }
 
     private func studioEnvelope(type: String, payload: [String: Any]) -> [String: Any] {
-        [
-            "protocolVersion": Self.protocolVersion,
-            "type": type,
-            "documentID": currentDocumentID as Any? ?? NSNull(),
-            "payload": payload,
-        ]
+        StudioProtocol.envelope(type: type, documentID: currentDocumentID, payload: payload)
     }
 
     private func callStudio(
@@ -382,19 +336,17 @@ class MirrorEditorInternalView: WKWebView {
     func reloadCurrentScript() {
         if let onRead = action?.onRead {
             let fileContent = onRead()
-            let content = currentDocumentID.flatMap {
-                StudioDraftStore.shared.recover(documentID: $0, currentContent: fileContent)?.content
-            } ?? fileContent
+            guard let currentDocumentID else { return }
+            let content = documentSession.open(documentID: currentDocumentID, content: fileContent)
             
             callStudio(
-                handlerName: StudioMessage.documentOpen,
+                handlerName: StudioProtocol.documentOpen,
                 payload: [
                     "content": content,
                     "version": 0,
                     "readOnly": action?.onIsReadOnly?() ?? false,
                 ]
             )
-            lastSaveContent = fileContent
         }
     }
     

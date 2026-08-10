@@ -36,6 +36,7 @@ import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLangua
 import { studioTheme } from "./studioTheme.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceStudioState, removeDraft, shouldWarnBeforeLeaving, writeDraft } from "./webStudioState.js";
+import { WebStudioAPI } from "./webStudioAPI.js";
 import "./style.css";
 
 const isWebStudio = /^https?:$/.test(window.location.protocol);
@@ -299,14 +300,6 @@ async function startWebStudio() {
   let loadedPath = "";
   let saveCoordinator = null;
 
-  class StudioAPIError extends Error {
-    constructor(message, status, body = {}) {
-      super(message);
-      this.status = status;
-      this.body = body;
-    }
-  }
-
   function requirePairing(message = "Session ended. Enter the new code shown on your device.") {
     token = "";
     window.sessionStorage.removeItem("scriptwidget.web-studio.token");
@@ -329,19 +322,8 @@ async function startWebStudio() {
     document.querySelector("#preview-detail").textContent = studioState.preview === "requested" ? "Requested on device" : "Not requested";
   }
 
-  async function api(path, options = {}) {
-    const response = await fetch(path, {
-      ...options,
-      headers: { "Content-Type": "application/json", "X-Studio-Token": token, ...(options.headers || {}) },
-    });
-    const body = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new StudioAPIError(body.message || `Request failed (${response.status})`, response.status, body);
-      if (response.status === 401 && path !== "/api/v1/pair") requirePairing();
-      throw error;
-    }
-    return body;
-  }
+  const apiClient = new WebStudioAPI({ token: () => token, onUnauthorized: () => requirePairing() });
+  const api = (path, options) => apiClient.request(path, options);
 
   saveCoordinator = new DocumentSaveCoordinator(({ packageID, path, content, baseRevision }) => (
     api("/api/v1/document", {

@@ -549,6 +549,42 @@ final class StudioDraftStoreTests: XCTestCase {
         store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "saved")
         XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "saved"))
     }
+
+    func testDocumentSessionRestoresDraftTracksBaselineAndClearsAfterSave() {
+        store.save(documentID: "/widget/main.jsx", baseContent: "saved", content: "draft")
+        let session = StudioDocumentSession(drafts: store)
+
+        XCTAssertEqual(session.open(documentID: "/widget/main.jsx", content: "saved"), "draft")
+        XCTAssertFalse(session.needsSave("saved"))
+        XCTAssertTrue(session.needsSave("draft"))
+
+        session.markSaved("draft")
+        XCTAssertFalse(session.needsSave("draft"))
+        XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "draft"))
+    }
+
+    func testDocumentSessionDraftNeverCrossesDocumentIdentity() {
+        let session = StudioDocumentSession(drafts: store)
+        _ = session.open(documentID: "/widget/a.jsx", content: "a")
+        session.recordDraft("draft-a")
+        _ = session.open(documentID: "/widget/b.jsx", content: "b")
+        session.recordDraft("draft-b")
+
+        XCTAssertEqual(store.recover(documentID: "/widget/a.jsx", currentContent: "a")?.content, "draft-a")
+        XCTAssertEqual(store.recover(documentID: "/widget/b.jsx", currentContent: "b")?.content, "draft-b")
+    }
+
+    func testStudioSnapshotNormalizesReverseSelection() throws {
+        let snapshot = try XCTUnwrap(StudioDocumentSnapshot(state: [
+            "content": "hello",
+            "version": 4,
+            "selection": ["from": 5, "to": 2],
+        ]))
+        XCTAssertEqual(snapshot.content, "hello")
+        XCTAssertEqual(snapshot.version, 4)
+        XCTAssertEqual(snapshot.selection, 2..<5)
+        XCTAssertNil(StudioDocumentSnapshot(state: ["version": 1]))
+    }
 }
 
 final class StudioEditorBundleIntegrationTests: XCTestCase {

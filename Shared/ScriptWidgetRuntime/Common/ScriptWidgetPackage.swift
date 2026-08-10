@@ -28,6 +28,86 @@ struct FileModel: Identifiable, Hashable {
     var id: String { relativePath }
 }
 
+/// Stable protocol shared by every Studio host. Keeping message names here
+/// prevents the iOS and macOS bridges from drifting independently.
+enum StudioProtocol {
+    static let version = 1
+    static let ready = "studio.ready"
+    static let documentOpen = "document.open"
+    static let documentChanged = "document.changed"
+    static let documentSave = "document.save"
+    static let documentReplace = "document.replace"
+    static let documentSetReadOnly = "document.setReadOnly"
+    static let editorInsert = "editor.insert"
+    static let editorFormat = "editor.format"
+    static let editorGetState = "editor.getState"
+
+    static func envelope(type: String, documentID: String?, payload: [String: Any]) -> [String: Any] {
+        [
+            "protocolVersion": version,
+            "type": type,
+            "documentID": documentID as Any? ?? NSNull(),
+            "payload": payload,
+        ]
+    }
+}
+
+struct StudioDocumentSnapshot: Equatable {
+    let content: String
+    let version: Int
+    let selection: Range<Int>
+
+    init?(state: Any?) {
+        guard
+            let state = state as? [String: Any],
+            let content = state["content"] as? String
+        else { return nil }
+        let version = state["version"] as? Int ?? 0
+        let selection = state["selection"] as? [String: Any]
+        let from = selection?["from"] as? Int ?? 0
+        let to = selection?["to"] as? Int ?? from
+        self.init(content: content, version: version, selection: min(from, to)..<max(from, to))
+    }
+
+    init(content: String, version: Int, selection: Range<Int>) {
+        self.content = content
+        self.version = version
+        self.selection = selection
+    }
+}
+
+/// Owns document identity and the persisted-draft baseline for native Studio
+/// hosts. Web views remain responsible only for transport and presentation.
+final class StudioDocumentSession {
+    private(set) var documentID: String?
+    private(set) var savedContent = ""
+    private let drafts: StudioDraftStore
+
+    init(drafts: StudioDraftStore = .shared) {
+        self.drafts = drafts
+    }
+
+    func open(documentID: String, content: String) -> String {
+        self.documentID = documentID
+        savedContent = content
+        return drafts.recover(documentID: documentID, currentContent: content)?.content ?? content
+    }
+
+    func recordDraft(_ content: String) {
+        guard let documentID else { return }
+        drafts.save(documentID: documentID, baseContent: savedContent, content: content)
+    }
+
+    func markSaved(_ content: String) {
+        savedContent = content
+        if let documentID { drafts.remove(documentID: documentID) }
+    }
+
+    func needsSave(_ content: String) -> Bool {
+        content != savedContent
+    }
+}
+
 /// Crash-safe editor drafts. A draft is restored only while its base file hash
 /// still matches, so an iCloud or external edit always wins over stale local work.
 struct StudioDraftRecord: Codable, Equatable {
