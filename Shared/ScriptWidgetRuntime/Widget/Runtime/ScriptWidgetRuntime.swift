@@ -675,7 +675,7 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForWidget(_ JavaScript: String) -> AnyPublisher<ScriptWidgetRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { promise in
+        return Future<ScriptWidgetRuntimeElement, ScriptWidgetError> { [self] promise in
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -882,7 +882,7 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForDynamicIsland(_ JavaScript: String) -> AnyPublisher<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> {
-        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { promise in
+        return Future<ScriptWidgetDynamicIslandRuntimeElement, ScriptWidgetError> { [self] promise in
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return
@@ -1112,7 +1112,7 @@ extension ScriptWidgetRuntime {
      }
      */
     private func internalExecuteJavaScriptForFunction(_ JavaScript: String) -> AnyPublisher<String, ScriptWidgetError> {
-        return Future<String, ScriptWidgetError> { promise in
+        return Future<String, ScriptWidgetError> { [self] promise in
             guard let supportJS = self.readSupportScript("util.js") else {
                 promise(.failure(.internalError("scriptwidget not found")))
                 return

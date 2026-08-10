@@ -37,6 +37,9 @@ import { studioTheme } from "./studioTheme.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
 import "./style.css";
 
+const isWebStudio = /^https?:$/.test(window.location.protocol);
+const editorParent = document.querySelector(isWebStudio ? "#editor" : "#native-editor");
+
 const readOnly = new Compartment();
 const theme = new Compartment();
 let bridge = null;
@@ -129,7 +132,7 @@ const extensions = [
 
 const view = new EditorView({
   state: EditorState.create({ doc: "", extensions }),
-  parent: document.querySelector("#editor"),
+  parent: editorParent,
 });
 
 function replaceDocument(content, nextDocumentID = documentID, version = 0) {
@@ -257,6 +260,110 @@ connectNativeBridge((nativeBridge) => {
 
   announceReady(bridge);
 });
+
+if (isWebStudio) {
+  document.querySelector("#native-editor").hidden = true;
+  document.querySelector("#web-studio").hidden = false;
+  startWebStudio();
+}
+
+async function startWebStudio() {
+  const dialog = document.querySelector("#pair-dialog");
+  const form = document.querySelector("#pair-form");
+  const errorOutput = document.querySelector("#pair-error");
+  const packageSelect = document.querySelector("#package-select");
+  const fileSelect = document.querySelector("#file-select");
+  const connectionStatus = document.querySelector("#connection-status");
+  let token = window.sessionStorage.getItem("scriptwidget.web-studio.token") || "";
+  let packages = [];
+
+  async function api(path, options = {}) {
+    const response = await fetch(path, {
+      ...options,
+      headers: { "Content-Type": "application/json", "X-Studio-Token": token, ...(options.headers || {}) },
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(body.message || `Request failed (${response.status})`);
+    return body;
+  }
+
+  async function pair(code) {
+    const result = await api("/api/v1/pair", { method: "POST", body: JSON.stringify({ code }) });
+    token = result.token;
+    window.sessionStorage.setItem("scriptwidget.web-studio.token", token);
+  }
+
+  async function loadPackages() {
+    const result = await api("/api/v1/packages");
+    packages = result.packages || [];
+    packageSelect.replaceChildren(...packages.map((item) => new Option(item.name, item.id)));
+    if (!packages.length) {
+      connectionStatus.textContent = "No editable widgets";
+      setReadOnly(true);
+      return;
+    }
+    await loadFiles();
+  }
+
+  async function loadFiles() {
+    const selected = packages.find((item) => item.id === packageSelect.value);
+    const files = selected?.files || [];
+    fileSelect.replaceChildren(...files.map((path) => new Option(path, path)));
+    const preferred = files.includes(selected?.entry) ? selected.entry : files[0];
+    if (preferred) fileSelect.value = preferred;
+    await loadDocument();
+  }
+
+  async function loadDocument() {
+    if (!packageSelect.value || !fileSelect.value) return;
+    const query = new URLSearchParams({ package: packageSelect.value, path: fileSelect.value });
+    const result = await api(`/api/v1/document?${query}`);
+    replaceDocument(result.content, `${packageSelect.value}/${fileSelect.value}`, result.version || 0);
+    setReadOnly(Boolean(result.readOnly));
+    connectionStatus.textContent = `Connected · Previewing ${result.packageName}`;
+  }
+
+  bridge = {
+    registerHandler() {},
+    callHandler(name, envelope, callback = () => {}) {
+      if (name === StudioMessage.documentSave) {
+        const body = JSON.stringify({
+          package: packageSelect.value,
+          path: fileSelect.value,
+          content: envelope.payload.content,
+          baseVersion: envelope.payload.version,
+        });
+        api("/api/v1/document", { method: "PUT", body })
+          .then((result) => callback({ result: "ok", ...result }))
+          .catch((error) => callback({ result: "failed", message: String(error) }));
+      } else {
+        callback({ result: "ok" });
+      }
+    },
+  };
+
+  packageSelect.addEventListener("change", () => loadFiles().catch(showError));
+  fileSelect.addEventListener("change", () => loadDocument().catch(showError));
+  function showError(error) { connectionStatus.textContent = String(error); }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault();
+    errorOutput.textContent = "";
+    try {
+      await pair(document.querySelector("#pair-code").value);
+      dialog.close();
+      await loadPackages();
+    } catch (error) { errorOutput.textContent = error.message; }
+  });
+
+  try {
+    await loadPackages();
+  } catch {
+    token = "";
+    window.sessionStorage.removeItem("scriptwidget.web-studio.token");
+    dialog.showModal();
+  }
+}
 
 window.matchMedia?.("(prefers-color-scheme: dark)").addEventListener("change", () => setTheme("system"));
 

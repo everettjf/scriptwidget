@@ -51,6 +51,7 @@ struct ScriptWidgetHomeView: View {
     @State private var isShowingSettings: Bool = false
     @State private var isShowingCreateGuide: Bool = false
     @State private var isShowingWidgetGuide = false
+    @State private var isShowingWebStudio = false
     @State private var searchText = ""
 
     @StateObject private var dataObject = ScriptWidgetHomeViewDataObject()
@@ -112,6 +113,14 @@ struct ScriptWidgetHomeView: View {
 
                     ToolbarItem(placement: .secondaryAction) {
                         Button {
+                            isShowingWebStudio = true
+                        } label: {
+                            Label("Web Studio", systemImage: "laptopcomputer.and.iphone")
+                        }
+                    }
+
+                    ToolbarItem(placement: .secondaryAction) {
+                        Button {
                             isShowingWidgetGuide = true
                         } label: {
                             Label("Add Widget to Home Screen", systemImage: "rectangle.stack.badge.plus")
@@ -129,6 +138,20 @@ struct ScriptWidgetHomeView: View {
                 }
                 .sheet(isPresented: $isShowingWidgetGuide) {
                     WidgetSetupGuideView()
+                }
+                .fullScreenCover(isPresented: $isShowingWebStudio, onDismiss: {
+                    WebStudioServer.shared.stop()
+                }) {
+                    WebStudioServerView()
+                        .overlay(alignment: .topTrailing) {
+                            Button("Close", systemImage: "xmark") {
+                                isShowingWebStudio = false
+                            }
+                            .labelStyle(.iconOnly)
+                            .buttonStyle(.bordered)
+                            .padding()
+                            .accessibilityLabel("Close Web Studio")
+                        }
                 }
         } detail: {
             HomeHelloView()

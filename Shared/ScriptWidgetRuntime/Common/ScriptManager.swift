@@ -524,9 +524,10 @@ class ScriptManager {
     }
     
     func asyncListScripts() async -> [ScriptModel] {
+        let directory = scriptDirectory
         return await withCheckedContinuation { continuation in
             DispatchQueue.global().async {
-                let models = self.listScripts()
+                let models = ScriptManager.listScriptsInDirectory(dirPath: directory, readonly: false)
                 continuation.resume(returning: models)
             }
         }

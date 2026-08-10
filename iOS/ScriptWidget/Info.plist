@@ -344,6 +344,12 @@
 	<string>Allow ScriptWidget to pick photos for script resources.</string>
 	<key>NSSupportsLiveActivities</key>
 	<true/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ScriptWidget uses your local network so you can edit widgets from a computer browser and preview them on this device.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_scriptwidget._tcp</string>
+	</array>
 	<key>NSUbiquitousContainers</key>
 	<dict>
 		<key>iCloud.ScriptWidget</key>

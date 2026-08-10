@@ -7,7 +7,32 @@
     <title>ScriptWidget Studio</title>
   </head>
   <body>
-    <main id="editor" aria-label="Script editor"></main>
+    <div id="web-studio" hidden>
+      <header class="web-toolbar">
+        <strong>ScriptWidget Web Studio</strong>
+        <span id="connection-status">Connecting…</span>
+      </header>
+      <div class="web-workspace">
+        <aside class="web-sidebar">
+          <label for="package-select">Widget</label>
+          <select id="package-select" aria-label="Widget"></select>
+          <label for="file-select">File</label>
+          <select id="file-select" aria-label="File"></select>
+          <p>Preview is rendered live on your iPhone or iPad.</p>
+        </aside>
+        <main id="editor" aria-label="Script editor"></main>
+      </div>
+    </div>
+    <main id="native-editor" aria-label="Script editor"></main>
+    <dialog id="pair-dialog">
+      <form method="dialog" id="pair-form">
+        <h1>Connect to ScriptWidget</h1>
+        <p>Enter the six-digit code shown on your iPhone or iPad.</p>
+        <input id="pair-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus />
+        <output id="pair-error" aria-live="polite"></output>
+        <button type="submit">Connect</button>
+      </form>
+    </dialog>
     <output id="save-status" aria-live="polite">Ready</output>
     <script type="module" src="/src/main.js"></script>
   </body>

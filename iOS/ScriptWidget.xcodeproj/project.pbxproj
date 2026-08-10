@@ -143,6 +143,9 @@
 		F228DDB827A3778A009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDB727A3778A009E8F04 /* ZipArchive */; };
 		F228DDBC27A37791009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDBB27A37791009E8F04 /* ZipArchive */; };
 		F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */; };
+		A120000100000000000000B0 /* WebStudioServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000300000000000000B0 /* WebStudioServer.swift */; };
+		A120000200000000000000B0 /* WebStudioServerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000400000000000000B0 /* WebStudioServerView.swift */; };
+		A120000600000000000000B0 /* WebStudioServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000700000000000000B0 /* WebStudioServerTests.swift */; };
 		F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */; };
 		F2433F6025D6F94B00AE4097 /* AppHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2433F5F25D6F94B00AE4097 /* AppHelper.swift */; };
 		F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */; };
@@ -516,6 +519,9 @@
 		F224FE5827A959E900617AF6 /* ImageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageListView.swift; sourceTree = "<group>"; };
 		F224FE5A27AA1AF500617AF6 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
+		A120000300000000000000B0 /* WebStudioServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServer.swift; sourceTree = "<group>"; };
+		A120000400000000000000B0 /* WebStudioServerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServerView.swift; sourceTree = "<group>"; };
+		A120000700000000000000B0 /* WebStudioServerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WebStudioServerTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/WebStudioServerTests.swift; sourceTree = "<group>"; };
 		F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarAccessor.swift; sourceTree = "<group>"; };
 		F2433F5F25D6F94B00AE4097 /* AppHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHelper.swift; sourceTree = "<group>"; };
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
@@ -728,6 +734,7 @@
 		A017E802CF902DDB89252314 /* Tests */ = {
 			isa = PBXGroup;
 			children = (
+				A120000700000000000000B0 /* WebStudioServerTests.swift */,
 				3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */,
 				6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */,
 				E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */,
@@ -886,6 +893,7 @@
 		D163031A254C6D62005EEB93 /* View */ = {
 			isa = PBXGroup;
 			children = (
+				A120000400000000000000B0 /* WebStudioServerView.swift */,
 				A105000200000000000000B0 /* AIGenerate */,
 				D1824275254476A200223563 /* CodeEditor */,
 				D1403DA22552FE950076F87C /* PhotoPicker */,
@@ -1334,6 +1342,7 @@
 		F296EA1425E88D1100E87A4A /* Manager */ = {
 			isa = PBXGroup;
 			children = (
+				A120000300000000000000B0 /* WebStudioServer.swift */,
 				5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */,
 				F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */,
 			);
@@ -1723,6 +1732,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A120000600000000000000B0 /* WebStudioServerTests.swift in Sources */,
 				B165542F120D2E511D4012B9 /* AIGenerationTests.swift in Sources */,
 				84C1353FBC065F971E23478C /* PackageCacheTests.swift in Sources */,
 				CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */,
@@ -1734,6 +1744,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A120000100000000000000B0 /* WebStudioServer.swift in Sources */,
+				A120000200000000000000B0 /* WebStudioServerView.swift in Sources */,
 				A102000900000000000000B0 /* AIExamplePrompts.swift in Sources */,
 				A102001000000000000000B0 /* AIWidgetSkills.swift in Sources */,
 				A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */,
