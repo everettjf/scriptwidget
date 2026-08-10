@@ -953,6 +953,25 @@ extension ScriptManager {
 
 
 
+/// Narrow read boundary used by package-list UI. The default implementation
+/// deliberately delegates to `ScriptManager` so introducing this seam cannot
+/// change package discovery, ordering, iCloud, or local fallback behavior.
+protocol ScriptPackageListing {
+    func listScripts() -> [ScriptModel]
+}
+
+struct DefaultScriptPackageRepository: ScriptPackageListing {
+    private let manager: ScriptManager
+
+    init(manager: ScriptManager = sharedScriptManager) {
+        self.manager = manager
+    }
+
+    func listScripts() -> [ScriptModel] {
+        manager.listScripts()
+    }
+}
+
 let sharedScriptManager = ScriptManager(isBuild: false)
 let buildScriptManager = ScriptManager(isBuild: true)
 

@@ -15,8 +15,11 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
     public static let scriptDeleteNotification = Notification.Name("ScriptWidgetHomeViewDataObjectDeleteScript")
     
     @Published var models = [ScriptModel]()
+
+    private let packages: any ScriptPackageListing
     
-    init() {
+    init(packages: any ScriptPackageListing = DefaultScriptPackageRepository()) {
+        self.packages = packages
         reload()
         
         NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil, queue: OperationQueue.main) { (noti) in
@@ -39,7 +42,7 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
     
     func reload() {
         DispatchQueue.global().async { [self] in
-            let items = sharedScriptManager.listScripts()
+            let items = packages.listScripts()
             DispatchQueue.main.async {
                 self.models = items
             }

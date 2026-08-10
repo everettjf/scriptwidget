@@ -1103,6 +1103,17 @@ final class ScriptManagerLifecycleTests: XCTestCase {
         XCTAssertTrue(manager.listScripts().isEmpty)
         XCTAssertEqual(manager.scriptCount(), 0)
     }
+
+    func testDefaultRepositoryPreservesManagerListingAndOrdering() throws {
+        let manager = try makeManager("Repository")
+        XCTAssertTrue(manager.createScript(content: "B", recommendPackageName: "Beta", imageCopyPath: nil).0)
+        XCTAssertTrue(manager.createScript(content: "A", recommendPackageName: "Alpha", imageCopyPath: nil).0)
+
+        let repository = DefaultScriptPackageRepository(manager: manager)
+
+        XCTAssertEqual(repository.listScripts().map(\.name), ["Alpha", "Beta"])
+        XCTAssertEqual(repository.listScripts().map(\.name), manager.listScripts().map(\.name))
+    }
 }
 
 private extension Data {

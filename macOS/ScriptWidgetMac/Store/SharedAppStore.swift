@@ -14,8 +14,11 @@ class SharedAppStore: ObservableObject {
 
     
     @Published var scriptModels = [ScriptModel]()
+
+    private let packages: any ScriptPackageListing
     
-    init() {
+    init(packages: any ScriptPackageListing = DefaultScriptPackageRepository()) {
+        self.packages = packages
         reloadUserScripts()
         addObserver()
     }
@@ -31,7 +34,7 @@ class SharedAppStore: ObservableObject {
     
     func reloadUserScripts() {
         DispatchQueue.global().async { [self] in
-            let items = sharedScriptManager.listScripts()
+            let items = packages.listScripts()
             DispatchQueue.main.async {
                 self.scriptModels = items
             }
