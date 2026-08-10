@@ -35,7 +35,7 @@ import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
 import { loadDocumentState, saveDocumentState } from "./documentState.js";
-import { initialStudioState, recoverableDraft, reduceStudioState, removeDraft, writeDraft } from "./webStudioState.js";
+import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceStudioState, removeDraft, shouldWarnBeforeLeaving, writeDraft } from "./webStudioState.js";
 import "./style.css";
 
 const isWebStudio = /^https?:$/.test(window.location.protocol);
@@ -295,6 +295,9 @@ async function startWebStudio() {
   let serverContent = "";
   let conflict = null;
   let studioState = initialStudioState();
+  let loadedPackageID = "";
+  let loadedPath = "";
+  let saveCoordinator = null;
 
   class StudioAPIError extends Error {
     constructor(message, status, body = {}) {
@@ -339,6 +342,13 @@ async function startWebStudio() {
     }
     return body;
   }
+
+  saveCoordinator = new DocumentSaveCoordinator(({ packageID, path, content, baseRevision }) => (
+    api("/api/v1/document", {
+      method: "PUT",
+      body: JSON.stringify({ package: packageID, path, content, baseRevision }),
+    })
+  ));
 
   async function pair(code) {
     const result = await api("/api/v1/pair", { method: "POST", body: JSON.stringify({ code }) });
@@ -393,11 +403,14 @@ async function startWebStudio() {
     const query = new URLSearchParams({ package: packageSelect.value, path: fileSelect.value });
     const result = await api(`/api/v1/document?${query}`);
     const nextID = `${packageSelect.value}/${fileSelect.value}`;
+    loadedPackageID = packageSelect.value;
+    loadedPath = fileSelect.value;
     remoteRevision = result.revision;
     serverContent = result.content;
     conflict = null;
     conflictBanner.hidden = true;
     replaceDocument(result.content, nextID, 0);
+    saveCoordinator.open({ documentID: nextID, packageID: loadedPackageID, path: loadedPath, revision: result.revision, content: result.content });
     setReadOnly(Boolean(result.readOnly));
     updateDocumentChrome(result);
     const draft = recoverableDraft(window.localStorage, nextID, result.content, result.revision);
@@ -448,15 +461,21 @@ async function startWebStudio() {
   }
 
   async function saveWebDocument(content, callback, overrideRevision = null) {
+    if (saveCoordinator.snapshot()?.content !== content) saveCoordinator.edit(content);
+    if (overrideRevision) saveCoordinator.rebase(overrideRevision);
     updateState({ type: "SAVING" });
     try {
-      const result = await api("/api/v1/document", { method: "PUT", body: JSON.stringify({ package: packageSelect.value, path: fileSelect.value, content, baseRevision: overrideRevision ?? remoteRevision }) });
-      remoteRevision = result.revision;
-      serverContent = content;
+      const completion = await saveCoordinator.flush();
+      if (completion.ignored) { callback({ result: "ok", ignored: true }); return; }
+      if (completion.skipped) { updateState({ type: "SAVED" }); callback({ result: "ok", skipped: true }); return; }
+      const result = completion.result || {};
+      const snapshot = saveCoordinator.snapshot();
+      remoteRevision = snapshot?.revision || remoteRevision;
+      serverContent = snapshot?.content || content;
       removeDraft(window.localStorage, documentID);
       conflict = null;
       conflictBanner.hidden = true;
-      document.querySelector("#revision-detail").textContent = remoteRevision.slice(0, 8);
+      document.querySelector("#revision-detail").textContent = remoteRevision?.slice(0, 8) || "—";
       updateState({ type: "SAVED", preview: result.preview?.state });
       callback({ result: "ok", ...result });
     } catch (error) {
@@ -484,15 +503,36 @@ async function startWebStudio() {
 
   webStudioController = {
     documentChanged() {
-      writeDraft(window.localStorage, documentID, view.state.doc.toString(), remoteRevision);
+      const content = view.state.doc.toString();
+      saveCoordinator.edit(content);
+      writeDraft(window.localStorage, documentID, content, saveCoordinator.snapshot()?.revision || remoteRevision);
       updateState({ type: "EDITED" });
       window.clearTimeout(diagnosticsTimer);
       diagnosticsTimer = window.setTimeout(renderProblems, 380);
     },
   };
 
-  packageSelect.addEventListener("change", () => loadFiles().catch(showError));
-  fileSelect.addEventListener("change", () => loadDocument().catch(showError));
+  async function confirmNavigation(load, restoreSelection) {
+    if (!shouldWarnBeforeLeaving(studioState.save)) { await load(); return; }
+    try {
+      window.clearTimeout(saveTimer);
+      await saveWebDocument(view.state.doc.toString(), () => {});
+      if (!saveCoordinator.isDirty && studioState.save !== "conflict") { await load(); return; }
+    } catch {}
+    const leave = window.confirm("This document has changes that are not saved on the device. A browser draft is available. Switch anyway?");
+    if (leave) await load(); else restoreSelection();
+  }
+
+  packageSelect.addEventListener("change", () => {
+    const nextPackage = packageSelect.value;
+    packageSelect.value = loadedPackageID;
+    confirmNavigation(async () => { packageSelect.value = nextPackage; await loadFiles(); }, () => { packageSelect.value = loadedPackageID; }).catch(showError);
+  });
+  fileSelect.addEventListener("change", () => {
+    const nextPath = fileSelect.value;
+    fileSelect.value = loadedPath;
+    confirmNavigation(async () => { fileSelect.value = nextPath; await loadDocument(); }, () => { fileSelect.value = loadedPath; }).catch(showError);
+  });
   function showError(error) { connectionStatus.textContent = error.message || String(error); updateState({ type: "SAVE_FAILED" }); }
 
   form.addEventListener("submit", async (event) => {
@@ -520,7 +560,7 @@ async function startWebStudio() {
     renderProblems();
   });
   document.querySelector("#discard-draft").addEventListener("click", () => { removeDraft(window.localStorage, documentID); recoveryBanner.hidden = true; });
-  document.querySelector("#reload-server").addEventListener("click", () => { if (!conflict) return; removeDraft(window.localStorage, documentID); remoteRevision = conflict.currentRevision; serverContent = conflict.currentContent; replaceDocument(serverContent, documentID, documentVersion + 1); conflict = null; conflictBanner.hidden = true; updateState({ type: "SAVED" }); renderProblems(); });
+  document.querySelector("#reload-server").addEventListener("click", () => { if (!conflict) return; removeDraft(window.localStorage, documentID); remoteRevision = conflict.currentRevision; serverContent = conflict.currentContent; replaceDocument(serverContent, documentID, documentVersion + 1); saveCoordinator.open({ documentID, packageID: loadedPackageID, path: loadedPath, revision: remoteRevision, content: serverContent }); conflict = null; conflictBanner.hidden = true; updateState({ type: "SAVED" }); renderProblems(); });
   document.querySelector("#keep-local").addEventListener("click", () => { if (conflict) saveWebDocument(view.state.doc.toString(), () => {}, conflict.currentRevision); });
   document.querySelector("#compare-conflict").addEventListener("click", () => { document.querySelector("#compare-local").textContent = view.state.doc.toString(); document.querySelector("#compare-server").textContent = conflict?.currentContent || serverContent; compareDialog.showModal(); });
   compareDialog.querySelector("button").addEventListener("click", () => compareDialog.close());
@@ -568,6 +608,11 @@ async function startWebStudio() {
   });
   window.addEventListener("online", () => {
     if (token) api("/api/v1/session").then((session) => { applySession(session); updateState({ type: "CONNECTED" }); return loadPackages(); }).catch(showError);
+  });
+  window.addEventListener("beforeunload", (event) => {
+    if (!shouldWarnBeforeLeaving(studioState.save)) return;
+    event.preventDefault();
+    event.returnValue = "";
   });
 
   try {

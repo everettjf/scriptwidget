@@ -551,6 +551,31 @@ final class StudioDraftStoreTests: XCTestCase {
     }
 }
 
+final class StudioEditorBundleIntegrationTests: XCTestCase {
+    func testEmbeddedBundleContainsNativeAndWebStudioEntrypointsAndAssets() throws {
+        let outerURL = try XCTUnwrap(Bundle.main.url(forResource: "StudioEditor", withExtension: "bundle"))
+        let studioBundle = try XCTUnwrap(Bundle(url: outerURL))
+        let resourceURL = try XCTUnwrap(studioBundle.resourceURL)
+        let indexURL = resourceURL.appendingPathComponent("index.html")
+        let html = try String(contentsOf: indexURL, encoding: .utf8)
+
+        XCTAssertTrue(html.contains("id=\"native-editor\""))
+        XCTAssertTrue(html.contains("id=\"web-studio\""))
+        XCTAssertTrue(html.contains("ScriptWidget Web Studio"))
+
+        let expression = try NSRegularExpression(pattern: #"(?:src|href)=\"\./([^\"]+)\""#)
+        let range = NSRange(html.startIndex..<html.endIndex, in: html)
+        let assets = expression.matches(in: html, range: range).compactMap { match -> String? in
+            guard let assetRange = Range(match.range(at: 1), in: html) else { return nil }
+            return String(html[assetRange])
+        }
+        XCTAssertFalse(assets.isEmpty)
+        for asset in assets {
+            XCTAssertTrue(FileManager.default.fileExists(atPath: resourceURL.appendingPathComponent(asset).path), "Missing Studio asset: \(asset)")
+        }
+    }
+}
+
 final class ProjectFileImportTests: XCTestCase {
     private var packageDirectory: URL!
     private var sourceDirectory: URL!

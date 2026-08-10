@@ -14,9 +14,10 @@ the only runtime and native-preview authority.
    an unsaved browser draft is retained locally if the connection drops.
 6. The selected package entry is evaluated and refreshed in Device Preview.
 
-The first release supports Safari, Chrome, Edge, and Firefox through ordinary
-HTTP requests. It does not require a Mac. A Studio session stops when its view
-is dismissed or the app leaves the foreground.
+The first release supports Safari 15.4+, Chrome/Edge 100+, and Firefox 100+
+through ordinary HTTP requests. It does not require a Mac. CSS includes a
+fallback for browsers that predate `light-dark()`. A Studio session stops when
+its view is dismissed or the app leaves the foreground.
 
 ## Architecture
 
@@ -69,7 +70,7 @@ memory-only and rotate whenever the server starts.
   trusted local networks; it does not claim confidentiality against a hostile
   network because transport is HTTP.
 
-## Web Studio 1.1 authoring experience
+## Web Studio 1.0 authoring experience
 
 - A professional Explorer/editor/Inspector workspace scales down to drawer-style
   sidebars on narrow browsers.
@@ -81,6 +82,19 @@ memory-only and rotate whenever the server starts.
   save, format, Explorer, Inspector, and Problems actions.
 - Recovery and conflict notices require an explicit choice and never silently
   replace either copy.
+- Saves are serialized and bound to a fixed package/path identity. Switching a
+  file first attempts to save and otherwise asks before leaving the local draft;
+  closing the page with an unsaved, failed, or conflicted save shows the browser's
+  standard leave warning.
+
+## 1.0 contract freeze
+
+For the first public release, Package 2.0, StudioBridge v1, Runtime API schema,
+Skills 1.0, Gallery 1.0, Data Source Plugin 1.0, and Web Studio HTTP API v1 are
+compatibility contracts. Changes before release should be additive unless they
+fix data loss, a security boundary, or behavior that cannot be supported. A
+breaking correction requires a documented migration and matching regression
+tests in the same change.
 
 ## Known version 1 limits
 
