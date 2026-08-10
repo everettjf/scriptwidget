@@ -153,6 +153,8 @@
 		F2534B3E27AA9C50000A4F98 /* PhotoPicker.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F2534B4027AA9C50000A4F98 /* PhotoPicker.storyboard */; };
 		F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
 		F25ED69027FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
+		A130000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
+		A130000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
 		F25ED69D27FF2227000089D0 /* FileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED69C27FF2227000089D0 /* FileDetailView.swift */; };
 		F25ED69F280067BD000089D0 /* FileCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED69E280067BD000089D0 /* FileCreateView.swift */; };
 		F25ED6A128008180000089D0 /* FileRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED6A028008180000089D0 /* FileRenameView.swift */; };
@@ -527,6 +529,7 @@
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		F2534B4127AA9C50000A4F98 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
 		F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
+		A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
 		F25ED69C27FF2227000089D0 /* FileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDetailView.swift; sourceTree = "<group>"; };
 		F25ED69E280067BD000089D0 /* FileCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreateView.swift; sourceTree = "<group>"; };
 		F25ED6A028008180000089D0 /* FileRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRenameView.swift; sourceTree = "<group>"; };
@@ -1186,6 +1189,7 @@
 			isa = PBXGroup;
 			children = (
 				F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */,
+				A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */,
 				F29119072793035E00B860B0 /* ScriptWidgetAppState.swift */,
 				F29119092793035E00B860B0 /* ScriptWidgetRuntime.swift */,
 				F291190A2793035E00B860B0 /* DeepLinkDefine.swift */,
@@ -1775,6 +1779,7 @@
 				D1403DE82552FEB40076F87C /* TOActivityCroppedImageProvider.m in Sources */,
 				5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */,
 				F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */,
+				A130000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */,
 				F29118F32793034D00B860B0 /* ScriptModel.swift in Sources */,
 				D1A0000000E0000000000002 /* ScriptMetadata.swift in Sources */,
@@ -1906,6 +1911,7 @@
 				D1CBAEDA28D5DA9700DE4E65 /* ScriptWidgetDataObject.swift in Sources */,
 				D1CBAED628D5B1DE00DE4E65 /* ScriptLiveActivityWidget.swift in Sources */,
 				F29119472793035E00B860B0 /* ScriptWidgetRuntime.swift in Sources */,
+				A130000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				F291193D2793035E00B860B0 /* ScriptWidgetElementPoint.swift in Sources */,
 				F291194F2793035E00B860B0 /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */,
 				F291194B2793035E00B860B0 /* ScriptWidgetElementView.swift in Sources */,

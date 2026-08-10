@@ -70,6 +70,8 @@
 		D1995C9D29536BB800D1BD94 /* MineRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5B29536BB800D1BD94 /* MineRingView.swift */; };
 		D1995CA029536BB800D1BD94 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */; };
 		D1995CA129536BB800D1BD94 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */; };
+		A230000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A230000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
+		A230000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A230000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
 		D1995CA229536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */; };
 		D1995CA329536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */; };
 		D1995CA429536BB800D1BD94 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */; };
@@ -310,6 +312,7 @@
 		D1995C5A29536BB800D1BD94 /* ScriptWidgetElementGradient.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementGradient.swift; sourceTree = "<group>"; };
 		D1995C5B29536BB800D1BD94 /* MineRingView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineRingView.swift; sourceTree = "<group>"; };
 		D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
+		A230000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
 		D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntime.swift; sourceTree = "<group>"; };
 		D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DeepLinkDefine.swift; sourceTree = "<group>"; };
 		D1995C6129536BB800D1BD94 /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppState.swift; sourceTree = "<group>"; };
@@ -596,6 +599,7 @@
 			isa = PBXGroup;
 			children = (
 				D1995C5E29536BB800D1BD94 /* ScriptWidgetRunningState.swift */,
+				A230000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */,
 				D1995C5F29536BB800D1BD94 /* ScriptWidgetRuntime.swift */,
 				D1995C6029536BB800D1BD94 /* DeepLinkDefine.swift */,
 				D1995C6129536BB800D1BD94 /* ScriptWidgetAppState.swift */,
@@ -1218,6 +1222,7 @@
 				D1995CA429536BB800D1BD94 /* DeepLinkDefine.swift in Sources */,
 				F29118C52791DCC400B860B0 /* GradientColorData.swift in Sources */,
 				D1995CA229536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */,
+				A230000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				D1995CE029536BB800D1BD94 /* ScriptWidgetElementTagGauge.swift in Sources */,
 				F2F90FC427970E3E003095A9 /* CreateGuideView.swift in Sources */,
 				F29117EA279101DF00B860B0 /* ContentView.swift in Sources */,
@@ -1329,6 +1334,7 @@
 				D1995CC529536BB800D1BD94 /* ScriptWidgetAttributeGeneral.swift in Sources */,
 				D1995CDB29536BB800D1BD94 /* ScriptWidgetElementTagText.swift in Sources */,
 				D1995CA329536BB800D1BD94 /* ScriptWidgetRuntime.swift in Sources */,
+				A230000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
 				D1995CC329536BB800D1BD94 /* ScriptWidgetAttributeImageModifier.swift in Sources */,
 				D1995CFF29536BC700D1BD94 /* ScriptManager.swift in Sources */,
 				D1995C9B29536BB800D1BD94 /* ScriptWidgetElementGradient.swift in Sources */,
