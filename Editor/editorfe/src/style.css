@@ -46,6 +46,22 @@ body,
   font-weight: 500;
 }
 
+.web-connection-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+#disconnect-button {
+  padding: 5px 9px;
+  border: 1px solid light-dark(#d0d7de, #484b52);
+  border-radius: 7px;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
 .web-sidebar {
   padding: 16px;
   border-right: 1px solid light-dark(#d8dee4, #3b3d43);

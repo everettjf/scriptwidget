@@ -274,8 +274,26 @@ async function startWebStudio() {
   const packageSelect = document.querySelector("#package-select");
   const fileSelect = document.querySelector("#file-select");
   const connectionStatus = document.querySelector("#connection-status");
+  const disconnectButton = document.querySelector("#disconnect-button");
   let token = window.sessionStorage.getItem("scriptwidget.web-studio.token") || "";
   let packages = [];
+  let heartbeatTimer = null;
+
+  class StudioAPIError extends Error {
+    constructor(message, status) {
+      super(message);
+      this.status = status;
+    }
+  }
+
+  function requirePairing(message = "Session ended. Enter the new code shown on your device.") {
+    token = "";
+    window.sessionStorage.removeItem("scriptwidget.web-studio.token");
+    disconnectButton.hidden = true;
+    connectionStatus.textContent = message;
+    setReadOnly(true);
+    if (!dialog.open) dialog.showModal();
+  }
 
   async function api(path, options = {}) {
     const response = await fetch(path, {
@@ -283,7 +301,11 @@ async function startWebStudio() {
       headers: { "Content-Type": "application/json", "X-Studio-Token": token, ...(options.headers || {}) },
     });
     const body = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(body.message || `Request failed (${response.status})`);
+    if (!response.ok) {
+      const error = new StudioAPIError(body.message || `Request failed (${response.status})`, response.status);
+      if (response.status === 401 && path !== "/api/v1/pair") requirePairing();
+      throw error;
+    }
     return body;
   }
 
@@ -291,6 +313,22 @@ async function startWebStudio() {
     const result = await api("/api/v1/pair", { method: "POST", body: JSON.stringify({ code }) });
     token = result.token;
     window.sessionStorage.setItem("scriptwidget.web-studio.token", token);
+    disconnectButton.hidden = false;
+    startHeartbeat();
+  }
+
+  function startHeartbeat() {
+    window.clearInterval(heartbeatTimer);
+    heartbeatTimer = window.setInterval(async () => {
+      if (!token) return;
+      try {
+        await api("/api/v1/session");
+        if (!navigator.onLine) return;
+        connectionStatus.dataset.state = "connected";
+      } catch (error) {
+        if (error.status !== 401) connectionStatus.textContent = `Connection interrupted · ${error.message}`;
+      }
+    }, 5000);
   }
 
   async function loadPackages() {
@@ -321,6 +359,8 @@ async function startWebStudio() {
     replaceDocument(result.content, `${packageSelect.value}/${fileSelect.value}`, result.version || 0);
     setReadOnly(Boolean(result.readOnly));
     connectionStatus.textContent = `Connected · Previewing ${result.packageName}`;
+    disconnectButton.hidden = false;
+    startHeartbeat();
   }
 
   bridge = {
@@ -356,12 +396,22 @@ async function startWebStudio() {
     } catch (error) { errorOutput.textContent = error.message; }
   });
 
+  disconnectButton.addEventListener("click", async () => {
+    try { await api("/api/v1/session", { method: "DELETE" }); } catch {}
+    requirePairing("Disconnected. Start a new session with the code on your device.");
+  });
+
+  window.addEventListener("offline", () => {
+    connectionStatus.textContent = "Computer is offline";
+  });
+  window.addEventListener("online", () => {
+    if (token) api("/api/v1/session").then(loadPackages).catch(showError);
+  });
+
   try {
     await loadPackages();
   } catch {
-    token = "";
-    window.sessionStorage.removeItem("scriptwidget.web-studio.token");
-    dialog.showModal();
+    requirePairing("Pair with the code shown on your device.");
   }
 }
 

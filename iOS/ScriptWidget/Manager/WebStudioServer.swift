@@ -7,6 +7,13 @@ extension Notification.Name {
     static let webStudioDocumentSaved = Notification.Name("WebStudioDocumentSaved")
 }
 
+struct WebStudioLogEntry: Identifiable, Codable {
+    let id: UUID
+    let date: Date
+    let level: String
+    let message: String
+}
+
 final class WebStudioServer: ObservableObject {
     static let shared = WebStudioServer()
 
@@ -18,19 +25,26 @@ final class WebStudioServer: ObservableObject {
     @Published private(set) var previewRelativePath: String?
     @Published private(set) var previewRevision = 0
     @Published private(set) var lastError: String?
+    @Published private(set) var logs = [WebStudioLogEntry]()
+    @Published private(set) var connectionHint: String?
 
     private let queue = DispatchQueue(label: "app.scriptwidget.web-studio", qos: .userInitiated)
     private var listener: NWListener?
     private var sessionToken = ""
     private var hasPairedBrowser = false
+    private var lastSessionActivity: Date?
+    private var leaseWorkItem: DispatchWorkItem?
     private let maximumRequestBytes = 2 * 1024 * 1024
+    private let sessionLease: TimeInterval
 
-    private init() {}
+    init(sessionLease: TimeInterval = 15) {
+        self.sessionLease = sessionLease
+    }
 
     var displayURLs: [String] {
         guard port != 0 else { return [] }
         let addresses = Self.localIPv4Addresses().map { "http://\($0):\(port)" }
-        return addresses.isEmpty ? ["http://scriptwidget.local:\(port)"] : addresses
+        return addresses
     }
 
     func start() {
@@ -39,6 +53,9 @@ final class WebStudioServer: ObservableObject {
         sessionToken = Self.randomToken()
         hasPairedBrowser = false
         lastError = nil
+        connectionHint = nil
+        logs.removeAll()
+        log("info", "Starting Web Studio")
 
         do {
             let listener = try NWListener(using: .tcp, on: .any)
@@ -50,8 +67,23 @@ final class WebStudioServer: ObservableObject {
                     case .ready:
                         self.port = listener.port?.rawValue ?? 0
                         self.isRunning = true
+                        self.lastError = nil
+                        self.connectionHint = nil
+                        self.log("info", "Listening on port \(self.port)")
+                        if self.displayURLs.isEmpty {
+                            self.connectionHint = "No usable Wi-Fi address was found. Connect this device to Wi-Fi or a personal hotspot, then restart Web Studio."
+                        }
+#if DEBUG
+                        NSLog("Web Studio QA ready: %@", self.displayURLs.joined(separator: ", "))
+#endif
+                    case .waiting(let error):
+                        self.lastError = error.localizedDescription
+                        self.connectionHint = "Check Local Network access in Settings, then confirm both devices use the same Wi-Fi without a VPN or guest-network isolation."
+                        self.log("warning", "Listener waiting: \(error.localizedDescription)")
                     case .failed(let error):
                         self.lastError = error.localizedDescription
+                        self.connectionHint = "Check Local Network access in Settings and try starting Web Studio again."
+                        self.log("error", "Listener failed: \(error.localizedDescription)")
                         self.stop()
                     case .cancelled:
                         self.isRunning = false
@@ -68,20 +100,27 @@ final class WebStudioServer: ObservableObject {
             listener.start(queue: queue)
         } catch {
             lastError = error.localizedDescription
+            connectionHint = "Web Studio could not open a local port. Check Local Network access and try again."
+            log("error", "Could not create listener: \(error.localizedDescription)")
         }
     }
 
     func stop() {
         listener?.cancel()
         listener = nil
+        leaseWorkItem?.cancel()
+        leaseWorkItem = nil
         sessionToken = ""
         hasPairedBrowser = false
+        lastSessionActivity = nil
         connectedClientCount = 0
         isRunning = false
         port = 0
+        log("info", "Web Studio stopped")
     }
 
     private func accept(_ connection: NWConnection) {
+        log("debug", "Accepted local HTTP connection")
         connection.start(queue: queue)
         receive(on: connection, accumulated: Data())
     }
@@ -92,6 +131,7 @@ final class WebStudioServer: ObservableObject {
             var buffer = accumulated
             if let data { buffer.append(data) }
             guard buffer.count <= self.maximumRequestBytes else {
+                self.log("warning", "Rejected request larger than 2 MiB")
                 self.send(.json(status: 413, ["message": "Request is too large"]), on: connection)
                 return
             }
@@ -108,24 +148,30 @@ final class WebStudioServer: ObservableObject {
     private func route(_ request: HTTPRequest, connection: NWConnection) {
         if request.method == "POST", request.path == "/api/v1/pair" {
             guard !hasPairedBrowser else {
+                log("warning", "Rejected pairing while another browser owns the session")
                 send(.json(status: 409, ["message": "Another browser is already connected"]), on: connection)
                 return
             }
             guard let body = request.json, body["code"] as? String == pairingCode else {
+                log("warning", "Rejected invalid pairing code")
                 send(.json(status: 401, ["message": "Invalid pairing code"]), on: connection)
                 return
             }
             hasPairedBrowser = true
+            refreshSessionLease()
             DispatchQueue.main.async { self.connectedClientCount = 1 }
+            log("info", "Browser paired")
             send(.json(["token": sessionToken]), on: connection)
             return
         }
 
         if request.path.hasPrefix("/api/") {
             guard request.headers["x-studio-token"] == sessionToken, !sessionToken.isEmpty else {
+                log("warning", "Rejected API request without a valid session")
                 send(.json(status: 401, ["message": "Pairing required"]), on: connection)
                 return
             }
+            refreshSessionLease()
             routeAPI(request, connection: connection)
             return
         }
@@ -134,6 +180,17 @@ final class WebStudioServer: ObservableObject {
     }
 
     private func routeAPI(_ request: HTTPRequest, connection: NWConnection) {
+        if request.method == "GET", request.path == "/api/v1/session" {
+            send(.json(["connected": true, "leaseSeconds": Int(sessionLease)]), on: connection)
+            return
+        }
+
+        if request.method == "DELETE", request.path == "/api/v1/session" {
+            send(.json(["disconnected": true]), on: connection)
+            releaseSession(reason: "Browser disconnected")
+            return
+        }
+
         if request.method == "GET", request.path == "/api/v1/packages" {
             let packages: [[String: Any]] = sharedScriptManager.listScripts().map { model in
                 let manifest = model.package.effectiveManifest()
@@ -186,6 +243,7 @@ final class WebStudioServer: ObservableObject {
                 ? model.package.writeMainFile(content: content)
                 : model.package.writeFile(relativePath: relativePath, content: content)
             guard result.0 else {
+                log("error", "Failed to save \(model.name)/\(relativePath): \(result.1)")
                 send(.json(status: 400, ["message": result.1]), on: connection)
                 return
             }
@@ -195,6 +253,7 @@ final class WebStudioServer: ObservableObject {
                 object: nil,
                 userInfo: ["package": model.name, "path": relativePath]
             )
+            log("info", "Saved \(model.name)/\(relativePath)")
             send(.json(["version": Self.version(for: content)]), on: connection)
             return
         }
@@ -235,6 +294,75 @@ final class WebStudioServer: ObservableObject {
         connection.send(content: response.encoded, completion: .contentProcessed { _ in connection.cancel() })
     }
 
+    var diagnosticReport: String {
+        let formatter = ISO8601DateFormatter()
+        let header = [
+            "ScriptWidget Web Studio diagnostics",
+            "Generated: \(formatter.string(from: Date()))",
+            "Running: \(isRunning)",
+            "Port: \(port)",
+            "Addresses: \(displayURLs.joined(separator: ", "))",
+            "Connected browsers: \(connectedClientCount)",
+            "Last error: \(lastError ?? "none")",
+            "",
+        ]
+        let lines = logs.map { "\(formatter.string(from: $0.date)) [\($0.level.uppercased())] \($0.message)" }
+        return (header + lines).joined(separator: "\n")
+    }
+
+    private func refreshSessionLease() {
+        lastSessionActivity = Date()
+        leaseWorkItem?.cancel()
+        let workItem = DispatchWorkItem { [weak self] in
+            guard let self, let activity = self.lastSessionActivity else { return }
+            let remaining = self.sessionLease - Date().timeIntervalSince(activity)
+            if remaining > 0 {
+                self.scheduleLeaseCheck(after: remaining)
+            } else {
+                self.releaseSession(reason: "Browser heartbeat expired")
+            }
+        }
+        leaseWorkItem = workItem
+        queue.asyncAfter(deadline: .now() + sessionLease, execute: workItem)
+    }
+
+    private func scheduleLeaseCheck(after interval: TimeInterval) {
+        let workItem = DispatchWorkItem { [weak self] in self?.refreshSessionLeaseIfExpired() }
+        leaseWorkItem = workItem
+        queue.asyncAfter(deadline: .now() + max(0.1, interval), execute: workItem)
+    }
+
+    private func refreshSessionLeaseIfExpired() {
+        guard let activity = lastSessionActivity else { return }
+        if Date().timeIntervalSince(activity) >= sessionLease {
+            releaseSession(reason: "Browser heartbeat expired")
+        } else {
+            scheduleLeaseCheck(after: sessionLease - Date().timeIntervalSince(activity))
+        }
+    }
+
+    private func releaseSession(reason: String) {
+        leaseWorkItem?.cancel()
+        leaseWorkItem = nil
+        hasPairedBrowser = false
+        lastSessionActivity = nil
+        sessionToken = Self.randomToken()
+        let nextCode = Self.randomDigits(count: 6)
+        DispatchQueue.main.async {
+            self.connectedClientCount = 0
+            self.pairingCode = nextCode
+        }
+        log("info", reason)
+    }
+
+    private func log(_ level: String, _ message: String) {
+        let entry = WebStudioLogEntry(id: UUID(), date: Date(), level: level, message: message)
+        DispatchQueue.main.async {
+            self.logs.append(entry)
+            if self.logs.count > 200 { self.logs.removeFirst(self.logs.count - 200) }
+        }
+    }
+
     private static func isEditableTextFile(_ path: String) -> Bool {
         let allowed = Set(["jsx", "js", "json", "css", "md", "txt", "csv", "svg"])
         return allowed.contains(URL(fileURLWithPath: path).pathExtension.lowercased())
@@ -273,9 +401,14 @@ final class WebStudioServer: ObservableObject {
         defer { freeifaddrs(pointer) }
         return sequence(first: first, next: { $0.pointee.ifa_next })
             .compactMap { item -> String? in
+                let interfaceName = String(cString: item.pointee.ifa_name)
+                let excludedPrefixes = ["awdl", "llw", "pdp_ip", "utun", "ipsec"]
                 guard let address = item.pointee.ifa_addr,
                       address.pointee.sa_family == UInt8(AF_INET),
-                      (item.pointee.ifa_flags & UInt32(IFF_LOOPBACK)) == 0 else { return nil }
+                      (item.pointee.ifa_flags & UInt32(IFF_LOOPBACK)) == 0,
+                      (item.pointee.ifa_flags & UInt32(IFF_UP)) != 0,
+                      (item.pointee.ifa_flags & UInt32(IFF_RUNNING)) != 0,
+                      !excludedPrefixes.contains(where: interfaceName.hasPrefix) else { return nil }
                 var host = [CChar](repeating: 0, count: Int(NI_MAXHOST))
                 let result = getnameinfo(address, socklen_t(address.pointee.sa_len), &host, socklen_t(host.count), nil, 0, NI_NUMERICHOST)
                 return result == 0 ? String(cString: host) : nil

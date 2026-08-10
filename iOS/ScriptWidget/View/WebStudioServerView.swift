@@ -1,14 +1,19 @@
 import SwiftUI
+import CoreImage.CIFilterBuiltins
+import UIKit
 
 struct WebStudioServerView: View {
     @Environment(\.scenePhase) private var scenePhase
-    @StateObject private var server = WebStudioServer.shared
+    @Environment(\.openURL) private var openURL
+    @ObservedObject private var server = WebStudioServer.shared
+    @State private var copiedValue: String?
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     connectionCard
+                    if server.isRunning { diagnosticsCard }
                     if let model = previewModel, let relativePath = server.previewRelativePath,
                        let fileURL = model.package.resolvedPackageURL(relativePath: relativePath) {
                         VStack(alignment: .leading, spacing: 8) {
@@ -46,11 +51,38 @@ struct WebStudioServerView: View {
             if server.isRunning {
                 Text("Keep this screen open, then visit this address from a computer on the same network:")
                     .foregroundStyle(.secondary)
-                ForEach(server.displayURLs, id: \.self) { url in
-                    Text(url).font(.system(.body, design: .monospaced)).textSelection(.enabled)
+                if let primaryURL = server.displayURLs.first {
+                    HStack(alignment: .top, spacing: 16) {
+                        WebStudioQRCodeView(value: primaryURL)
+                            .frame(width: 132, height: 132)
+                            .accessibilityLabel("QR code for Web Studio address")
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(primaryURL)
+                                .font(.system(.body, design: .monospaced))
+                                .textSelection(.enabled)
+                            Button(copiedValue == primaryURL ? "Copied" : "Copy Address", systemImage: copiedValue == primaryURL ? "checkmark" : "doc.on.doc") {
+                                copy(primaryURL)
+                            }
+                            .buttonStyle(.bordered)
+                        }
+                    }
+                }
+                ForEach(server.displayURLs.dropFirst(), id: \.self) { url in
+                    Button {
+                        copy(url)
+                    } label: {
+                        Label(url, systemImage: copiedValue == url ? "checkmark" : "doc.on.doc")
+                            .font(.system(.callout, design: .monospaced))
+                    }
                 }
                 LabeledContent("Pairing code") {
-                    Text(server.pairingCode).font(.system(.title2, design: .monospaced).weight(.bold)).textSelection(.enabled)
+                    Button {
+                        copy(server.pairingCode)
+                    } label: {
+                        Label(server.pairingCode, systemImage: copiedValue == server.pairingCode ? "checkmark" : "doc.on.doc")
+                            .font(.system(.title2, design: .monospaced).weight(.bold))
+                    }
+                    .accessibilityHint("Copies the pairing code")
                 }
                 LabeledContent("Connected browsers", value: "\(server.connectedClientCount)")
                 Button("Stop Web Studio", role: .destructive) { server.stop() }
@@ -64,15 +96,92 @@ struct WebStudioServerView: View {
             if let error = server.lastError {
                 Label(error, systemImage: "exclamationmark.triangle.fill").foregroundStyle(.red)
             }
+            if let hint = server.connectionHint {
+                Text(hint).font(.callout).foregroundStyle(.secondary)
+                Button("Open Local Network Settings", systemImage: "gear") {
+                    if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                }
+                .buttonStyle(.bordered)
+            }
         }
         .padding(18)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
     }
 
+    private var diagnosticsCard: some View {
+        DisclosureGroup {
+            VStack(alignment: .leading, spacing: 10) {
+                Text("If the computer cannot connect, confirm both devices use the same Wi-Fi, turn off VPN, and avoid guest networks that isolate clients.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+                HStack {
+                    Button("Open Settings", systemImage: "gear") {
+                        if let url = URL(string: UIApplication.openSettingsURLString) { openURL(url) }
+                    }
+                    ShareLink(item: server.diagnosticReport) {
+                        Label("Share Diagnostics", systemImage: "square.and.arrow.up")
+                    }
+                }
+                if !server.logs.isEmpty {
+                    Divider()
+                    ForEach(server.logs.suffix(12)) { entry in
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(entry.message).font(.caption.monospaced())
+                            Text(entry.date, style: .time).font(.caption2).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+            }
+            .padding(.top, 10)
+        } label: {
+            Label("Connection Help & Diagnostics", systemImage: "stethoscope")
+                .font(.headline)
+        }
+        .padding(18)
+        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
+    }
+
+    private func copy(_ value: String) {
+        UIPasteboard.general.string = value
+        copiedValue = value
+        Task { @MainActor in
+            try? await Task.sleep(nanoseconds: 1_500_000_000)
+            if copiedValue == value { copiedValue = nil }
+        }
+    }
+
     private var previewModel: ScriptModel? {
         guard let name = server.previewPackageName else { return nil }
         return sharedScriptManager.listScripts().first { $0.name == name }
+    }
+}
+
+private struct WebStudioQRCodeView: View {
+    let value: String
+
+    var body: some View {
+        if let image = qrImage {
+            Image(uiImage: image)
+                .resizable()
+                .interpolation(.none)
+                .scaledToFit()
+        } else {
+            Image(systemName: "qrcode")
+                .resizable()
+                .scaledToFit()
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    private var qrImage: UIImage? {
+        let filter = CIFilter.qrCodeGenerator()
+        filter.message = Data(value.utf8)
+        filter.correctionLevel = "M"
+        guard let output = filter.outputImage else { return nil }
+        let scaled = output.transformed(by: CGAffineTransform(scaleX: 8, y: 8))
+        guard let cgImage = CIContext(options: nil).createCGImage(scaled, from: scaled.extent) else { return nil }
+        return UIImage(cgImage: cgImage)
     }
 }
 

@@ -19,6 +19,13 @@ struct ScriptWidgetApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .task {
+#if DEBUG
+                    if ProcessInfo.processInfo.arguments.contains("-WebStudioAutoStart") {
+                        WebStudioServer.shared.start()
+                    }
+#endif
+                }
                 .onOpenURL(perform: { url in
                     print("onOpenURL \(url)")
                     

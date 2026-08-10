@@ -71,6 +71,19 @@ memory-only and rotate whenever the server starts.
 - A network with client isolation, restrictive VPN, or firewall rules may block
   direct access even when both devices appear to use the same Wi-Fi.
 
+## P0 stability behavior
+
+- The device screen provides a QR code, copyable addresses and pairing code,
+  Local Network settings guidance, recent safe logs, and a shareable diagnostic
+  report that excludes tokens, pairing codes, and source content.
+- The browser sends a heartbeat every five seconds. The device grants a
+  15-second writer lease, so refreshes reconnect while closed or abandoned
+  browsers automatically release the session.
+- Browser offline/online state is visible, and an explicit Disconnect action
+  rotates credentials immediately.
+- The physical-device and failure-path release matrix is maintained in
+  [`web-studio-p0-test-plan.md`](web-studio-p0-test-plan.md).
+
 ## Next protocol-compatible improvements
 
 1. Add WebSocket transport for diagnostics, console output, presence, and
