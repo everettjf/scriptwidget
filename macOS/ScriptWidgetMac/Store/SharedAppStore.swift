@@ -16,6 +16,8 @@ class SharedAppStore: ObservableObject {
     @Published var scriptModels = [ScriptModel]()
 
     private let packages: any ScriptPackageListing
+    private var observers: [NSObjectProtocol] = []
+    private var reloadGeneration = 0
     
     init(packages: any ScriptPackageListing = DefaultScriptPackageRepository()) {
         self.packages = packages
@@ -23,19 +25,25 @@ class SharedAppStore: ObservableObject {
         addObserver()
     }
     
-    func addObserver() {
-        NotificationCenter.default.addObserver(forName: SharedAppStore.scriptCreateNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            self.reloadUserScripts()
+    private func addObserver() {
+        observers = [Self.scriptCreateNotification, GalleryInstaller.changedNotification].map { name in
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.reloadUserScripts()
+            }
         }
-        NotificationCenter.default.addObserver(forName: GalleryInstaller.changedNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
-            self?.reloadUserScripts()
-        }
+    }
+
+    deinit {
+        observers.forEach(NotificationCenter.default.removeObserver)
     }
     
     func reloadUserScripts() {
+        reloadGeneration += 1
+        let generation = reloadGeneration
         DispatchQueue.global().async { [self] in
             let items = packages.listScripts()
             DispatchQueue.main.async {
+                guard generation == self.reloadGeneration else { return }
                 self.scriptModels = items
             }
         }

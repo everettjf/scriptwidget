@@ -1116,6 +1116,75 @@ final class ScriptManagerLifecycleTests: XCTestCase {
     }
 }
 
+final class PackageListRefreshTests: XCTestCase {
+    private final class SequencedListing: ScriptPackageListing {
+        let firstStarted = DispatchSemaphore(value: 0)
+        let secondFinished = DispatchSemaphore(value: 0)
+        let allowFirstToFinish = DispatchSemaphore(value: 0)
+
+        private let lock = NSLock()
+        private var callCount = 0
+        private let stale: [ScriptModel]
+        private let latest: [ScriptModel]
+
+        init(stale: [ScriptModel], latest: [ScriptModel]) {
+            self.stale = stale
+            self.latest = latest
+        }
+
+        func listScripts() -> [ScriptModel] {
+            lock.lock()
+            callCount += 1
+            let call = callCount
+            lock.unlock()
+
+            if call == 1 {
+                firstStarted.signal()
+                _ = allowFirstToFinish.wait(timeout: .now() + 5)
+                return stale
+            }
+            secondFinished.signal()
+            return latest
+        }
+    }
+
+    func testLatestPackageReloadWinsWhenEarlierReadFinishesLater() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent("PackageRefreshTests-\(UUID().uuidString)", isDirectory: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let stale = ScriptModel(package: ScriptWidgetPackage(path: root.appendingPathComponent("Stale")))
+        let latest = ScriptModel(package: ScriptWidgetPackage(path: root.appendingPathComponent("Latest")))
+        let listing = SequencedListing(stale: [stale], latest: [latest])
+
+#if os(macOS)
+        let store = SharedAppStore(packages: listing)
+#else
+        let store = ScriptWidgetHomeViewDataObject(packages: listing)
+#endif
+        XCTAssertEqual(listing.firstStarted.wait(timeout: .now() + 2), .success)
+#if os(macOS)
+        store.reloadUserScripts()
+#else
+        store.reload()
+#endif
+        XCTAssertEqual(listing.secondFinished.wait(timeout: .now() + 2), .success)
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+#if os(macOS)
+        XCTAssertEqual(store.scriptModels.map(\.name), ["Latest"])
+#else
+        XCTAssertEqual(store.models.map(\.name), ["Latest"])
+#endif
+
+        listing.allowFirstToFinish.signal()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+#if os(macOS)
+        XCTAssertEqual(store.scriptModels.map(\.name), ["Latest"])
+#else
+        XCTAssertEqual(store.models.map(\.name), ["Latest"])
+#endif
+    }
+}
+
 private extension Data {
     mutating func appendLE<T: FixedWidthInteger>(_ value: T) {
         var littleEndian = value.littleEndian

@@ -17,33 +17,37 @@ class ScriptWidgetHomeViewDataObject : ObservableObject {
     @Published var models = [ScriptModel]()
 
     private let packages: any ScriptPackageListing
+    private var observers: [NSObjectProtocol] = []
+    private var reloadGeneration = 0
     
     init(packages: any ScriptPackageListing = DefaultScriptPackageRepository()) {
         self.packages = packages
         reload()
         
-        NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            self.reload()
+        let names = [
+            Self.scriptCreateNotification,
+            Self.scriptRenameNotification,
+            Self.scriptDeleteNotification,
+            GalleryInstaller.changedNotification,
+        ]
+        observers = names.map { name in
+            NotificationCenter.default.addObserver(forName: name, object: nil, queue: .main) { [weak self] _ in
+                self?.reload()
+            }
         }
-        
-        NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptRenameNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            self.reload()
-        }
-        
-        NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptDeleteNotification, object: nil, queue: OperationQueue.main) { (noti) in
-            self.reload()
-        }
+    }
 
-        NotificationCenter.default.addObserver(forName: GalleryInstaller.changedNotification, object: nil, queue: OperationQueue.main) { [weak self] _ in
-            self?.reload()
-        }
-        
+    deinit {
+        observers.forEach(NotificationCenter.default.removeObserver)
     }
     
     func reload() {
+        reloadGeneration += 1
+        let generation = reloadGeneration
         DispatchQueue.global().async { [self] in
             let items = packages.listScripts()
             DispatchQueue.main.async {
+                guard generation == self.reloadGeneration else { return }
                 self.models = items
             }
         }
