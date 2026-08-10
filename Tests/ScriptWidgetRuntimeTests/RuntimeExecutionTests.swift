@@ -144,6 +144,35 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertTrue(text.contains("hello-param"), "expected widget-param in output, got: \(text)")
     }
 
+    func testConcurrentRuntimesKeepEnvironmentStateIsolated() {
+        let lock = NSLock()
+        var rendered: [Int: String] = [:]
+        var failures: [String] = []
+
+        DispatchQueue.concurrentPerform(iterations: 8) { index in
+            let token = "runtime-\(index)"
+            let runtime = makeRuntime(environments: ["widget-size": "medium", "widget-param": token])
+            let (element, error) = runtime.executeJSXSyncForWidget(
+                "$render(<text>{$getenv(\"widget-param\")}</text>);"
+            )
+            lock.lock()
+            defer { lock.unlock() }
+            if let error {
+                failures.append("\(index): \(error.displayMessage)")
+            } else if let element {
+                rendered[index] = collectText(element)
+            } else {
+                failures.append("\(index): missing element")
+            }
+        }
+
+        XCTAssertTrue(failures.isEmpty, failures.joined(separator: "\n"))
+        XCTAssertEqual(rendered.count, 8)
+        for index in 0..<8 {
+            XCTAssertEqual(rendered[index], "runtime-\(index)")
+        }
+    }
+
     func testIPadWidgetFamiliesReachRuntime() {
         for family in ["extraLarge", "extraLargePortrait"] {
             let runtime = makeRuntime(environments: ["widget-size": family, "widget-param": "ipad"])
