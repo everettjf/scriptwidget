@@ -16,6 +16,12 @@ struct WebStudioLogEntry: Identifiable, Codable {
     let message: String
 }
 
+private struct WebStudioEvent {
+    let sequence: Int
+    let type: String
+    let payload: [String: Any]
+}
+
 final class WebStudioServer: ObservableObject {
     static let shared = WebStudioServer()
 
@@ -29,6 +35,7 @@ final class WebStudioServer: ObservableObject {
     @Published private(set) var lastError: String?
     @Published private(set) var logs = [WebStudioLogEntry]()
     @Published private(set) var connectionHint: String?
+    @Published private(set) var previewSnapshotRevision = 0
 
     private let queue = DispatchQueue(label: "app.scriptwidget.web-studio", qos: .userInitiated)
     private var listener: NWListener?
@@ -38,6 +45,10 @@ final class WebStudioServer: ObservableObject {
     private var leaseWorkItem: DispatchWorkItem?
     private let maximumRequestBytes = 2 * 1024 * 1024
     private let sessionLease: TimeInterval
+    private var eventSequence = 0
+    private var events = [WebStudioEvent]()
+    private var previewSnapshot: Data?
+    private let eventLock = NSLock()
 
     init(sessionLease: TimeInterval = 15) {
         self.sessionLease = sessionLease
@@ -196,6 +207,7 @@ final class WebStudioServer: ObservableObject {
                     "package": previewPackageName.map { $0 as Any } ?? NSNull(),
                     "path": previewRelativePath.map { $0 as Any } ?? NSNull(),
                     "sequence": previewRevision,
+                    "snapshotSequence": previewSnapshotRevision,
                 ],
             ]), on: connection)
             return
@@ -222,6 +234,30 @@ final class WebStudioServer: ObservableObject {
                 ]
             }
             send(.json(["packages": packages]), on: connection)
+            return
+        }
+
+        if request.method == "GET", request.path == "/api/v1/events" {
+            let after = Int(request.query["after"] ?? "") ?? 0
+            eventLock.lock()
+            let pending = events.filter { $0.sequence > after }.suffix(100).map { event in
+                ["sequence": event.sequence, "type": event.type, "payload": event.payload] as [String: Any]
+            }
+            let nextSequence = eventSequence
+            eventLock.unlock()
+            send(.json(["events": Array(pending), "nextSequence": nextSequence]), on: connection)
+            return
+        }
+
+        if request.method == "GET", request.path == "/api/v1/preview" {
+            eventLock.lock()
+            let snapshot = previewSnapshot
+            eventLock.unlock()
+            guard let snapshot else {
+                send(.json(status: 404, ["message": "A device preview snapshot is not ready yet"]), on: connection)
+                return
+            }
+            send(HTTPResponse(status: 200, contentType: "image/png", body: snapshot), on: connection)
             return
         }
 
@@ -292,6 +328,54 @@ final class WebStudioServer: ObservableObject {
             return
         }
 
+        if request.path == "/api/v1/document", request.method == "POST" {
+            guard let body = request.json,
+                  let packageName = body["package"] as? String,
+                  let relativePath = body["path"] as? String,
+                  let model = editableModel(named: packageName),
+                  Self.isEditableTextFile(relativePath),
+                  let fileURL = model.package.resolvedPackageURL(relativePath: relativePath),
+                  model.package.readFile(relativePath: relativePath).0 == nil else {
+                send(.json(status: 400, ["message": "Choose a new, supported text-file path"]), on: connection)
+                return
+            }
+            do {
+                try FileManager.default.createDirectory(
+                    at: fileURL.deletingLastPathComponent(),
+                    withIntermediateDirectories: true
+                )
+            } catch {
+                send(.json(status: 400, ["message": "Could not create the file directory"]), on: connection)
+                return
+            }
+            let result = model.package.writeFile(relativePath: relativePath, content: "")
+            guard result.0 else {
+                send(.json(status: 400, ["message": result.1]), on: connection)
+                return
+            }
+            publishEvent("files.changed", ["package": packageName, "path": relativePath, "action": "created"])
+            log("info", "Created \(model.name)/\(relativePath)")
+            send(.json(status: 201, ["path": relativePath, "revision": Self.revision(for: "")]), on: connection)
+            return
+        }
+
+        if request.path == "/api/v1/document", request.method == "DELETE" {
+            guard let packageName = request.query["package"],
+                  let relativePath = request.query["path"],
+                  let model = editableModel(named: packageName),
+                  Self.isEditableTextFile(relativePath),
+                  relativePath != model.package.effectiveManifest().entry,
+                  model.package.readFile(relativePath: relativePath).0 != nil else {
+                send(.json(status: 400, ["message": "The entry file cannot be deleted"]), on: connection)
+                return
+            }
+            model.package.deleteFile(relativePath: relativePath)
+            publishEvent("files.changed", ["package": packageName, "path": relativePath, "action": "deleted"])
+            log("info", "Deleted \(model.name)/\(relativePath)")
+            send(.json(["deleted": true]), on: connection)
+            return
+        }
+
         send(.json(status: 404, ["message": "Unknown Studio API"]), on: connection)
     }
 
@@ -304,7 +388,21 @@ final class WebStudioServer: ObservableObject {
             self.previewPackageName = packageName
             self.previewRelativePath = relativePath
             self.previewRevision += 1
+            self.publishEvent("preview.requested", [
+                "package": packageName,
+                "path": relativePath,
+                "sequence": self.previewRevision,
+            ])
         }
+    }
+
+    func updatePreviewSnapshot(_ data: Data, revision: Int) {
+        guard revision == previewRevision, data.count <= 4 * 1024 * 1024 else { return }
+        eventLock.lock()
+        previewSnapshot = data
+        eventLock.unlock()
+        previewSnapshotRevision += 1
+        publishEvent("preview.snapshot", ["sequence": previewSnapshotRevision])
     }
 
     private func serveAsset(_ requestPath: String, connection: NWConnection) {
@@ -395,6 +493,15 @@ final class WebStudioServer: ObservableObject {
             self.logs.append(entry)
             if self.logs.count > 200 { self.logs.removeFirst(self.logs.count - 200) }
         }
+        publishEvent("console", ["level": level, "message": message])
+    }
+
+    private func publishEvent(_ type: String, _ payload: [String: Any]) {
+        eventLock.lock()
+        defer { eventLock.unlock() }
+        eventSequence += 1
+        events.append(WebStudioEvent(sequence: eventSequence, type: type, payload: payload))
+        if events.count > 300 { events.removeFirst(events.count - 300) }
     }
 
     private static func isEditableTextFile(_ path: String) -> Bool {

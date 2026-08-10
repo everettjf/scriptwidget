@@ -71,6 +71,15 @@ final class WebStudioServerTests: XCTestCase {
         let baseRevision = try XCTUnwrap(document["revision"] as? String)
         XCTAssertEqual(baseRevision.count, 64)
 
+        var createRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document")!)
+        createRequest.httpMethod = "POST"
+        createRequest.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        createRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
+        createRequest.httpBody = try JSONSerialization.data(withJSONObject: ["package": packageName, "path": "source/helper.js"])
+        let (_, createResponse) = try await URLSession.shared.data(for: createRequest)
+        XCTAssertEqual((createResponse as? HTTPURLResponse)?.statusCode, 201)
+        XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0, "")
+
         let updatedSource = "const widget = <Text text=\"saved through Web Studio\" />;"
         var saveRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document")!)
         saveRequest.httpMethod = "PUT"
@@ -86,6 +95,22 @@ final class WebStudioServerTests: XCTestCase {
         XCTAssertEqual((saveResponse as? HTTPURLResponse)?.statusCode, 200)
         let savedRevision = try XCTUnwrap((try JSONSerialization.jsonObject(with: saveData) as? [String: Any])?["revision"] as? String)
         XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
+
+        var eventsRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/events?after=0")!)
+        eventsRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
+        let (eventsData, eventsResponse) = try await URLSession.shared.data(for: eventsRequest)
+        XCTAssertEqual((eventsResponse as? HTTPURLResponse)?.statusCode, 200)
+        let eventObject = try XCTUnwrap(try JSONSerialization.jsonObject(with: eventsData) as? [String: Any])
+        let events = try XCTUnwrap(eventObject["events"] as? [[String: Any]])
+        XCTAssertTrue(events.contains { $0["type"] as? String == "files.changed" })
+        XCTAssertTrue(events.contains { $0["type"] as? String == "preview.requested" })
+
+        var deleteRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document?package=\(packageName)&path=source%2Fhelper.js")!)
+        deleteRequest.httpMethod = "DELETE"
+        deleteRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
+        let (_, deleteFileResponse) = try await URLSession.shared.data(for: deleteRequest)
+        XCTAssertEqual((deleteFileResponse as? HTTPURLResponse)?.statusCode, 200)
+        XCTAssertNil(sharedScriptManager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0)
 
         let conflictingSource = "const widget = <Text text=\"must not overwrite\" />;"
         saveRequest.httpBody = try JSONSerialization.data(withJSONObject: [

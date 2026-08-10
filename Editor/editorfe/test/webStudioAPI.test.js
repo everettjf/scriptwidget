@@ -45,3 +45,17 @@ test("WebStudioAPI tolerates an empty non-JSON success response", async () => {
   });
   assert.deepEqual(await client.request("/api/v1/session", { method: "DELETE" }), {});
 });
+
+test("WebStudioAPI reads authenticated preview blobs", async () => {
+  let authorization;
+  const expected = new Blob(["png"], { type: "image/png" });
+  const client = new WebStudioAPI({
+    token: () => "preview-token",
+    fetchImpl: async (_, options) => {
+      authorization = options.headers["X-Studio-Token"];
+      return { ok: true, blob: async () => expected };
+    },
+  });
+  assert.equal(await client.requestBlob("/api/v1/preview"), expected);
+  assert.equal(authorization, "preview-token");
+});

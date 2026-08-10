@@ -199,5 +199,32 @@ private struct WebStudioPreview: View {
     var body: some View {
         ScriptCodePreviewView(model: model, filePath: $fileURL, showsCloseButton: false)
             .id(revision)
+            .background(WebStudioPreviewSnapshotCapture(revision: revision))
+    }
+}
+
+private struct WebStudioPreviewSnapshotCapture: UIViewRepresentable {
+    let revision: Int
+
+    func makeUIView(context: Context) -> UIView {
+        let view = UIView(frame: .zero)
+        view.isUserInteractionEnabled = false
+        view.backgroundColor = .clear
+        return view
+    }
+
+    func updateUIView(_ view: UIView, context: Context) {
+        let revision = revision
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.9) { [weak view] in
+            guard let target = view?.superview, target.bounds.width > 1, target.bounds.height > 1 else { return }
+            let format = UIGraphicsImageRendererFormat()
+            format.scale = min(UIScreen.main.scale, 2)
+            let renderer = UIGraphicsImageRenderer(bounds: target.bounds, format: format)
+            let image = renderer.image { context in
+                target.layer.render(in: context.cgContext)
+            }
+            guard let data = image.pngData() else { return }
+            WebStudioServer.shared.updatePreviewSnapshot(data, revision: revision)
+        }
     }
 }

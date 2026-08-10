@@ -292,6 +292,9 @@ async function startWebStudio() {
   let packages = [];
   let heartbeatTimer = null;
   let diagnosticsTimer = null;
+  let eventTimer = null;
+  let eventSequence = 0;
+  let previewObjectURL = null;
   let remoteRevision = "";
   let serverContent = "";
   let conflict = null;
@@ -380,6 +383,17 @@ async function startWebStudio() {
     await loadDocument();
   }
 
+  async function refreshFiles(preferredPath = "") {
+    const result = await api("/api/v1/packages");
+    packages = result.packages || [];
+    packageSelect.replaceChildren(...packages.map((item) => new Option(item.name, item.id)));
+    if (loadedPackageID) packageSelect.value = loadedPackageID;
+    const selected = packages.find((item) => item.id === packageSelect.value);
+    const files = selected?.files || [];
+    fileSelect.replaceChildren(...files.map((path) => new Option(path, path)));
+    fileSelect.value = files.includes(preferredPath) ? preferredPath : (files.includes(loadedPath) ? loadedPath : selected?.entry || files[0]);
+  }
+
   async function loadDocument() {
     if (!packageSelect.value || !fileSelect.value) return;
     const query = new URLSearchParams({ package: packageSelect.value, path: fileSelect.value });
@@ -404,6 +418,7 @@ async function startWebStudio() {
     disconnectButton.hidden = false;
     renderProblems();
     startHeartbeat();
+    startEventChannel();
   }
 
   function updateDocumentChrome(result) {
@@ -420,6 +435,57 @@ async function startWebStudio() {
       document.querySelector("#device-system").textContent = `${session.device.model} · ${session.device.system}`;
     }
     if (session.preview?.package) document.querySelector("#preview-target").textContent = session.preview.package;
+    if (session.preview?.snapshotSequence) refreshPreviewSnapshot();
+  }
+
+  async function refreshPreviewSnapshot() {
+    try {
+      const blob = await apiClient.requestBlob("/api/v1/preview");
+      const nextURL = URL.createObjectURL(blob);
+      const image = document.querySelector("#device-preview");
+      const previousURL = previewObjectURL;
+      previewObjectURL = nextURL;
+      image.onload = () => { if (previousURL) URL.revokeObjectURL(previousURL); };
+      image.src = nextURL;
+      image.hidden = false;
+      document.querySelector("#preview-detail").textContent = "Rendered on device";
+    } catch {}
+  }
+
+  function appendConsole(payload) {
+    const list = document.querySelector("#console-list");
+    const item = document.createElement("li");
+    item.className = payload.level || "info";
+    item.textContent = payload.message || "";
+    list.append(item);
+    while (list.children.length > 200) list.firstChild.remove();
+    list.scrollTop = list.scrollHeight;
+  }
+
+  function startEventChannel() {
+    window.clearTimeout(eventTimer);
+    const poll = async () => {
+      if (!token) return;
+      try {
+        const result = await api(`/api/v1/events?after=${eventSequence}`);
+        eventSequence = result.nextSequence ?? eventSequence;
+        for (const event of result.events || []) {
+          if (event.type === "console") appendConsole(event.payload || {});
+          if (event.type === "preview.snapshot") refreshPreviewSnapshot();
+          if (event.type === "preview.requested") {
+            document.querySelector("#status-preview").textContent = "Preview requested";
+            document.querySelector("#preview-detail").textContent = "Requested on device";
+          }
+          if (event.type === "files.changed" && event.payload?.package === loadedPackageID) refreshFiles(loadedPath).catch(showError);
+        }
+        updateState({ type: "CONNECTED" });
+      } catch (error) {
+        if (error.status !== 401) updateState({ type: "OFFLINE" });
+      } finally {
+        if (token) eventTimer = window.setTimeout(poll, 1000);
+      }
+    };
+    poll();
   }
 
   function renderProblems() {
@@ -531,6 +597,29 @@ async function startWebStudio() {
     try { await api("/api/v1/session", { method: "DELETE" }); } catch {}
     requirePairing("Disconnected. Start a new session with the code on your device.");
   });
+
+  document.querySelector("#new-file").addEventListener("click", async () => {
+    const path = window.prompt("New package-relative text file", "source/helper.js")?.trim();
+    if (!path) return;
+    try {
+      await api("/api/v1/document", { method: "POST", body: JSON.stringify({ package: loadedPackageID, path }) });
+      await refreshFiles(path);
+      await loadDocument();
+    } catch (error) { showError(error); }
+  });
+  document.querySelector("#delete-file").addEventListener("click", async () => {
+    const selected = packages.find((item) => item.id === loadedPackageID);
+    if (!loadedPath || loadedPath === selected?.entry) { window.alert("The widget entry file cannot be deleted."); return; }
+    if (!window.confirm(`Delete ${loadedPath}? This cannot be undone.`)) return;
+    try {
+      const query = new URLSearchParams({ package: loadedPackageID, path: loadedPath });
+      await api(`/api/v1/document?${query}`, { method: "DELETE" });
+      loadedPath = "";
+      await refreshFiles();
+      await loadDocument();
+    } catch (error) { showError(error); }
+  });
+  document.querySelector("#clear-console").addEventListener("click", () => document.querySelector("#console-list").replaceChildren());
 
   document.querySelector("#restore-draft").addEventListener("click", () => {
     const draft = recoveryBanner._draft;

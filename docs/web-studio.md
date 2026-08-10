@@ -45,6 +45,9 @@ All `/api/v1/*` routes except pairing require `X-Studio-Token`.
 | `GET` | `/api/v1/packages` | List writable packages, entries, and editable text files. |
 | `GET` | `/api/v1/document?package=&path=` | Read one package-relative text file. |
 | `PUT` | `/api/v1/document` | Atomically save one bounded package-relative text file. |
+| `POST` / `DELETE` | `/api/v1/document` | Create a supported text file or delete a non-entry text file. |
+| `GET` | `/api/v1/events?after=` | Resume bounded device events after a sequence number. |
+| `GET` | `/api/v1/preview` | Read the latest PNG captured from the native device preview. |
 
 Document reads return a SHA-256 `revision`. Saves must send that value as
 `baseRevision`. If the device copy changed, the server returns `409 Conflict`
@@ -98,10 +101,12 @@ tests in the same change.
 
 ## Known version 1 limits
 
-- Native preview remains visible only on the device.
-- Browser-to-device updates use debounced HTTP rather than WebSocket push.
-- File creation, rename, deletion, binary upload, QR codes, TLS, and browser-side
-  device-preview screenshots are deferred.
+- Browser-to-device updates use serialized, debounced HTTP. Device-to-browser
+  console, file-list, presence, and preview events use a resumable sequence
+  channel with automatic reconnect rather than WebSocket.
+- The optional browser preview is a PNG captured from the device's native
+  SwiftUI preview. The browser never recreates WidgetKit rendering.
+- File rename, binary upload, TLS, and multi-client collaboration are deferred.
 - A network with client isolation, restrictive VPN, or firewall rules may block
   direct access even when both devices appear to use the same Wi-Fi.
 
@@ -120,9 +125,9 @@ tests in the same change.
 
 ## Next protocol-compatible improvements
 
-1. Add WebSocket transport for diagnostics, console output, presence, and
-   reconnect without changing editor message names.
-2. Add package operations and bounded resource upload using the existing secure
-   package APIs.
-3. Add device-rendered preview snapshots for optional browser display. This is
-   a remote view of the native renderer, never a browser renderer.
+1. Replace resumable event polling with WebSocket only when profiling shows a
+   material latency or energy benefit; retain the cursor as reconnect fallback.
+2. Add package rename and bounded binary-resource upload using the existing
+   secure package APIs.
+3. Add opt-in multi-client collaboration after per-client ownership and conflict
+   semantics are specified.

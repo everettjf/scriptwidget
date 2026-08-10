@@ -801,6 +801,9 @@ struct ScriptWidgetPackage {
     func deleteFile(relativePath: String) {
         guard let fullPath = resolvedPackageURL(relativePath: relativePath) else { return }
         try? FileManager.default.removeItem(at: fullPath)
+        if let cached = buildCachePath(for: fullPath) {
+            try? FileManager.default.removeItem(at: cached)
+        }
     }
     
     func rename(destPath: URL) -> (Bool, String) {

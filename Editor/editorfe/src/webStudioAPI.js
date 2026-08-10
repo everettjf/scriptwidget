@@ -16,20 +16,37 @@ export class WebStudioAPI {
   }
 
   async request(path, options = {}) {
-    const response = await this.fetchImpl(path, {
+    const response = await this.fetchImpl(path, this.authorizedOptions(options));
+    const body = await response.json().catch(() => ({}));
+    this.validate(response, path, body);
+    return body;
+  }
+
+  async requestBlob(path, options = {}) {
+    const response = await this.fetchImpl(path, this.authorizedOptions(options));
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      this.validate(response, path, body);
+    }
+    return response.blob();
+  }
+
+  authorizedOptions(options) {
+    return {
       ...options,
       headers: {
         "Content-Type": "application/json",
         "X-Studio-Token": this.token(),
         ...(options.headers || {}),
       },
-    });
-    const body = await response.json().catch(() => ({}));
+    };
+  }
+
+  validate(response, path, body) {
     if (!response.ok) {
       const error = new StudioAPIError(body.message || `Request failed (${response.status})`, response.status, body);
       if (response.status === 401 && path !== "/api/v1/pair") this.onUnauthorized(error);
       throw error;
     }
-    return body;
   }
 }

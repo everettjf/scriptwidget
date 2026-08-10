@@ -32,7 +32,7 @@
         <aside class="explorer panel" id="explorer-panel" aria-label="Explorer">
           <div class="panel-heading"><strong>Explorer</strong><button class="icon-button panel-close" data-close-panel="explorer" type="button" aria-label="Close Explorer">×</button></div>
           <div class="field"><label for="package-select">Widget</label><select id="package-select" aria-label="Widget"></select></div>
-          <div class="file-section"><span class="section-label">Files</span><select id="file-select" size="8" aria-label="Files"></select></div>
+          <div class="file-section"><div class="file-toolbar"><span class="section-label">Files</span><div><button id="new-file" class="icon-button" type="button" title="New text file" aria-label="New text file">＋</button><button id="delete-file" class="icon-button" type="button" title="Delete selected file" aria-label="Delete selected file">−</button></div></div><select id="file-select" size="8" aria-label="Files"></select></div>
         </aside>
 
         <section class="editor-column">
@@ -47,7 +47,8 @@
         <aside class="inspector panel" id="inspector-panel" aria-label="Inspector">
           <div class="panel-heading"><strong>Inspector</strong><button class="icon-button panel-close" data-close-panel="inspector" type="button" aria-label="Close Inspector">×</button></div>
           <section><span class="section-label">Device Preview</span><div class="device-card"><span class="device-glyph" aria-hidden="true"></span><div><strong id="device-name">iPhone or iPad</strong><span id="device-system">Waiting for device details</span></div></div></section>
-          <section><span class="section-label">Preview</span><dl><div><dt>Status</dt><dd id="preview-detail">Not requested</dd></div><div><dt>Renderer</dt><dd>Native WidgetKit</dd></div><div><dt>Target</dt><dd id="preview-target">On device</dd></div></dl><p class="help">Rendering happens on the connected device for pixel-accurate WidgetKit output.</p></section>
+          <section><span class="section-label">Preview</span><img id="device-preview" alt="Latest native preview rendered by the connected device" hidden /><dl><div><dt>Status</dt><dd id="preview-detail">Not requested</dd></div><div><dt>Renderer</dt><dd>Native WidgetKit</dd></div><div><dt>Target</dt><dd id="preview-target">On device</dd></div></dl><p class="help">This snapshot comes from the connected device. The browser never recreates WidgetKit rendering.</p></section>
+          <section><div class="file-toolbar"><span class="section-label">Device Console</span><button id="clear-console" class="subtle-button" type="button">Clear</button></div><ol id="console-list" aria-live="polite"></ol></section>
           <section><span class="section-label">Document</span><dl><div><dt>Revision</dt><dd id="revision-detail">—</dd></div><div><dt>Access</dt><dd id="access-detail">Editable</dd></div></dl></section>
         </aside>
       </div>
