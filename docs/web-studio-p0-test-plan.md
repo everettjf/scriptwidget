@@ -13,6 +13,8 @@ Do not mark a row as passed unless it was executed on the named environment.
 - [x] Explicit disconnect invalidates the previous token.
 - [x] An abandoned browser lease expires and releases the writer.
 - [x] HTTP saves reach the real `ScriptWidgetPackage` and persist the final source.
+- [x] Stale document revisions return 409 with the current device copy and never overwrite it.
+- [x] Browser draft recovery and save/conflict state transitions have deterministic unit tests.
 - [x] Requests larger than 2 MiB return 413 and the listener stays available.
 - [x] iOS app and hosted runtime tests build on the supported deployment target.
 - [x] macOS app and runtime tests remain green after the shared editor rebuild.

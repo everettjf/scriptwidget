@@ -63,6 +63,14 @@ final class WebStudioServerTests: XCTestCase {
         let packages = try XCTUnwrap(packagesObject["packages"] as? [[String: Any]])
         XCTAssertTrue(packages.contains { $0["id"] as? String == packageName })
 
+        var documentRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document?package=\(packageName)&path=main.jsx")!)
+        documentRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
+        let (documentData, documentResponse) = try await URLSession.shared.data(for: documentRequest)
+        XCTAssertEqual((documentResponse as? HTTPURLResponse)?.statusCode, 200)
+        let document = try XCTUnwrap(try JSONSerialization.jsonObject(with: documentData) as? [String: Any])
+        let baseRevision = try XCTUnwrap(document["revision"] as? String)
+        XCTAssertEqual(baseRevision.count, 64)
+
         let updatedSource = "const widget = <Text text=\"saved through Web Studio\" />;"
         var saveRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document")!)
         saveRequest.httpMethod = "PUT"
@@ -72,9 +80,25 @@ final class WebStudioServerTests: XCTestCase {
             "package": packageName,
             "path": "main.jsx",
             "content": updatedSource,
+            "baseRevision": baseRevision,
         ])
-        let (_, saveResponse) = try await URLSession.shared.data(for: saveRequest)
+        let (saveData, saveResponse) = try await URLSession.shared.data(for: saveRequest)
         XCTAssertEqual((saveResponse as? HTTPURLResponse)?.statusCode, 200)
+        let savedRevision = try XCTUnwrap((try JSONSerialization.jsonObject(with: saveData) as? [String: Any])?["revision"] as? String)
+        XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
+
+        let conflictingSource = "const widget = <Text text=\"must not overwrite\" />;"
+        saveRequest.httpBody = try JSONSerialization.data(withJSONObject: [
+            "package": packageName,
+            "path": "main.jsx",
+            "content": conflictingSource,
+            "baseRevision": baseRevision,
+        ])
+        let (conflictData, conflictResponse) = try await URLSession.shared.data(for: saveRequest)
+        XCTAssertEqual((conflictResponse as? HTTPURLResponse)?.statusCode, 409)
+        let conflict = try XCTUnwrap(try JSONSerialization.jsonObject(with: conflictData) as? [String: Any])
+        XCTAssertEqual(conflict["currentContent"] as? String, updatedSource)
+        XCTAssertEqual(conflict["currentRevision"] as? String, savedRevision)
         XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
 
         var sessionRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/session")!)

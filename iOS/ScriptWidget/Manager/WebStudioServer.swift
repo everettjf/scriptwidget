@@ -1,6 +1,8 @@
 import Foundation
 import Network
 import Security
+import CryptoKit
+import UIKit
 import Darwin
 
 extension Notification.Name {
@@ -181,7 +183,21 @@ final class WebStudioServer: ObservableObject {
 
     private func routeAPI(_ request: HTTPRequest, connection: NWConnection) {
         if request.method == "GET", request.path == "/api/v1/session" {
-            send(.json(["connected": true, "leaseSeconds": Int(sessionLease)]), on: connection)
+            send(.json([
+                "connected": true,
+                "leaseSeconds": Int(sessionLease),
+                "device": [
+                    "name": UIDevice.current.name,
+                    "model": UIDevice.current.localizedModel,
+                    "system": "\(UIDevice.current.systemName) \(UIDevice.current.systemVersion)",
+                ],
+                "preview": [
+                    "state": previewPackageName == nil ? "idle" : "requested",
+                    "package": previewPackageName.map { $0 as Any } ?? NSNull(),
+                    "path": previewRelativePath.map { $0 as Any } ?? NSNull(),
+                    "sequence": previewRevision,
+                ],
+            ]), on: connection)
             return
         }
 
@@ -221,7 +237,7 @@ final class WebStudioServer: ObservableObject {
             selectPreview(packageName: model.name, relativePath: model.package.effectiveManifest().entry)
             send(.json([
                 "content": content,
-                "version": Self.version(for: content),
+                "revision": Self.revision(for: content),
                 "readOnly": model.package.readonly,
                 "packageName": model.name,
             ]), on: connection)
@@ -233,10 +249,25 @@ final class WebStudioServer: ObservableObject {
                   let packageName = body["package"] as? String,
                   let relativePath = body["path"] as? String,
                   let content = body["content"] as? String,
+                  let baseRevision = body["baseRevision"] as? String,
                   content.utf8.count <= 1024 * 1024,
                   let model = editableModel(named: packageName),
                   Self.isEditableTextFile(relativePath) else {
                 send(.json(status: 400, ["message": "Invalid document request"]), on: connection)
+                return
+            }
+            guard let currentContent = model.package.readFile(relativePath: relativePath).0 else {
+                send(.json(status: 404, ["message": "Document not found"]), on: connection)
+                return
+            }
+            let currentRevision = Self.revision(for: currentContent)
+            guard baseRevision == currentRevision else {
+                log("warning", "Prevented conflicting save for \(model.name)/\(relativePath)")
+                send(.json(status: 409, [
+                    "message": "This document changed on the device.",
+                    "currentContent": currentContent,
+                    "currentRevision": currentRevision,
+                ]), on: connection)
                 return
             }
             let result = relativePath == model.package.effectiveManifest().entry
@@ -254,7 +285,10 @@ final class WebStudioServer: ObservableObject {
                 userInfo: ["package": model.name, "path": relativePath]
             )
             log("info", "Saved \(model.name)/\(relativePath)")
-            send(.json(["version": Self.version(for: content)]), on: connection)
+            send(.json([
+                "revision": Self.revision(for: content),
+                "preview": ["state": "requested", "package": model.name],
+            ]), on: connection)
             return
         }
 
@@ -368,8 +402,8 @@ final class WebStudioServer: ObservableObject {
         return allowed.contains(URL(fileURLWithPath: path).pathExtension.lowercased())
     }
 
-    private static func version(for content: String) -> Int {
-        content.utf8.reduce(5381) { (($0 &<< 5) &+ $0) &+ Int($1) }
+    private static func revision(for content: String) -> String {
+        SHA256.hash(data: Data(content.utf8)).map { String(format: "%02x", $0) }.joined()
     }
 
     private static func mimeType(for url: URL) -> String {

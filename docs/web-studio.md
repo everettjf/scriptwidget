@@ -10,7 +10,8 @@ the only runtime and native-preview authority.
 2. Keep the Web Studio screen in the foreground.
 3. From a computer on the same local network, open one of the displayed URLs.
 4. Enter the six-digit pairing code.
-5. Select an editable widget and text file. Changes save after a 700 ms debounce.
+5. Select an editable widget and text file. Changes save after a 700 ms debounce;
+   an unsaved browser draft is retained locally if the connection drops.
 6. The selected package entry is evaluated and refreshed in Device Preview.
 
 The first release supports Safari, Chrome, Edge, and Firefox through ordinary
@@ -39,9 +40,16 @@ All `/api/v1/*` routes except pairing require `X-Studio-Token`.
 | Method | Route | Purpose |
 | --- | --- | --- |
 | `POST` | `/api/v1/pair` | Exchange the displayed code for an ephemeral token. |
+| `GET` / `DELETE` | `/api/v1/session` | Read device/preview state or explicitly end the session. |
 | `GET` | `/api/v1/packages` | List writable packages, entries, and editable text files. |
 | `GET` | `/api/v1/document?package=&path=` | Read one package-relative text file. |
 | `PUT` | `/api/v1/document` | Atomically save one bounded package-relative text file. |
+
+Document reads return a SHA-256 `revision`. Saves must send that value as
+`baseRevision`. If the device copy changed, the server returns `409 Conflict`
+with its current revision and content and does not write. Web Studio then lets
+the author compare both copies, keep the device version, or explicitly rebase
+and save the browser draft.
 
 The server accepts one paired browser per session. Tokens and pairing state are
 memory-only and rotate whenever the server starts.
@@ -61,10 +69,22 @@ memory-only and rotate whenever the server starts.
   trusted local networks; it does not claim confidentiality against a hostile
   network because transport is HTTP.
 
+## Web Studio 1.1 authoring experience
+
+- A professional Explorer/editor/Inspector workspace scales down to drawer-style
+  sidebars on narrow browsers.
+- The status bar distinguishes connection, local draft, saving, saved, conflict,
+  and native-preview-requested states. It never claims that native rendering
+  succeeded when the device has only received a request.
+- The Problems panel exposes local ScriptWidget diagnostics and navigates to the
+  affected line. The command palette and documented keyboard shortcuts cover
+  save, format, Explorer, Inspector, and Problems actions.
+- Recovery and conflict notices require an explicit choice and never silently
+  replace either copy.
+
 ## Known version 1 limits
 
-- The browser shows the editor and save state; native preview remains visible
-  only on the device.
+- Native preview remains visible only on the device.
 - Browser-to-device updates use debounced HTTP rather than WebSocket push.
 - File creation, rename, deletion, binary upload, QR codes, TLS, and browser-side
   device-preview screenshots are deferred.
@@ -88,8 +108,7 @@ memory-only and rotate whenever the server starts.
 
 1. Add WebSocket transport for diagnostics, console output, presence, and
    reconnect without changing editor message names.
-2. Add server-issued revisions and reject stale writes with `409 Conflict`.
-3. Add package operations and bounded resource upload using the existing secure
+2. Add package operations and bounded resource upload using the existing secure
    package APIs.
-4. Add device-rendered preview snapshots for optional browser display. This is
+3. Add device-rendered preview snapshots for optional browser display. This is
    a remote view of the native renderer, never a browser renderer.

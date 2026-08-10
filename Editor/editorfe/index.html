@@ -4,39 +4,64 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="light dark" />
-    <title>ScriptWidget Studio</title>
+    <title>ScriptWidget Web Studio</title>
   </head>
   <body>
     <div id="web-studio" hidden>
-      <header class="web-toolbar">
-        <strong>ScriptWidget Web Studio</strong>
-        <div class="web-connection-controls">
-          <span id="connection-status">Connecting…</span>
-          <button id="disconnect-button" type="button" hidden>Disconnect</button>
+      <header class="topbar">
+        <div class="brand"><span class="brand-mark" aria-hidden="true">S</span><strong>ScriptWidget</strong><span class="product-name">Web Studio</span></div>
+        <div class="breadcrumbs" aria-label="Current document"><span id="breadcrumb-package">No Widget</span><span>/</span><strong id="breadcrumb-file">No File</strong></div>
+        <div class="topbar-actions">
+          <button class="subtle-button" id="inspector-button" type="button" title="Toggle Inspector">Inspector</button>
+          <button class="icon-button" id="command-button" type="button" title="Command Palette (⌘⇧P)" aria-label="Open command palette">⌘</button>
+          <span class="connection-badge" id="connection-status" data-state="connecting">Connecting…</span>
+          <button class="subtle-button" id="disconnect-button" type="button" hidden>Disconnect</button>
         </div>
       </header>
-      <div class="web-workspace">
-        <aside class="web-sidebar">
-          <label for="package-select">Widget</label>
-          <select id="package-select" aria-label="Widget"></select>
-          <label for="file-select">File</label>
-          <select id="file-select" aria-label="File"></select>
-          <p>Preview is rendered live on your iPhone or iPad.</p>
-        </aside>
-        <main id="editor" aria-label="Script editor"></main>
+
+      <div id="recovery-banner" class="notice" hidden role="status">
+        <div><strong>Unsaved browser draft found</strong><span id="recovery-message">Restore it or keep the device version.</span></div>
+        <div><button id="discard-draft" class="subtle-button" type="button">Discard</button><button id="restore-draft" class="primary-button" type="button">Restore Draft</button></div>
       </div>
+      <div id="conflict-banner" class="notice conflict" hidden role="alert">
+        <div><strong>Save conflict</strong><span>The file changed on your device. Nothing was overwritten.</span></div>
+        <div><button id="reload-server" class="subtle-button" type="button">Use Device Version</button><button id="compare-conflict" class="subtle-button" type="button">Compare</button><button id="keep-local" class="primary-button" type="button">Keep My Version</button></div>
+      </div>
+
+      <div class="studio-grid" id="studio-grid">
+        <aside class="explorer panel" id="explorer-panel" aria-label="Explorer">
+          <div class="panel-heading"><strong>Explorer</strong><button class="icon-button panel-close" data-close-panel="explorer" type="button" aria-label="Close Explorer">×</button></div>
+          <div class="field"><label for="package-select">Widget</label><select id="package-select" aria-label="Widget"></select></div>
+          <div class="file-section"><span class="section-label">Files</span><select id="file-select" size="8" aria-label="Files"></select></div>
+        </aside>
+
+        <section class="editor-column">
+          <div class="editor-tabbar"><div class="editor-tab"><span class="file-icon">JS</span><span id="editor-tab-name">main.jsx</span><span id="dirty-indicator" aria-label="Unsaved changes" hidden>●</span></div></div>
+          <main id="editor" aria-label="Script editor"></main>
+          <section id="problems-panel" class="problems" aria-label="Problems">
+            <div class="problems-heading"><button id="problems-toggle" type="button" aria-expanded="true"><strong>Problems</strong><span class="count" id="problems-count">0</span></button><span id="problems-summary">No problems detected</span></div>
+            <ol id="problems-list"></ol>
+          </section>
+        </section>
+
+        <aside class="inspector panel" id="inspector-panel" aria-label="Inspector">
+          <div class="panel-heading"><strong>Inspector</strong><button class="icon-button panel-close" data-close-panel="inspector" type="button" aria-label="Close Inspector">×</button></div>
+          <section><span class="section-label">Device Preview</span><div class="device-card"><span class="device-glyph" aria-hidden="true"></span><div><strong id="device-name">iPhone or iPad</strong><span id="device-system">Waiting for device details</span></div></div></section>
+          <section><span class="section-label">Preview</span><dl><div><dt>Status</dt><dd id="preview-detail">Not requested</dd></div><div><dt>Renderer</dt><dd>Native WidgetKit</dd></div><div><dt>Target</dt><dd id="preview-target">On device</dd></div></dl><p class="help">Rendering happens on the connected device for pixel-accurate WidgetKit output.</p></section>
+          <section><span class="section-label">Document</span><dl><div><dt>Revision</dt><dd id="revision-detail">—</dd></div><div><dt>Access</dt><dd id="access-detail">Editable</dd></div></dl></section>
+        </aside>
+      </div>
+
+      <footer class="statusbar">
+        <div><button id="explorer-button" type="button" title="Toggle Explorer (⌘⇧E)">Explorer</button><span id="status-connection">Connecting</span><span id="save-status" data-state="idle" aria-live="polite">Ready</span></div>
+        <div><button id="status-problems" type="button"><span id="status-problem-count">0</span> Problems</button><span id="cursor-position">Ln 1, Col 1</span><span id="status-preview">Preview idle</span></div>
+      </footer>
     </div>
+
     <main id="native-editor" aria-label="Script editor"></main>
-    <dialog id="pair-dialog">
-      <form method="dialog" id="pair-form">
-        <h1>Connect to ScriptWidget</h1>
-        <p>Enter the six-digit code shown on your iPhone or iPad.</p>
-        <input id="pair-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus />
-        <output id="pair-error" aria-live="polite"></output>
-        <button type="submit">Connect</button>
-      </form>
-    </dialog>
-    <output id="save-status" aria-live="polite">Ready</output>
+    <dialog id="pair-dialog"><form method="dialog" id="pair-form"><span class="brand-mark large" aria-hidden="true">S</span><h1>Connect to ScriptWidget</h1><p>Enter the six-digit code shown on your iPhone or iPad.</p><input id="pair-code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required autofocus /><output id="pair-error" aria-live="polite"></output><button class="primary-button" type="submit">Connect</button></form></dialog>
+    <dialog id="command-dialog"><form method="dialog"><label for="command-search">Command Palette</label><input id="command-search" placeholder="Type a command…" autocomplete="off" /><ol id="command-list"></ol></form></dialog>
+    <dialog id="compare-dialog"><div class="compare-header"><strong>Compare Changes</strong><button class="icon-button" value="cancel" formmethod="dialog" aria-label="Close">×</button></div><div class="compare-grid"><section><h2>My Draft</h2><pre id="compare-local"></pre></section><section><h2>On Device</h2><pre id="compare-server"></pre></section></div></dialog>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
