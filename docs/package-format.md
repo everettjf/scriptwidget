@@ -38,9 +38,16 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
 - `supportedFamilies`: one or more WidgetKit families.
   iOS, iPadOS, and macOS 27 add `systemExtraLargePortrait`; packages may
   include it while retaining other families as fallbacks on older systems.
+- `actions`: up to sixteen reusable script actions. Each action declares a
+  stable `id`, title, SF Symbol `systemImage`, and JavaScript `function` in the
+  package entry file. The same action can be selected in Siri and Shortcuts,
+  referenced by Widget `<button actionID="…">` / `<toggle actionID="…">`, and
+  reused by a Control Widget.
 - `controls`: up to eight declarative Control Center buttons or toggles. Each
   control declares a stable `id`, an SF Symbol `systemImage`, and a JavaScript
-  `action` function. Toggles also require `stateKey` and the `storage`
+  `actionID`. The legacy direct `action` function remains readable for existing
+  manifests, but it cannot be combined with `actionID`. Toggles also require
+  `stateKey` and the `storage`
   permission; the new value is available to the action as
   `$getenv("control-value")`.
 - `pushUpdates`: optional self-hosted WidgetKit push registration. The object
@@ -53,6 +60,20 @@ The machine-readable contract is [`widget.schema.json`](../Shared/ScriptWidgetRu
 - Optional discovery fields: `description`, `category`, `tags`, `icon`, `preview`, `author`, and `license`.
 
 The Mac Studio Config panel edits and validates these values before saving. New widgets get a manifest automatically. A legacy package containing `main.jsx` and optional `meta.json` is migrated when it is imported or exported.
+
+## Reusable actions
+
+Action calls receive a consistent environment on every system surface:
+
+- `action-id`: the declared action identifier;
+- `action-source`: `widget`, `control`, or `shortcut` (including Siri calls);
+- `action-value`: `true` or `false` when a toggle supplies a value.
+
+Control Widget calls additionally preserve `control-id` and `control-value` for
+compatibility. Toggle state is stored under the package namespace before its
+action runs; packages must declare the `storage` permission. A malformed
+present manifest, missing action reference, unsafe state key, or undeclared
+storage permission fails closed instead of invoking a legacy function.
 
 ## Import security
 

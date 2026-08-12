@@ -6,7 +6,6 @@ enum ScriptWidgetActionSource: String {
     case widget
     case control
     case shortcut
-    case siri
 }
 
 struct ResolvedScriptWidgetAction {

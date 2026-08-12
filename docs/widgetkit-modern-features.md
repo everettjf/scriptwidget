@@ -19,32 +19,72 @@ The app-side manager can start an activity with initial state, update an activit
 
 ## Scriptable Control Widgets
 
-Declare controls in `widget.json`. A button calls its JavaScript action. A toggle persists its Boolean state in package-scoped `$storage`, then calls its action with `$getenv("control-value")` set to `true` or `false`.
+Declare reusable actions once in `widget.json`, then reference them from ordinary
+Widget buttons/toggles and Control Widgets. The same actions appear as a dynamic
+entity picker in Siri and Shortcuts through **Run ScriptWidget Action**. A toggle
+persists its Boolean state in package-scoped `$storage`, then calls its action
+with `$getenv("action-value")` and the compatibility value
+`$getenv("control-value")` set to `true` or `false`.
 
 ```json
 {
   "permissions": ["storage"],
+  "actions": [
+    {
+      "id": "refresh",
+      "title": "Refresh Dashboard",
+      "systemImage": "arrow.clockwise",
+      "function": "refreshWidget"
+    },
+    {
+      "id": "focus",
+      "title": "Set Focus",
+      "systemImage": "timer",
+      "function": "setFocus"
+    }
+  ],
   "controls": [
     {
       "id": "refresh",
       "type": "button",
       "title": "Refresh",
       "systemImage": "arrow.clockwise",
-      "action": "refreshWidget"
+      "actionID": "refresh"
     },
     {
       "id": "focus",
       "type": "toggle",
       "title": "Focus",
       "systemImage": "timer",
-      "action": "setFocus",
+      "actionID": "focus",
       "stateKey": "focus.enabled"
     }
   ]
 }
 ```
 
+Use the same IDs in JSX:
+
+```jsx
+<button actionID="refresh">
+  <label title="Refresh" systemName="arrow.clockwise" />
+</button>
+<toggle on={focusEnabled} actionID="focus" stateKey="focus.enabled">
+  <text>Focus</text>
+</toggle>
+```
+
+Direct `onClick` and control `action` functions remain compatible for older
+packages but are intentionally not discoverable by Siri or Shortcuts. Studio
+diagnostics reject mixing a declared `actionID` with those legacy forms.
+
 Control actions and timeline reloads declare WidgetKit-extension execution targets. Ordinary widget and Live Activity actions declare main-app execution targets where the current SDK supports explicit targets.
+
+The Xcode 27 test target uses `AppIntentsTesting` to load the app's extracted
+metadata and verify the declared action entity plus the run/toggle parameter
+contracts. Separate deterministic tests cover catalog resolution, fail-closed
+manifests, storage permission enforcement, namespaced state, and compatibility
+environment values.
 
 ## Widget push updates
 

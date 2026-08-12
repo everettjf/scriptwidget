@@ -729,7 +729,7 @@ Title, value, and subtitle statistic.
 
 ### `<Button>`
 
-Interactive widget button on iOS 17 and later.
+Interactive widget button. Use actionID to share a declared Package 2.0 action with Siri, Shortcuts, and Control Widgets.
 
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -752,10 +752,11 @@ Interactive widget button on iOS 17 and later.
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `action` | `enum` | No | Values: `reload` |
 | `onClick` | `function` | No |  |
+| `actionID` | `action-id` | No |  |
 
 ### `<Toggle>`
 
-Interactive widget toggle on iOS 17 and later.
+Interactive widget toggle. A declared actionID requires a package-relative storage stateKey.
 
 | Property | Type | Required | Notes |
 | --- | --- | --- | --- |
@@ -777,7 +778,9 @@ Interactive widget toggle on iOS 17 and later.
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `on` | `boolean` | Yes |  |
-| `onClick` | `function` | Yes |  |
+| `onClick` | `function` | No |  |
+| `actionID` | `action-id` | No |  |
+| `stateKey` | `storage-key` | No |  |
 
 ## Runtime functions
 
@@ -793,4 +796,9 @@ Interactive widget toggle on iOS 17 and later.
 - `widget-rendering-mode`
 - `live-activity-state`
 - `live-activity-surface`
+- `action-id`
+- `action-source`
+- `action-value`
+- `control-id`
+- `control-value`
 

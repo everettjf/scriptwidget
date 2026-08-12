@@ -3,6 +3,15 @@
     "name": "ScriptWidget Community",
     "url": "https://github.com/everettjf/scriptwidget"
   },
+  "actions": [
+    {
+      "description": "Refresh the Hello Card timeline from a widget, Siri, or Shortcuts.",
+      "function": "refreshCard",
+      "id": "refresh",
+      "systemImage": "arrow.clockwise",
+      "title": "Refresh Hello Card"
+    }
+  ],
   "category": "starter",
   "description": "A polished offline starter that demonstrates a responsive Gallery install.",
   "entry": "main.jsx",

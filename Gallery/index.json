@@ -6,15 +6,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 398,
+          "bytes": 605,
           "path": "main.jsx",
-          "sha256": "3cfbab7dd3ccc446aac59023f6de602ed3b269bdd586f609185d28299335edb9",
+          "sha256": "70eeb6c0447c3dbce7544e2f2f2e4e62a0153100c857790d633628f1d97bbc6a",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hello-card/main.jsx"
         },
         {
-          "bytes": 644,
+          "bytes": 899,
           "path": "widget.json",
-          "sha256": "a09eee61c31f023fe5116248a0700b6e98e5f4d2a16fc644dc230f1984610051",
+          "sha256": "666f3d668670f53774f46d3f760f650a86b612a13677a5f17947c44fd5386dba",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hello-card/widget.json"
         }
       ],

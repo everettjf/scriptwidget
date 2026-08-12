@@ -37,6 +37,21 @@ test("custom components are accepted by diagnostics", () => {
   assert.deepEqual(scriptWidgetDiagnostics(viewFor("<MyComponent custom />")), []);
 });
 
+test("declared actions enforce dependencies and reject legacy conflicts", () => {
+  const missingState = scriptWidgetDiagnostics(viewFor('<Toggle on actionID="focus" />'));
+  assert.ok(missingState.some((item) => item.message.includes("requires the “stateKey”")));
+
+  const conflicting = scriptWidgetDiagnostics(viewFor('<Button actionID="refresh" onClick={refresh} />'));
+  assert.ok(conflicting.some((item) => item.message.includes("cannot combine")));
+
+  assert.deepEqual(scriptWidgetDiagnostics(viewFor('<Toggle on actionID="focus" stateKey="focus.enabled" />')), []);
+});
+
+test("interactive components require an action source", () => {
+  const diagnostics = scriptWidgetDiagnostics(viewFor("<Button>Refresh</Button>"));
+  assert.ok(diagnostics.some((item) => item.message.includes("requires one of")));
+});
+
 test("editor metadata stays aligned with the authoritative native runtime switch", async () => {
   const source = await readFile(new URL("../../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift", import.meta.url), "utf8");
   const runtimeTags = [...source.matchAll(/case "([a-z]+)"\s*:/g)].map((match) => match[1]).sort();

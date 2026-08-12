@@ -57,13 +57,13 @@ export const scriptWidgetAPI = {
     "Badge": { "documentation": "Compact status badge.", "children": false, "properties": { "text": { "type": "string" }, "radius": { "type": "number" } } },
     "Chip": { "documentation": "Outlined metadata chip.", "children": false, "properties": { "text": { "type": "string" }, "radius": { "type": "number" }, "borderColor": { "type": "color" } } },
     "Stat": { "documentation": "Title, value, and subtitle statistic.", "children": false, "properties": { "title": { "type": "string" }, "value": { "type": "string", "required": true }, "subtitle": { "type": "string" }, "mutedColor": { "type": "color" } } },
-    "Button": { "documentation": "Interactive widget button on iOS 17 and later.", "children": true, "availability": { "interactiveIos": "17.0" }, "properties": { "action": { "type": "enum", "values": ["reload"] }, "onClick": { "type": "function" } } },
-    "Toggle": { "documentation": "Interactive widget toggle on iOS 17 and later.", "children": true, "availability": { "interactiveIos": "17.0" }, "properties": { "on": { "type": "boolean", "required": true }, "onClick": { "type": "function", "required": true } } }
+    "Button": { "documentation": "Interactive widget button. Use actionID to share a declared Package 2.0 action with Siri, Shortcuts, and Control Widgets.", "children": true, "availability": { "interactiveIos": "17.0" }, "requiredAny": ["action", "onClick", "actionID"], "properties": { "action": { "type": "enum", "values": ["reload"], "conflicts": ["actionID"] }, "onClick": { "type": "function", "conflicts": ["actionID"] }, "actionID": { "type": "action-id", "conflicts": ["action", "onClick"] } } },
+    "Toggle": { "documentation": "Interactive widget toggle. A declared actionID requires a package-relative storage stateKey.", "children": true, "availability": { "interactiveIos": "17.0" }, "requiredAny": ["onClick", "actionID"], "properties": { "on": { "type": "boolean", "required": true }, "onClick": { "type": "function", "conflicts": ["actionID"] }, "actionID": { "type": "action-id", "requires": ["stateKey"], "conflicts": ["onClick"] }, "stateKey": { "type": "storage-key", "requires": ["actionID"] } } }
   },
   "functions": {
     "fetch": { "documentation": "Perform a network request." },
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
   },
-  "environmentValues": ["widgetFamily", "scriptName", "scriptParameter", "widget-rendering-mode", "live-activity-state", "live-activity-surface"]
+  "environmentValues": ["widgetFamily", "scriptName", "scriptParameter", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
 };

@@ -55,6 +55,26 @@ export function scriptWidgetDiagnostics(view) {
       if (property.required && !supplied.has(name)) {
         diagnostics.push({ from: tag.from, to: tag.to, severity: "error", message: `<${tag.name}> requires the “${name}” property.` });
       }
+      if (supplied.has(name)) {
+        for (const dependency of property.requires ?? []) {
+          if (!supplied.has(dependency)) {
+            diagnostics.push({ from: tag.from, to: tag.to, severity: "error", message: `<${tag.name}> “${name}” requires the “${dependency}” property.` });
+          }
+        }
+        for (const conflict of property.conflicts ?? []) {
+          if (supplied.has(conflict) && name < conflict) {
+            diagnostics.push({ from: tag.from, to: tag.to, severity: "error", message: `<${tag.name}> cannot combine “${name}” with “${conflict}”.` });
+          }
+        }
+      }
+    }
+    if (component.requiredAny?.length && !component.requiredAny.some((name) => supplied.has(name))) {
+      diagnostics.push({
+        from: tag.from,
+        to: tag.to,
+        severity: "error",
+        message: `<${tag.name}> requires one of: ${component.requiredAny.map((name) => `“${name}”`).join(", ")}.`,
+      });
     }
   }
   return diagnostics;
