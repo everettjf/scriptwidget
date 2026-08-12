@@ -21,6 +21,9 @@
 import XCTest
 import JavaScriptCore
 import ImageIO
+#if canImport(AppIntentsTesting)
+import AppIntentsTesting
+#endif
 // Both the iOS and macOS apps build with module name "ScriptWidget"
 // (the macOS target "ScriptWidgetMac" ships PRODUCT_NAME = ScriptWidget).
 @testable import ScriptWidget
@@ -1116,6 +1119,155 @@ final class WidgetPackageManifestTests: XCTestCase {
         return result
     }
 }
+
+final class ScriptWidgetActionTests: XCTestCase {
+    private var temporaryDirectories: [URL] = []
+
+    override func tearDown() {
+        temporaryDirectories.forEach { try? FileManager.default.removeItem(at: $0) }
+        temporaryDirectories.removeAll()
+        super.tearDown()
+    }
+
+    private func makeActionPackage(name: String = "Action Test") throws -> (ScriptWidgetPackage, WidgetPackageManifest) {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("ActionTests-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        temporaryDirectories.append(directory)
+        let package = ScriptWidgetPackage(path: directory)
+        XCTAssertTrue(package.writeMainFile(content: "function refresh() {}").0)
+        var manifest = WidgetPackageManifest.newProject(name: name)
+        manifest.id = "dev.scriptwidget.action-test"
+        manifest.actions = [
+            .init(
+                id: "refresh",
+                title: "Refresh",
+                description: "Refresh the widget",
+                systemImage: "arrow.clockwise",
+                function: "refresh"
+            ),
+        ]
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        return (package, manifest)
+    }
+
+    func testCatalogUsesStableIdentifiersAndRejectsMalformedPresentManifests() throws {
+        let (package, manifest) = try makeActionPackage()
+        let catalog = ScriptWidgetActionCatalog(packages: [package])
+        XCTAssertEqual(catalog.actions().map(\.identifier), ["\(manifest.id)::refresh"])
+        XCTAssertEqual(catalog.resolve(identifier: "\(manifest.id)::refresh")?.action.function, "refresh")
+
+        var object = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: package.manifestPath)) as? [String: Any])
+        object["executable"] = true
+        try JSONSerialization.data(withJSONObject: object).write(to: package.manifestPath)
+        XCTAssertTrue(catalog.actions().isEmpty, "Malformed Package 2.0 manifests must fail closed on system surfaces")
+    }
+
+    func testExecutorProvidesSharedActionAndLegacyControlEnvironments() throws {
+        let (package, manifest) = try makeActionPackage()
+        let resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)
+        var captured: [String: String] = [:]
+        var reloadCount = 0
+        let executor = ScriptWidgetActionExecutor(
+            catalog: .init(packages: [package]),
+            runAction: { _, environments in
+                captured = environments
+                return nil
+            },
+            reloadWidgets: { reloadCount += 1 }
+        )
+
+        XCTAssertNoThrow(try executor.execute(
+            resolved: resolved,
+            source: .control,
+            value: true,
+            contextID: "dashboard-toggle"
+        ).get())
+        XCTAssertEqual(captured["action-id"], manifest.actions?.first?.id)
+        XCTAssertEqual(captured["action-source"], "control")
+        XCTAssertEqual(captured["action-value"], "true")
+        XCTAssertEqual(captured["control-id"], "dashboard-toggle")
+        XCTAssertEqual(captured["control-value"], "true")
+        XCTAssertEqual(reloadCount, 1)
+    }
+
+    func testToggleRequiresStorageAndPersistsNamespacedValue() throws {
+        let (package, _) = try makeActionPackage()
+        var resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)
+        let suiteName = "ScriptWidgetActionTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suiteName))
+        defer { defaults.removePersistentDomain(forName: suiteName) }
+        let executor = ScriptWidgetActionExecutor(
+            catalog: .init(packages: [package]),
+            runAction: { _, _ in nil },
+            reloadWidgets: {},
+            defaults: defaults
+        )
+
+        if case .failure(let error) = executor.setToggleValue(
+            true,
+            resolved: resolved,
+            stateKey: "focus.enabled",
+            source: .widget
+        ) {
+            XCTAssertEqual(error, .storageDenied)
+        } else {
+            XCTFail("Storage must be declared before a toggle action can persist state")
+        }
+        var storageManifest = resolved.manifest
+        storageManifest.permissions = [.storage]
+        resolved = .init(package: package, manifest: storageManifest, action: resolved.action)
+        XCTAssertNoThrow(try executor.setToggleValue(
+            true,
+            resolved: resolved,
+            stateKey: "focus.enabled",
+            source: .widget
+        ).get())
+        XCTAssertEqual(defaults.string(forKey: "script.\(package.name).focus.enabled"), "true")
+        if case .failure(let error) = executor.setToggleValue(
+            true,
+            resolved: resolved,
+            stateKey: "../secret",
+            source: .widget
+        ) {
+            XCTAssertEqual(error, .invalidStateKey)
+        } else {
+            XCTFail("Unsafe toggle state keys must fail closed")
+        }
+    }
+}
+
+#if canImport(AppIntentsTesting)
+@available(macOS 27.0, iOS 27.0, *)
+final class ScriptWidgetAppIntentsMetadataTests: XCTestCase {
+    func testRunActionIntentAcceptsDeclaredActionEntity() throws {
+        let definitions = IntentDefinitions(bundleIdentifier: "com.everettjf.scriptwidget")
+        let actionEntity = definitions.entities["ScriptWidgetActionEntity"]
+        let reference = actionEntity.makeReference(identifier: "dev.scriptwidget.test::refresh")
+        let intent = definitions.intents["RunScriptWidgetActionIntent"].makeIntent(action: reference)
+        let captured: AnyAppEntity = try intent.action
+
+        XCTAssertEqual(intent.identifier, "RunScriptWidgetActionIntent")
+        XCTAssertNoThrow(try actionEntity.isInstance(captured))
+    }
+
+    func testToggleIntentMetadataKeepsValueAndStateParameters() throws {
+        let definitions = IntentDefinitions(bundleIdentifier: "com.everettjf.scriptwidget")
+        let intent = definitions.intents["SetScriptWidgetActionValueIntent"].makeIntent(
+            value: true,
+            actionID: "dev.scriptwidget.test::toggle",
+            stateKey: "focus.enabled"
+        )
+        let value: Bool = try intent.value
+        let actionID: String = try intent.actionID
+        let stateKey: String = try intent.stateKey
+
+        XCTAssertTrue(value)
+        XCTAssertEqual(actionID, "dev.scriptwidget.test::toggle")
+        XCTAssertEqual(stateKey, "focus.enabled")
+    }
+}
+#endif
 
 final class ScriptManagerLifecycleTests: XCTestCase {
     private var temporaryDirectories: [URL] = []

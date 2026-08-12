@@ -7,6 +7,21 @@
 
 import SwiftUI
 import WidgetKit
+import AppIntents
+
+struct ScriptWidgetAppShortcuts: AppShortcutsProvider {
+    static var appShortcuts: [AppShortcut] {
+        AppShortcut(
+            intent: RunScriptWidgetActionIntent(),
+            phrases: [
+                "Run \(\.$action) in \(.applicationName)",
+                "Use \(\.$action) with \(.applicationName)",
+            ],
+            shortTitle: "Run Widget Action",
+            systemImageName: "play.square"
+        )
+    }
+}
 
 @main
 struct ScriptWidgetApp: App {

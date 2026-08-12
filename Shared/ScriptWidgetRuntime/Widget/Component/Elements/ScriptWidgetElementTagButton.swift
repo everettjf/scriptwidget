@@ -12,6 +12,7 @@ class ScriptWidgetElementTagButton {
 
     private enum ButtonAction {
         case reload
+        case declared(String)
         case callFunction(String)
     }
     
@@ -31,6 +32,19 @@ class ScriptWidgetElementTagButton {
                     buttonLabel(element: element, context: context)
                 }
                 .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+            case .declared(let actionID):
+                if let resolved = ScriptWidgetActionCatalog(packages: [context.package]).resolve(package: context.package, actionID: actionID) {
+                    Button(intent: RunScriptWidgetActionIntent(identifier: resolved.identifier)) {
+                        buttonLabel(element: element, context: context)
+                    }
+                    .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+                } else {
+                    Button(action: {}) {
+                        buttonLabel(element: element, context: context)
+                    }
+                    .disabled(true)
+                    .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+                }
             case .callFunction(let functionName):
                 Button(intent: ButtonActionAppIntent(functionName: functionName, package: context.package)) {
                     buttonLabel(element: element, context: context)
@@ -55,6 +69,9 @@ class ScriptWidgetElementTagButton {
     private static func getButtonAction(_ element: ScriptWidgetRuntimeElement) -> ButtonAction {
         if let action = element.getPropString("action")?.lowercased(), action == "reload" {
             return .reload
+        }
+        if let actionID = element.getPropString("actionID"), !actionID.isEmpty {
+            return .declared(actionID)
         }
         let functionName = element.getPropString("onClick") ?? ""
         return .callFunction(functionName)

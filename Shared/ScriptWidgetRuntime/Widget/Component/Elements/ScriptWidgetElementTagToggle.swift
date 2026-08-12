@@ -20,10 +20,28 @@ class ScriptWidgetElementTagToggle {
     
     @ViewBuilder private static func buildToggle(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> some View {
         if #available(iOS 17.0, macOS 14.0, *) {
-            Toggle(isOn: self.getToggleValue(element), intent: ButtonActionAppIntent(functionName: Self.getToggleActionFunctionName(element), package: context.package)) {
-                toggleLabel(element: element, context: context)
+            if let actionID = element.getPropString("actionID"),
+               let stateKey = element.getPropString("stateKey"),
+               let resolved = ScriptWidgetActionCatalog(packages: [context.package]).resolve(package: context.package, actionID: actionID) {
+                Toggle(
+                    isOn: self.getToggleValue(element),
+                    intent: SetScriptWidgetActionValueIntent(actionID: resolved.identifier, stateKey: stateKey)
+                ) {
+                    toggleLabel(element: element, context: context)
+                }
+                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+            } else if element.getPropString("actionID") != nil || element.getPropString("stateKey") != nil {
+                Toggle(isOn: .constant(self.getToggleValue(element))) {
+                    toggleLabel(element: element, context: context)
+                }
+                .disabled(true)
+                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+            } else {
+                Toggle(isOn: self.getToggleValue(element), intent: ButtonActionAppIntent(functionName: Self.getToggleActionFunctionName(element), package: context.package)) {
+                    toggleLabel(element: element, context: context)
+                }
+                .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
             }
-            .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
         } else {
             Toggle(isOn: .constant(self.getToggleValue(element))) {
                 toggleLabel(element: element, context: context)

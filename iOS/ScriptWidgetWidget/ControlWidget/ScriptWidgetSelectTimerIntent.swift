@@ -4,19 +4,28 @@ import WidgetKit
 
 private enum ScriptWidgetControlCatalog {
     static func controls(type: WidgetPackageControlType) -> [(package: ScriptWidgetPackage, control: WidgetPackageControl)] {
-        sharedScriptManager.listScripts().flatMap { model in
-            let manifest = model.package.effectiveManifest()
+        ScriptWidgetActionCatalog.live.packages.flatMap { package -> [(package: ScriptWidgetPackage, control: WidgetPackageControl)] in
+            guard let manifest = package.readManifest(),
+                  WidgetPackageManifestValidator.validate(manifest, package: package).isValid else { return [] }
             return (manifest.controls ?? [])
                 .filter { $0.type == type }
-                .map { (model.package, $0) }
+                .map { (package, $0) }
         }
     }
 
     static func resolve(id: String, type: WidgetPackageControlType) -> (ScriptWidgetPackage, WidgetPackageControl)? {
-        controls(type: type).first { entityID(package: $0.package, control: $0.control) == id }
+        guard let (_, control) = ScriptWidgetActionCatalog.live.resolveControl(identifier: id, type: type) else { return nil }
+        return controls(type: type).first {
+            $0.control.id == control.id && (entityID(package: $0.package, control: $0.control) == id || legacyEntityID(package: $0.package, control: $0.control) == id)
+        }
     }
 
     static func entityID(package: ScriptWidgetPackage, control: WidgetPackageControl) -> String {
+        let manifest = package.readManifest() ?? package.effectiveManifest()
+        return "\(manifest.id)::\(control.id)"
+    }
+
+    static func legacyEntityID(package: ScriptWidgetPackage, control: WidgetPackageControl) -> String {
         "\(package.name)::\(control.id)"
     }
 
@@ -28,22 +37,6 @@ private enum ScriptWidgetControlCatalog {
         return false
     }
 
-    static func setStorageValue(_ value: Bool, package: ScriptWidgetPackage, key: String) {
-        let defaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? .standard
-        defaults.set(value ? "true" : "false", forKey: "script.\(package.name).\(key)")
-    }
-
-    static func runAction(package: ScriptWidgetPackage, control: WidgetPackageControl, value: Bool? = nil) {
-        guard let source = package.readMainFileResult().content else { return }
-        var environments = [
-            "widget-size": "control",
-            "widget-param": "",
-            "control-id": control.id,
-        ]
-        if let value { environments["control-value"] = value ? "true" : "false" }
-        let runtime = ScriptWidgetRuntime(package: package, environments: environments)
-        _ = runtime.executeJSXSyncForFunction(source, control.action)
-    }
 }
 
 struct ScriptWidgetButtonControlEntity: AppEntity, Identifiable {
@@ -194,8 +187,15 @@ struct RunScriptWidgetControlIntent: AppIntent {
     init(controlID: String) { self.controlID = controlID }
 
     func perform() async throws -> some IntentResult {
-        guard let (package, control) = ScriptWidgetControlCatalog.resolve(id: controlID, type: .button) else { return .result() }
-        ScriptWidgetControlCatalog.runAction(package: package, control: control)
+        guard let (resolved, control) = ScriptWidgetActionCatalog.live.resolveControl(identifier: controlID, type: .button) else {
+            throw ScriptWidgetActionExecutionError.actionNotFound
+        }
+        let result = ScriptWidgetActionExecutor(catalog: .live).execute(
+            resolved: resolved,
+            source: .control,
+            contextID: control.id
+        )
+        if case .failure(let error) = result { throw error }
         ControlCenter.shared.reloadControls(ofKind: "ScriptWidget.Button")
         return .result()
     }
@@ -216,10 +216,16 @@ struct SetScriptWidgetControlValueIntent: SetValueIntent {
     init(controlID: String) { self.controlID = controlID }
 
     func perform() async throws -> some IntentResult {
-        guard let (package, control) = ScriptWidgetControlCatalog.resolve(id: controlID, type: .toggle),
+        guard let (resolved, control) = ScriptWidgetActionCatalog.live.resolveControl(identifier: controlID, type: .toggle),
               let stateKey = control.stateKey else { return .result() }
-        ScriptWidgetControlCatalog.setStorageValue(value, package: package, key: stateKey)
-        ScriptWidgetControlCatalog.runAction(package: package, control: control, value: value)
+        let result = ScriptWidgetActionExecutor(catalog: .live).setToggleValue(
+            value,
+            resolved: resolved,
+            stateKey: stateKey,
+            source: .control,
+            contextID: control.id
+        )
+        if case .failure(let error) = result { throw error }
         ControlCenter.shared.reloadControls(ofKind: "ScriptWidget.Toggle")
         WidgetCenter.shared.reloadTimelines(ofKind: "ScriptWidget")
         return .result()
