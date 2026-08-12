@@ -923,6 +923,22 @@ final class WidgetPackageManifestTests: XCTestCase {
         manifest.supportedFamilies.append(.systemExtraLargePortrait)
         manifest.permissions = [.network, .storage]
         manifest.networkDomains = ["push.example.com"]
+        manifest.actions = [
+            .init(
+                id: "refresh",
+                title: "Refresh Dashboard",
+                description: "Fetch the latest dashboard data",
+                systemImage: "arrow.clockwise",
+                function: "refreshWidget"
+            ),
+            .init(
+                id: "focus",
+                title: "Set Focus",
+                description: nil,
+                systemImage: "timer",
+                function: "setFocus"
+            ),
+        ]
         manifest.controls = [
             .init(
                 id: "refresh",
@@ -930,7 +946,8 @@ final class WidgetPackageManifestTests: XCTestCase {
                 title: "Refresh",
                 subtitle: nil,
                 systemImage: "arrow.clockwise",
-                action: "refreshWidget",
+                action: nil,
+                actionID: "refresh",
                 stateKey: nil
             ),
             .init(
@@ -939,7 +956,8 @@ final class WidgetPackageManifestTests: XCTestCase {
                 title: "Focus",
                 subtitle: "Focus mode",
                 systemImage: "timer",
-                action: "setFocus",
+                action: nil,
+                actionID: "focus",
                 stateKey: "focus.enabled"
             ),
         ]
@@ -951,6 +969,28 @@ final class WidgetPackageManifestTests: XCTestCase {
         XCTAssertTrue(package.writeManifest(manifest).0)
         XCTAssertEqual(package.readManifest(), manifest)
         XCTAssertTrue(WidgetPackageManifestValidator.validate(manifest, package: package).isValid)
+    }
+
+    func testActionReferencesFailClosed() throws {
+        let package = try makePackage()
+        var manifest = WidgetPackageManifest.newProject(name: "Broken Actions")
+        manifest.actions = [
+            .init(id: "duplicate", title: "First", description: nil, systemImage: "play", function: "run"),
+            .init(id: "DUPLICATE", title: "", description: String(repeating: "x", count: 161), systemImage: "../bad", function: "run()"),
+        ]
+        manifest.controls = [
+            .init(id: "missing", type: .button, title: "Missing", subtitle: nil, systemImage: "play", action: nil, actionID: "unknown", stateKey: nil),
+            .init(id: "ambiguous", type: .button, title: "Ambiguous", subtitle: nil, systemImage: "play", action: "run", actionID: "duplicate", stateKey: nil),
+        ]
+
+        let codes = Set(WidgetPackageManifestValidator.validate(manifest, package: package).errors.map(\.code))
+        XCTAssertTrue(codes.contains("duplicate_actions"))
+        XCTAssertTrue(codes.contains("invalid_action_title"))
+        XCTAssertTrue(codes.contains("invalid_action_description"))
+        XCTAssertTrue(codes.contains("invalid_action_image"))
+        XCTAssertTrue(codes.contains("invalid_action_function"))
+        XCTAssertTrue(codes.contains("missing_control_action"))
+        XCTAssertTrue(codes.contains("ambiguous_control_action"))
     }
 
     func testControlAndPushCapabilitiesFailClosed() throws {

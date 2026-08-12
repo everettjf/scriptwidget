@@ -391,7 +391,7 @@ struct ScriptWidgetPackage {
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let allowedKeys: Set<String> = [
             "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
-            "supportedFamilies", "permissions", "networkDomains", "plugins", "controls", "pushUpdates", "description",
+            "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description",
             "category", "tags", "icon", "preview", "author", "license"
         ]
         guard Set(object.keys).isSubset(of: allowedKeys) else { return nil }
@@ -400,8 +400,12 @@ struct ScriptWidgetPackage {
             return nil
         }
         if let controls = object["controls"] as? [[String: Any]] {
-            let allowedControlKeys: Set<String> = ["id", "type", "title", "subtitle", "systemImage", "action", "stateKey"]
+            let allowedControlKeys: Set<String> = ["id", "type", "title", "subtitle", "systemImage", "action", "actionID", "stateKey"]
             guard controls.allSatisfy({ Set($0.keys).isSubset(of: allowedControlKeys) }) else { return nil }
+        }
+        if let actions = object["actions"] as? [[String: Any]] {
+            let allowedActionKeys: Set<String> = ["id", "title", "description", "systemImage", "function"]
+            guard actions.allSatisfy({ Set($0.keys).isSubset(of: allowedActionKeys) }) else { return nil }
         }
         if let pushUpdates = object["pushUpdates"] as? [String: Any],
            !Set(pushUpdates.keys).isSubset(of: ["registrationURL", "channel"]) {

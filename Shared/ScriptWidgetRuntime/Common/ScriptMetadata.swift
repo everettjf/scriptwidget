@@ -65,6 +65,14 @@ struct WidgetPackageAuthor: Codable, Equatable {
     var url: String?
 }
 
+struct WidgetPackageAction: Codable, Equatable, Identifiable {
+    var id: String
+    var title: String
+    var description: String?
+    var systemImage: String
+    var function: String
+}
+
 enum WidgetPackageControlType: String, Codable, CaseIterable {
     case button
     case toggle
@@ -76,7 +84,10 @@ struct WidgetPackageControl: Codable, Equatable, Identifiable {
     var title: String
     var subtitle: String?
     var systemImage: String
-    var action: String
+    /// Legacy direct JavaScript function reference. New manifests should use
+    /// `actionID` so every system surface resolves the same declared action.
+    var action: String?
+    var actionID: String? = nil
     var stateKey: String?
 }
 
@@ -102,6 +113,7 @@ struct WidgetPackageManifest: Codable, Equatable {
     var permissions: [WidgetPackagePermission]
     var networkDomains: [String]
     var plugins: [String]?
+    var actions: [WidgetPackageAction]?
     var controls: [WidgetPackageControl]?
     var pushUpdates: WidgetPackagePushUpdates?
     var description: String?
@@ -124,6 +136,7 @@ struct WidgetPackageManifest: Codable, Equatable {
             permissions: [],
             networkDomains: [],
             plugins: [],
+            actions: [],
             controls: [],
             pushUpdates: nil,
             description: metadata?.description,
@@ -226,6 +239,29 @@ enum WidgetPackageManifestValidator {
             }
             if !plugins.isEmpty && !manifest.permissions.contains(.network) { error("plugin_network", "Data source plugins require the network permission.") }
         }
+        let actions = manifest.actions ?? []
+        if actions.count > 16 { error("too_many_actions", "A package may declare at most 16 actions.") }
+        if Set(actions.map { $0.id.lowercased() }).count != actions.count {
+            error("duplicate_actions", "Action identifiers must be unique.")
+        }
+        for action in actions {
+            if action.id.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{0,63}$", options: .regularExpression) == nil {
+                error("invalid_action_id", "Invalid action identifier: \(action.id).")
+            }
+            let title = action.title.trimmingCharacters(in: .whitespacesAndNewlines)
+            if title.isEmpty || action.title.count > 40 {
+                error("invalid_action_title", "Action titles must contain 1–40 characters.")
+            }
+            if let description = action.description, description.count > 160 {
+                error("invalid_action_description", "Action descriptions may contain at most 160 characters.")
+            }
+            if action.systemImage.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$", options: .regularExpression) == nil {
+                error("invalid_action_image", "Action systemImage must be an SF Symbols name.")
+            }
+            if action.function.range(of: "^[A-Za-z_$][A-Za-z0-9_$]{0,63}$", options: .regularExpression) == nil {
+                error("invalid_action_function", "Action function must be a JavaScript function identifier.")
+            }
+        }
         if let controls = manifest.controls {
             if controls.count > 8 { error("too_many_controls", "A package may declare at most 8 controls.") }
             if Set(controls.map { $0.id.lowercased() }).count != controls.count {
@@ -241,8 +277,18 @@ enum WidgetPackageManifestValidator {
                 if control.systemImage.range(of: "^[A-Za-z0-9][A-Za-z0-9.-]{0,79}$", options: .regularExpression) == nil {
                     error("invalid_control_image", "Control systemImage must be an SF Symbols name.")
                 }
-                if control.action.range(of: "^[A-Za-z_$][A-Za-z0-9_$]{0,63}$", options: .regularExpression) == nil {
-                    error("invalid_control_action", "Control action must be a JavaScript function identifier.")
+                if control.action != nil && control.actionID != nil {
+                    error("ambiguous_control_action", "Controls must declare either action or actionID, not both.")
+                } else if let action = control.action {
+                    if action.range(of: "^[A-Za-z_$][A-Za-z0-9_$]{0,63}$", options: .regularExpression) == nil {
+                        error("invalid_control_action", "Control action must be a JavaScript function identifier.")
+                    }
+                } else if let actionID = control.actionID {
+                    if !actions.contains(where: { $0.id.caseInsensitiveCompare(actionID) == .orderedSame }) {
+                        error("missing_control_action", "Control \(control.id) references unknown action \(actionID).")
+                    }
+                } else {
+                    error("missing_control_action", "Controls must declare actionID or the legacy action field.")
                 }
                 if control.type == .toggle {
                     guard let stateKey = control.stateKey,
