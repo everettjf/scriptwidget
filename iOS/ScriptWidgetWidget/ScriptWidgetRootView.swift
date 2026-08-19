@@ -48,8 +48,10 @@ struct ScriptWidgetWidgetElementRootView: View {
                 debugMode: false,
                 scriptName: self.scriptName,
                 scriptParameter: self.scriptParameter,
-                package: data.package
+                package: data.package,
+                containerBackgroundElement: data.rootElement
             )
         )
+        .modifier(ScriptWidgetContainerBackgroundModifier(data.rootElement))
     }
 }

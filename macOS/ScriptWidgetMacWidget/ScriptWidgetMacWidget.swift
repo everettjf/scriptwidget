@@ -182,9 +182,11 @@ struct ScriptWidgetWidgetElementRootView: View {
                 debugMode: false,
                 scriptName: data.scriptName,
                 scriptParameter: data.scriptParameter,
-                package: data.package
+                package: data.package,
+                containerBackgroundElement: data.rootElement
             )
         )
+        .modifier(ScriptWidgetContainerBackgroundModifier(data.rootElement))
     }
 }
 
@@ -202,7 +204,6 @@ struct ScriptWidgetMacWidgetEntryView : View {
                 .containerBackground(.background, for: .widget)
         } else {
             ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, entry: self.entry)
-                .containerBackground(.background, for: .widget)
         }
     }
 }

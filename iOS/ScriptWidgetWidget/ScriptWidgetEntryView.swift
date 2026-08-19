@@ -28,7 +28,6 @@ struct ScriptWidgetWidgetEntryView : View {
                 .containerBackground(.background, for: .widget)
         } else {
             ScriptWidgetWidgetElementRootView(widgetFamily: self.widgetFamily, renderingMode: widgetRenderingMode, entry: self.entry)
-                .containerBackground(.background, for: .widget)
         }
     }
 }

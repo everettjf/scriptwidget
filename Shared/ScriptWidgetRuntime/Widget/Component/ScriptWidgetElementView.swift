@@ -12,15 +12,21 @@ class ScriptWidgetElementContext {
     let scriptName: String
     let scriptParameter: String
     let package: ScriptWidgetPackage
+    private let containerBackgroundElementID: ObjectIdentifier?
     
     weak var runtime: ScriptWidgetRuntime?
         
-    init(runtime: ScriptWidgetRuntime? ,debugMode: Bool, scriptName: String, scriptParameter: String, package: ScriptWidgetPackage) {
+    init(runtime: ScriptWidgetRuntime? ,debugMode: Bool, scriptName: String, scriptParameter: String, package: ScriptWidgetPackage, containerBackgroundElement: ScriptWidgetRuntimeElement? = nil) {
         self.runtime = runtime
         self.debugMode = debugMode
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.package = package
+        self.containerBackgroundElementID = containerBackgroundElement.map(ObjectIdentifier.init)
+    }
+
+    func usesContainerBackground(for element: ScriptWidgetRuntimeElement) -> Bool {
+        containerBackgroundElementID == ObjectIdentifier(element)
     }
 }
 

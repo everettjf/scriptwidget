@@ -26,7 +26,7 @@ struct ScriptWidgetAttributeGeneralModifier: ViewModifier {
             // a light halo around otherwise full-bleed widget cards.
             .modifier(ScriptWidgetAttributePaddingModifier(element))
             .modifier(ScriptWidgetAttributeFrameModifier(element))
-            .modifier(ScriptWidgetAttributeBackgroundModifier(element))
+            .modifier(ScriptWidgetAttributeBackgroundModifier(element, context))
             .modifier(ScriptWidgetAttributeCornerRadiusModifier(element))
             .modifier(ScriptWidgetAttributeClippedModifier(element))
             .modifier(ScriptWidgetAttributeOpacityModifier(element))
