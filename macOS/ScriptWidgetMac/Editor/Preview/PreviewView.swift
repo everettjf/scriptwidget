@@ -282,7 +282,7 @@ struct PreviewView: View {
         self.configuration = configuration
         _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
             file: scriptModel.package,
-            widgetSizeType: 0,
+            widgetSizeType: configuration.family.rawValue,
             scriptParameter: "",
             renderingMode: configuration.renderingMode
         ))

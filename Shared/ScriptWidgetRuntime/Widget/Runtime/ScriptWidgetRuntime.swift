@@ -509,40 +509,93 @@ class ScriptWidgetRuntime {
 
 extension ScriptWidgetRuntime {
 
-    private func resolveWidgetRootElement(_ root: ScriptWidgetRuntimeElement) -> Result<ScriptWidgetRuntimeElement, ScriptWidgetError> {
-        var current = root
-        var visited = Set<ObjectIdentifier>()
+    private func resolveWidgetElementTree(_ root: ScriptWidgetRuntimeElement) -> Result<ScriptWidgetRuntimeElement, ScriptWidgetError> {
+        var activePath = Set<ObjectIdentifier>()
 
-        for _ in 0..<ScriptWidgetRuntimeContract.maximumElementDepth {
-            guard visited.insert(ObjectIdentifier(current)).inserted else {
-                return .failure(.resourceLimit("Root component resolution contains a cycle"))
-            }
-
-            if current.tagAsString() == "Fragment" {
-                let children = current.childrenAsElements()
-                guard children.count == 1, let child = children.first else {
-                    return .success(current)
+        func singleFragmentElement(_ values: [Any]) -> ScriptWidgetRuntimeElement? {
+            var flattened: [Any] = []
+            func append(_ value: Any) {
+                if let nested = value as? [Any] {
+                    nested.forEach(append)
+                } else {
+                    flattened.append(value)
                 }
-                current = child
-                continue
             }
-
-            guard current.tagAsString() == nil,
-                  getTypeOfValue(current.tag) == "function" else {
-                return .success(current)
-            }
-
-            var argument = current.getProps()
-            argument["children"] = current.getChildren()
-            guard let resultValue = current.tag.call(withArguments: [argument]),
-                  resultValue.isObject,
-                  let resolved = resultValue.toObject() as? ScriptWidgetRuntimeElement else {
-                return .failure(.scriptError("Root custom component must return a ScriptWidget element"))
-            }
-            current = resolved
+            values.forEach(append)
+            guard flattened.count == 1 else { return nil }
+            return flattened[0] as? ScriptWidgetRuntimeElement
         }
 
-        return .failure(.resourceLimit("Root component resolution exceeds the maximum element depth"))
+        func resolve(_ element: ScriptWidgetRuntimeElement, depth: Int, unwrapFragment: Bool) -> Result<ScriptWidgetRuntimeElement, ScriptWidgetError> {
+            guard depth <= ScriptWidgetRuntimeContract.maximumElementDepth else {
+                return .failure(.resourceLimit("Element tree exceeds the maximum depth of \(ScriptWidgetRuntimeContract.maximumElementDepth)"))
+            }
+
+            var current = element
+            var insertedIdentifiers: [ObjectIdentifier] = []
+            defer { insertedIdentifiers.forEach { activePath.remove($0) } }
+
+            for _ in 0..<ScriptWidgetRuntimeContract.maximumElementDepth {
+                let identifier = ObjectIdentifier(current)
+                guard activePath.insert(identifier).inserted else {
+                    return .failure(.resourceLimit("Element tree contains a component cycle"))
+                }
+                insertedIdentifiers.append(identifier)
+
+                guard current.tagAsString() == nil,
+                      getTypeOfValue(current.tag) == "function" else {
+                    break
+                }
+
+                var argument = current.getProps()
+                argument["children"] = current.getChildren()
+                guard let resultValue = current.tag.call(withArguments: [argument]),
+                      resultValue.isObject,
+                      let resolved = resultValue.toObject() as? ScriptWidgetRuntimeElement else {
+                    return .failure(.scriptError("Custom component must return a ScriptWidget element"))
+                }
+                current = resolved
+            }
+
+            guard current.tagAsString() != nil else {
+                return .failure(.resourceLimit("Component resolution exceeds the maximum depth"))
+            }
+
+            if unwrapFragment,
+               current.tagAsString() == "Fragment",
+               let child = singleFragmentElement(current.getChildren()) {
+                return resolve(child, depth: depth, unwrapFragment: true)
+            }
+
+            func resolveChild(_ child: Any) -> Result<Any, ScriptWidgetError> {
+                if let childElement = child as? ScriptWidgetRuntimeElement {
+                    return resolve(childElement, depth: depth + 1, unwrapFragment: false).map { $0 as Any }
+                }
+                if let nested = child as? [Any] {
+                    var resolvedChildren: [Any] = []
+                    for nestedChild in nested {
+                        switch resolveChild(nestedChild) {
+                        case .success(let value): resolvedChildren.append(value)
+                        case .failure(let error): return .failure(error)
+                        }
+                    }
+                    return .success(resolvedChildren)
+                }
+                return .success(child)
+            }
+
+            var resolvedChildren: [Any] = []
+            for child in current.getChildren() {
+                switch resolveChild(child) {
+                case .success(let value): resolvedChildren.append(value)
+                case .failure(let error): return .failure(error)
+                }
+            }
+            current.children = resolvedChildren
+            return .success(current)
+        }
+
+        return resolve(root, depth: 1, unwrapFragment: true)
     }
     
     func executeJSXSyncForWidget(_ JSX: String) -> (ScriptWidgetRuntimeElement? , ScriptWidgetError?) {
@@ -619,7 +672,7 @@ extension ScriptWidgetRuntime {
             var rootResolutionError: ScriptWidgetError?
             
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                switch self.resolveWidgetRootElement(rootElement) {
+                switch self.resolveWidgetElementTree(rootElement) {
                 case .success(let resolved):
                     resultElement = resolved
                 case .failure(let error):
@@ -833,6 +886,7 @@ extension ScriptWidgetRuntime {
             
             let semaphore = DispatchSemaphore(value: 0)
             var resultElement: ScriptWidgetDynamicIslandRuntimeElement?
+            var componentResolutionError: ScriptWidgetError?
             
             // ignore for dynamic island
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
@@ -854,14 +908,45 @@ extension ScriptWidgetRuntime {
                     return
                 }
                 
-                let expandedLeading = expandedInfo["leading"] as? ScriptWidgetRuntimeElement
-                let expandedTrailing = expandedInfo["trailing"] as? ScriptWidgetRuntimeElement
-                let expandedCenter = expandedInfo["center"] as? ScriptWidgetRuntimeElement
-                let expandedBottom = expandedInfo["bottom"] as? ScriptWidgetRuntimeElement
+                func resolveRequired(_ element: ScriptWidgetRuntimeElement) -> ScriptWidgetRuntimeElement? {
+                    switch self.resolveWidgetElementTree(element) {
+                    case .success(let resolved): return resolved
+                    case .failure(let error):
+                        componentResolutionError = error
+                        return nil
+                    }
+                }
+
+                func resolveOptional(_ element: ScriptWidgetRuntimeElement?) -> ScriptWidgetRuntimeElement? {
+                    guard let element else { return nil }
+                    return resolveRequired(element)
+                }
+
+                guard let resolvedMinimal = resolveRequired(minimal),
+                      let resolvedCompactLeading = resolveRequired(compactLeading),
+                      let resolvedCompactTrailing = resolveRequired(compactTrailing) else {
+                    semaphore.signal()
+                    return
+                }
+
+                let expandedLeading = resolveOptional(expandedInfo["leading"] as? ScriptWidgetRuntimeElement)
+                let expandedTrailing = resolveOptional(expandedInfo["trailing"] as? ScriptWidgetRuntimeElement)
+                let expandedCenter = resolveOptional(expandedInfo["center"] as? ScriptWidgetRuntimeElement)
+                let expandedBottom = resolveOptional(expandedInfo["bottom"] as? ScriptWidgetRuntimeElement)
+
+                guard componentResolutionError == nil else {
+                    semaphore.signal()
+                    return
+                }
                 
                 let resultExpanded = ScriptWidgetDynamicIslandRuntimeElement.ExpandedElement(leading: expandedLeading, trailing: expandedTrailing, center: expandedCenter, bottom: expandedBottom)
                 
-                resultElement = ScriptWidgetDynamicIslandRuntimeElement(expanded: resultExpanded, compactLeading: compactLeading, compactTrailing: compactTrailing, minimal: minimal)
+                resultElement = ScriptWidgetDynamicIslandRuntimeElement(
+                    expanded: resultExpanded,
+                    compactLeading: resolvedCompactLeading,
+                    compactTrailing: resolvedCompactTrailing,
+                    minimal: resolvedMinimal
+                )
                 
                 semaphore.signal()
             }
@@ -962,6 +1047,10 @@ extension ScriptWidgetRuntime {
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
+                    return
+                }
+                if let componentResolutionError {
+                    promise(.failure(componentResolutionError))
                     return
                 }
                 

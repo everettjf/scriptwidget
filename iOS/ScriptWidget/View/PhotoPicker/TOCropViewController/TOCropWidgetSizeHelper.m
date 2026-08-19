@@ -84,7 +84,10 @@
 }
 
 + (CGSize)extraLarge {
-    return [TOCropWidgetSizeHelper shared].prop.large;
+    return CGSizeMake(720, 338);
+}
++ (CGSize)extraLargePortrait {
+    return CGSizeMake(360, 668);
 }
 + (CGSize)accessoryInline {
     return CGSizeMake(1044/3, 92/3);
@@ -105,6 +108,7 @@
         case 4: return [self accessoryInline];
         case 5: return [self accessoryCircular];
         case 6: return [self accessoryRectangular];
+        case 8: return [self extraLargePortrait];
         default: return [self small];
     }
 }

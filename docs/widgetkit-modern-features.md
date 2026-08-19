@@ -10,6 +10,8 @@ Use `$getenv("widget-rendering-mode")` to adapt to `fullColor`, `accented`, or `
 
 The root element's `background` is promoted to WidgetKit's container background on supported systems, including when the root is returned through custom components or a single-child Fragment. A Fragment with multiple top-level children has no unique container; wrap those children in one stack when the widget needs a removable container background.
 
+Custom components are fully expanded on the JavaScript execution thread before SwiftUI builds the view, including components nested inside ordinary widgets and every Dynamic Island region. Runtime depth, node-count, property-count, and cycle validation therefore applies to the expanded tree rather than only to the component wrappers.
+
 ## Live Activities
 
 Live Activity content receives:

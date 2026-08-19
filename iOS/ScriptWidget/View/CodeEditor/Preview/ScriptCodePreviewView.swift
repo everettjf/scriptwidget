@@ -40,6 +40,16 @@ struct ScriptCodePreviewView: View {
             .alert(isPresented: $showAlert) { () -> Alert in
                 Alert(title: Text(self.showAlertMessage))
             }
+            .onAppear {
+                if widgetSizeType != 7 {
+                    state.changeWidgetSizeType(widgetSizeType)
+                }
+            }
+            .onChange(of: filePath) { value in
+                if state.filePath != value {
+                    state.changeFile(value)
+                }
+            }
     }
     
     var content: some View {
@@ -166,6 +176,7 @@ struct ScriptCodePreviewView: View {
                 Text("AccessoryInline").tag(4)
                 Text("AccessoryCircular").tag(5)
                 Text("AccessoryRectangular").tag(6)
+                Text("ExtraLargePortrait").tag(8)
                 Text("All Sizes").tag(7)
             }
             .onChange(of: widgetSizeType) { value in
@@ -205,7 +216,7 @@ struct ScriptCodePreviewView: View {
     }
 
     private var previewSizeLabel: String {
-        if widgetSizeType == 7 { return "Small · Medium · Large" }
+        if widgetSizeType == 7 { return "Small · Medium · Large · Extra Large · Portrait" }
         let size = WidgetSizeHelper.size(Int32(widgetSizeType))
         return "\(Int(size.width)) × \(Int(size.height))"
     }
@@ -224,7 +235,7 @@ private struct ScriptCodeAllSizesPreview: View {
     var body: some View {
         ScrollView([.horizontal, .vertical]) {
             HStack(alignment: .top, spacing: 20) {
-                ForEach([0, 1, 2], id: \.self) { sizeType in
+                ForEach([0, 1, 2, 3, 8], id: \.self) { sizeType in
                     ScriptCodePreviewCard(
                         model: model,
                         filePath: filePath,
@@ -245,12 +256,14 @@ private struct ScriptCodeAllSizesPreview: View {
 
 private struct ScriptCodePreviewCard: View {
     @StateObject private var state: ScriptCodePreviewDataObject
+    let filePath: URL
     let sizeType: Int
     let scriptParameter: String
     let widgetRenderingMode: String
     let isDebugMode: Bool
 
     init(model: ScriptModel, filePath: URL, sizeType: Int, scriptParameter: String, widgetRenderingMode: String, isDebugMode: Bool) {
+        self.filePath = filePath
         self.sizeType = sizeType
         self.scriptParameter = scriptParameter
         self.widgetRenderingMode = widgetRenderingMode
@@ -267,7 +280,7 @@ private struct ScriptCodePreviewCard: View {
     var body: some View {
         let size = WidgetSizeHelper.size(Int32(sizeType))
         VStack(spacing: 8) {
-            Text(["Small", "Medium", "Large"][sizeType])
+            Text(sizeTitle)
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.secondary)
             ScriptWidgetElementView(
@@ -290,6 +303,22 @@ private struct ScriptCodePreviewCard: View {
         }
         .onChange(of: widgetRenderingMode) { value in
             state.changeWidgetRenderingMode(value)
+        }
+        .onChange(of: filePath) { value in
+            if state.filePath != value {
+                state.changeFile(value)
+            }
+        }
+    }
+
+    private var sizeTitle: String {
+        switch sizeType {
+        case 0: return "Small"
+        case 1: return "Medium"
+        case 2: return "Large"
+        case 3: return "Extra Large"
+        case 8: return "Extra Large Portrait"
+        default: return "Widget"
         }
     }
 }

@@ -97,29 +97,9 @@ struct ScriptWidgetElementView: View {
     }
     
     static func unknownTypeTagView(element: ScriptWidgetRuntimeElement, context: ScriptWidgetElementContext) -> AnyView {
-        // search custom tag
-        if let runtime = context.runtime {
-            let tagType = runtime.getTypeOfValue(element.tag)
-            print("tag type = \(tagType)")
-            if tagType == "function" {
-                let builder = element.tag
-                var argument = [AnyHashable:Any]()
-                for (prop,value) in element.getProps() {
-                    argument[prop] = value
-                }
-                argument["children"] = element.getChildren()
-                if let resultValue = builder.call(withArguments: [argument]) {
-                    if resultValue.isObject {
-                        let resultObject = resultValue.toObject()
-                        if let resultElement = resultObject as? ScriptWidgetRuntimeElement {
-                            return Self.buildView(element: resultElement, context: context)
-                        }
-                    }
-                }
-                
-                return AnyView(Text("Custom component function type error").background(Color.blue))
-            }
-        }
+        // Runtime execution resolves custom components before SwiftUI builds the
+        // view tree. Never call JavaScriptCore here because SwiftUI may evaluate
+        // this body on a different thread from the owning JSContext.
         return AnyView(Text("UnknownTagType").background(Color.purple))
     }
     

@@ -155,6 +155,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
             case 4: widgetSizeString = "accessoryInline"
             case 5: widgetSizeString = "accessoryCircular"
             case 6: widgetSizeString = "accessoryRectangular"
+            case 8: widgetSizeString = "extraLargePortrait"
             default: widgetSizeString = "small"
             }
             

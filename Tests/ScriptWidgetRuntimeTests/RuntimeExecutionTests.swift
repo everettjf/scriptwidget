@@ -172,6 +172,25 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertEqual(element.map(collectText), "Resolved root")
     }
 
+    func testNestedCustomComponentsAreResolvedBeforeReturning() {
+        let jsx = """
+        const Badge = ({label}) => <hstack><icon systemName="star"/><text>{label}</text></hstack>;
+        const Card = ({children}) => <vstack>{children}</vstack>;
+        $render(<Card><Badge label="Nested component" /></Card>);
+        """
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
+        XCTAssertNil(error, "unexpected error: \(String(describing: error?.displayMessage))")
+        XCTAssertEqual(element?.tagAsString(), "vstack")
+        XCTAssertEqual(element?.childrenAsElements().first?.tagAsString(), "hstack")
+        XCTAssertTrue(element.map(collectText)?.contains("Nested component") ?? false)
+
+        func containsUnresolvedComponent(_ element: ScriptWidgetRuntimeElement) -> Bool {
+            if element.tagAsString() == nil { return true }
+            return element.childrenAsElements().contains(where: containsUnresolvedComponent)
+        }
+        XCTAssertFalse(element.map(containsUnresolvedComponent) ?? true)
+    }
+
     func testSingleChildRootFragmentIsResolved() {
         let (element, error) = makeRuntime().executeJSXSyncForWidget(
             "$render(<><vstack background=\"navy\"><text>One root</text></vstack></>);"
@@ -190,11 +209,47 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertEqual(element?.childrenAsElements().count, 2)
     }
 
+    func testRootFragmentWithTextAndElementIsNotIncorrectlyUnwrapped() {
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(
+            "$render(<>Prefix<text>Body</text></>);"
+        )
+        XCTAssertNil(error)
+        XCTAssertEqual(element?.tagAsString(), "Fragment")
+        XCTAssertEqual(element?.getChildren().count, 2)
+    }
+
     func testInvalidRootCustomComponentReturnIsRejected() {
         let (_, error) = makeRuntime().executeJSXSyncForWidget(
             "const App = () => 'not an element'; $render(<App />);"
         )
         XCTAssertTrue(error?.displayMessage.contains("must return a ScriptWidget element") ?? false)
+    }
+
+    func testInvalidNestedCustomComponentReturnIsRejected() {
+        let (_, error) = makeRuntime().executeJSXSyncForWidget(
+            "const Broken = () => 42; $render(<vstack><Broken /></vstack>);"
+        )
+        XCTAssertTrue(error?.displayMessage.contains("must return a ScriptWidget element") ?? false)
+    }
+
+    func testNestedComponentExpansionCannotBypassElementLimit() {
+        let jsx = """
+        const Flood = () => <vstack>{Array.from({length: 1001}, (_, index) => <text>{index}</text>)}</vstack>;
+        $render(<vstack><Flood /></vstack>);
+        """
+        let (_, error) = makeRuntime().executeJSXSyncForWidget(jsx)
+        guard case .resourceLimit = error else {
+            return XCTFail("expected expanded element limit, got \(String(describing: error))")
+        }
+    }
+
+    func testRecursiveCustomComponentIsBounded() {
+        let (_, error) = makeRuntime().executeJSXSyncForWidget(
+            "const Loop = () => <Loop />; $render(<Loop />);"
+        )
+        guard case .resourceLimit = error else {
+            return XCTFail("expected component depth limit, got \(String(describing: error))")
+        }
     }
 
     func testConcurrentRuntimesKeepEnvironmentStateIsolated() {
@@ -426,5 +481,28 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertNil(error, "unexpected error: \(String(describing: error?.displayMessage))")
         XCTAssertNotNil(island)
         XCTAssertEqual(island?.compactLeading.tagAsString(), "text")
+    }
+
+    func testDynamicIslandCustomComponentsAreResolvedBeforeReturning() {
+        let jsx = """
+        const Region = ({text}) => <hstack><text>{text}</text></hstack>;
+        $dynamic_island({
+          expanded: {
+            leading: <Region text="L" />,
+            trailing: <Region text="T" />,
+            center: null,
+            bottom: null,
+          },
+          compactLeading: <Region text="cl" />,
+          compactTrailing: <Region text="ct" />,
+          minimal: <Region text="m" />,
+        });
+        """
+        let (island, error) = makeRuntime().executeJSXSyncForDynamicIsland(jsx)
+        XCTAssertNil(error, "unexpected error: \(String(describing: error?.displayMessage))")
+        XCTAssertEqual(island?.expanded.leading?.tagAsString(), "hstack")
+        XCTAssertEqual(island?.compactLeading.tagAsString(), "hstack")
+        XCTAssertEqual(island?.compactTrailing.tagAsString(), "hstack")
+        XCTAssertEqual(island?.minimal.tagAsString(), "hstack")
     }
 }
