@@ -105,6 +105,7 @@ final class AgentRuntimeBridge {
                 let runtime = ScriptWidgetRuntime(package: package, environments: [
                     "widget-size": size.rawValue,
                     "widget-param": "",
+                    "widget-rendering-mode": "fullColor",
                 ])
 
                 let (element, err) = runtime.executeJSXSyncForWidget(jsx)

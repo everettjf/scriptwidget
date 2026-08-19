@@ -508,6 +508,42 @@ class ScriptWidgetRuntime {
 }
 
 extension ScriptWidgetRuntime {
+
+    private func resolveWidgetRootElement(_ root: ScriptWidgetRuntimeElement) -> Result<ScriptWidgetRuntimeElement, ScriptWidgetError> {
+        var current = root
+        var visited = Set<ObjectIdentifier>()
+
+        for _ in 0..<ScriptWidgetRuntimeContract.maximumElementDepth {
+            guard visited.insert(ObjectIdentifier(current)).inserted else {
+                return .failure(.resourceLimit("Root component resolution contains a cycle"))
+            }
+
+            if current.tagAsString() == "Fragment" {
+                let children = current.childrenAsElements()
+                guard children.count == 1, let child = children.first else {
+                    return .success(current)
+                }
+                current = child
+                continue
+            }
+
+            guard current.tagAsString() == nil,
+                  getTypeOfValue(current.tag) == "function" else {
+                return .success(current)
+            }
+
+            var argument = current.getProps()
+            argument["children"] = current.getChildren()
+            guard let resultValue = current.tag.call(withArguments: [argument]),
+                  resultValue.isObject,
+                  let resolved = resultValue.toObject() as? ScriptWidgetRuntimeElement else {
+                return .failure(.scriptError("Root custom component must return a ScriptWidget element"))
+            }
+            current = resolved
+        }
+
+        return .failure(.resourceLimit("Root component resolution exceeds the maximum element depth"))
+    }
     
     func executeJSXSyncForWidget(_ JSX: String) -> (ScriptWidgetRuntimeElement? , ScriptWidgetError?) {
         let trace = ScriptWidgetRuntimeTrace(operation: "widget")
@@ -580,9 +616,15 @@ extension ScriptWidgetRuntime {
 
             let semaphore = DispatchSemaphore(value: 0)
             var resultElement: ScriptWidgetRuntimeElement?
+            var rootResolutionError: ScriptWidgetError?
             
             let renderWidget:@convention(block) (ScriptWidgetRuntimeElement)->Void = { rootElement in
-                resultElement = rootElement
+                switch self.resolveWidgetRootElement(rootElement) {
+                case .success(let resolved):
+                    resultElement = resolved
+                case .failure(let error):
+                    rootResolutionError = error
+                }
                 semaphore.signal()
             }
             self.runtimeContext["$render"] = unsafeBitCast(renderWidget, to: JSValue.self)
@@ -690,6 +732,10 @@ extension ScriptWidgetRuntime {
                 // check javascript exception
                 if let exceptionInfo = exceptionInfo {
                     promise(.failure(.scriptException(exceptionInfo)))
+                    return
+                }
+                if let rootResolutionError {
+                    promise(.failure(rootResolutionError))
                     return
                 }
                 

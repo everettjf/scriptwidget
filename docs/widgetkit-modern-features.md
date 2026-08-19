@@ -6,7 +6,9 @@ ScriptWidget packages can use the current WidgetKit presentation, interaction, L
 
 Add `systemExtraLargePortrait` to `supportedFamilies` for the tall extra-large family. At runtime, `$getenv("widget-size")` returns `extraLargePortrait`.
 
-Use `$getenv("widget-rendering-mode")` to adapt to `fullColor`, `accented`, or `vibrant` rendering. Studio exposes the same three preview modes. Set `widgetAccentable={true}` on a component to opt its content into the accent group. Images additionally accept `accentedRenderingMode="accented"`, `"desaturated"`, `"accentedDesaturated"`, or `"fullColor"`.
+Use `$getenv("widget-rendering-mode")` to adapt to `fullColor`, `accented`, or `vibrant` rendering. The iOS editor and macOS Studio expose the same three rendering environments so conditional script branches can be tested. These editor canvases do not reproduce WidgetKit's final system tint pixel-for-pixel; verify the final appearance in a real widget. Set `widgetAccentable={true}` on a component to opt its content into the accent group. Images additionally accept `accentedRenderingMode="accented"`, `"desaturated"`, `"accentedDesaturated"`, or `"fullColor"`.
+
+The root element's `background` is promoted to WidgetKit's container background on supported systems, including when the root is returned through custom components or a single-child Fragment. A Fragment with multiple top-level children has no unique container; wrap those children in one stack when the widget needs a removable container background.
 
 ## Live Activities
 

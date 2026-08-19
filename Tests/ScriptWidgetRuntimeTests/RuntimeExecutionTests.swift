@@ -144,6 +144,59 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertTrue(text.contains("hello-param"), "expected widget-param in output, got: \(text)")
     }
 
+    func testWidgetRenderingModesReachRuntime() {
+        for mode in ["fullColor", "accented", "vibrant"] {
+            let runtime = makeRuntime(environments: [
+                "widget-size": "medium",
+                "widget-param": "",
+                "widget-rendering-mode": mode,
+            ])
+            let (element, error) = runtime.executeJSXSyncForWidget(
+                "$render(<text>{$getenv(\"widget-rendering-mode\")}</text>);"
+            )
+            XCTAssertNil(error)
+            XCTAssertEqual(element.map(collectText), mode)
+        }
+    }
+
+    func testRootCustomComponentIsResolvedBeforeReturning() {
+        let jsx = """
+        const Shell = ({children}) => <vstack background="#101014">{children}</vstack>;
+        const App = () => <Shell><text>Resolved root</text></Shell>;
+        $render(<App />);
+        """
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(jsx)
+        XCTAssertNil(error, "unexpected error: \(String(describing: error?.displayMessage))")
+        XCTAssertEqual(element?.tagAsString(), "vstack")
+        XCTAssertEqual(element?.getProps()["background"] as? String, "#101014")
+        XCTAssertEqual(element.map(collectText), "Resolved root")
+    }
+
+    func testSingleChildRootFragmentIsResolved() {
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(
+            "$render(<><vstack background=\"navy\"><text>One root</text></vstack></>);"
+        )
+        XCTAssertNil(error)
+        XCTAssertEqual(element?.tagAsString(), "vstack")
+        XCTAssertEqual(element?.getProps()["background"] as? String, "navy")
+    }
+
+    func testMultiChildRootFragmentRemainsAFragment() {
+        let (element, error) = makeRuntime().executeJSXSyncForWidget(
+            "$render(<><text>One</text><text>Two</text></>);"
+        )
+        XCTAssertNil(error)
+        XCTAssertEqual(element?.tagAsString(), "Fragment")
+        XCTAssertEqual(element?.childrenAsElements().count, 2)
+    }
+
+    func testInvalidRootCustomComponentReturnIsRejected() {
+        let (_, error) = makeRuntime().executeJSXSyncForWidget(
+            "const App = () => 'not an element'; $render(<App />);"
+        )
+        XCTAssertTrue(error?.displayMessage.contains("must return a ScriptWidget element") ?? false)
+    }
+
     func testConcurrentRuntimesKeepEnvironmentStateIsolated() {
         let lock = NSLock()
         var rendered: [Int: String] = [:]

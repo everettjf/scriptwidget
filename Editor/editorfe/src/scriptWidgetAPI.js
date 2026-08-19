@@ -65,5 +65,5 @@ export const scriptWidgetAPI = {
     "importJS": { "documentation": "Import a package-relative JavaScript file." },
     "$dataSource.request": { "documentation": "Call a declared Data Source Plugin operation. Requires Package 2.0 plugins, network permission, and networkDomains declarations.", "arguments": ["pluginID", "operationID", "parameters"], "returns": "Promise<json|string>" }
   },
-  "environmentValues": ["widgetFamily", "scriptName", "scriptParameter", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
+  "environmentValues": ["widget-size", "widget-param", "widget-rendering-mode", "live-activity-state", "live-activity-surface", "action-id", "action-source", "action-value", "control-id", "control-value"]
 };

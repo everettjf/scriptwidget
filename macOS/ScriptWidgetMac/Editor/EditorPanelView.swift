@@ -291,7 +291,7 @@ private struct WidgetConfigurationView: View {
                         Text(mode.title).tag(mode)
                     }
                 }
-                Picker("Rendering", selection: $configuration.renderingMode) {
+                Picker("Rendering Environment", selection: $configuration.renderingMode) {
                     ForEach(StudioPreviewRenderingMode.allCases) { mode in
                         Text(mode.title).tag(mode)
                     }

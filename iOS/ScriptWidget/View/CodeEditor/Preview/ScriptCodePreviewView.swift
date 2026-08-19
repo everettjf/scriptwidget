@@ -16,6 +16,7 @@ struct ScriptCodePreviewView: View {
     
     @State private var scriptParameter = ""
     @State private var scriptParameterApplied = ""
+    @State private var widgetRenderingMode = "fullColor"
     @State private var outputTab = 0
     @FocusState private var scriptParameterIsFocused: Bool
     
@@ -59,6 +60,7 @@ struct ScriptCodePreviewView: View {
                         model: state.model,
                         filePath: state.filePath,
                         scriptParameter: scriptParameterApplied,
+                        widgetRenderingMode: widgetRenderingMode,
                         isDebugMode: isDebugMode
                     )
                 } else {
@@ -175,6 +177,16 @@ struct ScriptCodePreviewView: View {
             Toggle(isOn: $isDebugMode) {
                 Label("Debug Borders", systemImage: "square.dashed")
             }
+
+            Picker("Rendering Environment", selection: $widgetRenderingMode) {
+                Text("Full Color").tag("fullColor")
+                Text("Accented").tag("accented")
+                Text("Vibrant").tag("vibrant")
+            }
+            .pickerStyle(.segmented)
+            .onChange(of: widgetRenderingMode) { value in
+                state.changeWidgetRenderingMode(value)
+            }
             
             HStack {
                 TextField("Parameter", text: $scriptParameter)
@@ -206,6 +218,7 @@ private struct ScriptCodeAllSizesPreview: View {
     let model: ScriptModel
     let filePath: URL
     let scriptParameter: String
+    let widgetRenderingMode: String
     let isDebugMode: Bool
 
     var body: some View {
@@ -217,6 +230,7 @@ private struct ScriptCodeAllSizesPreview: View {
                         filePath: filePath,
                         sizeType: sizeType,
                         scriptParameter: scriptParameter,
+                        widgetRenderingMode: widgetRenderingMode,
                         isDebugMode: isDebugMode
                     )
                 }
@@ -233,17 +247,20 @@ private struct ScriptCodePreviewCard: View {
     @StateObject private var state: ScriptCodePreviewDataObject
     let sizeType: Int
     let scriptParameter: String
+    let widgetRenderingMode: String
     let isDebugMode: Bool
 
-    init(model: ScriptModel, filePath: URL, sizeType: Int, scriptParameter: String, isDebugMode: Bool) {
+    init(model: ScriptModel, filePath: URL, sizeType: Int, scriptParameter: String, widgetRenderingMode: String, isDebugMode: Bool) {
         self.sizeType = sizeType
         self.scriptParameter = scriptParameter
+        self.widgetRenderingMode = widgetRenderingMode
         self.isDebugMode = isDebugMode
         _state = StateObject(wrappedValue: ScriptCodePreviewDataObject(
             model: model,
             filePath: filePath,
             widgetSizeType: sizeType,
-            scriptParameter: scriptParameter
+            scriptParameter: scriptParameter,
+            widgetRenderingMode: widgetRenderingMode
         ))
     }
 
@@ -270,6 +287,9 @@ private struct ScriptCodePreviewCard: View {
         }
         .onChange(of: scriptParameter) { value in
             state.changeWidgetParameter(value)
+        }
+        .onChange(of: widgetRenderingMode) { value in
+            state.changeWidgetRenderingMode(value)
         }
     }
 }

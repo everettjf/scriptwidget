@@ -790,9 +790,8 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 
 ## Environment values
 
-- `widgetFamily`
-- `scriptName`
-- `scriptParameter`
+- `widget-size`
+- `widget-param`
 - `widget-rendering-mode`
 - `live-activity-state`
 - `live-activity-surface`

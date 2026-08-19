@@ -359,7 +359,7 @@ struct PreviewView: View {
             }
 
 
-            Picker("Rendering", selection: $configuration.renderingMode) {
+            Picker("Rendering Environment", selection: $configuration.renderingMode) {
                 ForEach(StudioPreviewRenderingMode.allCases) { mode in
                     Text(mode.title).tag(mode)
                 }
@@ -401,6 +401,7 @@ struct PreviewView: View {
                             family: family,
                             scriptModel: scriptModel,
                             scriptParameter: scriptParameterApplied,
+                            renderingMode: configuration.renderingMode,
                             isDebugMode: configuration.debugMode
                         )
                     }
@@ -491,6 +492,7 @@ private struct StudioPreviewTile: View {
     let family: StudioPreviewFamily
     let scriptModel: ScriptModel
     let scriptParameter: String
+    let renderingMode: StudioPreviewRenderingMode
     let isDebugMode: Bool
 
     @StateObject private var data: ScriptCodeRunnerDataObject
@@ -499,16 +501,19 @@ private struct StudioPreviewTile: View {
         family: StudioPreviewFamily,
         scriptModel: ScriptModel,
         scriptParameter: String,
+        renderingMode: StudioPreviewRenderingMode,
         isDebugMode: Bool
     ) {
         self.family = family
         self.scriptModel = scriptModel
         self.scriptParameter = scriptParameter
+        self.renderingMode = renderingMode
         self.isDebugMode = isDebugMode
         _data = StateObject(wrappedValue: ScriptCodeRunnerDataObject(
             file: scriptModel.package,
             widgetSizeType: family.rawValue,
-            scriptParameter: scriptParameter
+            scriptParameter: scriptParameter,
+            renderingMode: renderingMode
         ))
     }
 
@@ -544,6 +549,9 @@ private struct StudioPreviewTile: View {
         .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
         .onChange(of: scriptParameter) { _, value in
             data.changeWidgetParameter(value)
+        }
+        .onChange(of: renderingMode) { _, value in
+            data.changeRenderingMode(value)
         }
     }
 }

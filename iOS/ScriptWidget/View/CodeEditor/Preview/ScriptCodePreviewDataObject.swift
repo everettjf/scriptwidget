@@ -13,6 +13,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
     let model: ScriptModel
     var widgetSizeType: Int
     var scriptParameter: String
+    var widgetRenderingMode: String
     
     @Published var rootElement : ScriptWidgetRuntimeElement
     @Published var previewStatus : String
@@ -27,11 +28,12 @@ class ScriptCodePreviewDataObject : ObservableObject {
     private var previewGeneration = 0
     private var pendingLayoutWorkItem: DispatchWorkItem?
     
-    init(model: ScriptModel, filePath: URL, widgetSizeType: Int, scriptParameter: String) {
+    init(model: ScriptModel, filePath: URL, widgetSizeType: Int, scriptParameter: String, widgetRenderingMode: String = "fullColor") {
         self.model = model
         self.filePath = filePath
         self.widgetSizeType = widgetSizeType
         self.scriptParameter = scriptParameter
+        self.widgetRenderingMode = widgetRenderingMode
         
         self.previewQueue = DispatchQueue(label: "preview-queue", qos: .default)
         self.previewStatus = "Initializing"
@@ -57,6 +59,11 @@ class ScriptCodePreviewDataObject : ObservableObject {
     func changeWidgetParameter(_ parameter: String) {
         self.scriptParameter = parameter
         
+        self.layoutElements()
+    }
+    func changeWidgetRenderingMode(_ mode: String) {
+        self.widgetRenderingMode = mode
+
         self.layoutElements()
     }
     func changeFile(_ filePath: URL) {
@@ -154,6 +161,7 @@ class ScriptCodePreviewDataObject : ObservableObject {
             let runtime = ScriptWidgetRuntime(package: self.model.package, environments: [
                 "widget-size": widgetSizeString,
                 "widget-param": self.scriptParameter,
+                "widget-rendering-mode": self.widgetRenderingMode,
             ])
             
             let result = runtime.executeJSXSyncForWidget(JSX)
