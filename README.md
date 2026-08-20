@@ -337,7 +337,9 @@ See the [public roadmap](ROADMAP.md), [governance model](GOVERNANCE.md), and [Ga
 
 ## 📜 License
 
-ScriptWidget is released under the [MIT License](LICENSE).
+The source code in this repository is released under the [MIT License](LICENSE).
+
+The ScriptWidget name, logos, screenshots, and App Store marketing materials are not licensed under the MIT License. All rights to those brand and marketing assets are reserved by their respective owners.
 
 ---
 

@@ -67,4 +67,6 @@ $render(
 
 安全问题请按照[安全政策](SECURITY.md)私下报告，不要在公开 Issue 中披露利用细节或个人数据。
 
-ScriptWidget 使用 [MIT License](LICENSE) 发布。
+ScriptWidget 仓库中的源代码使用 [MIT License](LICENSE) 发布。
+
+ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 MIT 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
