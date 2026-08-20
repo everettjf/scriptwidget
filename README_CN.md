@@ -8,7 +8,7 @@
 
 **使用 JavaScript、JSX 和 AI，为 iPhone、iPad 与 Mac 创建原生 Widget**
 
-[English](README.md) | [中文](README_CN.md)
+[English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
 </div>
 
