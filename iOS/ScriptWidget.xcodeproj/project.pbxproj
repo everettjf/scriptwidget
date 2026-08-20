@@ -11,12 +11,8 @@
 		1E22E34C64E42F5CF2DA6EDD /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 95D38A9C0960C28615553017 /* HealthKit.framework */; };
 		219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		2430E21D4B97E82D7DCA974F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5281E73D1780ED2020D931F0 /* Foundation.framework */; };
-		41EB46718721B65431419598 /* RuntimeExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */; };
-		557FA1D54AACDD61E7F1B35E /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */; };
 		5A89B7942F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
 		5A89B7952F0FACFA008B90A2 /* SwingAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */; };
-		A20000012F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
-		A20000022F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
 		5A89B7972F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A89B7982F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */; };
 		5A912FB22D214B2C0050F250 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = 5A912FB12D214B2C0050F250 /* SDWebImageSwiftUI */; };
@@ -29,7 +25,6 @@
 		683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */; };
 		742D49A1274DF1AC35D6D0A9 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		74884F234581499E712CA059 /* RuntimeUnitTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3652233A3AB5536745D0BC47 /* RuntimeUnitTests.swift */; };
-		74EB26EE55B573449CA423BB /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 5281E73D1780ED2020D931F0 /* Foundation.framework */; };
 		774D548855AA4BF0BF1E9DBA /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = DC40ED375515427089251479 /* ScriptWidgetRuntimeLocation.swift */; };
 		7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */; };
 		84C1353FBC065F971E23478C /* PackageCacheTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99DD0AE0F4C799D5DFEE8E76 /* PackageCacheTests.swift */; };
@@ -50,16 +45,24 @@
 		A102000E00000000000000B0 /* AIEvalRunner.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000E00000000000000B0 /* AIEvalRunner.swift */; };
 		A102000F00000000000000B0 /* AIEvalReport.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000F00000000000000B0 /* AIEvalReport.swift */; };
 		A102001000000000000000B0 /* AIWidgetSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101001000000000000000B0 /* AIWidgetSkills.swift */; };
-		A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000100000000000000B0 /* ScriptWidgetGallery.swift */; };
-		A109000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
-		A110000300000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A110000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
-		A110000400000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A110000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
 		A104000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000100000000000000B0 /* SettingAIView.swift */; };
 		A104000200000000000000B0 /* AIGenerateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000200000000000000B0 /* AIGenerateView.swift */; };
 		A104000300000000000000B0 /* AIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000300000000000000B0 /* AIReviewView.swift */; };
 		A106000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A106000200000000000000B0 /* SwiftOpenAI */; };
+		A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000100000000000000B0 /* ScriptWidgetGallery.swift */; };
+		A109000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
+		A110000300000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A110000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
+		A110000400000000000000B0 /* ScriptWidgetDataSources.swift in Sources */ = {isa = PBXBuildFile; fileRef = A110000100000000000000B0 /* ScriptWidgetDataSources.swift */; };
+		A120000100000000000000B0 /* WebStudioServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000300000000000000B0 /* WebStudioServer.swift */; };
+		A120000200000000000000B0 /* WebStudioServerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000400000000000000B0 /* WebStudioServerView.swift */; };
+		A120000600000000000000B0 /* WebStudioServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000700000000000000B0 /* WebStudioServerTests.swift */; };
+		A130000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
+		A130000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
+		A20000012F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
+		A20000022F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */; };
+		A27000012F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */; };
+		A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
 		B165542F120D2E511D4012B9 /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */; };
-		BFAA31C9A336C67AFEEC9324 /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */; };
 		BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */; };
@@ -135,8 +138,6 @@
 		F0C613452AE9679C00877D9F /* Monofonto.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F0C613392AE9679C00877D9F /* Monofonto.ttf */; };
 		F0C7ECF82AD0759F0039D30D /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */; };
 		F0C7ECF92AD0759F0039D30D /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
-		A27000012F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF62AD0759F0039D30D /* ScriptWidgetAppIntent.swift */; };
-		A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
 		F2032A6A25D3EEE30070E068 /* CloudKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = F2B20D1825D3EAEA00B62DAC /* CloudKit.framework */; };
 		F205238727A58DDD00C6EB45 /* ResourceCodeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F205238627A58DDD00C6EB45 /* ResourceCodeView.swift */; };
 		F224FE5927A959E900617AF6 /* ImageListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F224FE5827A959E900617AF6 /* ImageListView.swift */; };
@@ -145,9 +146,6 @@
 		F228DDB827A3778A009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDB727A3778A009E8F04 /* ZipArchive */; };
 		F228DDBC27A37791009E8F04 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F228DDBB27A37791009E8F04 /* ZipArchive */; };
 		F23A40BB262492FF0035CBA7 /* DeepLinkManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */; };
-		A120000100000000000000B0 /* WebStudioServer.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000300000000000000B0 /* WebStudioServer.swift */; };
-		A120000200000000000000B0 /* WebStudioServerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000400000000000000B0 /* WebStudioServerView.swift */; };
-		A120000600000000000000B0 /* WebStudioServerTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A120000700000000000000B0 /* WebStudioServerTests.swift */; };
 		F240AC7827B2CE1C00D249EA /* TabBarAccessor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */; };
 		F2433F6025D6F94B00AE4097 /* AppHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2433F5F25D6F94B00AE4097 /* AppHelper.swift */; };
 		F245BBED25B9E5DC00F25F68 /* SDWebImageSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = F245BBEC25B9E5DC00F25F68 /* SDWebImageSwiftUI */; };
@@ -155,8 +153,6 @@
 		F2534B3E27AA9C50000A4F98 /* PhotoPicker.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = F2534B4027AA9C50000A4F98 /* PhotoPicker.storyboard */; };
 		F25ED68F27FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
 		F25ED69027FDF9DD000089D0 /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */; };
-		A130000200000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
-		A130000300000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */; };
 		F25ED69D27FF2227000089D0 /* FileDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED69C27FF2227000089D0 /* FileDetailView.swift */; };
 		F25ED69F280067BD000089D0 /* FileCreateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED69E280067BD000089D0 /* FileCreateView.swift */; };
 		F25ED6A128008180000089D0 /* FileRenameView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F25ED6A028008180000089D0 /* FileRenameView.swift */; };
@@ -353,13 +349,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		577A7FE963C8CF574E578349 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = D18AAC24252A12D10065386A /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = D18AAC2B252A12D10065386A;
-			remoteInfo = ScriptWidget;
-		};
 		831F7D0B8364473D7667DC31 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = D18AAC24252A12D10065386A /* Project object */;
@@ -405,7 +394,6 @@
 		5116262BE362901C3EAD93A5 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
 		5281E73D1780ED2020D931F0 /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS18.0.sdk/System/Library/Frameworks/Foundation.framework; sourceTree = DEVELOPER_DIR; };
 		5A89B7932F0FACFA008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
-		A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockHandRotationEffect.swift; sourceTree = "<group>"; };
 		5A89B7962F0FAD0A008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5AC386D12CDA09760027B976 /* ImportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportView.swift; sourceTree = "<group>"; };
 		5AC386D32CDA0CA90027B976 /* ImportExportManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImportExportManager.swift; sourceTree = "<group>"; };
@@ -435,12 +423,17 @@
 		A101000E00000000000000B0 /* AIEvalRunner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalRunner.swift; sourceTree = "<group>"; };
 		A101000F00000000000000B0 /* AIEvalReport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIEvalReport.swift; sourceTree = "<group>"; };
 		A101001000000000000000B0 /* AIWidgetSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWidgetSkills.swift; sourceTree = "<group>"; };
-		A109000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
-		A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
-		A110000100000000000000B0 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
 		A103000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A103000200000000000000B0 /* AIGenerateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateView.swift; sourceTree = "<group>"; };
 		A103000300000000000000B0 /* AIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReviewView.swift; sourceTree = "<group>"; };
+		A109000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
+		A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
+		A110000100000000000000B0 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
+		A120000300000000000000B0 /* WebStudioServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServer.swift; sourceTree = "<group>"; };
+		A120000400000000000000B0 /* WebStudioServerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServerView.swift; sourceTree = "<group>"; };
+		A120000700000000000000B0 /* WebStudioServerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WebStudioServerTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/WebStudioServerTests.swift; sourceTree = "<group>"; };
+		A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
+		A20000002F200001008B90A2 /* ClockHandRotationEffect.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClockHandRotationEffect.swift; sourceTree = "<group>"; };
 		A9738B524EDA9C8CDBF0BAAF /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		D132336428E08C15002C26A2 /* ScriptLiveActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptLiveActivityManager.swift; sourceTree = "<group>"; };
 		D132336628E09630002C26A2 /* ScriptDynamicIslandCreator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptDynamicIslandCreator.swift; sourceTree = "<group>"; };
@@ -523,15 +516,11 @@
 		F224FE5827A959E900617AF6 /* ImageListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageListView.swift; sourceTree = "<group>"; };
 		F224FE5A27AA1AF500617AF6 /* ImagePreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImagePreviewView.swift; sourceTree = "<group>"; };
 		F23A40BA262492FF0035CBA7 /* DeepLinkManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkManager.swift; sourceTree = "<group>"; };
-		A120000300000000000000B0 /* WebStudioServer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServer.swift; sourceTree = "<group>"; };
-		A120000400000000000000B0 /* WebStudioServerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebStudioServerView.swift; sourceTree = "<group>"; };
-		A120000700000000000000B0 /* WebStudioServerTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = WebStudioServerTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/WebStudioServerTests.swift; sourceTree = "<group>"; };
 		F240AC7727B2CE1C00D249EA /* TabBarAccessor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabBarAccessor.swift; sourceTree = "<group>"; };
 		F2433F5F25D6F94B00AE4097 /* AppHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppHelper.swift; sourceTree = "<group>"; };
 		F2433F8425D6FE6200AE4097 /* QuickLook.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = QuickLook.framework; path = System/Library/Frameworks/QuickLook.framework; sourceTree = SDKROOT; };
 		F2534B4127AA9C50000A4F98 /* en */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = en; path = en.lproj/PhotoPicker.storyboard; sourceTree = "<group>"; };
 		F25ED68E27FDF9DD000089D0 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
-		A130000100000000000000B0 /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
 		F25ED69C27FF2227000089D0 /* FileDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileDetailView.swift; sourceTree = "<group>"; };
 		F25ED69E280067BD000089D0 /* FileCreateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileCreateView.swift; sourceTree = "<group>"; };
 		F25ED6A028008180000089D0 /* FileRenameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FileRenameView.swift; sourceTree = "<group>"; };
@@ -779,23 +768,6 @@
 			path = AIGenerate;
 			sourceTree = "<group>";
 		};
-		A109000500000000000000B0 /* Gallery */ = {
-			isa = PBXGroup;
-			children = (
-				A109000100000000000000B0 /* ScriptWidgetGallery.swift */,
-				A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */,
-			);
-			path = ../Shared/ScriptWidgetRuntime/Gallery;
-			sourceTree = "<group>";
-		};
-		A110000500000000000000B0 /* Plugin */ = {
-			isa = PBXGroup;
-			children = (
-				A110000100000000000000B0 /* ScriptWidgetDataSources.swift */,
-			);
-			path = ../Shared/ScriptWidgetRuntime/Plugin;
-			sourceTree = "<group>";
-		};
 		A105000300000000000000B0 /* Eval */ = {
 			isa = PBXGroup;
 			children = (
@@ -804,6 +776,23 @@
 				A101000F00000000000000B0 /* AIEvalReport.swift */,
 			);
 			path = Eval;
+			sourceTree = "<group>";
+		};
+		A109000500000000000000B0 /* ../Shared/ScriptWidgetRuntime/Gallery */ = {
+			isa = PBXGroup;
+			children = (
+				A109000100000000000000B0 /* ScriptWidgetGallery.swift */,
+				A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */,
+			);
+			path = ../Shared/ScriptWidgetRuntime/Gallery;
+			sourceTree = "<group>";
+		};
+		A110000500000000000000B0 /* ../Shared/ScriptWidgetRuntime/Plugin */ = {
+			isa = PBXGroup;
+			children = (
+				A110000100000000000000B0 /* ScriptWidgetDataSources.swift */,
+			);
+			path = ../Shared/ScriptWidgetRuntime/Plugin;
 			sourceTree = "<group>";
 		};
 		CC6F42B73739364215C9044B /* iOS */ = {
@@ -1140,8 +1129,8 @@
 			isa = PBXGroup;
 			children = (
 				A105000100000000000000B0 /* AI */,
-				A109000500000000000000B0 /* Gallery */,
-				A110000500000000000000B0 /* Plugin */,
+				A109000500000000000000B0 /* ../Shared/ScriptWidgetRuntime/Gallery */,
+				A110000500000000000000B0 /* ../Shared/ScriptWidgetRuntime/Plugin */,
 				F291198E2793039700B860B0 /* Resource */,
 				F29118FF2793035E00B860B0 /* Widget */,
 				F29118EA2793034D00B860B0 /* Common */,
@@ -2053,42 +2042,7 @@
 			};
 			name = Debug;
 		};
-		70D46B65A296DB7C32BECD19 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGN_IDENTITY = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/ScriptWidget";
-			};
-			name = Debug;
-		};
 		720880244BC2FA34B3AE3604 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				BUNDLE_LOADER = "$(TEST_HOST)";
-				CLANG_ENABLE_OBJC_WEAK = NO;
-				CODE_SIGNING_ALLOWED = NO;
-				CODE_SIGN_IDENTITY = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.runtimetests;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SDKROOT = iphoneos;
-				SWIFT_VERSION = 5.0;
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/ScriptWidget.app/ScriptWidget";
-				VALIDATE_PRODUCT = YES;
-			};
-			name = Release;
-		};
-		C0A3735EE3D7C0D022C06E92 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				BUNDLE_LOADER = "$(TEST_HOST)";
@@ -2236,7 +2190,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2248,7 +2202,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2269,7 +2223,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2280,7 +2234,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2297,7 +2251,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2306,7 +2260,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2323,7 +2277,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2332,7 +2286,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2348,7 +2302,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2357,7 +2311,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2372,7 +2326,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 26601;
+				CURRENT_PROJECT_VERSION = 27000;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2381,7 +2335,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 26.6;
+				MARKETING_VERSION = 27.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

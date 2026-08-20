@@ -73,3 +73,32 @@ The editor budgets are enforced by repeated CodeMirror state creation and edit t
 4. Verify App Store privacy answers, screenshots, support/privacy URLs, version and build numbers.
 5. Archive both apps with distribution signing, validate, then distribute to TestFlight for a final smoke pass.
 6. Tag the exact tested commit; never rebuild from an untested commit.
+
+### Automated Apple release
+
+`Scripts/release-apple.sh` increments the shared patch and build numbers for the
+iOS and macOS apps and their extensions, runs the release gate, archives and
+uploads both builds to TestFlight, waits for processing, attaches the builds to
+their platform versions, and submits both versions to App Review.
+
+```sh
+export APPLE_ID='developer@example.com'
+export APPLE_SPECIFIC_PASSWORD='xxxx-xxxx-xxxx-xxxx'
+export APPLE_TEAM_ID='ABCDE12345'
+export APP_STORE_CONNECT_API_KEY_ID='ABC123DEFG'
+export APP_STORE_CONNECT_API_ISSUER_ID='00000000-0000-0000-0000-000000000000'
+export APP_STORE_CONNECT_API_KEY_PATH="$HOME/private/AuthKey_ABC123DEFG.p8"
+
+./Scripts/release-apple.sh --dry-run
+./Scripts/release-apple.sh --yes
+```
+
+The Developer Team ID selects the signing team; Xcode still needs a valid local
+distribution certificate/profile or an authenticated developer account. The
+Apple ID and app-specific password authenticate binary validation. App Review
+submission additionally requires an App Store Connect API key with App Manager
+or Admin access; an app-specific password does not authorize App Store Connect
+API operations. No third-party release tool or Ruby gem is used: the script
+uses Xcode command-line tools and a Ruby-standard-library API client. Keep the
+`.p8` file outside the repository. The script reuses metadata and screenshots
+already present in App Store Connect and does not commit or tag automatically.

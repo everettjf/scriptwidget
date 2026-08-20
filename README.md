@@ -371,7 +371,7 @@ Inspired by:
 
 [![GitHub Issues](https://img.shields.io/badge/Issues-Bug_Reports-FF6B6B?style=for-the-badge&logo=github)](https://github.com/everettjf/ScriptWidget/issues)
 [![GitHub Discussions](https://img.shields.io/badge/Discussions-Q&A-4ECDC4?style=for-the-badge&logo=github)](https://github.com/everettjf/ScriptWidget/discussions)
-[![Discord](https://img.shields.io/badge/Discord-Join_Chat-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/scriptwidget)
+[![Discord](https://img.shields.io/badge/Discord-Join_Chat-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/eGzEaP6TzR)
 
 **有问题？去 [Issues](https://github.com/everettjf/ScriptWidget/issues) 提问！**
 
