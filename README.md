@@ -1,5 +1,7 @@
 # ScriptWidget 🎨
 
+Website: <https://xnu.app/scriptwidget/>
+
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
