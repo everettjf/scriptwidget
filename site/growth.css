@@ -1,0 +1,37 @@
+.community > .wrap {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 48px;
+  align-items: center;
+}
+
+.community h2 {
+  margin-bottom: 20px;
+}
+
+.community .lede {
+  font-size: 17px;
+}
+
+.star-proof {
+  display: block;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: var(--card);
+}
+
+.star-proof img {
+  display: block;
+  min-width: 190px;
+}
+
+@media (max-width: 820px) {
+  .community > .wrap {
+    grid-template-columns: 1fr;
+  }
+
+  .star-proof {
+    width: max-content;
+  }
+}
