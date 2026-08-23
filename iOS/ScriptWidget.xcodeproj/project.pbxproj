@@ -2416,7 +2416,7 @@
 			repositoryURL = "https://github.com/SDWebImage/SDWebImageSwiftUI.git";
 			requirement = {
 				kind = upToNextMajorVersion;
-				minimumVersion = 1.5.0;
+				minimumVersion = 3.1.4;
 			};
 		};
 		F245BBF625B9E62300F25F68 /* XCRemoteSwiftPackageReference "SwiftyJSON" */ = {
