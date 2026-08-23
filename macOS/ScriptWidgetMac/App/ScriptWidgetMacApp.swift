@@ -260,7 +260,7 @@ private struct ScriptWidgetMacSettingsView: View {
                         Label("MyJSONDiff", systemImage: "curlybraces")
                     }
                     Link(destination: URL(string: "https://apps.apple.com/us/app/startmyapp-fast-app-launch/id6753610893")!) {
-                        Label("StartMyApp", systemImage: "bolt")
+                        Label("LaunchDeck", systemImage: "bolt")
                     }
                 }
             }
