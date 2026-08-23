@@ -256,8 +256,8 @@ private struct ScriptWidgetMacSettingsView: View {
 
             Form {
                 Section("More Apps") {
-                    Link(destination: URL(string: "https://apps.apple.com/us/app/myjsondiff/id6742816661")!) {
-                        Label("MyJSONDiff", systemImage: "curlybraces")
+                    Link(destination: URL(string: "https://xnu.app/grapecompare/")!) {
+                        Label("GrapeCompare", systemImage: "arrow.left.arrow.right")
                     }
                     Link(destination: URL(string: "https://apps.apple.com/us/app/startmyapp-fast-app-launch/id6753610893")!) {
                         Label("LaunchDeck", systemImage: "bolt")
