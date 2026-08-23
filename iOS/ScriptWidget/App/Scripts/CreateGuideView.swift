@@ -90,7 +90,7 @@ struct CreateGuideView: View {
             .alert("Configure AI First", isPresented: $showingAIConfigAlert) {
                 Button("OK", role: .cancel) { }
             } message: {
-                Text("Open Settings → AI to add your OpenAI API key, then come back to generate with AI.")
+                Text("AI generation uses Apple Private Cloud Compute by default. You can add another provider in Settings → AI.")
             }
         }
     }

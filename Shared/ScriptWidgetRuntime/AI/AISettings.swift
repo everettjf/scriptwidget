@@ -29,6 +29,11 @@ enum AIAuthMethod: String, Codable {
     case oauth
 }
 
+enum AIProviderKind: String, Codable {
+    case applePrivateCloudCompute
+    case openAICompatible
+}
+
 struct AIProfile: Identifiable, Equatable {
     var id: String
     var name: String
@@ -38,6 +43,7 @@ struct AIProfile: Identifiable, Equatable {
     /// and stripped before encode. Never persisted to UserDefaults.
     var apiKey: String
     var authMethod: AIAuthMethod
+    var providerKind: AIProviderKind = .openAICompatible
 
     static let defaultBaseURL = "https://api.openai.com"
     static let defaultModel = "gpt-4o-mini"
@@ -53,8 +59,21 @@ struct AIProfile: Identifiable, Equatable {
         )
     }
 
+    static func makeApplePrivateCloudCompute(named name: String = "Apple Intelligence") -> AIProfile {
+        AIProfile(
+            id: UUID().uuidString,
+            name: name,
+            baseURL: "",
+            model: "Private Cloud Compute",
+            apiKey: "",
+            authMethod: .apiKey,
+            providerKind: .applePrivateCloudCompute
+        )
+    }
+
     var isConfigured: Bool {
-        !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        providerKind == .applePrivateCloudCompute ||
+            !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
     var normalizedBaseURL: String {
@@ -83,7 +102,7 @@ struct AIProfile: Identifiable, Equatable {
 
 extension AIProfile: Codable {
     private enum CodingKeys: String, CodingKey {
-        case id, name, baseURL, model, authMethod
+        case id, name, baseURL, model, authMethod, providerKind
     }
 
     init(from decoder: Decoder) throws {
@@ -93,6 +112,7 @@ extension AIProfile: Codable {
         baseURL = try c.decode(String.self, forKey: .baseURL)
         model = try c.decode(String.self, forKey: .model)
         authMethod = try c.decode(AIAuthMethod.self, forKey: .authMethod)
+        providerKind = try c.decodeIfPresent(AIProviderKind.self, forKey: .providerKind) ?? .openAICompatible
         apiKey = ""  // hydrated from Keychain by AISettingsStore
     }
 
@@ -103,6 +123,7 @@ extension AIProfile: Codable {
         try c.encode(baseURL, forKey: .baseURL)
         try c.encode(model, forKey: .model)
         try c.encode(authMethod, forKey: .authMethod)
+        try c.encode(providerKind, forKey: .providerKind)
         // apiKey is intentionally omitted — Keychain owns it.
     }
 }
@@ -140,6 +161,7 @@ struct AISettings: Equatable {
     var baseURL: String { profile.baseURL }
     var model: String { profile.model }
     var authMethod: AIAuthMethod { profile.authMethod }
+    var providerKind: AIProviderKind { profile.providerKind }
 }
 
 final class AISettingsStore {
@@ -148,6 +170,7 @@ final class AISettingsStore {
     static let changedNotification = Notification.Name("AISettingsStoreChanged")
 
     private static let apiKeyAccountPrefix = "scriptwidget.profile.apiKey"
+    private static let applePCCMigration = "ai.applePrivateCloudComputeMigration.v1"
 
     private let defaults: UserDefaults
     private let keychain = AIKeychain.live
@@ -162,11 +185,25 @@ final class AISettingsStore {
         if let data = defaults.data(forKey: AISettingsKey.profiles),
            let decoded = try? JSONDecoder().decode([AIProfile].self, from: data),
            !decoded.isEmpty {
-            return decoded.map { hydrateAPIKey($0) }
+            var profiles = decoded.map { hydrateAPIKey($0) }
+            if !profiles.contains(where: { $0.providerKind == .applePrivateCloudCompute }) {
+                let appleProfile = AIProfile.makeApplePrivateCloudCompute()
+                profiles.insert(appleProfile, at: 0)
+                let shouldActivate = !defaults.bool(forKey: Self.applePCCMigration)
+                saveProfiles(
+                    profiles,
+                    activeID: shouldActivate ? appleProfile.id : nil,
+                    notify: false
+                )
+                defaults.set(true, forKey: Self.applePCCMigration)
+            }
+            return profiles
         }
-        // First launch: seed with one default profile.
-        let fresh = [AIProfile.makeDefault()]
+        // First launch: Apple PCC is zero-configuration. Users can add an
+        // OpenAI-compatible profile as an explicit fallback.
+        let fresh = [AIProfile.makeApplePrivateCloudCompute()]
         saveProfiles(fresh, activeID: fresh[0].id, notify: false)
+        defaults.set(true, forKey: Self.applePCCMigration)
         return fresh
     }
 
@@ -273,6 +310,10 @@ final class AISettingsStore {
     }
 
     private func persistAPIKey(_ profile: AIProfile) {
+        if profile.providerKind == .applePrivateCloudCompute {
+            keychain.removeValue(for: apiKeyAccount(for: profile.id))
+            return
+        }
         let trimmed = profile.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             keychain.removeValue(for: apiKeyAccount(for: profile.id))

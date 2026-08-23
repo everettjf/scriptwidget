@@ -1,6 +1,6 @@
 # AI Generate — 设计文档
 
-在 ScriptWidget 中引入 "AI 生成 Widget" 能力：用户在设置里配置 OpenAI (或兼容端点) 的 API key，然后在新建 Widget 流程里输入一段自然语言 prompt，由 LLM 生成 JSX 代码，并在本机 runtime 中自动"跑—看错—修"直至通过，最后进入审阅+预览态，由用户确认落盘。
+ScriptWidget 默认使用 Apple Private Cloud Compute (PCC) 生成 Widget，不要求用户提供 API key。用户输入自然语言 prompt 后，模型生成 JSX，App 在本机 runtime 中自动“跑—看错—修”，最后进入审阅和预览态，由用户确认落盘。OpenAI 及兼容端点继续作为可选后端。
 
 本设计为 `feature/ai-generate` 分支的实施依据。实现阶段按第 9 节里程碑推进。
 
@@ -26,10 +26,10 @@
 | 项 | 决定 |
 |---|---|
 | 存储 | 非敏感 Profile 配置存入 App Group `UserDefaults`；API Key、OAuth access/refresh token 存入系统 Keychain |
-| OpenAI 客户端 | [SwiftOpenAI](https://github.com/jamesrochabrun/SwiftOpenAI) |
-| 默认模型 | `gpt-4o-mini`，用户可自填任意 SwiftOpenAI 支持的 model id |
+| 默认 AI 后端 | Apple Foundation Models `PrivateCloudComputeLanguageModel`，无需 API key |
+| 可选 AI 后端 | OpenAI 兼容端点，通过 [SwiftOpenAI](https://github.com/jamesrochabrun/SwiftOpenAI) 调用 |
+| 默认迭代上限 | PCC 最多 3 次；OpenAI 兼容后端默认 20 次，可设 30 / 40 / 50 |
 | 默认 base URL | `https://api.openai.com/v1`，用户可自填（兼容 Azure / DeepSeek / 本地 vLLM 等） |
-| 默认迭代上限 | 20，用户可设 30 / 40 / 50 |
 | 交互形态 | 一次性 prompt → agent loop → 审阅+预览 → 用户点确认落盘 |
 | 优化 | 已生成的 widget 上，用户可追加一段 prompt 触发新一轮 agent loop（单轮单次，不留聊天历史） |
 | Agent UI | 进度条 + 当前阶段文本 + 错误日志折叠面板。不做流式打字 |

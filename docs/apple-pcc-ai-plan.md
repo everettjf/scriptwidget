@@ -1,5 +1,18 @@
 # Apple Private Cloud Compute AI plan
 
+## Implementation status
+
+Implemented for the iOS and macOS main apps. New installations default to PCC,
+existing installations receive a one-time migration that adds and selects the
+Apple profile, and existing OpenAI-compatible profiles remain available. PCC
+requests check OS support, model availability, and daily quota before sending;
+repair loops are capped at three requests. The managed entitlement is limited
+to the main app targets because widget and share extensions never call an AI
+backend.
+
+The on-device model fallback described below remains future work. On devices
+without PCC, users can select an existing OpenAI-compatible profile instead.
+
 ## Decision
 
 Adopt Apple Foundation Models as a new, Apple-first AI backend, with Private
