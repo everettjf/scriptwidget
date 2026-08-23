@@ -3,25 +3,40 @@ updates:
   - package-ecosystem: npm
     directory: /Editor/editorfe
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      # Batch routine dependency maintenance into two planned review windows.
+      interval: semiannually
+    open-pull-requests-limit: 1
     groups:
-      editor-development:
-        dependency-type: development
+      editor-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
-    open-pull-requests-limit: 5
+      interval: semiannually
+    open-pull-requests-limit: 1
+    groups:
+      actions:
+        patterns:
+          - "*"
+
   - package-ecosystem: swift
     directory: /iOS
     schedule:
-      interval: monthly
-    open-pull-requests-limit: 5
+      interval: semiannually
+    open-pull-requests-limit: 1
+    groups:
+      ios-packages:
+        patterns:
+          - "*"
 
   - package-ecosystem: swift
     directory: /macOS
     schedule:
-      interval: monthly
-    open-pull-requests-limit: 5
+      interval: semiannually
+    open-pull-requests-limit: 1
+    groups:
+      macos-packages:
+        patterns:
+          - "*"
