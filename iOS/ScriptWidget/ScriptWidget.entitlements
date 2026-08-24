@@ -14,6 +14,8 @@
 	<array>
 		<string>CloudDocuments</string>
 	</array>
+	<key>com.apple.developer.private-cloud-compute</key>
+	<true/>
 	<key>com.apple.developer.ubiquity-container-identifiers</key>
 	<array>
 		<string>iCloud.ScriptWidget</string>

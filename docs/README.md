@@ -9,6 +9,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
+- [Apple PCC AI plan](apple-pcc-ai-plan.md) — feasibility, constraints, architecture, and zero-key rollout.
 - [Skills 1.0](skills.md) — reusable AI guidance, authoring, safe sharing, and package format.
 - [Widget & Skills Gallery](gallery.md) — discover, verify, install, update, and submit community packages.
 - [Data Source Plugins](data-source-plugins.md) — safe third-party API connectors and the Mac Data Source Lab.

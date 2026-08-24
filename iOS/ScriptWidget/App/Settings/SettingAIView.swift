@@ -76,17 +76,28 @@ struct SettingAIView: View {
 
     private func profileRow(_ profile: AIProfile) -> some View {
         HStack {
-            Image(systemName: profile.id == activeID ? "checkmark.circle.fill" : "circle")
-                .foregroundStyle(profile.id == activeID ? Color.accentColor : Color.secondary)
-                .onTapGesture {
+            Button {
                     AISettingsStore.shared.setActiveProfile(id: profile.id)
                     activeID = profile.id
-                }
+            } label: {
+                Image(systemName: profile.id == activeID ? "checkmark.circle.fill" : "circle")
+                    .foregroundStyle(profile.id == activeID ? Color.accentColor : Color.secondary)
+            }
+            .buttonStyle(.plain)
+            .accessibilityLabel(profile.id == activeID ? "Active profile" : "Set active profile")
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
                     Text(profile.name.isEmpty ? "Unnamed" : profile.name)
                         .font(.body)
-                    if profile.authMethod == .oauth {
+                    if profile.providerKind == .applePrivateCloudCompute {
+                        Text("PCC")
+                            .font(.caption2)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1)
+                            .background(Color.green.opacity(0.18))
+                            .foregroundStyle(.green)
+                            .clipShape(Capsule())
+                    } else if profile.authMethod == .oauth {
                         Text("OAuth")
                             .font(.caption2)
                             .padding(.horizontal, 6)
@@ -105,6 +116,9 @@ struct SettingAIView: View {
     }
 
     private func profileSubtitle(_ profile: AIProfile) -> String {
+        if profile.providerKind == .applePrivateCloudCompute {
+            return "Apple · Private Cloud Compute"
+        }
         let host = URL(string: profile.normalizedBaseURL)?.host ?? profile.normalizedBaseURL
         let model = profile.model.isEmpty ? "—" : profile.model
         return "\(host) · \(model)"
@@ -150,6 +164,7 @@ struct AIProfileEditorView: View {
     @State private var model: String = AIProfile.defaultModel
     @State private var apiKey: String = ""
     @State private var authMethod: AIAuthMethod = .apiKey
+    @State private var providerKind: AIProviderKind = .openAICompatible
     @State private var apiKeyVisible: Bool = false
 
     @State private var oauthAccountID: String = ""
@@ -181,87 +196,100 @@ struct AIProfileEditorView: View {
                     .onChange(of: name) { _ in persist() }
             }
 
-            Section("Provider") {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Self.providerPresets, id: \.label) { preset in
-                            Button(preset.label) {
-                                baseURL = preset.host
-                                if let first = preset.models.first {
-                                    model = first
+            if providerKind == .applePrivateCloudCompute {
+                Section("Provider") {
+                    Label("Apple Private Cloud Compute", systemImage: "apple.intelligence")
+                        .font(.headline)
+                    Text("Uses Apple Foundation Models with Private Cloud Compute. No API key is required. Availability and daily quota are managed by Apple.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    Text("Requires iOS or macOS 27, Apple Intelligence, network access, and an eligible app entitlement.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+            } else {
+                Section("Provider") {
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 8) {
+                            ForEach(Self.providerPresets, id: \.label) { preset in
+                                Button(preset.label) {
+                                    baseURL = preset.host
+                                    if let first = preset.models.first {
+                                        model = first
+                                    }
+                                    persist()
                                 }
-                                persist()
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
                         }
                     }
+                    TextField("https://api.openai.com", text: $baseURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                        .onChange(of: baseURL) { _ in persist() }
                 }
-                TextField("https://api.openai.com", text: $baseURL)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .onChange(of: baseURL) { _ in persist() }
-            }
 
-            Section("Model") {
-                TextField("gpt-4o-mini", text: $model)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .onChange(of: model) { _ in persist() }
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 6) {
-                        ForEach(modelSuggestions, id: \.self) { preset in
-                            Button(preset) {
-                                model = preset
-                                persist()
+                Section("Model") {
+                    TextField("gpt-4o-mini", text: $model)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .onChange(of: model) { _ in persist() }
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 6) {
+                            ForEach(modelSuggestions, id: \.self) { preset in
+                                Button(preset) {
+                                    model = preset
+                                    persist()
+                                }
+                                .buttonStyle(.bordered)
+                                .controlSize(.small)
                             }
-                            .buttonStyle(.bordered)
-                            .controlSize(.small)
                         }
                     }
                 }
-            }
 
-            Section {
-                Picker("Method", selection: $authMethod) {
-                    Text("API Key").tag(AIAuthMethod.apiKey)
-                    Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
-                }
-                .pickerStyle(.segmented)
-                .onChange(of: authMethod) { _ in persist() }
-
-                if authMethod == .apiKey {
-                    HStack {
-                        if apiKeyVisible {
-                            TextField("sk-...", text: $apiKey)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                        } else {
-                            SecureField("sk-...", text: $apiKey)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled()
-                        }
-                        Button {
-                            apiKeyVisible.toggle()
-                        } label: {
-                            Image(systemName: apiKeyVisible ? "eye.slash" : "eye")
-                        }
-                        .buttonStyle(.borderless)
+                Section {
+                    Picker("Method", selection: $authMethod) {
+                        Text("API Key").tag(AIAuthMethod.apiKey)
+                        Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
                     }
-                    .onChange(of: apiKey) { _ in persist() }
-                } else {
-                    oauthSection
-                }
-            } header: {
-                Text("Authentication")
-            } footer: {
-                if authMethod == .apiKey {
-                    Text("API key is stored in the Keychain on this device.")
-                        .foregroundColor(.secondary)
-                } else {
-                    Text("OAuth uses the Codex CLI client and only works with the OpenAI host (api.openai.com). The token is stored in the Keychain and refreshed automatically.")
-                        .foregroundColor(.secondary)
+                    .pickerStyle(.segmented)
+                    .onChange(of: authMethod) { _ in persist() }
+
+                    if authMethod == .apiKey {
+                        HStack {
+                            if apiKeyVisible {
+                                TextField("sk-...", text: $apiKey)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                            } else {
+                                SecureField("sk-...", text: $apiKey)
+                                    .textInputAutocapitalization(.never)
+                                    .autocorrectionDisabled()
+                            }
+                            Button {
+                                apiKeyVisible.toggle()
+                            } label: {
+                                Image(systemName: apiKeyVisible ? "eye.slash" : "eye")
+                            }
+                            .buttonStyle(.borderless)
+                        }
+                        .onChange(of: apiKey) { _ in persist() }
+                    } else {
+                        oauthSection
+                    }
+                } header: {
+                    Text("Authentication")
+                } footer: {
+                    if authMethod == .apiKey {
+                        Text("API key is stored in the Keychain on this device.")
+                            .foregroundColor(.secondary)
+                    } else {
+                        Text("OAuth uses the Codex CLI client and only works with the OpenAI host (api.openai.com). The token is stored in the Keychain and refreshed automatically.")
+                            .foregroundColor(.secondary)
+                    }
                 }
             }
 
@@ -380,6 +408,9 @@ struct AIProfileEditorView: View {
     }
 
     private var configured: Bool {
+        if providerKind == .applePrivateCloudCompute {
+            return true
+        }
         if authMethod == .apiKey {
             return !apiKey.trimmingCharacters(in: .whitespaces).isEmpty
         } else {
@@ -397,6 +428,7 @@ struct AIProfileEditorView: View {
         model = profile.model
         apiKey = profile.apiKey
         authMethod = profile.authMethod
+        providerKind = profile.providerKind
         if profile.authMethod == .oauth, !profile.apiKey.isEmpty {
             if let accountID = AIOpenAIOAuthService.accountID(fromAccessToken: profile.apiKey),
                let stored = AIOpenAIOAuthVault.credential(for: accountID) {
@@ -418,7 +450,8 @@ struct AIProfileEditorView: View {
             baseURL: baseURL.trimmingCharacters(in: .whitespacesAndNewlines),
             model: model.trimmingCharacters(in: .whitespacesAndNewlines),
             apiKey: apiKey.trimmingCharacters(in: .whitespacesAndNewlines),
-            authMethod: authMethod
+            authMethod: authMethod,
+            providerKind: providerKind
         )
     }
 

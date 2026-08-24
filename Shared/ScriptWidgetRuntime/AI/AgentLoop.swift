@@ -46,6 +46,11 @@ final class AgentLoop {
         self.bridge = bridge
     }
 
+    static func iterationLimit(for request: AgentLoopRequest) -> Int {
+        let providerLimit = request.settings.providerKind == .applePrivateCloudCompute ? 3 : request.maxIterations
+        return max(1, min(request.maxIterations, providerLimit))
+    }
+
     func run(_ request: AgentLoopRequest, onEvent: @escaping EventHandler) async -> AgentLoopOutcome {
         var cumulativeUsage = AITokenUsage.zero
 
@@ -83,7 +88,9 @@ final class AgentLoop {
         var lastError: String?
         var lastLogs: [String] = []
 
-        let iterationLimit = max(1, request.maxIterations)
+        // PCC has a per-person daily quota. Bound repair attempts so a single
+        // difficult widget cannot unexpectedly consume the day's allowance.
+        let iterationLimit = Self.iterationLimit(for: request)
 
         for iteration in 1...iterationLimit {
             if Task.isCancelled {

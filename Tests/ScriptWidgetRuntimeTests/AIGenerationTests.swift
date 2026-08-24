@@ -27,6 +27,89 @@ import XCTest
 
 final class AIGenerationTests: XCTestCase {
 
+    func testApplePCCProfileRequiresNoCredential() throws {
+        let profile = AIProfile.makeApplePrivateCloudCompute()
+
+        XCTAssertEqual(profile.providerKind, .applePrivateCloudCompute)
+        XCTAssertTrue(profile.isConfigured)
+        XCTAssertTrue(profile.apiKey.isEmpty)
+    }
+
+    func testLegacyProfileDecodesAsOpenAICompatible() throws {
+        let legacy = """
+        {
+          "id": "legacy",
+          "name": "Existing",
+          "baseURL": "https://api.openai.com",
+          "model": "gpt-4o-mini",
+          "authMethod": "apiKey"
+        }
+        """.data(using: .utf8)!
+
+        let profile = try JSONDecoder().decode(AIProfile.self, from: legacy)
+
+        XCTAssertEqual(profile.providerKind, .openAICompatible)
+        XCTAssertFalse(profile.isConfigured)
+    }
+
+    func testApplePCCProfileRoundTripsWithoutSecret() throws {
+        let original = AIProfile.makeApplePrivateCloudCompute()
+
+        let decoded = try JSONDecoder().decode(
+            AIProfile.self,
+            from: JSONEncoder().encode(original)
+        )
+
+        XCTAssertEqual(decoded.providerKind, .applePrivateCloudCompute)
+        XCTAssertEqual(decoded.name, original.name)
+        XCTAssertTrue(decoded.apiKey.isEmpty)
+        XCTAssertTrue(decoded.isConfigured)
+    }
+
+    func testApplePCCRepairLoopIsCappedAtThreeRequests() {
+        let pccRequest = AgentLoopRequest(
+            mode: .fresh(userDescription: "A clock"),
+            size: .small,
+            settings: AISettings(profile: .makeApplePrivateCloudCompute(), maxIterations: 20, temperature: 0),
+            maxIterations: 20
+        )
+        var openAIProfile = AIProfile.makeDefault()
+        openAIProfile.apiKey = "test-only"
+        let openAIRequest = AgentLoopRequest(
+            mode: .fresh(userDescription: "A clock"),
+            size: .small,
+            settings: AISettings(profile: openAIProfile, maxIterations: 20, temperature: 0),
+            maxIterations: 20
+        )
+
+        XCTAssertEqual(AgentLoop.iterationLimit(for: pccRequest), 3)
+        XCTAssertEqual(AgentLoop.iterationLimit(for: openAIRequest), 20)
+    }
+
+    func testApplePCCLiveConnection() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard environment["AI_PCC_LIVE"] == "1"
+                || environment["TEST_RUNNER_AI_PCC_LIVE"] == "1" else {
+            throw XCTSkip("AI_PCC_LIVE != 1 — skipping live PCC connection test.")
+        }
+        let settings = AISettings(
+            profile: .makeApplePrivateCloudCompute(),
+            maxIterations: 1,
+            temperature: 0
+        )
+
+        let result = try await AIClient.shared.chat(
+            messages: [
+                AIMessage(role: .system, content: "Reply with exactly pong."),
+                AIMessage(role: .user, content: "ping"),
+            ],
+            settings: settings
+        )
+
+        XCTAssertFalse(result.content.isEmpty)
+        XCTAssertGreaterThan(result.usage.totalTokens, 0)
+    }
+
     private struct Env {
         let apiKey: String
         let baseURL: String
