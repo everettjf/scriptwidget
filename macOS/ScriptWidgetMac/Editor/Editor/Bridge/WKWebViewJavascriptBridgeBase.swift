@@ -153,14 +153,24 @@ public class WKWebViewJavascriptBridgeBase: NSObject {
     }
     
     private func deserialize(messageJSON: String) -> [Message]? {
-        var result = [Message]()
         guard let data = messageJSON.data(using: .utf8) else { return nil }
         do {
-            result = try JSONSerialization.jsonObject(with: data, options: .allowFragments) as! [WKWebViewJavascriptBridgeBase.Message]
+            let object = try JSONSerialization.jsonObject(with: data, options: .allowFragments)
+            guard let messages = object as? [Any] else {
+                log("Ignoring bridge payload whose root is not an array")
+                return nil
+            }
+
+            let result = messages.compactMap { $0 as? Message }
+            guard result.count == messages.count else {
+                log("Ignoring bridge payload containing a non-object message")
+                return nil
+            }
+            return result
         } catch let error {
             log(error)
+            return nil
         }
-        return result
     }
     
     // MARK: - Log
