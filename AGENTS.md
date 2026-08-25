@@ -73,6 +73,8 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 
 ## Commits and Pull Requests
 
+- When the user asks to "commit" (or says “提交”), commit the requested changes and push the resulting commit to the current remote branch.
+- When the user asks to "merge" (or says “合并”), merge the requested work into `main` and push `main` to the remote.
 - Use concise, action-oriented commit subjects. Add a body when behavior, security tradeoffs, migrations, or generated artifacts need explanation.
 - PRs should state the user outcome, linked issue, security/compatibility impact, commands/schemes run, and any skipped physical-device or signed-iCloud checks.
 - Include before/after screenshots for visible UI changes and keep documentation/schema/generated bundles in the same PR as the behavior they describe.
