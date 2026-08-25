@@ -332,6 +332,36 @@
 		F2C5C63327AF5C3200797C5B /* plain4@2x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2C5C60B27AF5C3200797C5B /* plain4@2x.png */; };
 		F2C5C63427AF5C3200797C5B /* green@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2C5C60C27AF5C3200797C5B /* green@3x.png */; };
 		F2C5C63527AF5C3200797C5B /* plain6@3x.png in Resources */ = {isa = PBXBuildFile; fileRef = F2C5C60D27AF5C3200797C5B /* plain6@3x.png */; };
+		C10000000000000000000001 /* blue@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000001 /* blue@2x~ipad.png */; };
+		C10000000000000000000002 /* blue2@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000002 /* blue2@2x~ipad.png */; };
+		C10000000000000000000003 /* color@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000003 /* color@2x~ipad.png */; };
+		C10000000000000000000004 /* color2@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000004 /* color2@2x~ipad.png */; };
+		C10000000000000000000005 /* color3@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000005 /* color3@2x~ipad.png */; };
+		C10000000000000000000006 /* color4@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000006 /* color4@2x~ipad.png */; };
+		C10000000000000000000007 /* dark@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000007 /* dark@2x~ipad.png */; };
+		C10000000000000000000008 /* dark2@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000008 /* dark2@2x~ipad.png */; };
+		C10000000000000000000009 /* green@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000009 /* green@2x~ipad.png */; };
+		C1000000000000000000000A /* lightblue@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000A /* lightblue@2x~ipad.png */; };
+		C1000000000000000000000B /* lightgreen@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000B /* lightgreen@2x~ipad.png */; };
+		C1000000000000000000000C /* newicon1@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000C /* newicon1@2x~ipad.png */; };
+		C1000000000000000000000D /* newicon10@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000D /* newicon10@2x~ipad.png */; };
+		C1000000000000000000000E /* newicon2@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000E /* newicon2@2x~ipad.png */; };
+		C1000000000000000000000F /* newicon3@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000000F /* newicon3@2x~ipad.png */; };
+		C10000000000000000000010 /* newicon4@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000010 /* newicon4@2x~ipad.png */; };
+		C10000000000000000000011 /* newicon5@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000011 /* newicon5@2x~ipad.png */; };
+		C10000000000000000000012 /* newicon6@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000012 /* newicon6@2x~ipad.png */; };
+		C10000000000000000000013 /* newicon7@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000013 /* newicon7@2x~ipad.png */; };
+		C10000000000000000000014 /* newicon8@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000014 /* newicon8@2x~ipad.png */; };
+		C10000000000000000000015 /* newicon9@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000015 /* newicon9@2x~ipad.png */; };
+		C10000000000000000000016 /* orange@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000016 /* orange@2x~ipad.png */; };
+		C10000000000000000000017 /* plain@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000017 /* plain@2x~ipad.png */; };
+		C10000000000000000000018 /* plain2@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000018 /* plain2@2x~ipad.png */; };
+		C10000000000000000000019 /* plain3@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000019 /* plain3@2x~ipad.png */; };
+		C1000000000000000000001A /* plain4@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000001A /* plain4@2x~ipad.png */; };
+		C1000000000000000000001B /* plain5@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000001B /* plain5@2x~ipad.png */; };
+		C1000000000000000000001C /* plain6@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000001C /* plain6@2x~ipad.png */; };
+		C1000000000000000000001D /* purple@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000001D /* purple@2x~ipad.png */; };
+		C1000000000000000000001E /* red@2x~ipad.png in Resources */ = {isa = PBXBuildFile; fileRef = C2000000000000000000001E /* red@2x~ipad.png */; };
 		F2C6AC7426004B0F009CECE9 /* ShareViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2C6AC7326004B0F009CECE9 /* ShareViewController.swift */; };
 		F2C6AC7B26004B0F009CECE9 /* ScriptWidgetShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F2C6AC7126004B0F009CECE9 /* ScriptWidgetShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F2D738C925D0CA8900021E08 /* SettingTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */; };
@@ -651,6 +681,36 @@
 		F2C5C60B27AF5C3200797C5B /* plain4@2x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain4@2x.png"; sourceTree = "<group>"; };
 		F2C5C60C27AF5C3200797C5B /* green@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "green@3x.png"; sourceTree = "<group>"; };
 		F2C5C60D27AF5C3200797C5B /* plain6@3x.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain6@3x.png"; sourceTree = "<group>"; };
+		C20000000000000000000001 /* blue@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "blue@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000002 /* blue2@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "blue2@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000003 /* color@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "color@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000004 /* color2@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "color2@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000005 /* color3@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "color3@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000006 /* color4@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "color4@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000007 /* dark@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "dark@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000008 /* dark2@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "dark2@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000009 /* green@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "green@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000A /* lightblue@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "lightblue@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000B /* lightgreen@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "lightgreen@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000C /* newicon1@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon1@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000D /* newicon10@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon10@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000E /* newicon2@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon2@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000000F /* newicon3@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon3@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000010 /* newicon4@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon4@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000011 /* newicon5@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon5@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000012 /* newicon6@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon6@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000013 /* newicon7@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon7@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000014 /* newicon8@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon8@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000015 /* newicon9@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "newicon9@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000016 /* orange@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "orange@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000017 /* plain@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000018 /* plain2@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain2@2x~ipad.png"; sourceTree = "<group>"; };
+		C20000000000000000000019 /* plain3@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain3@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000001A /* plain4@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain4@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000001B /* plain5@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain5@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000001C /* plain6@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "plain6@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000001D /* purple@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "purple@2x~ipad.png"; sourceTree = "<group>"; };
+		C2000000000000000000001E /* red@2x~ipad.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "red@2x~ipad.png"; sourceTree = "<group>"; };
 		F2C6AC7126004B0F009CECE9 /* ScriptWidgetShare.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ScriptWidgetShare.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2C6AC7326004B0F009CECE9 /* ShareViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareViewController.swift; sourceTree = "<group>"; };
 		F2C6AC7826004B0F009CECE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
@@ -1380,6 +1440,36 @@
 		F2C5C5E527AF5C3200797C5B /* Icons */ = {
 			isa = PBXGroup;
 			children = (
+				C20000000000000000000001 /* blue@2x~ipad.png */,
+				C20000000000000000000002 /* blue2@2x~ipad.png */,
+				C20000000000000000000003 /* color@2x~ipad.png */,
+				C20000000000000000000004 /* color2@2x~ipad.png */,
+				C20000000000000000000005 /* color3@2x~ipad.png */,
+				C20000000000000000000006 /* color4@2x~ipad.png */,
+				C20000000000000000000007 /* dark@2x~ipad.png */,
+				C20000000000000000000008 /* dark2@2x~ipad.png */,
+				C20000000000000000000009 /* green@2x~ipad.png */,
+				C2000000000000000000000A /* lightblue@2x~ipad.png */,
+				C2000000000000000000000B /* lightgreen@2x~ipad.png */,
+				C2000000000000000000000C /* newicon1@2x~ipad.png */,
+				C2000000000000000000000D /* newicon10@2x~ipad.png */,
+				C2000000000000000000000E /* newicon2@2x~ipad.png */,
+				C2000000000000000000000F /* newicon3@2x~ipad.png */,
+				C20000000000000000000010 /* newicon4@2x~ipad.png */,
+				C20000000000000000000011 /* newicon5@2x~ipad.png */,
+				C20000000000000000000012 /* newicon6@2x~ipad.png */,
+				C20000000000000000000013 /* newicon7@2x~ipad.png */,
+				C20000000000000000000014 /* newicon8@2x~ipad.png */,
+				C20000000000000000000015 /* newicon9@2x~ipad.png */,
+				C20000000000000000000016 /* orange@2x~ipad.png */,
+				C20000000000000000000017 /* plain@2x~ipad.png */,
+				C20000000000000000000018 /* plain2@2x~ipad.png */,
+				C20000000000000000000019 /* plain3@2x~ipad.png */,
+				C2000000000000000000001A /* plain4@2x~ipad.png */,
+				C2000000000000000000001B /* plain5@2x~ipad.png */,
+				C2000000000000000000001C /* plain6@2x~ipad.png */,
+				C2000000000000000000001D /* purple@2x~ipad.png */,
+				C2000000000000000000001E /* red@2x~ipad.png */,
 				F277CB8027CA73BB003AB97D /* newicon1@2x.png */,
 				F277CB7B27CA73BB003AB97D /* newicon1@3x.png */,
 				F277CB7127CA73BB003AB97D /* newicon2@2x.png */,
@@ -1616,6 +1706,36 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C10000000000000000000001 /* blue@2x~ipad.png in Resources */,
+				C10000000000000000000002 /* blue2@2x~ipad.png in Resources */,
+				C10000000000000000000003 /* color@2x~ipad.png in Resources */,
+				C10000000000000000000004 /* color2@2x~ipad.png in Resources */,
+				C10000000000000000000005 /* color3@2x~ipad.png in Resources */,
+				C10000000000000000000006 /* color4@2x~ipad.png in Resources */,
+				C10000000000000000000007 /* dark@2x~ipad.png in Resources */,
+				C10000000000000000000008 /* dark2@2x~ipad.png in Resources */,
+				C10000000000000000000009 /* green@2x~ipad.png in Resources */,
+				C1000000000000000000000A /* lightblue@2x~ipad.png in Resources */,
+				C1000000000000000000000B /* lightgreen@2x~ipad.png in Resources */,
+				C1000000000000000000000C /* newicon1@2x~ipad.png in Resources */,
+				C1000000000000000000000D /* newicon10@2x~ipad.png in Resources */,
+				C1000000000000000000000E /* newicon2@2x~ipad.png in Resources */,
+				C1000000000000000000000F /* newicon3@2x~ipad.png in Resources */,
+				C10000000000000000000010 /* newicon4@2x~ipad.png in Resources */,
+				C10000000000000000000011 /* newicon5@2x~ipad.png in Resources */,
+				C10000000000000000000012 /* newicon6@2x~ipad.png in Resources */,
+				C10000000000000000000013 /* newicon7@2x~ipad.png in Resources */,
+				C10000000000000000000014 /* newicon8@2x~ipad.png in Resources */,
+				C10000000000000000000015 /* newicon9@2x~ipad.png in Resources */,
+				C10000000000000000000016 /* orange@2x~ipad.png in Resources */,
+				C10000000000000000000017 /* plain@2x~ipad.png in Resources */,
+				C10000000000000000000018 /* plain2@2x~ipad.png in Resources */,
+				C10000000000000000000019 /* plain3@2x~ipad.png in Resources */,
+				C1000000000000000000001A /* plain4@2x~ipad.png in Resources */,
+				C1000000000000000000001B /* plain5@2x~ipad.png in Resources */,
+				C1000000000000000000001C /* plain6@2x~ipad.png in Resources */,
+				C1000000000000000000001D /* purple@2x~ipad.png in Resources */,
+				C1000000000000000000001E /* red@2x~ipad.png in Resources */,
 				F2C5C61327AF5C3200797C5B /* color@3x.png in Resources */,
 				F2C5C60E27AF5C3200797C5B /* blue@2x.png in Resources */,
 				F2C5C62127AF5C3200797C5B /* red@3x.png in Resources */,
@@ -2190,7 +2310,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2223,7 +2343,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2251,7 +2371,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2277,7 +2397,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2302,7 +2422,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2326,7 +2446,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27001;
+				CURRENT_PROJECT_VERSION = 27002;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

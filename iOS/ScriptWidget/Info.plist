@@ -284,6 +284,42 @@
 			</dict>
 		</dict>
 	</dict>
+	<key>CFBundleIcons~ipad</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<dict>
+			<key>blue</key><dict><key>CFBundleIconFiles</key><array><string>blue</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>blue2</key><dict><key>CFBundleIconFiles</key><array><string>blue2</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>color</key><dict><key>CFBundleIconFiles</key><array><string>color</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>color2</key><dict><key>CFBundleIconFiles</key><array><string>color2</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>color3</key><dict><key>CFBundleIconFiles</key><array><string>color3</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>color4</key><dict><key>CFBundleIconFiles</key><array><string>color4</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>dark</key><dict><key>CFBundleIconFiles</key><array><string>dark</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>dark2</key><dict><key>CFBundleIconFiles</key><array><string>dark2</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>green</key><dict><key>CFBundleIconFiles</key><array><string>green</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>lightblue</key><dict><key>CFBundleIconFiles</key><array><string>lightblue</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>lightgreen</key><dict><key>CFBundleIconFiles</key><array><string>lightgreen</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon1</key><dict><key>CFBundleIconFiles</key><array><string>newicon1</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon10</key><dict><key>CFBundleIconFiles</key><array><string>newicon10</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon2</key><dict><key>CFBundleIconFiles</key><array><string>newicon2</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon3</key><dict><key>CFBundleIconFiles</key><array><string>newicon3</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon4</key><dict><key>CFBundleIconFiles</key><array><string>newicon4</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon5</key><dict><key>CFBundleIconFiles</key><array><string>newicon5</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon6</key><dict><key>CFBundleIconFiles</key><array><string>newicon6</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon7</key><dict><key>CFBundleIconFiles</key><array><string>newicon7</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon8</key><dict><key>CFBundleIconFiles</key><array><string>newicon8</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>newicon9</key><dict><key>CFBundleIconFiles</key><array><string>newicon9</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>orange</key><dict><key>CFBundleIconFiles</key><array><string>orange</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain</key><dict><key>CFBundleIconFiles</key><array><string>plain</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain2</key><dict><key>CFBundleIconFiles</key><array><string>plain2</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain3</key><dict><key>CFBundleIconFiles</key><array><string>plain3</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain4</key><dict><key>CFBundleIconFiles</key><array><string>plain4</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain5</key><dict><key>CFBundleIconFiles</key><array><string>plain5</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>plain6</key><dict><key>CFBundleIconFiles</key><array><string>plain6</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>purple</key><dict><key>CFBundleIconFiles</key><array><string>purple</string></array><key>UIPrerenderedIcon</key><false/></dict>
+			<key>red</key><dict><key>CFBundleIconFiles</key><array><string>red</string></array><key>UIPrerenderedIcon</key><false/></dict>
+		</dict>
+	</dict>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>
