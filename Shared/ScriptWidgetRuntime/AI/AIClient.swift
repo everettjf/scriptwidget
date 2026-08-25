@@ -53,7 +53,7 @@ enum AIClientError: LocalizedError {
         case .appleIntelligenceUnavailable(let reason):
             return "Apple Intelligence is unavailable: \(reason)"
         case .quotaLimitReached(let details):
-            return "Private Cloud Compute quota reached. \(details)"
+            return "Apple Private Cloud Compute's daily quota has been exhausted. \(details) You can also switch to an OpenAI-compatible profile in Settings → AI."
         case .upstream(let message):
             return message
         }

@@ -86,6 +86,15 @@ final class AIGenerationTests: XCTestCase {
         XCTAssertEqual(AgentLoop.iterationLimit(for: openAIRequest), 20)
     }
 
+    func testApplePCCQuotaErrorOffersAnActionableFallback() {
+        let message = AIClientError.quotaLimitReached("Try again tomorrow.").localizedDescription
+
+        XCTAssertTrue(message.contains("daily quota"))
+        XCTAssertTrue(message.contains("Try again tomorrow."))
+        XCTAssertTrue(message.contains("OpenAI-compatible profile"))
+        XCTAssertTrue(message.contains("Settings → AI"))
+    }
+
     func testApplePCCLiveConnection() async throws {
         let environment = ProcessInfo.processInfo.environment
         guard environment["AI_PCC_LIVE"] == "1"

@@ -335,6 +335,12 @@ private struct AIProfileEditorPane: View {
                     Text("Uses Apple Foundation Models with Private Cloud Compute. No API key is required. Availability and daily quota are managed by Apple.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
+                    Label(
+                        "PCC has a daily quota. If it is used up, AI Generate will show the reset time; you can wait or switch to an OpenAI-compatible profile.",
+                        systemImage: "exclamationmark.triangle"
+                    )
+                    .font(.caption)
+                    .foregroundStyle(.orange)
                     Text("Requires macOS 27 or iOS 27, Apple Intelligence, network access, and an eligible app entitlement.")
                         .font(.caption)
                         .foregroundStyle(.secondary)
