@@ -83,6 +83,8 @@ struct SettingsView: View {
                     SettingsLinkRowView(name: "Remote Keyboard", label: "App Store", urlString: "https://apps.apple.com/us/app/remote-keyboard/id1474458879")
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(StudioDesign.groupedBackground)
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -93,11 +95,44 @@ struct SettingsView: View {
     }
 }
 
-struct SettingsView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsView()
-            .preferredColorScheme(.dark)
-            .previewDevice("iPhone 12 Pro")
+#Preview("Settings") {
+    SettingsView()
+}
+
+#Preview("Settings · Dark") {
+    SettingsView()
+        .preferredColorScheme(.dark)
+}
+
+private struct SettingsStatusView<Actions: View>: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    let color: Color
+    @ViewBuilder let actions: Actions
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 12) {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                .foregroundStyle(color)
+                .frame(width: 34, height: 34)
+                .background(color.opacity(0.12), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                .accessibilityHidden(true)
+
+            VStack(alignment: .leading, spacing: 5) {
+                Text(title)
+                    .font(.subheadline.weight(.semibold))
+                Text(detail)
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                actions
+                    .padding(.top, 3)
+            }
+        }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -161,6 +196,27 @@ private struct SettingsHealthView: View {
                 return false
             }
         }
+
+        var systemImage: String {
+            switch self {
+            case .checking: "hourglass"
+            case .unavailable: "heart.slash"
+            case .notDetermined: "heart"
+            case .denied: "exclamationmark.shield"
+            case .partial: "heart.circle"
+            case .authorized: "checkmark.circle.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .checking, .unavailable: .secondary
+            case .notDetermined: .blue
+            case .denied: .red
+            case .partial: .orange
+            case .authorized: .green
+            }
+        }
     }
 
     @State private var authorizationState: HealthAuthorizationState = .checking
@@ -171,26 +227,21 @@ private struct SettingsHealthView: View {
     private let healthStore = HKHealthStore()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(authorizationState.title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .padding(.top, 4)
-
-            Text(authorizationState.detail)
-                .font(.footnote)
-                .multilineTextAlignment(.leading)
-
+        SettingsStatusView(
+            title: authorizationState.title,
+            detail: authorizationState.detail,
+            systemImage: authorizationState.systemImage,
+            color: authorizationState.color
+        ) {
             HStack(spacing: 8) {
                 if authorizationState.shouldShowAuthorizeButton {
                     Button {
                         requestAuthorization()
                     } label: {
                         Text(isRequesting ? "Authorizing..." : "Authorize")
-                            .font(.caption)
-                            .frame(minWidth: 90)
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .disabled(isRequesting)
                 }
 
@@ -199,20 +250,19 @@ private struct SettingsHealthView: View {
                         openHealthApp()
                     } label: {
                         Text("Open Health")
-                            .font(.caption)
-                            .frame(minWidth: 90)
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-
-                Spacer()
             }
         }
         .onAppear {
             refreshAuthorizationState()
         }
-        .alert(isPresented: $showingAlert) {
-            Alert(title: Text("Health"), message: Text(alertMessage), dismissButton: .default(Text("OK")))
+        .alert("Health", isPresented: $showingAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(alertMessage)
         }
     }
 
@@ -406,31 +456,45 @@ private struct SettingsLocationView: View {
                 return false
             }
         }
+
+        var systemImage: String {
+            switch self {
+            case .checking: "hourglass"
+            case .disabled: "location.slash"
+            case .notDetermined: "location"
+            case .restricted, .denied: "exclamationmark.shield"
+            case .authorizedWhenInUse, .authorizedAlways: "checkmark.circle.fill"
+            }
+        }
+
+        var color: Color {
+            switch self {
+            case .checking, .disabled: .secondary
+            case .notDetermined: .blue
+            case .restricted, .denied: .red
+            case .authorizedWhenInUse, .authorizedAlways: .green
+            }
+        }
     }
 
     @StateObject private var manager = SettingsLocationManager()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text(manager.state.title)
-                .font(.subheadline)
-                .fontWeight(.semibold)
-                .padding(.top, 4)
-
-            Text(manager.state.detail)
-                .font(.footnote)
-                .multilineTextAlignment(.leading)
-
+        SettingsStatusView(
+            title: manager.state.title,
+            detail: manager.state.detail,
+            systemImage: manager.state.systemImage,
+            color: manager.state.color
+        ) {
             HStack(spacing: 8) {
                 if manager.state.shouldShowAuthorizeButton {
                     Button {
                         manager.requestAuthorization()
                     } label: {
                         Text(manager.isRequesting ? "Authorizing..." : "Authorize")
-                            .font(.caption)
-                            .frame(minWidth: 90)
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.small)
                     .disabled(manager.isRequesting)
                 }
 
@@ -439,13 +503,10 @@ private struct SettingsLocationView: View {
                         openSettings()
                     } label: {
                         Text("Open Settings")
-                            .font(.caption)
-                            .frame(minWidth: 110)
                     }
                     .buttonStyle(.bordered)
+                    .controlSize(.small)
                 }
-
-                Spacer()
             }
         }
         .onAppear {

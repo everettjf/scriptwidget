@@ -96,14 +96,25 @@ private struct EditorWorkspaceHeader: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text(scriptModel.name)
                     .font(.headline)
-                Label("Saved automatically", systemImage: "checkmark.icloud")
+                Text("Widget project")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("⌘R Preview")
-                .font(.caption.monospaced())
-                .foregroundStyle(.tertiary)
+            HStack(spacing: 12) {
+                Label("Saved", systemImage: "checkmark.icloud.fill")
+                    .foregroundStyle(.secondary)
+
+                Divider()
+                    .frame(height: 14)
+
+                Label("⌘R", systemImage: "play.fill")
+                    .foregroundStyle(.secondary)
+                    .help("Run preview")
+            }
+            .font(.caption)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Saved automatically. Command R runs the preview.")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 9)

@@ -17,7 +17,7 @@ struct SettingsICloudView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: StudioDesign.standardSpacing) {
             Label(isICloudAvailable ? "iCloud Drive Available" : "Using Local Storage",
                   systemImage: isICloudAvailable ? "icloud.fill" : "internaldrive")
                 .font(.subheadline.weight(.semibold))
@@ -31,14 +31,18 @@ struct SettingsICloudView: View {
                 CountDownButton(text: "Move \(sandboxFileCount) Local File\(sandboxFileCount == 1 ? "" : "s")", waitSeconds: 2) {
                     _ = ScriptManager.moveSandboxFilesToICloud()
                 }
+                .buttonStyle(.borderedProminent)
             }
 
             if isICloudAvailable {
                 CountDownButton(text: "Sync from iCloud", waitSeconds: 10) {
                     sharedScriptManager.requestUpdateICloudScripts()
                 }
+                .buttonStyle(.bordered)
             }
         }
+        .padding(.vertical, 4)
+        .accessibilityElement(children: .contain)
     }
 
     private var statusMessage: String {
@@ -52,15 +56,13 @@ struct SettingsICloudView: View {
     }
 }
 
-struct SettingsICloudView_Previews: PreviewProvider {
-    static var previews: some View {
-        SettingsICloudView()
-            .previewLayout(.sizeThatFits)
-            .preferredColorScheme(.light)
-        
-        SettingsICloudView()
-            .previewLayout(.sizeThatFits)
-            .preferredColorScheme(.dark)
-        
-    }
+#Preview("iCloud Settings") {
+    SettingsICloudView()
+        .padding()
+}
+
+#Preview("iCloud Settings · Dark") {
+    SettingsICloudView()
+        .padding()
+        .preferredColorScheme(.dark)
 }

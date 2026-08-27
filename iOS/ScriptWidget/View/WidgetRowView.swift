@@ -12,7 +12,7 @@ struct WidgetRowImageView: View {
     let model: ScriptModel
     
     var body: some View {
-        NameAutoImageView(name: model.name, colors: getGradientColorsWithString(string: model.name), size: 44)
+        NameAutoImageView(name: model.name, colors: getGradientColorsWithString(string: model.name), size: 46)
     }
 }
 
@@ -45,13 +45,16 @@ struct ICloudStatusBadge: View {
             switch state {
             case .downloading:
                 Image(systemName: "arrow.down.circle")
-                    .foregroundColor(.secondary)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel("Downloading from iCloud")
             case .notInICloud:
                 Image(systemName: "exclamationmark.icloud")
-                    .foregroundColor(.orange)
+                    .foregroundStyle(.orange)
+                    .accessibilityLabel("Not available in iCloud")
             case .error:
                 Image(systemName: "exclamationmark.icloud")
-                    .foregroundColor(.red)
+                    .foregroundStyle(.red)
+                    .accessibilityLabel("iCloud error")
             case .local, .downloaded:
                 EmptyView()
             }
@@ -79,22 +82,19 @@ struct WidgetRowView: View {
             Spacer()
             ICloudStatusBadge(model: model)
         }
-        .padding(.vertical, 4)
+        .padding(.vertical, 6)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
 }
 
-struct WidgetRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
-            .previewLayout(.sizeThatFits)
-            .padding()
-        
-        
-        WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
-            .preferredColorScheme(.dark)
-            .previewLayout(.sizeThatFits)
-            .padding()
-        
-    }
+#Preview("Widget Row") {
+    WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
+        .padding()
+}
+
+#Preview("Widget Row · Dark") {
+    WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
+        .preferredColorScheme(.dark)
+        .padding()
 }

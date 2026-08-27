@@ -258,10 +258,13 @@ class ScriptManager {
         } else if let sandboxRoot = ScriptManager.getSandboxRootDirectoryURL() {
             root = sandboxRoot
             isUsingiCloud = false
-        } else {
-            print("app group container unavailable; falling back to local root directory")
-            root = ScriptManager.localFallbackDirectoryURL("Documents")
+        } else if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
+            root = FileManager.default.temporaryDirectory
+                .appendingPathComponent("ScriptWidgetTests")
+                .appendingPathComponent("Documents")
             isUsingiCloud = false
+        } else {
+            preconditionFailure("ScriptWidget requires its iCloud or App Group container. Check code signing and entitlements.")
         }
         
         let scriptRoot = root.appendingPathComponent("Scripts")
@@ -306,18 +309,17 @@ class ScriptManager {
                 try FileManager.default.removeItem(at: probe)
                 return buildURL
             } catch {
-                // Unsigned CI test hosts can resolve the group URL without being
-                // allowed to write it. Keep cache tests and local previews usable.
+                // Build output is disposable cache state, so unsigned test hosts
+                // may safely use a process-local cache directory.
                 return localFallbackDirectoryURL("__Build")
             }
         }
         return localFallbackDirectoryURL("__Build")
     }
 
-    /// Local, per-process fallback used when the shared app-group container is
-    /// unavailable (e.g. a missing entitlement). Keeps the app functional with
-    /// local-only storage instead of crashing on a force-unwrap. Prefers
-    /// Application Support and degrades to the temporary directory.
+    /// Local storage used only for disposable build cache state and isolated
+    /// tests. Authoritative user scripts must never fall back here because the
+    /// app, widgets, and iCloud would then observe different libraries.
     static func localFallbackDirectoryURL(_ component: String) -> URL {
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] != nil {
             return FileManager.default.temporaryDirectory

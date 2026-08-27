@@ -83,21 +83,18 @@ struct WidgetRowView: View {
             ICloudStatusBadge(model: model)
         }
         .padding(.vertical, 3)
+        .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
     }
 }
 
-struct WidgetRowView_Previews: PreviewProvider {
-    static var previews: some View {
-        WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
-            .previewLayout(.sizeThatFits)
-            .padding()
-        
-        
-        WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
-            .preferredColorScheme(.dark)
-            .previewLayout(.sizeThatFits)
-            .padding()
-        
-    }
+#Preview("Widget Row") {
+    WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
+        .padding()
+}
+
+#Preview("Widget Row · Dark") {
+    WidgetRowView(model: ScriptModel(package: ScriptWidgetPackage(bundle: "Script", relativePath: "template/is-friday")))
+        .preferredColorScheme(.dark)
+        .padding()
 }

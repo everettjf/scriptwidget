@@ -28,7 +28,7 @@ struct EmptyListBackgroundView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: StudioDesign.sectionSpacing) {
                 heroSection
                     .padding(.top, 16)
 
@@ -45,12 +45,12 @@ struct EmptyListBackgroundView: View {
             .padding(.horizontal, 20)
             .padding(.bottom, 40)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(StudioDesign.groupedBackground)
         .fullScreenCover(isPresented: $showCreate) {
             CreateGuideView()
         }
         .sheet(item: $selectedFeatured) { item in
-            NavigationView {
+            NavigationStack {
                 ScriptCodeEditorView(mode: .creator, scriptModel: item, actionCreate: {
                     guard let content = item.package.readMainFile().0 else { return }
                     let imageCopyPath = item.package.imagePath
@@ -193,11 +193,7 @@ struct OnboardingStep: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 14))
-        .overlay {
-            RoundedRectangle(cornerRadius: 14)
-                .stroke(Color(.separator).opacity(0.35), lineWidth: 0.5)
-        }
+        .studioCard(padding: 12)
         .accessibilityElement(children: .combine)
     }
 }
@@ -238,12 +234,7 @@ struct FeaturedRow: View {
                 .foregroundStyle(.tertiary)
         }
         .padding(13)
-        .background(Color(.secondarySystemGroupedBackground))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color(.separator).opacity(0.35), lineWidth: 0.5)
-        }
-        .clipShape(.rect(cornerRadius: 12))
+        .studioCard(padding: 13)
     }
 
     private var accent: Color {
@@ -251,8 +242,11 @@ struct FeaturedRow: View {
     }
 }
 
-struct EmptyListBackgroundView_Previews: PreviewProvider {
-    static var previews: some View {
-        EmptyListBackgroundView()
-    }
+#Preview("Empty Studio") {
+    EmptyListBackgroundView()
+}
+
+#Preview("Empty Studio · Large Type") {
+    EmptyListBackgroundView()
+        .environment(\.dynamicTypeSize, .accessibility2)
 }

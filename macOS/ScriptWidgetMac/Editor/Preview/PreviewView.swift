@@ -369,17 +369,19 @@ struct PreviewView: View {
                 data.changeRenderingMode(value)
             }
 
-            HStack {
+            HStack(spacing: StudioDesign.compactSpacing) {
                 TextField("Widget parameter", text: $configuration.parameter)
                     .textFieldStyle(.roundedBorder)
                     .onSubmit { applyParameter() }
                 Button("Apply") { applyParameter() }
+                    .buttonStyle(.borderedProminent)
+                    .disabled(configuration.parameter == scriptParameterApplied)
                 Spacer()
                 Button("Snapshot", systemImage: "photo") { saveSnapshot() }
                     .disabled(configuration.canvasMode == .all)
             }
         }
-        .padding(10)
+        .padding(StudioDesign.standardSpacing)
     }
 
     @ViewBuilder
@@ -545,8 +547,7 @@ private struct StudioPreviewTile: View {
             .frame(width: family.size.width, height: family.size.height)
             .clipShape(.rect(cornerRadius: 12))
         }
-        .padding(12)
-        .background(Color.secondary.opacity(0.08), in: .rect(cornerRadius: 14))
+        .studioCard(padding: StudioDesign.standardSpacing)
         .onChange(of: scriptParameter) { _, value in
             data.changeWidgetParameter(value)
         }
@@ -556,9 +557,7 @@ private struct StudioPreviewTile: View {
     }
 }
 
-struct PreviewView_Previews: PreviewProvider {
-    static var previews: some View {
-        PreviewView(scriptModel: globalScriptModel, configuration: StudioWidgetConfiguration())
-            .frame(width: 300, height: 600, alignment: .topLeading)
-    }
+#Preview("Studio Preview") {
+    PreviewView(scriptModel: globalScriptModel, configuration: StudioWidgetConfiguration())
+        .frame(width: 520, height: 720, alignment: .topLeading)
 }

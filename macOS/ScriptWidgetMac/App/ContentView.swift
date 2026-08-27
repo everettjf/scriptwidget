@@ -7,6 +7,30 @@
 
 import SwiftUI
 
+enum StudioDesign {
+    static let compactSpacing: CGFloat = 8
+    static let standardSpacing: CGFloat = 12
+    static let sectionSpacing: CGFloat = 24
+    static let controlCornerRadius: CGFloat = 8
+    static let cardCornerRadius: CGFloat = 12
+    static let prominentCornerRadius: CGFloat = 16
+
+    static let cardBackground = Color(nsColor: .controlBackgroundColor)
+    static let separator = Color.secondary.opacity(0.2)
+}
+
+extension View {
+    func studioCard(padding: CGFloat = 14) -> some View {
+        self
+            .padding(padding)
+            .background(StudioDesign.cardBackground, in: .rect(cornerRadius: StudioDesign.cardCornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius, style: .continuous)
+                    .stroke(StudioDesign.separator, lineWidth: 1)
+            }
+    }
+}
+
 struct ContentView: View {
     @StateObject private var store = SharedAppStore()
     @State private var showingSkills = false

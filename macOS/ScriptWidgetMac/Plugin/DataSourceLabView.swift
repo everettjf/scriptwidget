@@ -23,16 +23,30 @@ struct DataSourceLabView: View {
 
     var body: some View {
         NavigationSplitView {
-            List(plugins, selection: $selectedPluginID) { plugin in
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(plugin.name)
-                        Text(plugin.id).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+            Group {
+                if plugins.isEmpty {
+                    ContentUnavailableView {
+                        Label("No Data Sources", systemImage: "externaldrive.badge.plus")
+                    } description: {
+                        Text("Import a declarative plugin to begin.")
+                    } actions: {
+                        Button("Import Plugin…") { isImporting = true }
+                            .buttonStyle(.borderedProminent)
                     }
-                } icon: {
-                    Image(systemName: plugin.symbol)
+                } else {
+                    List(plugins, selection: $selectedPluginID) { plugin in
+                        Label {
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(plugin.name)
+                                Text(plugin.id).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                            }
+                        } icon: {
+                            Image(systemName: plugin.symbol)
+                        }
+                        .tag(plugin.id)
+                        .accessibilityElement(children: .combine)
+                    }
                 }
-                .tag(plugin.id)
             }
             .navigationTitle("Data Sources")
             .safeAreaInset(edge: .bottom) {
@@ -98,9 +112,15 @@ struct DataSourceLabView: View {
                         }
 
                         if !requestSummary.isEmpty {
-                            Text(requestSummary)
-                                .font(.caption.monospaced())
-                                .textSelection(.enabled)
+                            Label {
+                                Text(requestSummary)
+                                    .font(.caption.monospaced())
+                                    .textSelection(.enabled)
+                            } icon: {
+                                Image(systemName: response.hasPrefix("Error:") ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
+                                    .foregroundStyle(response.hasPrefix("Error:") ? Color.red : Color.green)
+                            }
+                            .studioCard(padding: StudioDesign.standardSpacing)
                         }
 
                         GroupBox("Response") {

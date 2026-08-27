@@ -151,8 +151,11 @@ private struct WidgetSetupStep: View {
     }
 }
 
-struct HomeHelloView_Previews: PreviewProvider {
-    static var previews: some View {
-        HomeHelloView()
-    }
+#Preview("Workspace") {
+    HomeHelloView()
+}
+
+#Preview("Workspace · Large Type") {
+    HomeHelloView()
+        .environment(\.dynamicTypeSize, .accessibility2)
 }

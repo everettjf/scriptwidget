@@ -9,7 +9,7 @@
 import SwiftUI
 
 struct AIGenerateView: View {
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var session = AIGenerateSession()
 
     @State private var prompt: String = ""
@@ -32,9 +32,12 @@ struct AIGenerateView: View {
                     ZStack(alignment: .topLeading) {
                         TextEditor(text: $prompt)
                             .frame(minHeight: 120)
-                            .padding(4)
-                            .background(Color.secondary.opacity(0.08))
-                            .cornerRadius(10)
+                            .padding(StudioDesign.compactSpacing)
+                            .background(StudioDesign.cardBackground, in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                            .overlay {
+                                RoundedRectangle(cornerRadius: StudioDesign.controlCornerRadius, style: .continuous)
+                                    .stroke(StudioDesign.separator, lineWidth: 0.5)
+                            }
                         if prompt.isEmpty {
                             Text(placeholderPrompt)
                                 .foregroundStyle(.secondary)
@@ -93,6 +96,7 @@ struct AIGenerateView: View {
             }
             .padding()
         }
+        .background(StudioDesign.groupedBackground)
         .navigationTitle("Generate")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
@@ -114,7 +118,7 @@ struct AIGenerateView: View {
         }
         .navigationDestination(isPresented: $showReview) {
             AIReviewView(session: session) {
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             }
         }
     }
@@ -167,7 +171,7 @@ struct AIGenerateView: View {
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .background(Color.accentColor.opacity(0.12))
-                            .foregroundColor(.accentColor)
+                            .foregroundStyle(.tint)
                             .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)

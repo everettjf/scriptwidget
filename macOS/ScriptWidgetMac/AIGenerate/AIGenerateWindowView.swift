@@ -109,7 +109,12 @@ struct AIGenerateWindowView: View {
                 TextEditor(text: $prompt)
                     .font(.body)
                     .frame(minHeight: 140)
-                    .border(Color.secondary.opacity(0.3))
+                    .padding(StudioDesign.compactSpacing)
+                    .background(Color(nsColor: .textBackgroundColor), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                    .overlay {
+                        RoundedRectangle(cornerRadius: StudioDesign.controlCornerRadius, style: .continuous)
+                            .stroke(StudioDesign.separator, lineWidth: 1)
+                    }
 
                 examplesSection
                 skillsSection
@@ -199,12 +204,16 @@ struct AIGenerateWindowView: View {
             }
 
             ZStack {
-                Rectangle().fill(Color.secondary.opacity(0.15))
+                StudioDesign.cardBackground
                 previewContent
             }
             .frame(maxWidth: .infinity)
             .frame(height: 360)
-            .cornerRadius(12)
+            .clipShape(.rect(cornerRadius: StudioDesign.cardCornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius, style: .continuous)
+                    .stroke(StudioDesign.separator, lineWidth: 1)
+            }
 
             HStack {
                 Button { showingCode = true } label: {
@@ -297,10 +306,19 @@ struct AIGenerateWindowView: View {
                 .frame(width: size.width, height: size.height)
                 .background(Color(NSColor.textBackgroundColor))
                 .cornerRadius(session.size.previewIsCircular ? size.height / 2 : 10)
+        } else if session.isRunning {
+            VStack(spacing: StudioDesign.standardSpacing) {
+                ProgressView()
+                Text("Building and validating your widget…")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
         } else {
-            Text(session.isRunning ? "Generating..." : "No preview yet")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            ContentUnavailableView(
+                "Ready to Create",
+                systemImage: "sparkles.rectangle.stack",
+                description: Text("Describe a widget on the left, then generate a live preview.")
+            )
         }
     }
 
@@ -325,6 +343,7 @@ struct AIGenerateWindowView: View {
             } label: {
                 Label("Save Widget", systemImage: "square.and.arrow.down")
             }
+            .buttonStyle(.borderedProminent)
             .keyboardShortcut(.defaultAction)
             .disabled(jsx.isEmpty || saveName.trimmingCharacters(in: .whitespaces).isEmpty)
         }

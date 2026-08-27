@@ -11,9 +11,6 @@ struct ScriptCodePreviewView: View {
     @SceneStorage("preview-size-type") private var widgetSizeType = 0
     
     @State private var isDebugMode = false
-    @State private var showAlert = false
-    @State private var showAlertMessage = ""
-    
     @State private var scriptParameter = ""
     @State private var scriptParameterApplied = ""
     @State private var widgetRenderingMode = "fullColor"
@@ -37,9 +34,6 @@ struct ScriptCodePreviewView: View {
 
     var body: some View {
         content
-            .alert(isPresented: $showAlert) { () -> Alert in
-                Alert(title: Text(self.showAlertMessage))
-            }
             .onAppear {
                 if widgetSizeType != 7 {
                     state.changeWidgetSizeType(widgetSizeType)
@@ -89,7 +83,7 @@ struct ScriptCodePreviewView: View {
             }
             
             Form {
-                Section("Config") {
+                Section("Preview Settings") {
                     config
                 }
                 Section {
@@ -101,12 +95,19 @@ struct ScriptCodePreviewView: View {
 
                     if outputTab == 0 {
                         if let problem = state.lastErrorMessage {
-                            Label(problem, systemImage: "exclamationmark.triangle.fill")
-                                .foregroundStyle(.red)
-                                .textSelection(.enabled)
+                            VStack(alignment: .leading, spacing: StudioDesign.compactSpacing) {
+                                Label("Preview failed", systemImage: "exclamationmark.triangle.fill")
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(.red)
+                                Text(problem)
+                                    .font(.footnote.monospaced())
+                                    .foregroundStyle(.secondary)
+                                    .textSelection(.enabled)
+                            }
+                            .padding(.vertical, 4)
                         } else {
-                            Label("No runtime problems", systemImage: "checkmark.circle")
-                                .foregroundStyle(.secondary)
+                            Label("No runtime problems", systemImage: "checkmark.circle.fill")
+                                .foregroundStyle(.green)
                         }
                     } else {
                         ScriptCodePreviewConsoleView(data: consoleData)
@@ -117,19 +118,20 @@ struct ScriptCodePreviewView: View {
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(StudioDesign.groupedBackground)
         }
+        .background(StudioDesign.groupedBackground)
     }
     
     var header: some View {
-        HStack {
-            Spacer()
-            
-            VStack(spacing: 2) {
+        HStack(spacing: StudioDesign.standardSpacing) {
+            VStack(alignment: .leading, spacing: 2) {
                 Text("Widget Preview")
                     .font(.headline)
-                Text(state.previewStatus)
+                Label(state.previewStatus, systemImage: state.lastErrorMessage == nil ? "checkmark.circle.fill" : "exclamationmark.triangle.fill")
                     .font(.caption)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(state.lastErrorMessage == nil ? Color.green : Color.red)
             }
             
             Spacer()
@@ -142,6 +144,7 @@ struct ScriptCodePreviewView: View {
         .padding(.horizontal)
         .padding(.vertical, 10)
         .background(.bar)
+        .accessibilityElement(children: .combine)
     }
     
     var preview: some View {
@@ -199,20 +202,26 @@ struct ScriptCodePreviewView: View {
                 state.changeWidgetRenderingMode(value)
             }
             
-            HStack {
+            HStack(spacing: StudioDesign.compactSpacing) {
                 TextField("Parameter", text: $scriptParameter)
                     .focused($scriptParameterIsFocused)
+                    .submitLabel(.done)
+                    .onSubmit(applyParameter)
                 Button {
-                    scriptParameterIsFocused = false
-                    
-                    self.scriptParameterApplied = self.scriptParameter
-                    self.state.changeWidgetParameter(self.scriptParameterApplied)
-                    
+                    applyParameter()
                 } label: {
                     Text("Apply")
                 }
+                .buttonStyle(.borderedProminent)
+                .disabled(scriptParameter == scriptParameterApplied)
             }
         }
+    }
+
+    private func applyParameter() {
+        scriptParameterIsFocused = false
+        scriptParameterApplied = scriptParameter
+        state.changeWidgetParameter(scriptParameterApplied)
     }
 
     private var previewSizeLabel: String {
@@ -323,13 +332,11 @@ private struct ScriptCodePreviewCard: View {
     }
 }
 
-struct ScriptCodePreviewView_Previews: PreviewProvider {
-    static var previews: some View {
-        Group {
-            ScriptCodePreviewView(model: globalScriptModel, filePath: .constant(URL(string:"/Users/main.jsx")!))
-                .preferredColorScheme(.light)
-            ScriptCodePreviewView(model: globalScriptModel, filePath: .constant(URL(string:"/Users/main.jsx")!))
-                .preferredColorScheme(.dark)
-        }
-    }
+#Preview("Widget Preview") {
+    ScriptCodePreviewView(model: globalScriptModel, filePath: .constant(URL(fileURLWithPath: "/Users/main.jsx")))
+}
+
+#Preview("Widget Preview · Dark") {
+    ScriptCodePreviewView(model: globalScriptModel, filePath: .constant(URL(fileURLWithPath: "/Users/main.jsx")))
+        .preferredColorScheme(.dark)
 }

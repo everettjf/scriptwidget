@@ -74,31 +74,41 @@ struct SidebarView: View {
                 }
                 ToolbarItem(placement: .automatic) {
                     Button {
-                        if AISettingsStore.shared.load().isConfigured {
-                            self.aiGenerateShowingSheet = true
-                        } else {
-                            self.aiConfigAlertShown = true
-                        }
-                    } label: {
-                        Label("Generate with AI", systemImage: "wand.and.stars")
-                    }
-                    .help("Generate with AI (⌘⇧N)")
-                }
-                ToolbarItem(placement: .automatic) {
-                    Button {
                         self.createShowingSheet.toggle()
                     } label: {
                         Label("New Widget", systemImage: "plus")
                     }
-                    .help("New widget")
+                    .help("New widget from a template")
                 }
                 ToolbarItem(placement: .automatic) {
-                    Button {
-                        widgetGuideShowingSheet = true
+                    Menu {
+                        Button {
+                            if AISettingsStore.shared.load().isConfigured {
+                                aiGenerateShowingSheet = true
+                            } else {
+                                aiConfigAlertShown = true
+                            }
+                        } label: {
+                            Label("Generate with AI", systemImage: "wand.and.stars")
+                        }
+
+                        Button {
+                            NotificationCenter.default.post(name: GalleryOpenRequest.notification, object: nil)
+                        } label: {
+                            Label("Community Gallery", systemImage: "square.grid.2x2")
+                        }
+
+                        Divider()
+
+                        Button {
+                            widgetGuideShowingSheet = true
+                        } label: {
+                            Label("Add Widget to Desktop", systemImage: "rectangle.stack.badge.plus")
+                        }
                     } label: {
-                        Label("Add Widget", systemImage: "rectangle.stack.badge.plus")
+                        Label("More", systemImage: "ellipsis.circle")
                     }
-                    .help("How to add ScriptWidget to the desktop")
+                    .help("More Studio actions")
                 }
             }
             .searchable(text: $searchText, prompt: "Search widgets")
@@ -107,38 +117,21 @@ struct SidebarView: View {
     @ViewBuilder
     var content: some View {
         List {
-            Section("Quick Start") {
-                Button {
-                    createShowingSheet = true
-                } label: {
-                    Label("New from Template", systemImage: "square.grid.2x2")
-                }
-
-                Button {
-                    if AISettingsStore.shared.load().isConfigured {
-                        aiGenerateShowingSheet = true
-                    } else {
-                        aiConfigAlertShown = true
-                    }
-                } label: {
-                    Label("Generate with AI", systemImage: "sparkles")
-                }
-
-                Button {
-                    NotificationCenter.default.post(name: GalleryOpenRequest.notification, object: nil)
-                } label: {
-                    Label("Community Gallery", systemImage: "square.grid.2x2")
-                }
-
-            }
-
             Section("Scripts") {
                 if store.scriptModels.isEmpty {
                     EmptyListBackgroundView()
                 } else if filteredScriptModels.isEmpty {
-                    Text("No widgets match ‘\(searchText)’")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
+                    VStack(alignment: .leading, spacing: StudioDesign.compactSpacing) {
+                        Label("No Matches", systemImage: "magnifyingglass")
+                            .font(.subheadline.weight(.semibold))
+                        Text("No widgets match ‘\(searchText)’.")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        Button("Clear Search") { searchText = "" }
+                            .buttonStyle(.link)
+                            .controlSize(.small)
+                    }
+                    .padding(.vertical, StudioDesign.compactSpacing)
                 } else {
                     ForEach(filteredScriptModels) { item in
                         NavigationLink(destination: EditorMainView(scriptModel: item)) {
@@ -218,19 +211,6 @@ struct SidebarView: View {
             }
         }
         .listStyle(.sidebar)
-        .safeAreaInset(edge: .bottom) {
-            Button {
-                widgetGuideShowingSheet = true
-            } label: {
-                Label("Add Widget to Desktop", systemImage: "rectangle.stack.badge.plus")
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-            .buttonStyle(.plain)
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .background(.bar)
-        }
     }
 
     private var filteredScriptModels: [ScriptModel] {
@@ -242,8 +222,6 @@ struct SidebarView: View {
     }
 }
 
-struct SidebarView_Previews: PreviewProvider {
-    static var previews: some View {
-        SidebarView(store: SharedAppStore())
-    }
+#Preview("Sidebar") {
+    SidebarView(store: SharedAppStore())
 }

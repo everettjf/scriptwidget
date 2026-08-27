@@ -12,7 +12,7 @@ struct ComponentsHomeView: View {
     private var idiom : UIUserInterfaceIdiom { UIDevice.current.userInterfaceIdiom }
 
     var body: some View {
-        NavigationView {
+        NavigationStack {
             BundleScriptListView(
                 navigationTitle: "Components",
                 inlineTitle: false,
@@ -42,8 +42,6 @@ struct ComponentsHomeView: View {
     }
 }
 
-struct ComponentsHomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        ComponentsHomeView()
-    }
+#Preview("Components") {
+    ComponentsHomeView()
 }

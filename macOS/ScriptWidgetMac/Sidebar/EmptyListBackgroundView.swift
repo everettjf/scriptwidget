@@ -15,7 +15,7 @@ struct EmptyListBackgroundView: View {
                 .foregroundStyle(.secondary)
             Text("No widgets yet")
                 .font(.subheadline).bold()
-            Text("Tap the + button above to browse templates or generate with AI.")
+            Text("Use New Widget in the toolbar to browse templates or generate with AI.")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -24,8 +24,7 @@ struct EmptyListBackgroundView: View {
     }
 }
 
-struct EmptyListBackgroundView_Previews: PreviewProvider {
-    static var previews: some View {
-        EmptyListBackgroundView()
-    }
+#Preview("Empty Sidebar") {
+    EmptyListBackgroundView()
+        .padding()
 }

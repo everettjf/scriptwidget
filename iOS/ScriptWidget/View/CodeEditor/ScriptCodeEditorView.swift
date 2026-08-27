@@ -13,14 +13,16 @@ enum ScriptCodeEditorViewMode {
 }
 
 struct ScriptCodeEditorNavButtonView: View {
-    let image: String
+    let title: LocalizedStringKey
+    let systemImage: String
     let action: () -> Void
     
     var body: some View {
         Button(action: action) {
-            Image(systemName: image)
-                .font(.title3)
+            Label(title, systemImage: systemImage)
+                .labelStyle(.iconOnly)
         }
+        .accessibilityLabel(Text(title))
     }
 }
 
@@ -62,6 +64,7 @@ struct ScriptCodeEditorView: View {
     
     @State private var showingAlert = false
     @State private var alertMessage = ""
+    @State private var didSave = false
 
     
     init(mode: ScriptCodeEditorViewMode, scriptModel: ScriptModel) {
@@ -138,7 +141,7 @@ struct ScriptCodeEditorView: View {
     var leadingButtons: some View {
         HStack {
             if self.mode != .creator  {
-                ScriptCodeEditorNavButtonView(image: "book") {
+                ScriptCodeEditorNavButtonView(title: "Project Resources", systemImage: "book.closed") {
                     self.showResourceCodeView.toggle()
                 }
                 .sheet(isPresented: $showResourceCodeView, content: {
@@ -155,7 +158,7 @@ struct ScriptCodeEditorView: View {
     var trailingButtons: some View {
         HStack {
             if #available(iOS 16.1, *) {
-                ScriptCodeEditorNavButtonView(image: "lock") {
+                ScriptCodeEditorNavButtonView(title: "Start Live Activity", systemImage: "lock.rectangle") {
                     
                     // build
                     let buildResult = sharedScriptManager.buildScriptPackage(package: self.dataObject.scriptModel.package)
@@ -167,7 +170,7 @@ struct ScriptCodeEditorView: View {
                 }
             }
             
-            ScriptCodeEditorNavButtonView(image: "play") {
+            ScriptCodeEditorNavButtonView(title: "Run Preview", systemImage: "play.fill") {
                 self.showRunnerView.toggle()
             }
             .keyboardShortcut("r", modifiers: .command)
@@ -176,22 +179,24 @@ struct ScriptCodeEditorView: View {
             })
 
             if horizontalSizeClass != .regular {
-                ScriptCodeEditorNavButtonView(image: "sparkles") {
+                ScriptCodeEditorNavButtonView(title: "AI Copilot", systemImage: "sparkles") {
                     showCopilotView = true
                 }
                 .keyboardShortcut("k", modifiers: [.command, .shift])
             }
 
             Button {
-                NotificationCenter.default.post(name: MirrorEditorService.saveNotification, object: nil)
+                saveEditor()
             } label: {
-                Image(systemName: "square.and.arrow.down")
+                Label(didSave ? "Saved" : "Save", systemImage: didSave ? "checkmark.circle.fill" : "square.and.arrow.down")
+                    .labelStyle(.iconOnly)
             }
             .keyboardShortcut("s", modifiers: .command)
-            .accessibilityLabel("Save widget")
+            .accessibilityLabel(didSave ? "Widget saved" : "Save widget")
+            .foregroundStyle(didSave ? Color.green : Color.accentColor)
             
             if self.mode == .creator {
-                ScriptCodeEditorNavButtonView(image: "plus.square") {
+                ScriptCodeEditorNavButtonView(title: "Create Widget", systemImage: "plus.square.fill") {
                     print("create tapped")
                     
                     DispatchQueue.main.async {
@@ -200,6 +205,18 @@ struct ScriptCodeEditorView: View {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private func saveEditor() {
+        NotificationCenter.default.post(name: MirrorEditorService.saveNotification, object: nil)
+        withAnimation(.easeOut(duration: 0.2)) {
+            didSave = true
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
+            withAnimation(.easeOut(duration: 0.2)) {
+                didSave = false
             }
         }
     }
@@ -225,7 +242,7 @@ private struct ScriptCodeStudioPanelView: View {
                 ScriptCodeCopilotView(scriptModel: scriptModel)
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(StudioDesign.groupedBackground)
     }
 }
 
@@ -256,7 +273,7 @@ private struct ScriptCodeCopilotView: View {
                 TextEditor(text: $instruction)
                     .frame(minHeight: 100)
                     .padding(4)
-                    .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 8))
+                    .background(StudioDesign.cardBackground, in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
                     .accessibilityLabel("Copilot instruction")
 
                 Text("Skills")
@@ -351,7 +368,7 @@ private struct ScriptCodeCopilotView: View {
                 .padding(8)
         }
         .frame(maxHeight: 190)
-        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 8))
+        .background(StudioDesign.cardBackground, in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
     }
 
     private func beginCopilotRequest(fixCurrentError: Bool) {
@@ -413,10 +430,8 @@ private struct ScriptCodeCopilotView: View {
     }
 }
 
-struct ScriptCodeEditorView_Previews: PreviewProvider {
-    static var previews: some View {
-        NavigationView {
-            ScriptCodeEditorView(mode: .editor, scriptModel: globalScriptModel)
-        }
+#Preview("Widget Editor") {
+    NavigationStack {
+        ScriptCodeEditorView(mode: .editor, scriptModel: globalScriptModel)
     }
 }

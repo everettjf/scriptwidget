@@ -12,13 +12,13 @@ struct ButtonOfficalSite: View {
         Button(action: {
             NSWorkspace.shared.open(URL(string: "https://xnu.app/scriptwidget")!)
         }) {
-            Image(systemName: "questionmark.circle")
+            Label("ScriptWidget Help", systemImage: "questionmark.circle")
+                .labelStyle(.iconOnly)
         }
+        .help("Open ScriptWidget help")
     }
 }
 
-struct ButtonOfficalSite_Previews: PreviewProvider {
-    static var previews: some View {
-        ButtonOfficalSite()
-    }
+#Preview("Help Button") {
+    ButtonOfficalSite()
 }

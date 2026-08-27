@@ -11,18 +11,21 @@ OUTPUT_ROOT=${SCRIPTWIDGET_RELEASE_OUTPUT_DIR:-"$ROOT/__Release/Apple"}
 DRY_RUN=0
 SKIP_CHECKS=0
 ASSUME_YES=0
+SUBMIT_REVIEW=1
 
 usage() {
   cat <<'EOF'
-Usage: ./Scripts/release-apple.sh [--yes] [--dry-run] [--skip-checks]
+Usage: ./Scripts/release-apple.sh [--yes] [--dry-run] [--skip-checks] [--testflight-only]
 
 Increments the shared patch/build versions, archives iOS and macOS, uploads both
 builds to TestFlight, waits for processing, and submits both to App Review.
 
-Required environment variables:
+Required environment variables for all uploads:
   APPLE_ID
   APPLE_SPECIFIC_PASSWORD
   APPLE_TEAM_ID
+
+Additionally required when submitting App Review:
   APP_STORE_CONNECT_API_KEY_ID
   APP_STORE_CONNECT_API_ISSUER_ID
   APP_STORE_CONNECT_API_KEY_PATH
@@ -31,6 +34,8 @@ Options:
   --yes          Do not ask for confirmation.
   --dry-run      Print the next version/build without changing or uploading.
   --skip-checks  Skip Scripts/release-readiness.sh (not recommended).
+  --testflight-only
+                 Upload both builds to TestFlight without submitting App Review.
   -h, --help     Show this help.
 EOF
 }
@@ -49,6 +54,7 @@ while [ "$#" -gt 0 ]; do
     --yes) ASSUME_YES=1 ;;
     --dry-run) DRY_RUN=1 ;;
     --skip-checks) SKIP_CHECKS=1 ;;
+    --testflight-only) SUBMIT_REVIEW=0 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; die "unknown option: $1" ;;
   esac
@@ -81,17 +87,26 @@ NEXT_BUILD=$((CURRENT_BUILD + 1))
 echo "Apple release: $CURRENT_VERSION ($CURRENT_BUILD) -> $NEXT_VERSION ($NEXT_BUILD)"
 [ "$DRY_RUN" = 0 ] || exit 0
 
-for name in APPLE_ID APPLE_SPECIFIC_PASSWORD APPLE_TEAM_ID \
-  APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_ISSUER_ID APP_STORE_CONNECT_API_KEY_PATH; do
+for name in APPLE_ID APPLE_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
   require_env "$name"
 done
-[ -f "$APP_STORE_CONNECT_API_KEY_PATH" ] || die "API key not found: $APP_STORE_CONNECT_API_KEY_PATH"
+if [ "$SUBMIT_REVIEW" = 1 ]; then
+  for name in APP_STORE_CONNECT_API_KEY_ID APP_STORE_CONNECT_API_ISSUER_ID APP_STORE_CONNECT_API_KEY_PATH; do
+    require_env "$name"
+  done
+  [ -f "$APP_STORE_CONNECT_API_KEY_PATH" ] || die "API key not found: $APP_STORE_CONNECT_API_KEY_PATH"
+fi
 for tool in xcodebuild xcrun ruby perl; do
   command -v "$tool" >/dev/null 2>&1 || die "$tool is required"
 done
 
 if [ "$ASSUME_YES" = 0 ]; then
-  printf 'Upload and submit iOS + macOS %s (%s)? [y/N] ' "$NEXT_VERSION" "$NEXT_BUILD"
+  if [ "$SUBMIT_REVIEW" = 1 ]; then
+    action='Upload and submit'
+  else
+    action='Upload to TestFlight'
+  fi
+  printf '%s iOS + macOS %s (%s)? [y/N] ' "$action" "$NEXT_VERSION" "$NEXT_BUILD"
   read -r answer
   case "$answer" in y|Y|yes|YES) ;; *) die "cancelled" ;; esac
 fi
@@ -147,8 +162,11 @@ for spec in "ios:$IPA" "macos:$PKG"; do
   xcrun altool --upload-app -f "$file" -t "$type" -u "$APPLE_ID" -p '@env:APPLE_SPECIFIC_PASSWORD'
 done
 
-ruby "$ROOT/Scripts/app-store-connect-submit.rb" \
-  --bundle-id com.everettjf.scriptwidget --version "$NEXT_VERSION" --build "$NEXT_BUILD" \
-  --platform IOS --platform MAC_OS
-
-echo "✓ Uploaded iOS and macOS $NEXT_VERSION ($NEXT_BUILD) to TestFlight and App Review"
+if [ "$SUBMIT_REVIEW" = 1 ]; then
+  ruby "$ROOT/Scripts/app-store-connect-submit.rb" \
+    --bundle-id com.everettjf.scriptwidget --version "$NEXT_VERSION" --build "$NEXT_BUILD" \
+    --platform IOS --platform MAC_OS
+  echo "✓ Uploaded iOS and macOS $NEXT_VERSION ($NEXT_BUILD) to TestFlight and App Review"
+else
+  echo "✓ Uploaded iOS and macOS $NEXT_VERSION ($NEXT_BUILD) to TestFlight"
+fi

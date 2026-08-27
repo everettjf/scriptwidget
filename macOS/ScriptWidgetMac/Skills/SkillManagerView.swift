@@ -140,6 +140,14 @@ struct SkillManagerView: View {
     private var detail: some View {
         if let skill = selectedSkill {
             Form {
+                Section {
+                    Label(
+                        skill.isBuiltIn ? "Built-in · Read only" : "Custom · Editable",
+                        systemImage: skill.isBuiltIn ? "lock.fill" : "pencil.circle.fill"
+                    )
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(skill.isBuiltIn ? Color.secondary : Color.accentColor)
+                }
                 Section("Identity") {
                     TextField("Name", text: $draftManifest.name).disabled(!isEditable)
                     LabeledContent("Identifier", value: draftManifest.id).textSelection(.enabled)
@@ -166,6 +174,8 @@ struct SkillManagerView: View {
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(Color(nsColor: .windowBackgroundColor))
         } else {
             ContentUnavailableView(
                 "Select a Skill",
@@ -178,7 +188,10 @@ struct SkillManagerView: View {
     private var footer: some View {
         HStack {
             if let statusMessage {
-                Text(statusMessage).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                Label(statusMessage, systemImage: "info.circle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
             } else {
                 Text("Skills sync beside your widget projects.").font(.caption).foregroundStyle(.secondary)
             }

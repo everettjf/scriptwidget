@@ -29,7 +29,7 @@ struct EmptyHelloView: View {
 
     var body: some View {
         ScrollView {
-            VStack(alignment: .leading, spacing: 28) {
+            VStack(alignment: .leading, spacing: StudioDesign.sectionSpacing) {
                 hero
                 howItWorks
                 if !data.featured.isEmpty {
@@ -51,19 +51,22 @@ struct EmptyHelloView: View {
     }
 
     private var hero: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        HStack(alignment: .center, spacing: 20) {
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
                 .scaledToFit()
-                .frame(width: 88, height: 88)
+                .frame(width: 80, height: 80)
                 .accessibilityLabel("ScriptWidget app icon")
-            Text("Build widgets with JavaScript")
-                .font(.title).bold()
-            Text("Pick a template, preview it instantly on your desktop, then add it anywhere widgets go.")
-                .font(.body)
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+            VStack(alignment: .leading, spacing: StudioDesign.compactSpacing) {
+                Text("Build widgets with JavaScript")
+                    .font(.largeTitle.weight(.bold))
+                Text("Start with a template, preview it instantly, then add the finished widget to your desktop.")
+                    .font(.body)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
+        .studioCard(padding: 20)
     }
 
     private var howItWorks: some View {
@@ -96,7 +99,14 @@ struct EmptyHelloView: View {
     }
 
     private var createRow: some View {
-        HStack(spacing: 10) {
+        ViewThatFits(in: .horizontal) {
+            createButtons
+            VStack(alignment: .leading, spacing: StudioDesign.compactSpacing) { createButtons }
+        }
+    }
+
+    private var createButtons: some View {
+        HStack(spacing: StudioDesign.compactSpacing) {
             Button {
                 showCreate = true
             } label: {
@@ -242,9 +252,7 @@ struct MacOnboardingStep: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(12)
-        .background(Color.secondary.opacity(0.06))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+        .studioCard(padding: StudioDesign.standardSpacing)
     }
 }
 
@@ -283,13 +291,11 @@ struct MacFeaturedRow: View {
                 .font(.title3)
                 .foregroundStyle(accent.opacity(isHovered ? 1.0 : 0.5))
         }
-        .padding(12)
-        .background(Color(nsColor: NSColor.controlBackgroundColor))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(isHovered ? accent.opacity(0.7) : Color.secondary.opacity(0.2), lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .studioCard(padding: StudioDesign.standardSpacing)
+        .overlay {
+            RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius, style: .continuous)
+                .stroke(isHovered ? accent.opacity(0.7) : .clear, lineWidth: 1)
+        }
         .contentShape(Rectangle())
         .onHover { hovering in
             isHovered = hovering
@@ -301,8 +307,6 @@ struct MacFeaturedRow: View {
     }
 }
 
-struct EmptyHelloView_Previews: PreviewProvider {
-    static var previews: some View {
-        EmptyHelloView()
-    }
+#Preview("Welcome") {
+    EmptyHelloView()
 }

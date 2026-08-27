@@ -121,6 +121,7 @@ struct CreateGuideView: View {
         HStack(spacing: 12) {
             aiCard
             blankCard
+            galleryCard
         }
     }
 
@@ -150,9 +151,7 @@ struct CreateGuideView: View {
                 }
                 Spacer()
             }
-            .padding(10)
-            .background(Color.accentColor.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .studioCard(padding: 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -176,9 +175,33 @@ struct CreateGuideView: View {
                 }
                 Spacer()
             }
-            .padding(10)
-            .background(Color.secondary.opacity(0.06))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .studioCard(padding: 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var galleryCard: some View {
+        Button {
+            dismiss()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                NotificationCenter.default.post(name: GalleryOpenRequest.notification, object: nil)
+            }
+        } label: {
+            HStack(spacing: 12) {
+                Image(systemName: "square.grid.2x2")
+                    .font(.title2)
+                    .foregroundStyle(.indigo)
+                    .frame(width: 44, height: 44)
+                    .background(Color.indigo.opacity(0.12), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Gallery").font(.headline)
+                    Text("Install verified community widgets.")
+                        .font(.caption).foregroundStyle(.secondary)
+                }
+                Spacer()
+            }
+            .studioCard(padding: 10)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)

@@ -81,16 +81,17 @@ struct ScriptWidgetHomeView: View {
                     // share
                     ActivityViewController(activityItems: sharedScriptManager.exportScriptItemsInTempPath(model: item))
                 })
-                .alert("Confirm Delete : \(selectedDeleteItem?.name ?? "") ? ", isPresented: $isShowingDeleteAlert, presenting: selectedDeleteItem, actions: { item in
-                    Button("Delete", role:.destructive ,action: {
-                        // real delete
+                .alert("Delete Widget?", isPresented: $isShowingDeleteAlert, presenting: selectedDeleteItem) { item in
+                    Button("Delete", role: .destructive) {
                         if sharedScriptManager.deleteScript(packageName: item.name) {
                             NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptDeleteNotification, object: nil)
                             selectedDeleteItem = nil
                         }
-                    })
-                    
-                })
+                    }
+                    Button("Cancel", role: .cancel) { }
+                } message: { item in
+                    Text("“\(item.name)” and its project files will be removed. This can’t be undone.")
+                }
                 .navigationTitle("Widgets")
                 .searchable(text: $searchText, prompt: "Search widgets")
                 .toolbar {
@@ -170,16 +171,27 @@ struct ScriptWidgetHomeView: View {
         if dataObject.models.isEmpty && searchText.isEmpty {
             EmptyListBackgroundView()
         } else if filteredModels.isEmpty {
-            VStack(spacing: 12) {
-                Image(systemName: "magnifyingglass")
-                    .font(.largeTitle)
-                    .foregroundStyle(.secondary)
+            VStack(spacing: StudioDesign.standardSpacing) {
+                Image(systemName: "doc.text.magnifyingglass")
+                    .font(.title.weight(.medium))
+                    .foregroundStyle(.tint)
+                    .frame(width: 56, height: 56)
+                    .background(.tint.opacity(0.12), in: .rect(cornerRadius: StudioDesign.cardCornerRadius))
+                    .accessibilityHidden(true)
                 Text("No Results for “\(searchText)”")
                     .font(.headline)
                 Text("Try a different widget name.")
+                    .font(.subheadline)
                     .foregroundStyle(.secondary)
+                Button("Clear Search") {
+                    searchText = ""
+                }
+                .buttonStyle(.bordered)
             }
+            .multilineTextAlignment(.center)
+            .padding(32)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(StudioDesign.groupedBackground)
         } else {
             List {
                 Section {
@@ -223,10 +235,17 @@ struct ScriptWidgetHomeView: View {
                         }
                     }
                 } header: {
-                    Text("\(filteredModels.count) widget\(filteredModels.count == 1 ? "" : "s")")
+                    HStack {
+                        Text("My Widgets")
+                        Spacer()
+                        Text("\(filteredModels.count)")
+                            .monospacedDigit()
+                    }
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .background(StudioDesign.groupedBackground)
             .refreshable {
                 dataObject.reload()
                 WidgetCenter.shared.reloadAllTimelines()
@@ -244,8 +263,6 @@ struct ScriptWidgetHomeView: View {
     }
 }
 
-struct ScriptWidgetListView_Previews: PreviewProvider {
-    static var previews: some View {
-        ScriptWidgetHomeView()
-    }
+#Preview("Studio") {
+    ScriptWidgetHomeView()
 }

@@ -14,7 +14,7 @@ struct AIReviewView: View {
     /// Called when the user successfully saves (so the parent sheet can close).
     var onSaved: () -> Void
 
-    @Environment(\.presentationMode) private var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     @State private var refineInstruction: String = ""
     @State private var showingCodeSheet = false
@@ -45,6 +45,7 @@ struct AIReviewView: View {
             }
             .padding()
         }
+        .background(StudioDesign.groupedBackground)
         .navigationTitle("Review")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -89,13 +90,16 @@ struct AIReviewView: View {
     @ViewBuilder private var previewSection: some View {
         let size = session.size.previewSize
         ZStack {
-            Rectangle()
-                .fill(Color.secondary.opacity(0.15))
+            StudioDesign.cardBackground
             previewContent(size: size)
         }
         .frame(maxWidth: .infinity)
         .frame(height: Swift.max(size.height + 40, 200))
-        .cornerRadius(12)
+        .clipShape(.rect(cornerRadius: StudioDesign.cardCornerRadius))
+        .overlay {
+            RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius, style: .continuous)
+                .stroke(StudioDesign.separator, lineWidth: 0.5)
+        }
     }
 
     @ViewBuilder
@@ -113,16 +117,26 @@ struct AIReviewView: View {
                 .background(Color(UIColor.systemBackground))
                 .cornerRadius(session.size.previewIsCircular ? size.height / 2 : 10)
         } else {
-            Text("No preview available")
-                .font(.footnote)
-                .foregroundStyle(.secondary)
+            VStack(spacing: StudioDesign.compactSpacing) {
+                Image(systemName: "rectangle.slash")
+                    .font(.title2)
+                    .foregroundStyle(.secondary)
+                Text("Preview Unavailable")
+                    .font(.headline)
+                Text("Refine the request or inspect the iteration logs for details.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+            }
+            .padding()
+            .accessibilityElement(children: .combine)
         }
     }
 
     private var actionsSection: some View {
         HStack(spacing: 12) {
             Button(role: .destructive) {
-                presentationMode.wrappedValue.dismiss()
+                dismiss()
             } label: {
                 Label("Discard", systemImage: "trash")
                     .frame(maxWidth: .infinity)
@@ -180,12 +194,14 @@ struct AIReviewView: View {
                 Label("Logs", systemImage: "text.alignleft")
             }
         } label: {
-            Image(systemName: "ellipsis.circle")
+            Label("More", systemImage: "ellipsis.circle")
+                .labelStyle(.iconOnly)
         }
+        .accessibilityLabel("Review options")
     }
 
     @ViewBuilder private var codeSheet: some View {
-        NavigationView {
+        NavigationStack {
             ScrollView {
                 Text(jsx)
                     .font(.system(.footnote, design: .monospaced))
@@ -204,7 +220,7 @@ struct AIReviewView: View {
     }
 
     @ViewBuilder private var logsSheet: some View {
-        NavigationView {
+        NavigationStack {
             List {
                 ForEach(session.iterationHistory) { record in
                     Section("Iteration \(record.iteration)") {

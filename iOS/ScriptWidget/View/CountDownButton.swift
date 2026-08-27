@@ -39,9 +39,8 @@ struct CountDownButton: View {
             getButtonText()
         }
         .font(.footnote)
-        .foregroundColor(.primary)
-        .frame(width: 80, height: 40, alignment: .center)
-        .buttonStyle(.bordered)
+        .foregroundStyle(.primary)
+        .frame(minWidth: 80, minHeight: 40, alignment: .center)
         .onReceive(timer, perform: { _ in
             
             if self.leftSeconds == 0 {
@@ -54,6 +53,8 @@ struct CountDownButton: View {
             }
         })
         .disabled(self.isTimerStart)
+        .accessibilityLabel(Text(LocalizedStringKey(text)))
+        .accessibilityValue(isTimerStart ? "Available again in \(leftSeconds) seconds" : "Ready")
     }
     
     func stopTimer() {
@@ -65,15 +66,13 @@ struct CountDownButton: View {
     }
 }
 
-struct CountDownButton_Previews: PreviewProvider {
-    static var previews: some View {
-        CountDownButton(text: "hello",waitSeconds: 10){
-        }
-        .previewLayout(.sizeThatFits)
-        .preferredColorScheme(.light)
-        CountDownButton(text: "hello",waitSeconds: 10) {
-        }
-        .previewLayout(.sizeThatFits)
-        .preferredColorScheme(.dark)
-    }
+#Preview("Countdown Button") {
+    CountDownButton(text: "Sync", waitSeconds: 10) { }
+        .padding()
+}
+
+#Preview("Countdown Button · Large Type") {
+    CountDownButton(text: "Sync", waitSeconds: 10) { }
+        .padding()
+        .environment(\.dynamicTypeSize, .accessibility2)
 }

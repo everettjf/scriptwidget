@@ -7,6 +7,18 @@
 
 import SwiftUI
 
+private let defaultNewWidgetSource = """
+const family = $getenv("widget-size");
+
+$render(
+  <vstack frame="max" padding="16" spacing="8">
+    <text font="caption" color="#68728A">NEW WIDGET</text>
+    <text font="title" fontWeight="bold">Hello, ScriptWidget!</text>
+    <text font="caption" color="#68728A">Family: {family}</text>
+  </vstack>
+);
+"""
+
 
 class CreateGuideDataObject: ObservableObject {
     @Published var models = [ScriptModel]()
@@ -29,7 +41,7 @@ class CreateGuideDataObject: ObservableObject {
 struct CreateGuideView: View {
     @StateObject private var dataObject = CreateGuideDataObject()
 
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
     @State private var showingAIGenerate = false
     @State private var showingAIConfigAlert = false
@@ -55,6 +67,15 @@ struct CreateGuideView: View {
                             .frame(maxWidth: .infinity)
                             .padding(.top, 40)
                     } else {
+                        VStack(alignment: .leading, spacing: 3) {
+                            Text("Start with a template")
+                                .font(.title3.weight(.semibold))
+                            Text("Every template is ready to preview and customize.")
+                                .font(.subheadline)
+                                .foregroundStyle(.secondary)
+                        }
+                        .padding(.horizontal)
+
                         LazyVGrid(columns: [GridItem(.adaptive(minimum: 160), spacing: 12)], spacing: 12) {
                             ForEach(filteredModels) { item in
                                 NavigationLink(destination: editorDestination(for: item)) {
@@ -74,7 +95,7 @@ struct CreateGuideView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
-                        presentationMode.wrappedValue.dismiss()
+                        dismiss()
                     }) {
                         Label("Close", systemImage: "xmark")
                             .labelStyle(.iconOnly)
@@ -112,70 +133,49 @@ struct CreateGuideView: View {
     // MARK: - Subviews
 
     private var quickStartRows: some View {
-        VStack(spacing: 10) {
-            aiRow
-            Button {
-                showingGallery = true
-            } label: {
-                HStack(spacing: 12) {
-                    Image(systemName: "square.grid.2x2")
-                        .font(.title2)
-                        .foregroundColor(.white)
-                        .frame(width: 44, height: 44)
-                        .background(Color.indigo.gradient)
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Community Gallery").font(.headline).foregroundColor(.primary)
-                        Text("Install verified widgets and reusable AI Skills.").font(.caption).foregroundColor(.secondary)
-                    }
-                    Spacer()
-                    Image(systemName: "chevron.right").font(.caption).foregroundColor(.secondary)
-                }
-                .padding(12)
-                .background(Color.indigo.opacity(0.08))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .contentShape(Rectangle())
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Other ways to start")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 10) { creationShortcuts }
+                VStack(spacing: 10) { creationShortcuts }
             }
-            .buttonStyle(.plain)
         }
     }
 
-    private var aiRow: some View {
-        Button {
+    @ViewBuilder
+    private var creationShortcuts: some View {
+        CreationShortcutButton(
+            title: "Generate with AI",
+            detail: "Describe an idea",
+            systemImage: "sparkles",
+            color: .purple
+        ) {
             if AISettingsStore.shared.load().isConfigured {
                 showingAIGenerate = true
             } else {
                 showingAIConfigAlert = true
             }
-        } label: {
-            HStack(spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.title2)
-                    .foregroundColor(.white)
-                    .frame(width: 44, height: 44)
-                    .background(
-                        LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
-                    )
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Generate with AI")
-                        .font(.headline)
-                        .foregroundColor(.primary)
-                    Text("Describe your widget and let the AI build it.")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-            }
-            .padding(12)
-            .background(Color.accentColor.opacity(0.08))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .contentShape(Rectangle())
         }
-        .buttonStyle(.plain)
+
+        CreationShortcutButton(
+            title: "Blank Widget",
+            detail: "Start from code",
+            systemImage: "doc.badge.plus",
+            color: .blue,
+            action: createBlankWidget
+        )
+
+        CreationShortcutButton(
+            title: "Gallery",
+            detail: "Browse community picks",
+            systemImage: "square.grid.2x2",
+            color: .indigo
+        ) {
+            showingGallery = true
+        }
     }
 
     private var categoryChips: some View {
@@ -203,12 +203,12 @@ struct CreateGuideView: View {
     private var emptyState: some View {
         VStack(spacing: 8) {
             Image(systemName: "magnifyingglass")
-                .font(.system(size: 36))
-                .foregroundColor(.secondary)
+                .font(.title)
+                .foregroundStyle(.secondary)
             Text("No templates match").font(.headline)
             Text("Try another keyword or category.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -220,9 +220,57 @@ struct CreateGuideView: View {
             _ = sharedScriptManager.createScript(content: content, recommendPackageName: item.name, imageCopyPath: imageCopyPath)
             NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.3, execute: {
-                self.presentationMode.wrappedValue.dismiss()
+                dismiss()
             })
         })
+    }
+
+    private func createBlankWidget() {
+        let packageName = sharedScriptManager.getValidPackageName(recommendPackageName: "A New Widget")
+        let result = sharedScriptManager.createScript(
+            content: defaultNewWidgetSource,
+            recommendPackageName: packageName,
+            imageCopyPath: nil
+        )
+        guard result.0 else { return }
+        NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptCreateNotification, object: nil)
+        dismiss()
+    }
+}
+
+private struct CreationShortcutButton: View {
+    let title: LocalizedStringKey
+    let detail: LocalizedStringKey
+    let systemImage: String
+    let color: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(color)
+                    .frame(width: 34, height: 34)
+                    .background(color.opacity(0.12), in: .rect(cornerRadius: StudioDesign.controlCornerRadius))
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.primary)
+                    Text(detail)
+                        .font(.caption2)
+                        .foregroundStyle(.secondary)
+                }
+                Spacer(minLength: 4)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .studioCard(padding: 10)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityElement(children: .combine)
+        .accessibilityAddTraits(.isButton)
     }
 }
 
@@ -245,7 +293,7 @@ struct CategoryChip: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 7)
-            .foregroundColor(selected ? .white : color)
+            .foregroundStyle(selected ? .white : color)
             .background(selected ? color : color.opacity(0.12))
             .clipShape(Capsule())
         }
@@ -274,7 +322,7 @@ struct TemplateCardView: View {
                 } else {
                     Image(systemName: model.iconSystemName)
                         .font(.system(size: 34, weight: .regular))
-                        .foregroundColor(accentColor)
+                        .foregroundStyle(accentColor)
                 }
 
                 if model.isFeatured {
@@ -299,12 +347,12 @@ struct TemplateCardView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(model.name)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .foregroundStyle(.primary)
                     .lineLimit(1)
                 if let summary = model.summary, !summary.isEmpty {
                     Text(summary)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundStyle(.secondary)
                         .lineLimit(2)
                         .frame(maxWidth: .infinity, alignment: .leading)
                 }
@@ -317,12 +365,11 @@ struct TemplateCardView: View {
             .padding(.bottom, 4)
         }
         .padding(6)
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(Color.secondary.opacity(0.15), lineWidth: 0.5)
-        )
+            .background(Color(.systemBackground), in: .rect(cornerRadius: StudioDesign.cardCornerRadius))
+            .overlay {
+                RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius)
+                    .stroke(StudioDesign.separator, lineWidth: 0.5)
+            }
     }
 
     private var accentColor: Color {
@@ -343,7 +390,7 @@ struct DifficultyBadge: View {
             .font(.system(size: 10, weight: .semibold))
             .padding(.horizontal, 6)
             .padding(.vertical, 2)
-            .foregroundColor(color)
+            .foregroundStyle(color)
             .background(color.opacity(0.15))
             .clipShape(Capsule())
     }
@@ -357,8 +404,6 @@ struct DifficultyBadge: View {
     }
 }
 
-struct CreateGuideView_Previews: PreviewProvider {
-    static var previews: some View {
-        CreateGuideView()
-    }
+#Preview("New Widget") {
+    CreateGuideView()
 }

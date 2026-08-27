@@ -12,7 +12,7 @@ struct APIsHomeView: View {
     private var idiom : UIUserInterfaceIdiom { UIDevice.current.userInterfaceIdiom }
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             BundleScriptListView(navigationTitle: "APIs", inlineTitle: false, dataObject: BundleScriptDataObject(bundleName: "Script", bundleDirectory: "api")){
                 showTabBar(false)
             } onNextDisappear: {
@@ -39,8 +39,6 @@ struct APIsHomeView: View {
     }
 }
 
-struct APIsHomeView_Previews: PreviewProvider {
-    static var previews: some View {
-        APIsHomeView()
-    }
+#Preview("APIs") {
+    APIsHomeView()
 }
