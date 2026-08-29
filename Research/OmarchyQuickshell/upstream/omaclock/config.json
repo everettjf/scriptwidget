@@ -1,0 +1,13 @@
+{
+  "format": "h:mm",
+  "showSeconds": false,
+  "fontFamily": "",
+  "fontWeight": 200,
+  "fontScale": 0.15,
+  "letterSpacing": -3,
+  "color": "",
+  "opacity": 0.92,
+  "position": "top",
+  "yRatio": 0.20,
+  "namespace": "ubeyidah.omaclock"
+}

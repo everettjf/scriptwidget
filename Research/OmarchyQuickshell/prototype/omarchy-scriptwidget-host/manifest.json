@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "id": "everettjf.scriptwidget-host-research",
+  "name": "ScriptWidget Host Research",
+  "version": "0.0.1",
+  "author": "ScriptWidget",
+  "description": "Non-shipping surface smoke test for ScriptWidget cards on Omarchy 4.",
+  "kinds": ["service"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "DesktopHost.qml"
+  }
+}
+

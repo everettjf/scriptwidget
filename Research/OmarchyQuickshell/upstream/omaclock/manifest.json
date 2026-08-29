@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "id": "ubeyidah.omaclock",
+  "name": "OmaClock",
+  "version": "1.3.0",
+  "author": "ubeyidah",
+  "description": "A simple, minimal desktop clock widget rendered behind all windows on the bottom layer, with theme-aware colors, controlled from a bar widget.",
+  "kinds": ["service", "bar-widget"],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "DesktopClock.qml",
+    "barWidget": "Control.qml"
+  },
+  "barWidget": {
+    "displayName": "OmaClock",
+    "description": "Control the desktop clock: size, X/Y position, and color (theme or custom).",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "center",
+    "defaults": {}
+  }
+}
