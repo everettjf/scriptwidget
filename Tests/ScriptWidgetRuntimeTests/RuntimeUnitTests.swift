@@ -291,6 +291,43 @@ final class ScriptWidgetRuntimeElementTests: XCTestCase {
     }
 }
 
+final class ScriptWidgetBackgroundTests: XCTestCase {
+    func testNamedColorWithOpacityIsParsed() {
+        XCTAssertNotNil(ScriptWidgetAttributeColor("green,0.5").color)
+        XCTAssertNil(ScriptWidgetAttributeColor("not-a-color,0.5").color)
+    }
+
+    func testOnlyConfiguredRootUsesWidgetContainerBackground() {
+        let child = ScriptWidgetRuntimeElement(
+            tagString: "text",
+            props: ["background": "blue"],
+            children: ["Nested"]
+        )
+        let root = ScriptWidgetRuntimeElement(
+            tagString: "vstack",
+            props: ["background": "green"],
+            children: [child]
+        )
+        let equivalentButDistinctRoot = ScriptWidgetRuntimeElement(
+            tagString: "vstack",
+            props: ["background": "green"],
+            children: [child]
+        )
+        let context = ScriptWidgetElementContext(
+            runtime: nil,
+            debugMode: false,
+            scriptName: "BackgroundTest",
+            scriptParameter: "",
+            package: globalScriptWidgetPackage,
+            containerBackgroundElement: root
+        )
+
+        XCTAssertTrue(context.usesContainerBackground(for: root))
+        XCTAssertFalse(context.usesContainerBackground(for: child))
+        XCTAssertFalse(context.usesContainerBackground(for: equivalentButDistinctRoot))
+    }
+}
+
 final class ScriptWidgetErrorTests: XCTestCase {
 
     func testDisplayMessageReturnsUnderlyingMessage() {

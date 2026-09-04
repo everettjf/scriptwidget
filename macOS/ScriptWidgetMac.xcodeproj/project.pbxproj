@@ -1530,7 +1530,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27004;
+				CURRENT_PROJECT_VERSION = 27005;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1550,7 +1550,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.0.3;
+				MARKETING_VERSION = 27.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
 				REGISTER_APP_GROUPS = YES;
@@ -1568,7 +1568,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27004;
+				CURRENT_PROJECT_VERSION = 27005;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1587,7 +1587,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.0.3;
+				MARKETING_VERSION = 27.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
 				REGISTER_APP_GROUPS = YES;
@@ -1604,7 +1604,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27004;
+				CURRENT_PROJECT_VERSION = 27005;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1620,7 +1620,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.0.3;
+				MARKETING_VERSION = 27.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1638,7 +1638,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27004;
+				CURRENT_PROJECT_VERSION = 27005;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1654,7 +1654,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.0.3;
+				MARKETING_VERSION = 27.0.4;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;

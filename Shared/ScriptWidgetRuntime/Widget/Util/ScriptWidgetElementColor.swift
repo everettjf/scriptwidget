@@ -76,7 +76,7 @@ struct ScriptWidgetAttributeColor {
             if colorPart.hasPrefix("#") {
                 tmpColor = Color(hex: colorPart)
             } else {
-                tmpColor = ScriptWidgetAttributeColor.getBuiltinColorFromName(colorValue)
+                tmpColor = ScriptWidgetAttributeColor.getBuiltinColorFromName(colorPart)
             }
             
             if let opacity = Double(opacityPart) {
