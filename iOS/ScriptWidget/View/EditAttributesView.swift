@@ -124,7 +124,7 @@ struct EditAttributesView: View {
         NotificationCenter.default.post(
             name: ScriptWidgetHomeViewDataObject.scriptRenameNotification,
             object: nil,
-            userInfo: ["newName": trimmedName]
+            userInfo: ["oldName": scriptModel.name, "newName": trimmedName]
         )
         dismiss()
     }

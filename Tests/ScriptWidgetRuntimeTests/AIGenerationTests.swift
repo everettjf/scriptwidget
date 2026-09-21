@@ -27,6 +27,101 @@ import XCTest
 
 final class AIGenerationTests: XCTestCase {
 
+    func testOllamaNeedsModelButNotAPIKey() {
+        var profile = AIProfile.makeOllama()
+        XCTAssertFalse(profile.isConfigured)
+        profile.model = "installed-model"
+        XCTAssertTrue(profile.isConfigured)
+        XCTAssertEqual(profile.normalizedBaseURL, "http://localhost:11434")
+        XCTAssertTrue(profile.apiKey.isEmpty)
+        profile.baseURL = ""
+        XCTAssertEqual(profile.normalizedBaseURL, "http://localhost:11434", "Clearing Ollama's address must never route to a cloud host")
+    }
+
+    func testCustomEndpointValidationAndCredentialIsolation() {
+        var profile = AIProfile.makeDefault()
+        profile.apiKey = "test-secret"
+        profile.authMethod = .oauth
+        let changed = profile.changingEndpoint(to: "http://localhost:11434/v1/")
+        XCTAssertEqual(changed.normalizedBaseURL, "http://localhost:11434")
+        XCTAssertTrue(changed.apiKey.isEmpty)
+        XCTAssertEqual(changed.authMethod, .apiKey)
+        for address in ["file:///tmp/api", "api.example.com", "https://user:secret@example.com", "https://example.com?key=secret", "https://example.com/chat/completions"] {
+            profile.baseURL = address
+            XCTAssertNil(profile.endpointURL, address)
+        }
+        profile.baseURL = "https://example.com/custom/v1/"
+        XCTAssertEqual(profile.normalizedBaseURL, "https://example.com/custom")
+        XCTAssertFalse(profile.isConfigured, "OAuth must not be used on another host")
+    }
+
+    func testAppleMigrationPreservesExistingActiveProfile() throws {
+        let suite = "AISettingsTests-\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let profile = AIProfile.makeDefault()
+        defaults.set(try JSONEncoder().encode([profile]), forKey: AISettingsKey.profiles)
+        defaults.set(profile.id, forKey: AISettingsKey.activeProfileID)
+        let store = AISettingsStore(defaults: defaults)
+        XCTAssertTrue(store.loadProfiles().contains { $0.providerKind == .applePrivateCloudCompute })
+        XCTAssertEqual(store.loadActiveProfileID(), profile.id)
+    }
+
+    func testOllamaProfileRoundTripsWithoutCredential() throws {
+        var profile = AIProfile.makeOllama()
+        profile.model = "installed-model"
+        let decoded = try JSONDecoder().decode(AIProfile.self, from: JSONEncoder().encode(profile))
+        XCTAssertEqual(decoded.providerKind, .ollama)
+        XCTAssertEqual(decoded.authMethod, .none)
+        XCTAssertTrue(decoded.isConfigured)
+    }
+
+    func testCompatibleRequestsPreserveHostPathAndOmitCredentialsWithoutAuth() async throws {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [CompatibleEndpointStub.self]
+        let session = URLSession(configuration: configuration)
+        defer { session.invalidateAndCancel() }
+        let client = AIClient(session: session)
+        var profile = AIProfile.makeOllama()
+        profile.baseURL = "http://compat.test/gateway/v1/"
+        profile.model = "local-model"
+        profile.apiKey = "must-not-be-sent"
+        let models = try await client.availableModels(profile: profile)
+        XCTAssertEqual(models, ["local-model"])
+        let result = try await client.chat(messages: [.init(role: .user, content: "ping")],
+                                          settings: AISettings(profile: profile, maxIterations: 1, temperature: 0))
+        XCTAssertEqual(result.content, "pong")
+    }
+
+    func testOllamaLiveConnectionWhenEnabled() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        guard let address = environment["AI_OLLAMA_TEST_URL"] ?? environment["TEST_RUNNER_AI_OLLAMA_TEST_URL"],
+              let model = environment["AI_OLLAMA_TEST_MODEL"] ?? environment["TEST_RUNNER_AI_OLLAMA_TEST_MODEL"] else {
+            throw XCTSkip("Ollama live test not configured")
+        }
+        var profile = AIProfile.makeOllama()
+        profile.baseURL = address
+        profile.model = model
+        let client = AIClient()
+        let models = try await client.availableModels(profile: profile)
+        XCTAssertTrue(models.contains(model))
+        let result = try await client.chat(messages: [.init(role: .user, content: "Reply with exactly pong.")],
+                                          settings: AISettings(profile: profile, maxIterations: 1, temperature: 0))
+        XCTAssertFalse(result.content.isEmpty)
+    }
+
+    @MainActor
+    func testResetCannotBeOverwrittenByCancelledGeneration() async {
+        let session = AIGenerateSession()
+        session.start(userDescription: "A static greeting widget")
+        let cancelledTask = session.currentTask
+        session.reset()
+        await cancelledTask?.value
+        XCTAssertEqual(session.phase, .idle)
+        XCTAssertFalse(session.isRunning)
+        XCTAssertNil(session.lastJSX)
+    }
+
     func testApplePCCProfileRequiresNoCredential() throws {
         let profile = AIProfile.makeApplePrivateCloudCompute()
 
@@ -215,4 +310,24 @@ final class AIGenerationTests: XCTestCase {
         XCTAssertGreaterThan(report.totalAttempts, 0)
         XCTAssertGreaterThan(report.totalPasses, 0, "expected at least one template to generate successfully")
     }
+}
+
+private final class CompatibleEndpointStub: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { request.url?.host == "compat.test" }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        XCTAssertNil(request.value(forHTTPHeaderField: "Authorization"))
+        let body: String
+        if request.url?.path == "/gateway/v1/models" {
+            body = #"{"data":[{"id":"local-model"},{"id":"local-model"}]}"#
+        } else {
+            XCTAssertEqual(request.url?.path, "/gateway/v1/chat/completions")
+            body = #"{"id":"test","object":"chat.completion","created":1,"model":"local-model","choices":[{"index":0,"message":{"role":"assistant","content":"pong"},"finish_reason":"stop"}]}"#
+        }
+        client?.urlProtocol(self, didReceive: HTTPURLResponse(url: request.url!, statusCode: 200,
+                            httpVersion: nil, headerFields: ["Content-Type":"application/json"])!, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: Data(body.utf8))
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
 }

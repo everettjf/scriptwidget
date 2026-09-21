@@ -50,6 +50,81 @@ final class PackageCacheTests: XCTestCase {
         XCTAssertFalse(FileManager.default.fileExists(atPath: url.path), "precondition: file should be gone")
     }
 
+    func testFailedBuildPreservesLastWorkingPackage() throws {
+        let package = makeTempPackage()
+        XCTAssertTrue(package.writeMainFile(content: "WORKING").0)
+        XCTAssertTrue(sharedScriptManager.buildScriptPackage(package: package).0)
+        try FileManager.default.removeItem(at: package.path)
+        XCTAssertFalse(sharedScriptManager.buildScriptPackage(package: package).0)
+        XCTAssertEqual(buildScriptManager.getScriptPackage(packageName: package.name).readMainFile().0, "WORKING")
+    }
+
+    func testBuildReplacesPackageAndRejectsIncompleteSnapshot() throws {
+        let package = makeTempPackage()
+        XCTAssertTrue(package.writeMainFile(content: "OLD").0)
+        XCTAssertTrue(sharedScriptManager.buildScriptPackage(package: package).0)
+        try "NEW".write(to: package.jsxPath, atomically: true, encoding: .utf8)
+        XCTAssertTrue(sharedScriptManager.buildScriptPackage(package: package).0)
+        XCTAssertEqual(buildScriptManager.getScriptPackage(packageName: package.name).readMainFile().0, "NEW")
+        try Data().write(to: package.path.appendingPathComponent(".image.png.icloud"))
+        try "INCOMPLETE".write(to: package.jsxPath, atomically: true, encoding: .utf8)
+        XCTAssertFalse(sharedScriptManager.buildScriptPackage(package: package).0)
+        XCTAssertEqual(buildScriptManager.getScriptPackage(packageName: package.name).readMainFile().0, "NEW")
+    }
+
+    func testManifestEntrySurvivesEvictionAndMalformedManifestFailsClosed() throws {
+        let package = makeTempPackage()
+        XCTAssertTrue(package.writeFile(relativePath: "src/widget.jsx", content: "ENTRY").0)
+        var manifest = WidgetPackageManifest.legacy(name: package.name, metadata: nil)
+        manifest.entry = "src/widget.jsx"
+        XCTAssertTrue(package.writeManifest(manifest).0)
+        XCTAssertEqual(package.readMainFile().0, "ENTRY")
+        evict(package.jsxPath)
+        evict(package.manifestPath)
+        XCTAssertEqual(package.readMainFile().0, "ENTRY")
+        try "{invalid".write(to: package.manifestPath, atomically: true, encoding: .utf8)
+        XCTAssertNil(package.readMainFile().0)
+        XCTAssertFalse(package.ensureManifest().0)
+        XCTAssertEqual(try String(contentsOf: package.manifestPath, encoding: .utf8), "{invalid")
+    }
+
+    func testNestedDownloadTraversalDoesNotCycleOrFollowSymlinks() throws {
+        let package = makeTempPackage()
+        let nested = package.path.appendingPathComponent("a/a")
+        try FileManager.default.createDirectory(at: nested, withIntermediateDirectories: true)
+        try Data().write(to: nested.appendingPathComponent(".main.jsx.icloud"))
+        try FileManager.default.createSymbolicLink(at: package.path.appendingPathComponent("loop"), withDestinationURL: package.path)
+        let urls = package.downloadableFileURLs(in: package.path)
+        XCTAssertEqual(urls.count, 1)
+        XCTAssertEqual(urls.first?.lastPathComponent, "main.jsx")
+        XCTAssertEqual(urls.first?.deletingLastPathComponent().resolvingSymlinksInPath().path,
+                       nested.resolvingSymlinksInPath().path)
+    }
+
+    func testMigrationPreservesCollisionsAndFileExtensions() throws {
+        let source = makeTempPackage()
+        let destination = makeTempPackage()
+        try "NEW".write(to: source.path.appendingPathComponent("notes.txt"), atomically: true, encoding: .utf8)
+        try "OLD".write(to: destination.path.appendingPathComponent("notes.txt"), atomically: true, encoding: .utf8)
+        try ScriptManager.migrateLocalItems(from: source.path, to: destination.path)
+        XCTAssertEqual(try String(contentsOf: destination.path.appendingPathComponent("notes.txt"), encoding: .utf8), "OLD")
+        XCTAssertEqual(try String(contentsOf: destination.path.appendingPathComponent("notes (1).txt"), encoding: .utf8), "NEW")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.path.path))
+    }
+
+    func testMigrationListingFailureDoesNotDeleteSource() throws {
+        final class FailingFileManager: FileManager, @unchecked Sendable {
+            override func contentsOfDirectory(at url: URL, includingPropertiesForKeys keys: [URLResourceKey]?, options mask: FileManager.DirectoryEnumerationOptions = []) throws -> [URL] {
+                throw CocoaError(.fileReadNoPermission)
+            }
+        }
+        let package = makeTempPackage()
+        XCTAssertTrue(package.writeMainFile(content: "KEEP").0)
+        let destination = package.path.appendingPathComponent("destination")
+        XCTAssertThrowsError(try ScriptManager.migrateLocalItems(from: package.path, to: destination, fileManager: FailingFileManager()))
+        XCTAssertEqual(try String(contentsOf: package.jsxPath, encoding: .utf8), "KEEP")
+    }
+
     // MARK: - Regression: read falls back to the build cache (issue #6 fix)
 
     func testReadFallsBackToBuildCacheWhenPrimaryMissing() {

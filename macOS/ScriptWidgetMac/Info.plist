@@ -10,6 +10,8 @@
 	<false/>
 	<key>ITSEncryptionExportComplianceCode</key>
 	<false/>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ScriptWidget connects to the local AI server you configure, such as Ollama.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsArbitraryLoads</key>

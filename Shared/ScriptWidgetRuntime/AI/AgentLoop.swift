@@ -117,6 +117,7 @@ final class AgentLoop {
             do {
                 chatResult = try await client.chat(messages: messages, settings: request.settings)
             } catch {
+                if Task.isCancelled { return .cancelled(usage: cumulativeUsage) }
                 return .failed(message: error.localizedDescription, usage: cumulativeUsage)
             }
 

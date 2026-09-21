@@ -372,7 +372,7 @@
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Allow ScriptWidget to update Health data if you enable it.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>ScriptWidget uses your local network so you can edit widgets from a computer browser and preview them on this device.</string>
+	<string>ScriptWidget uses your local network to connect to your Ollama server, edit widgets from a computer browser, and preview them on this device.</string>
 	<key>NSLocationTemporaryUsageDescriptionDictionary</key>
 	<dict>
 		<key>ScriptWidgetLocation</key>

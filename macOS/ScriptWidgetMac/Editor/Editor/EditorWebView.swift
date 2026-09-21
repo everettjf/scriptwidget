@@ -148,7 +148,8 @@ final class EditorInternalWebView: WKWebView {
             guard
                 let self,
                 let payload = parameters?["payload"] as? [String: Any],
-                let content = payload["content"] as? String
+                let content = payload["content"] as? String,
+                parameters?["documentID"] as? String == self.currentDocumentID
             else {
                 callback?(["result": "failed", "message": "Invalid document payload"])
                 return
@@ -199,7 +200,7 @@ final class EditorInternalWebView: WKWebView {
     }
 
     private func saveCurrentContent(completion: ((Bool) -> Void)? = nil) {
-        guard isEditorReady else {
+        guard isEditorReady, let documentID = currentDocumentID else {
             completion?(false)
             return
         }
@@ -207,7 +208,9 @@ final class EditorInternalWebView: WKWebView {
             guard
                 let self,
                 let state = response as? [String: Any],
-                let content = state["content"] as? String
+                let content = state["content"] as? String,
+                self.currentDocumentID == documentID,
+                state["documentID"] as? String == documentID
             else {
                 completion?(false)
                 return
@@ -241,18 +244,15 @@ final class EditorInternalWebView: WKWebView {
 
     @discardableResult
     private func save(content: String) -> Bool {
-        guard documentSession.needsSave(content) else { return true }
-        guard let scriptModel else { return false }
-
-        let result = currentRelativePath == "main.jsx"
-            ? scriptModel.package.writeMainFile(content: content)
-            : scriptModel.package.writeFile(relativePath: currentRelativePath, content: content)
-        guard result.0 else {
-            print("Studio save failed: \(result.1)")
-            return false
+        guard let scriptModel, let documentID = currentDocumentID else { return false }
+        let saved = documentSession.save(content, documentID: documentID) { value in
+            let entry = scriptModel.package.readManifest()?.entry ?? "main.jsx"
+            return currentRelativePath == entry
+                ? scriptModel.package.writeMainFile(content: value).0
+                : scriptModel.package.writeFile(relativePath: currentRelativePath, content: value).0
         }
+        guard saved else { return false }
 
-        documentSession.markSaved(content)
         NotificationCenter.default.post(name: PreviewService.updateNotification, object: scriptModel.package)
         return true
     }

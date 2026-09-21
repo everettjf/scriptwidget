@@ -39,9 +39,15 @@ class ScriptCodeEditorViewDataObject : ObservableObject {
         
         renameObserver = NotificationCenter.default.addObserver(forName: ScriptWidgetHomeViewDataObject.scriptRenameNotification, object: nil, queue: OperationQueue.main) { [weak self] noti in
             
-            guard let newName = noti.userInfo?["newName"] as? String else { return }
-            
-            self?.scriptModel = ScriptModel(package:sharedScriptManager.getScriptPackage(packageName: newName))
+            guard let self, let newName = noti.userInfo?["newName"] as? String,
+                  let oldName = noti.userInfo?["oldName"] as? String,
+                  self.scriptModel.name == oldName else { return }
+            let oldRoot = self.scriptModel.package.path.standardizedFileURL.path + "/"
+            let oldFile = self.filePath.standardizedFileURL.path
+            let relative = oldFile.hasPrefix(oldRoot) ? String(oldFile.dropFirst(oldRoot.count)) : "main.jsx"
+            let package = sharedScriptManager.getScriptPackage(packageName: newName)
+            self.scriptModel = ScriptModel(package: package)
+            self.filePath = package.resolvedPackageURL(relativePath: relative) ?? package.jsxPath
         }
     }
 
@@ -65,6 +71,7 @@ struct ScriptCodeEditorView: View {
     @State private var showingAlert = false
     @State private var alertMessage = ""
     @State private var didSave = false
+    @State private var isSaving = false
 
     
     init(mode: ScriptCodeEditorViewMode, scriptModel: ScriptModel) {
@@ -157,19 +164,28 @@ struct ScriptCodeEditorView: View {
     
     var trailingButtons: some View {
         HStack {
-            if #available(iOS 16.1, *) {
+            if #available(iOS 16.2, *) {
                 ScriptCodeEditorNavButtonView(title: "Start Live Activity", systemImage: "lock.rectangle") {
-                    
-                    // build
-                    let buildResult = sharedScriptManager.buildScriptPackage(package: self.dataObject.scriptModel.package)
-                    print("build result = \(buildResult)")
-                    
-                    // show lock screen widget
-                    sharedLiveActivityManager.create(scriptName: self.dataObject.scriptModel.name, scriptParameter: "")
-                    showAlert("Lock screen live activity created :)")
+                    saveEditor {
+                        let package = dataObject.scriptModel.package
+                        isSaving = true
+                        DispatchQueue.global(qos: .userInitiated).async {
+                            let result = sharedScriptManager.buildScriptPackage(package: package, requireSharedContainer: true)
+                            DispatchQueue.main.async {
+                                isSaving = false
+                                guard result.0 else { showAlert(result.1); return }
+                                if sharedLiveActivityManager.create(scriptName: package.name, scriptParameter: "") != nil {
+                                    showAlert("Lock screen live activity created.")
+                                } else {
+                                    showAlert("Live Activity could not be started. Check that Live Activities are enabled and try again.")
+                                }
+                            }
+                        }
+                    }
                 }
+                .disabled(isSaving)
             }
-            
+
             ScriptCodeEditorNavButtonView(title: "Run Preview", systemImage: "play.fill") {
                 self.showRunnerView.toggle()
             }
@@ -186,11 +202,12 @@ struct ScriptCodeEditorView: View {
             }
 
             Button {
-                saveEditor()
+                saveEditor {}
             } label: {
                 Label(didSave ? "Saved" : "Save", systemImage: didSave ? "checkmark.circle.fill" : "square.and.arrow.down")
                     .labelStyle(.iconOnly)
             }
+            .disabled(isSaving)
             .keyboardShortcut("s", modifiers: .command)
             .accessibilityLabel(didSave ? "Widget saved" : "Save widget")
             .foregroundStyle(didSave ? Color.green : Color.accentColor)
@@ -209,17 +226,22 @@ struct ScriptCodeEditorView: View {
         }
     }
 
-    private func saveEditor() {
-        NotificationCenter.default.post(name: MirrorEditorService.saveNotification, object: nil)
-        withAnimation(.easeOut(duration: 0.2)) {
-            didSave = true
-        }
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) {
-            withAnimation(.easeOut(duration: 0.2)) {
-                didSave = false
+    private func saveEditor(onSuccess: @escaping () -> Void) {
+        guard !isSaving else { return }
+        isSaving = true
+        didSave = false
+        MirrorEditorService.save(documentID: dataObject.filePath.standardizedFileURL.path) { succeeded in
+            isSaving = false
+            guard succeeded else {
+                showAlert("Could not save the script. Your edits are still in the editor. Try saving again before leaving.")
+                return
             }
+            withAnimation(.easeOut(duration: 0.2)) { didSave = true }
+            onSuccess()
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.6) { didSave = false }
         }
     }
+
 }
 
 private struct ScriptCodeStudioPanelView: View {

@@ -12,6 +12,12 @@ import Combine
 
 class MirrorEditorService {
     static let saveNotification = Notification.Name("MirrorEditorSaveNotification")
+    static func save(documentID: String, completion: @escaping (Bool) -> Void) {
+        let request = MirrorEditorSaveRequest(documentID: documentID, completion: completion)
+        NotificationCenter.default.post(name: saveNotification, object: request)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 10) { request.finish(false) }
+    }
+
     fileprivate static let snapshotNotification = Notification.Name("MirrorEditorSnapshotNotification")
     fileprivate static let replaceDocumentNotification = Notification.Name("MirrorEditorReplaceDocumentNotification")
 
@@ -28,6 +34,20 @@ class MirrorEditorService {
 }
 
 typealias MirrorEditorDocumentSnapshot = StudioDocumentSnapshot
+
+private final class MirrorEditorSaveRequest {
+    let documentID: String
+    private var completion: ((Bool) -> Void)?
+    init(documentID: String, completion: @escaping (Bool) -> Void) {
+        self.documentID = documentID
+        self.completion = completion
+    }
+    func finish(_ succeeded: Bool) {
+        let callback = completion
+        completion = nil
+        callback?(succeeded)
+    }
+}
 
 private struct MirrorEditorSnapshotRequest {
     let completion: (MirrorEditorDocumentSnapshot?) -> Void
@@ -102,18 +122,13 @@ class MirrorEditorInternalView: WKWebView {
                 return
             }
             
-            // save
-            if let onWrite = self?.action?.onWrite {
-                let writeSucceed = onWrite(value)
-                if !writeSucceed {
-                    print("save failed : write file ")
-                    callback?(["result": "failed"])
-                    return
-                }
-                self?.documentSession.markSaved(value)
+            guard let self, let documentID = parameters?["documentID"] as? String,
+                  let writer = self.action?.onWrite else {
+                callback?(["result": "failed"])
+                return
             }
-
-            callback?(["result": "ok"])
+            let saved = self.documentSession.save(value, documentID: documentID, writer: writer)
+            callback?(["result": saved ? "ok" : "failed"])
         })
 
         self.bridge?.register(handlerName: StudioProtocol.documentChanged, handler: { [weak self] _, callback in
@@ -133,7 +148,13 @@ class MirrorEditorInternalView: WKWebView {
         self.loadFileURL(indexURL, allowingReadAccessTo: bundle.resourceURL!)
         
         let saveNoti = NotificationCenter.default.publisher(for: MirrorEditorService.saveNotification, object: nil).sink { [weak self] noti in
-            self?.saveCurrentContent()
+            guard let self else { return }
+            if let request = noti.object as? MirrorEditorSaveRequest {
+                guard request.documentID == self.currentDocumentID else { return }
+                self.saveCurrentContent(completion: request.finish)
+            } else {
+                self.saveCurrentContent()
+            }
         }
         self.cancellables.append(saveNoti)
 
@@ -171,35 +192,21 @@ class MirrorEditorInternalView: WKWebView {
         return accessoryView
     }
     
-    func saveCurrentContent() {
-        guard !isTearingDown else {
+    func saveCurrentContent(completion: @escaping (Bool) -> Void = { _ in }) {
+        guard !isTearingDown, let documentID = currentDocumentID else {
+            completion(false)
             return
         }
-        editorGetValue { [weak self] (succeed, value) in
-            guard let self = self else { return }
-            guard !self.isTearingDown else { return }
-            if !succeed {
+        editorGetValue { [weak self] succeed, value in
+            guard let self, !self.isTearingDown, self.currentDocumentID == documentID, succeed else {
+                completion(false)
                 return
             }
-            
-            
-            if !self.documentSession.needsSave(value) {
-//                print("content same, already saved")
-                return
-            }
-            
-            if let onWrite = self.action?.onWrite {
-                let saveSucceed = onWrite(value)
-                if !saveSucceed {
-                    return
-                }
-                self.documentSession.markSaved(value)
-            }
-            
-            print("save succeed")
+            guard let writer = self.action?.onWrite else { completion(false); return }
+            completion(self.documentSession.save(value, documentID: documentID, writer: writer))
         }
     }
-    
+
     func editorInsert(value: String) {
         guard !isTearingDown else { return }
         callStudio(handlerName: StudioProtocol.editorInsert, payload: ["content": value])
@@ -226,7 +233,8 @@ class MirrorEditorInternalView: WKWebView {
                 return
             }
             
-            guard let value = data["content"] as? String else {
+            guard data["documentID"] as? String == self.currentDocumentID,
+                  let value = data["content"] as? String else {
                 callback(false, "")
                 return
             }

@@ -103,6 +103,15 @@ final class StudioDocumentSession {
         if let documentID { drafts.remove(documentID: documentID) }
     }
 
+    func save(_ content: String, documentID: String, writer: (String) -> Bool) -> Bool {
+        guard self.documentID == documentID else { return false }
+        guard needsSave(content) else { return true }
+        recordDraft(content)
+        guard writer(content) else { return false }
+        markSaved(content)
+        return true
+    }
+
     func needsSave(_ content: String) -> Bool {
         content != savedContent
     }
@@ -364,7 +373,12 @@ enum ScriptWidgetCompiledArtifactStore {
 struct ScriptWidgetPackage {
     let path: URL
     let name: String
-    let jsxPath: URL
+    var jsxPath: URL {
+        if let entry = readManifest()?.entry, let url = resolvedPackageURL(relativePath: entry) {
+            return url
+        }
+        return path.appendingPathComponent("main.jsx")
+    }
     let imagePath: URL
     let metaPath: URL
     let manifestPath: URL
@@ -373,7 +387,6 @@ struct ScriptWidgetPackage {
     init(path: URL, readonly: Bool) {
         self.readonly = readonly
         self.path = path
-        self.jsxPath = self.path.appendingPathComponent("main.jsx")
         self.imagePath = self.path.appendingPathComponent("image")
         self.metaPath = self.path.appendingPathComponent("meta.json")
         self.manifestPath = self.path.appendingPathComponent("widget.json")
@@ -386,8 +399,23 @@ struct ScriptWidgetPackage {
         return try? JSONDecoder().decode(ScriptMetadata.self, from: data)
     }
 
+    var hasManifest: Bool {
+        FileManager.default.fileExists(atPath: manifestPath.path) ||
+            FileManager.default.fileExists(atPath: path.appendingPathComponent(".widget.json.icloud").path) ||
+            (!readonly && buildCachePath(for: manifestPath).map { FileManager.default.fileExists(atPath: $0.path) } == true)
+    }
+
     func readManifest() -> WidgetPackageManifest? {
-        guard let data = try? Data(contentsOf: manifestPath) else { return nil }
+        // A present but malformed manifest is authoritative; never fall back to
+        // an older manifest or reinterpret the package as legacy.
+        let data: Data
+        if FileManager.default.fileExists(atPath: manifestPath.path) {
+            guard let primary = try? Data(contentsOf: manifestPath) else { return nil }
+            data = primary
+        } else if !readonly, let cached = buildCachePath(for: manifestPath),
+                  let fallback = try? Data(contentsOf: cached) {
+            data = fallback
+        } else { return nil }
         guard let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else { return nil }
         let allowedKeys: Set<String> = [
             "formatVersion", "id", "name", "version", "runtimeVersion", "entry",
@@ -429,7 +457,9 @@ struct ScriptWidgetPackage {
             try makePackageDirectory()
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
-            try encoder.encode(manifest).write(to: manifestPath, options: .atomic)
+            let data = try encoder.encode(manifest)
+            try data.write(to: manifestPath, options: .atomic)
+            syncBuildCache(fullPath: manifestPath, data: data)
             try FileManager.default.setAttributes(
                 [.protectionKey: FileProtectionType.none],
                 ofItemAtPath: manifestPath.path
@@ -450,6 +480,7 @@ struct ScriptWidgetPackage {
                 ? (true, "")
                 : (false, report.errors.map(\.message).joined(separator: "\n"))
         }
+        guard !hasManifest else { return (false, "Invalid or unavailable widget.json") }
         guard !readonly else { return (true, "") }
         return writeManifest(.legacy(name: name, metadata: readMetadata()))
     }
@@ -485,33 +516,45 @@ struct ScriptWidgetPackage {
     }
     
     func updateDirectory(_ dirPath: URL) {
-        do {
-            let items = try FileManager.default.contentsOfDirectory(atPath: dirPath.path)
-            for item in items {
-                let path = self.path.appendingPathComponent(item)
-                
-                var isDir: ObjCBool = false
-                if !FileManager.default.fileExists(atPath: path.path, isDirectory: &isDir) {
-                    continue
-                }
-                
-                if isDir.boolValue {
-                    updateDirectory(path)
-                } else {
-                    try? FileManager.default.startDownloadingUbiquitousItem(at: path)
-                }
-            }
-        } catch {
-            print("error : \(error)")
+        for url in downloadableFileURLs(in: dirPath) {
+            try? FileManager.default.startDownloadingUbiquitousItem(at: url)
         }
     }
-    
+
+    /// Enumerates nested and evicted files without following symlinks.
+    func downloadableFileURLs(in directory: URL) -> [URL] {
+        let root = path.standardizedFileURL.resolvingSymlinksInPath().path
+        let candidate = directory.standardizedFileURL.resolvingSymlinksInPath().path
+        guard candidate == root || candidate.hasPrefix(root + "/"),
+              let enumerator = FileManager.default.enumerator(
+                at: directory, includingPropertiesForKeys: [.isDirectoryKey, .isSymbolicLinkKey]
+              ) else { return [] }
+        var urls: [URL] = []
+        for case let url as URL in enumerator {
+            guard let values = try? url.resourceValues(forKeys: [.isDirectoryKey, .isSymbolicLinkKey]) else { continue }
+            if values.isSymbolicLink == true {
+                enumerator.skipDescendants()
+                continue
+            }
+            if values.isDirectory != true { urls.append(ScriptManager.logicalURL(for: url)) }
+        }
+        return urls
+    }
+
     func readMainFile() -> (String?, String) {
-        return readFile(fullPath: self.jsxPath)
+        let result = readMainFileResult()
+        return (result.content, result.message)
     }
 
     func readMainFileResult() -> ScriptFileReadResult {
-        return readFileResult(fullPath: self.jsxPath)
+        if hasManifest {
+            guard let manifest = readManifest(),
+                  WidgetPackageManifestValidator.validate(manifest, package: self, checkEntryExists: false).isValid else {
+                return ScriptFileReadResult(content: nil, source: nil, icloud: .error("Invalid or unavailable widget.json"),
+                                            message: "Invalid or unavailable widget.json")
+            }
+        }
+        return readFileResult(fullPath: jsxPath)
     }
 
     func readFile(relativePath: String) -> (String?, String) {
@@ -660,15 +703,20 @@ struct ScriptWidgetPackage {
         guard let cacheFilePath = buildCachePath(for: fullPath) else {
             return
         }
-        let directory = cacheFilePath.deletingLastPathComponent()
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true, attributes: [
-                FileAttributeKey.protectionKey: FileProtectionType.none
-            ])
-            try data.write(to: cacheFilePath, options: .atomic)
-            try FileManager.default.setAttributes([FileAttributeKey.protectionKey: FileProtectionType.none], ofItemAtPath: cacheFilePath.path)
-        } catch {
-            print("sync build cache failed: \(error)")
+        // Reading a build package must not rewrite the file being rendered.
+        guard cacheFilePath.standardizedFileURL.resolvingSymlinksInPath() != fullPath.standardizedFileURL.resolvingSymlinksInPath() else { return }
+        guard let buildRoot = ScriptManager.getSandboxBuildDirectoryURL() else { return }
+        var coordinationError: NSError?
+        NSFileCoordinator().coordinate(writingItemAt: buildRoot.appendingPathComponent(name), options: .forMerging,
+                                       error: &coordinationError) { _ in
+            do {
+                try FileManager.default.createDirectory(at: cacheFilePath.deletingLastPathComponent(),
+                    withIntermediateDirectories: true, attributes: [.protectionKey: FileProtectionType.none])
+                try data.write(to: cacheFilePath, options: .atomic)
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: cacheFilePath.path)
+            } catch {
+                print("Could not refresh the widget cache.")
+            }
         }
     }
 
@@ -707,9 +755,9 @@ struct ScriptWidgetPackage {
         
         guard let data = content.data(using: .utf8) else { return (false, "Failed to convert code to utf8 encoding") }
         do {
-            if !FileManager.default.fileExists(atPath: fullPath.path) {
-                try self.makePackageDirectory()
-            }
+            try FileManager.default.createDirectory(at: fullPath.deletingLastPathComponent(),
+                                                    withIntermediateDirectories: true,
+                                                    attributes: [.protectionKey: FileProtectionType.none])
             
             try data.write(to: fullPath, options: .atomic)
             

@@ -32,8 +32,10 @@ struct SettingAIView: View {
                 }
                 .onDelete(perform: deleteProfiles)
 
-                Button {
-                    addProfile()
+                Menu {
+                    Button("Apple PCC") { addProfile(.makeApplePrivateCloudCompute()) }
+                    Button("Ollama") { addProfile(.makeOllama()) }
+                    Button("OpenAI-compatible") { addProfile(.makeDefault(named: "Custom API")) }
                 } label: {
                     Label("Add Profile", systemImage: "plus.circle")
                 }
@@ -131,8 +133,7 @@ struct SettingAIView: View {
         temperature = AISettingsStore.shared.loadTemperature()
     }
 
-    private func addProfile() {
-        let new = AIProfile.makeDefault(named: "New Profile")
+    private func addProfile(_ new: AIProfile) {
         AISettingsStore.shared.upsertProfile(new)
         AISettingsStore.shared.setActiveProfile(id: new.id)
         reload()
@@ -166,6 +167,9 @@ struct AIProfileEditorView: View {
     @State private var authMethod: AIAuthMethod = .apiKey
     @State private var providerKind: AIProviderKind = .openAICompatible
     @State private var apiKeyVisible: Bool = false
+    @State private var discoveredModels: [String] = []
+    @State private var loadingModels = false
+    @State private var modelListMessage = ""
 
     @State private var oauthAccountID: String = ""
     @State private var oauthExpiresAt: Date?
@@ -185,7 +189,7 @@ struct AIProfileEditorView: View {
         ("OpenAI",   "https://api.openai.com", ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1", "o4-mini"]),
         ("DeepSeek", "https://api.deepseek.com", ["deepseek-chat", "deepseek-reasoner"]),
         ("xAI",      "https://api.x.ai", ["grok-2-latest", "grok-2-mini"]),
-        ("Local",    "http://localhost:11434", ["llama3.2", "qwen2.5-coder"]),
+        ("Ollama",   "http://localhost:11434", []),
     ]
 
     var body: some View {
@@ -219,6 +223,10 @@ struct AIProfileEditorView: View {
                         HStack(spacing: 8) {
                             ForEach(Self.providerPresets, id: \.label) { preset in
                                 Button(preset.label) {
+                                    apiKey = ""
+                                    authMethod = preset.label == "Ollama" ? .none : .apiKey
+                                    providerKind = preset.label == "Ollama" ? .ollama : .openAICompatible
+                                    model = ""
                                     baseURL = preset.host
                                     if let first = preset.models.first {
                                         model = first
@@ -230,15 +238,31 @@ struct AIProfileEditorView: View {
                             }
                         }
                     }
-                    TextField("https://api.openai.com", text: $baseURL)
+                    TextField("API Base URL", text: $baseURL)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .keyboardType(.URL)
-                        .onChange(of: baseURL) { _ in persist() }
+                        .onChange(of: baseURL) { _ in endpointChanged() }
                 }
 
                 Section("Model") {
-                    TextField("gpt-4o-mini", text: $model)
+                    Button(loadingModels ? "Loading Models…" : "Load Models from Server") { loadModels() }
+                        .disabled(loadingModels || authMethod == .oauth)
+                    if !modelListMessage.isEmpty {
+                        Text(modelListMessage).font(.caption).foregroundStyle(.secondary)
+                    }
+                    if !discoveredModels.isEmpty {
+                        Menu("Choose Installed Model") {
+                            ForEach(discoveredModels, id: \.self) { id in
+                                Button(id) { model = id; persist() }
+                            }
+                        }
+                    }
+                    if providerKind == .ollama {
+                        Text("Ollama must be running. On Mac, localhost connects to this Mac. On iPhone or iPad, enter the address of the computer running Ollama. Local Ollama does not require an API key.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
+                    TextField("Model name", text: $model)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                         .onChange(of: model) { _ in persist() }
@@ -258,6 +282,7 @@ struct AIProfileEditorView: View {
 
                 Section {
                     Picker("Method", selection: $authMethod) {
+                        Text("No Authentication").tag(AIAuthMethod.none)
                         Text("API Key").tag(AIAuthMethod.apiKey)
                         Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
                     }
@@ -283,7 +308,7 @@ struct AIProfileEditorView: View {
                             .buttonStyle(.borderless)
                         }
                         .onChange(of: apiKey) { _ in persist() }
-                    } else {
+                    } else if authMethod == .oauth {
                         oauthSection
                     }
                 } header: {
@@ -292,7 +317,7 @@ struct AIProfileEditorView: View {
                     if authMethod == .apiKey {
                         Text("API key is stored in the Keychain on this device.")
                             .foregroundColor(.secondary)
-                    } else {
+                    } else if authMethod == .oauth {
                         Text("OAuth uses the Codex CLI client and only works with the OpenAI host (api.openai.com). The token is stored in the Keychain and refreshed automatically.")
                             .foregroundColor(.secondary)
                     }
@@ -339,6 +364,7 @@ struct AIProfileEditorView: View {
     }
 
     private var modelSuggestions: [String] {
+        if providerKind == .ollama { return [] }
         let host = URL(string: AIProfile(
             id: "", name: "", baseURL: baseURL, model: "", apiKey: "", authMethod: .apiKey
         ).normalizedBaseURL)?.host ?? ""
@@ -347,7 +373,7 @@ struct AIProfileEditorView: View {
         } else if host.contains("x.ai") {
             return ["grok-2-latest", "grok-2-mini"]
         } else if host.contains("localhost") || host.contains("127.0.0.1") {
-            return ["llama3.2", "qwen2.5-coder", "mistral"]
+            return []
         } else {
             return ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1", "o4-mini"]
         }
@@ -413,14 +439,36 @@ struct AIProfileEditorView: View {
         }
     }
 
-    private var configured: Bool {
-        if providerKind == .applePrivateCloudCompute {
-            return true
+    private var configured: Bool { currentSnapshot().isConfigured }
+
+    private func endpointChanged() {
+        if let previous = AISettingsStore.shared.loadProfiles().first(where: { $0.id == profileID }),
+           previous.normalizedBaseURL != currentSnapshot().normalizedBaseURL {
+            let sanitized = previous.changingEndpoint(to: baseURL)
+            apiKey = sanitized.apiKey
+            authMethod = providerKind == .ollama ? .none : sanitized.authMethod
+            oauthState = .idle
         }
-        if authMethod == .apiKey {
-            return !apiKey.trimmingCharacters(in: .whitespaces).isEmpty
-        } else {
-            return oauthState == .signedIn
+        discoveredModels = []
+        modelListMessage = ""
+        testMessage = ""
+        persist()
+    }
+
+    private func loadModels() {
+        let snapshot = currentSnapshot()
+        loadingModels = true
+        modelListMessage = ""
+        Task {
+            do {
+                let ids = try await AIClient.shared.availableModels(profile: snapshot)
+                guard currentSnapshot() == snapshot else { loadingModels = false; return }
+                discoveredModels = ids
+                modelListMessage = ids.isEmpty ? "No models found. Install a model in Ollama or enter a model name manually." : "Models loaded. Select one or enter a name manually."
+            } catch {
+                if currentSnapshot() == snapshot { modelListMessage = "Could not load models. Check the server and authentication, or enter the model name manually." }
+            }
+            loadingModels = false
         }
     }
 
@@ -429,6 +477,8 @@ struct AIProfileEditorView: View {
             notFound = true
             return
         }
+        discoveredModels = []
+        modelListMessage = ""
         name = profile.name
         baseURL = profile.baseURL
         model = profile.model

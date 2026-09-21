@@ -25,6 +25,7 @@
 import Foundation
 
 enum AIAuthMethod: String, Codable {
+    case none
     case apiKey
     case oauth
 }
@@ -32,6 +33,7 @@ enum AIAuthMethod: String, Codable {
 enum AIProviderKind: String, Codable {
     case applePrivateCloudCompute
     case openAICompatible
+    case ollama
 }
 
 struct AIProfile: Identifiable, Equatable {
@@ -71,15 +73,44 @@ struct AIProfile: Identifiable, Equatable {
         )
     }
 
+    static func makeOllama() -> AIProfile {
+        AIProfile(id: UUID().uuidString, name: "Ollama", baseURL: "http://localhost:11434", model: "",
+                  apiKey: "", authMethod: .none, providerKind: .ollama)
+    }
+
+    var endpointURL: URL? {
+        guard let components = URLComponents(string: normalizedBaseURL),
+              ["https", "http"].contains(components.scheme?.lowercased() ?? ""),
+              let host = components.host, !host.isEmpty,
+              components.user == nil, components.password == nil,
+              components.query == nil, components.fragment == nil,
+              !components.path.hasSuffix("/chat/completions") else { return nil }
+        return components.url
+    }
+
     var isConfigured: Bool {
-        providerKind == .applePrivateCloudCompute ||
-            !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        if providerKind == .applePrivateCloudCompute { return true }
+        guard endpointURL != nil, !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        if authMethod == .none { return true }
+        if authMethod == .oauth && !isOpenAIHost { return false }
+        return !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Credentials belong to an endpoint, not a reusable provider preset.
+    func changingEndpoint(to address: String) -> AIProfile {
+        var result = self
+        result.baseURL = address
+        if result.normalizedBaseURL != normalizedBaseURL {
+            result.apiKey = ""
+            result.authMethod = providerKind == .ollama ? .none : .apiKey
+        }
+        return result
     }
 
     var normalizedBaseURL: String {
         let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return AIProfile.defaultBaseURL
+            return providerKind == .ollama ? "http://localhost:11434" : AIProfile.defaultBaseURL
         }
         // SwiftOpenAI appends /v1 itself.
         var normalized = trimmed
@@ -175,8 +206,8 @@ final class AISettingsStore {
     private let defaults: UserDefaults
     private let keychain = AIKeychain.live
 
-    private init() {
-        self.defaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? .standard
+    init(defaults: UserDefaults = UserDefaults(suiteName: "group.everettjf.scriptwidget") ?? .standard) {
+        self.defaults = defaults
     }
 
     // MARK: - Profiles
@@ -189,7 +220,7 @@ final class AISettingsStore {
             if !profiles.contains(where: { $0.providerKind == .applePrivateCloudCompute }) {
                 let appleProfile = AIProfile.makeApplePrivateCloudCompute()
                 profiles.insert(appleProfile, at: 0)
-                let shouldActivate = !defaults.bool(forKey: Self.applePCCMigration)
+                let shouldActivate = defaults.string(forKey: AISettingsKey.activeProfileID) == nil
                 saveProfiles(
                     profiles,
                     activeID: shouldActivate ? appleProfile.id : nil,

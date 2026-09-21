@@ -17,6 +17,7 @@ struct EditorMainView: View {
     
     init(scriptModel: ScriptModel) {
         self.scriptModel = scriptModel
+        _selectedFilePath = State(initialValue: scriptModel.package.readManifest()?.entry ?? "main.jsx")
     }
     
     var body: some View {

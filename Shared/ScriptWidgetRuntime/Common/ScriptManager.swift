@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Darwin
 import SwiftUI
 import ZipArchive
 
@@ -217,6 +218,8 @@ private extension Data {
 
 class ScriptManager {
     
+    static let packageRemovedNotification = Notification.Name("ScriptWidgetPackageRemoved")
+
     let scriptDirectory: URL
     let isUsingiCloud: Bool
     let isBuild: Bool
@@ -352,65 +355,45 @@ class ScriptManager {
         guard let icloudUrl = ScriptManager.getICloudRootDirectoryURL() else { return false }
         guard let sandboxUrl = ScriptManager.getSandboxRootDirectoryURL() else { return false }
         
-        var errorOccur = false
-        guard let sandboxItems = try? FileManager.default.contentsOfDirectory(atPath: sandboxUrl.path) else { return false }
-        for item in sandboxItems {
-            if item == "__Build" {
-                continue
+        do {
+            let roots = try FileManager.default.contentsOfDirectory(at: sandboxUrl, includingPropertiesForKeys: [.isDirectoryKey])
+            for root in roots where root.lastPathComponent != "__Build" {
+                try migrateLocalItems(from: root, to: icloudUrl.appendingPathComponent(root.lastPathComponent))
             }
-            
-            let srcRoot = sandboxUrl.appendingPathComponent(item)
-            let destRoot = icloudUrl.appendingPathComponent(item)
-            
-            // make sure destRoot exist
-            try? FileManager.default.createDirectory(at: destRoot, withIntermediateDirectories: true, attributes: [
-                FileAttributeKey.protectionKey : FileProtectionType.none
-            ])
-            
-            // move each item in root
-            if let files = try? FileManager.default.contentsOfDirectory(atPath: srcRoot.path) {
-                
-                for fileName in files {
-                    let srcPath = srcRoot.appendingPathComponent(fileName)
-                    var destPath = destRoot.appendingPathComponent(fileName)
-                    
-                    let fileExt = destPath.pathExtension
-                    let fileNameNoExt = destPath.deletingPathExtension().lastPathComponent
-                    
-                    for index in 1...1000 {
-                        if !FileManager.default.fileExists(atPath: destPath.path) {
-                            break
-                        }
-                        destPath = destRoot.appendingPathComponent("\(fileNameNoExt) (\(index)).\(fileExt)")
-                    }
-                    
-                    print("will move \(srcPath) to \(destPath)")
-                    
-                    do {
-                        // make sure succeed
-                        try FileManager.default.moveItem(at: srcPath, to: destPath)
-                        
-                        // succeed, delete src, ignore result
-                        try? FileManager.default.removeItem(at: srcPath)
-                        
-                        print("move done")
-                    } catch {
-                        print("error occur = \(error)")
-                        errorOccur = true
-                    }
-                }
-            }
-            
-            if !errorOccur {
-                // remove srcRoot
-                try? FileManager.default.removeItem(at: srcRoot)
-            }
-
+            return true
+        } catch {
+            return false
         }
-        
-        return !errorOccur
     }
-    
+
+    /// A failed listing or move must never trigger deletion of unverified data.
+    /// Successfully moved items are absent from the source; retry is safe.
+    static func migrateLocalItems(from source: URL, to destination: URL, fileManager: FileManager = .default) throws {
+        let items = try fileManager.contentsOfDirectory(at: source, includingPropertiesForKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+        try fileManager.createDirectory(at: destination, withIntermediateDirectories: true)
+        for item in items {
+            let values = try item.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey])
+            guard values.isSymbolicLink != true else {
+                throw CocoaError(.fileReadUnsupportedScheme)
+            }
+            var target = destination.appendingPathComponent(item.lastPathComponent)
+            var suffix = 1
+            while fileManager.fileExists(atPath: target.path) {
+                let name = values.isDirectory == true || item.pathExtension.isEmpty
+                    ? "\(item.lastPathComponent) (\(suffix))"
+                    : "\(item.deletingPathExtension().lastPathComponent) (\(suffix)).\(item.pathExtension)"
+                target = destination.appendingPathComponent(name)
+                suffix += 1
+            }
+            try fileManager.moveItem(at: item, to: target)
+        }
+        // rmdir is deliberately nonrecursive: it fails if another process
+        // added a file after enumeration, preserving that new file.
+        source.withUnsafeFileSystemRepresentation { path in
+            if let path { _ = rmdir(path) }
+        }
+    }
+
     func isICloudAvaliable() -> Bool {
         if let _ = FileManager.default.url(forUbiquityContainerIdentifier: nil) {
             return true
@@ -456,6 +439,7 @@ class ScriptManager {
         let file = ScriptWidgetPackage(path: srcScriptPath)
         let renameResult = file.rename(destPath: destScriptPath)
         if renameResult.0, !self.isBuild {
+            NotificationCenter.default.post(name: Self.packageRemovedNotification, object: srcPackageName)
             _ = removeBuildScriptPackage(package: file)
             let newPackage = self.getScriptPackage(packageName: destPackageName)
             _ = buildScriptPackage(package: newPackage)
@@ -570,6 +554,9 @@ class ScriptManager {
         let scriptDirPath = self.getPackagePathFromPackageName(packageName: packageName)
         let package = ScriptWidgetPackage(path: scriptDirPath)
         let deleteResult = package.delete()
+        if deleteResult {
+            NotificationCenter.default.post(name: Self.packageRemovedNotification, object: packageName)
+        }
         
         let deleteBuildResult = removeBuildScriptPackage(package: package)
         
@@ -739,7 +726,7 @@ extension ScriptManager {
 extension ScriptManager {
     
     
-    func buildScriptPackage(package: ScriptWidgetPackage) -> (Bool, String) {
+    func buildScriptPackage(package: ScriptWidgetPackage, requireSharedContainer: Bool = false) -> (Bool, String) {
         if isBuild {
             return (false, "Not work when is build is true")
         }
@@ -747,29 +734,57 @@ extension ScriptManager {
             return (false, "Failed to get build directory")
         }
         
-        self.makeSureDirectoryExist(path: buildDirectory)
-        
-        // remove target
-        let targetDirectory = buildDirectory.appendingPathComponent(package.name)
-        
-        if FileManager.default.fileExists(atPath: targetDirectory.path) {
-            do {
-                try FileManager.default.removeItem(at: targetDirectory)
-            } catch {
-                return (false, "Failed to remove old files : \(error)")
+        if requireSharedContainer {
+            guard let sharedRoot = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget"),
+                  sharedRoot.appendingPathComponent("__Build").standardizedFileURL.resolvingSymlinksInPath() == buildDirectory.standardizedFileURL.resolvingSymlinksInPath() else {
+                return (false, "The shared widget container is unavailable. Restart ScriptWidget and try again.")
             }
         }
-        
-        // copy new to target
+        self.makeSureDirectoryExist(path: buildDirectory)
+
+        let targetDirectory = buildDirectory.appendingPathComponent(package.name)
+        let staging = buildDirectory.appendingPathComponent(".staging-\(UUID().uuidString)")
+        defer { try? FileManager.default.removeItem(at: staging) }
         do {
-            try FileManager.default.copyItem(at: package.path, to: targetDirectory)
+            try FileManager.default.copyItem(at: package.path, to: staging)
+            try FileManager.default.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: staging.path)
+            let staged = ScriptWidgetPackage(path: staging, readonly: true)
+            if staged.hasManifest {
+                guard let manifest = staged.readManifest(),
+                      WidgetPackageManifestValidator.validate(manifest, package: staged).isValid else {
+                    return (false, "Package manifest or files are unavailable. Sync the package before starting the activity.")
+                }
+            }
+            guard (try? String(contentsOf: staged.jsxPath, encoding: .utf8)) != nil else {
+                return (false, "Script is unavailable. Open the app online to finish syncing.")
+            }
+            // Do not publish unresolved iCloud placeholders as a working build.
+            let files = FileManager.default.enumerator(at: staging, includingPropertiesForKeys: [.isSymbolicLinkKey])
+            while let url = files?.nextObject() as? URL {
+                guard !url.lastPathComponent.hasSuffix(".icloud"),
+                      (try url.resourceValues(forKeys: [.isSymbolicLinkKey])).isSymbolicLink != true else {
+                    return (false, "Package contains unavailable files or symbolic links.")
+                }
+                try FileManager.default.setAttributes([.protectionKey: FileProtectionType.none], ofItemAtPath: url.path)
+            }
+            var coordinationError: NSError?
+            var publicationError: Error?
+            NSFileCoordinator().coordinate(writingItemAt: targetDirectory, options: .forReplacing, error: &coordinationError) { target in
+                do {
+                    if FileManager.default.fileExists(atPath: target.path) {
+                        _ = try FileManager.default.replaceItemAt(target, withItemAt: staging)
+                    } else {
+                        try FileManager.default.moveItem(at: staging, to: target)
+                    }
+                } catch { publicationError = error }
+            }
+            if let error = coordinationError ?? publicationError as NSError? { throw error }
+            return (true, "Succeed")
         } catch {
-            return (false, "Failed to copy files : \(error)")
+            return (false, "Failed to prepare script: \(error.localizedDescription)")
         }
-        
-        return (true, "Succeed")
     }
-    
+
     func removeBuildScriptPackage(package: ScriptWidgetPackage) -> (Bool, String) {
         if isBuild {
             return (false, "Not work when is build is true")
@@ -803,9 +818,9 @@ extension ScriptManager {
         
         let items = listScripts()
         for item in items {
-            _ = buildScriptPackage(package: item.package)
+            let result = buildScriptPackage(package: item.package)
+            if !result.0 { return result }
         }
-        
         return (true, "Succeed")
     }
     

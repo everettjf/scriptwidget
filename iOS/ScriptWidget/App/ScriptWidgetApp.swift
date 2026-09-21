@@ -28,6 +28,7 @@ struct ScriptWidgetApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
+        _ = sharedLiveActivityManager
         ScriptWidgetPrecompiler.install()
     }
     
