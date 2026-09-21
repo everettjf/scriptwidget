@@ -26,7 +26,7 @@ An opt-in native Ollama test reads `/v1/models` and generates a response through
 Validation results and CI link are recorded in the pull request. Local logs are `/tmp/scriptwidget-stability-gate-final.log`, `/tmp/scriptwidget-stability-ipad.log`, and `/tmp/scriptwidget-ollama-final.log`; Xcode result bundles are under `/tmp/scriptwidget-release-readiness/`.
 
 - Focused native cache/AI regression run passed, including a real no-key Ollama response on the isolated local test server (`qwen2.5:1.5b`).
-- macOS settings were manually exercised: add Ollama, load installed models, choose one, test connection; result was `pong`.
+- macOS settings were manually exercised: add Ollama, load installed models, choose one, test connection; result was `pong`. Final screenshot review found and fixed a clipped authentication label in the narrow window. The macOS app scheme was rebuilt and the corrected label was visually verified; before/after screenshots are in the task.
 - Final `release-readiness.sh` passed on Xcode 27: editor 29 tests, macOS 160 passed / 6 opt-in skipped, iPhone 163 passed / 6 opt-in skipped, plus iOS/macOS app builds and metadata/generated-bundle checks.
 - Final `ipad-icloud-tests.sh` passed: iPad 163 passed / 6 opt-in skipped. Deterministic iCloud-state coverage passed; signed-container tests were not enabled.
 - The final direct URLSession transport also passed the opt-in native Ollama test with `qwen2.5:1.5b`.

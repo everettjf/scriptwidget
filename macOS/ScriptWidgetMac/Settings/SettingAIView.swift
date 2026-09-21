@@ -409,7 +409,7 @@ private struct AIProfileEditorPane: View {
 
                 Section("Authentication") {
                     Picker("Method", selection: $authMethod) {
-                        Text("No Authentication").tag(AIAuthMethod.none)
+                        Text("None").tag(AIAuthMethod.none)
                         Text("API Key").tag(AIAuthMethod.apiKey)
                         Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
                     }
