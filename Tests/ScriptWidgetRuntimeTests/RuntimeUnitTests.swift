@@ -603,6 +603,19 @@ final class StudioDraftStoreTests: XCTestCase {
         XCTAssertNil(store.recover(documentID: "/widget/main.jsx", currentContent: "draft"))
     }
 
+    func testFailedSaveRetainsDraftAndRejectsStaleDocument() {
+        let session = StudioDocumentSession(drafts: store)
+        _ = session.open(documentID: "/widget/a.jsx", content: "original")
+        XCTAssertFalse(session.save("edits", documentID: "/widget/a.jsx", writer: { _ in false }))
+        XCTAssertEqual(session.savedContent, "original")
+        XCTAssertEqual(store.recover(documentID: "/widget/a.jsx", currentContent: "original")?.content, "edits")
+        _ = session.open(documentID: "/widget/b.jsx", content: "other")
+        var wrote = false
+        XCTAssertFalse(session.save("stale-a", documentID: "/widget/a.jsx", writer: { _ in wrote = true; return true }))
+        XCTAssertFalse(wrote)
+        XCTAssertEqual(session.savedContent, "other")
+    }
+
     func testDocumentSessionDraftNeverCrossesDocumentIdentity() {
         let session = StudioDocumentSession(drafts: store)
         _ = session.open(documentID: "/widget/a.jsx", content: "a")

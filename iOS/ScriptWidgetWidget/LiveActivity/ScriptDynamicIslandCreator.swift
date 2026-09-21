@@ -36,12 +36,15 @@ class ScriptDynamicIslandCreator {
         
         self.systemLog("[START]")
         
-        let (JSX, errorInfo) = self.package.readMainFile()
-        guard let JSX = JSX else {
-            self.rootElement = ScriptWidgetDynamicIslandRuntimeElement(text: "Failed to open script : \(errorInfo)")
+        let read = package.readMainFileResult()
+        guard let JSX = read.content else {
+            let message = read.icloud == .downloading
+                ? "Downloading script. Open ScriptWidget to finish syncing, then start the activity again."
+                : "Script unavailable. Open ScriptWidget and start the activity again."
+            self.rootElement = ScriptWidgetDynamicIslandRuntimeElement(text: message)
             return
         }
-        
+
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : "dynamic-island",
             "widget-param": scriptParameter,

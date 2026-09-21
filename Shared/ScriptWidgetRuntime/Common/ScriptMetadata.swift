@@ -181,7 +181,7 @@ struct WidgetPackageValidationReport: Codable, Equatable {
 }
 
 enum WidgetPackageManifestValidator {
-    static func validate(_ manifest: WidgetPackageManifest, package: ScriptWidgetPackage) -> WidgetPackageValidationReport {
+    static func validate(_ manifest: WidgetPackageManifest, package: ScriptWidgetPackage, checkEntryExists: Bool = true) -> WidgetPackageValidationReport {
         var issues: [WidgetPackageValidationIssue] = []
         func error(_ code: String, _ message: String) {
             issues.append(.init(severity: .error, code: code, message: message))
@@ -211,7 +211,7 @@ enum WidgetPackageManifestValidator {
         } else if let entryURL = package.resolvedPackageURL(relativePath: manifest.entry) {
             if !["js", "jsx"].contains(entryURL.pathExtension.lowercased()) {
                 error("invalid_entry_type", "entry must be a .js or .jsx file.")
-            } else if !FileManager.default.fileExists(atPath: entryURL.path) {
+            } else if checkEntryExists && !FileManager.default.fileExists(atPath: entryURL.path) {
                 error("missing_entry", "Entry file \(manifest.entry) does not exist.")
             }
         } else {

@@ -10,12 +10,33 @@ import ActivityKit
 
 
 class ScriptLiveActivityManager {
+    private var removalObserver: NSObjectProtocol?
+
+    init() {
+        removalObserver = NotificationCenter.default.addObserver(forName: ScriptManager.packageRemovedNotification,
+                                                                 object: nil, queue: .main) { notification in
+            guard let name = notification.object as? String else { return }
+            if #available(iOS 16.2, *) {
+                Task {
+                    for activity in Activity<ScriptLiveActivityAttributes>.activities where activity.attributes.scriptName == name {
+                        await activity.end(nil, dismissalPolicy: .immediate)
+                    }
+                }
+            }
+        }
+    }
+
+    deinit {
+        if let removalObserver { NotificationCenter.default.removeObserver(removalObserver) }
+    }
+
     static let maximumStateBytes = 4 * 1_024
 
     @discardableResult
     func create(scriptName: String, scriptParameter: String, initialState: String = "") -> String? {
         if #available(iOS 16.2, *) {
-            guard Self.isValidState(initialState) else { return nil }
+            guard Self.isValidState(initialState),
+                  buildScriptManager.getScriptPackage(packageName: scriptName).readMainFile().0 != nil else { return nil }
             guard ActivityAuthorizationInfo().areActivitiesEnabled else { return nil }
             let initialContentState = ScriptLiveActivityAttributes.ScriptLiveActivityState(scriptState: initialState)
             let activityAttributes = ScriptLiveActivityAttributes(scriptName: scriptName, scriptParameter: scriptParameter)

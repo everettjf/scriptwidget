@@ -62,6 +62,9 @@ enum AIClientError: LocalizedError {
 
 actor AIClient {
     static let shared = AIClient()
+    private let session: URLSession
+
+    init(session: URLSession = .shared) { self.session = session }
 
     func chat(messages: [AIMessage], settings: AISettings) async throws -> AIChatResult {
         if settings.providerKind == .applePrivateCloudCompute {
@@ -69,11 +72,11 @@ actor AIClient {
         }
 
         let trimmedKey = settings.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmedKey.isEmpty else {
+        guard settings.authMethod == .none || !trimmedKey.isEmpty else {
             throw AIClientError.missingAPIKey
         }
         let baseURLString = settings.normalizedBaseURL
-        guard URL(string: baseURLString) != nil else {
+        guard settings.profile.endpointURL != nil else {
             throw AIClientError.invalidBaseURL(baseURLString)
         }
 
@@ -82,23 +85,16 @@ actor AIClient {
         // key profiles pass through unchanged.
         let resolvedKey: String
         if settings.authMethod == .oauth {
+            guard settings.profile.isOpenAIHost else {
+                throw AIClientError.upstream("OAuth credentials can only be used with the OpenAI endpoint.")
+            }
             do {
                 resolvedKey = try await AIOpenAIOAuthVault.resolvedAccessToken(from: trimmedKey)
             } catch {
                 throw AIClientError.upstream("OAuth refresh failed: \(error.localizedDescription)")
             }
         } else {
-            resolvedKey = trimmedKey
-        }
-
-        let service: OpenAIService
-        if baseURLString == AISettings.defaultBaseURL {
-            service = OpenAIServiceFactory.service(apiKey: resolvedKey)
-        } else {
-            service = OpenAIServiceFactory.service(
-                apiKey: resolvedKey,
-                overrideBaseURL: baseURLString
-            )
+            resolvedKey = settings.authMethod == .none ? "" : trimmedKey
         }
 
         let chatMessages: [ChatCompletionParameters.Message] = messages.map { msg in
@@ -112,7 +108,8 @@ actor AIClient {
         }
 
         let modelId = settings.model.trimmingCharacters(in: .whitespacesAndNewlines)
-        let resolvedModel: Model = modelId.isEmpty ? .custom(AISettings.defaultModel) : .custom(modelId)
+        guard !modelId.isEmpty else { throw AIClientError.upstream("Choose a model before generating a widget.") }
+        let resolvedModel: Model = .custom(modelId)
 
         let parameters = ChatCompletionParameters(
             messages: chatMessages,
@@ -121,7 +118,27 @@ actor AIClient {
         )
 
         do {
-            let response = try await service.startChat(parameters: parameters)
+            guard let base = settings.profile.endpointURL else { throw AIClientError.invalidBaseURL(baseURLString) }
+            var request = URLRequest(url: base.appendingPathComponent("v1/chat/completions"))
+            request.httpMethod = "POST"
+            request.timeoutInterval = 120
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            if settings.authMethod != .none {
+                request.setValue("Bearer " + resolvedKey, forHTTPHeaderField: "Authorization")
+            }
+            request.httpBody = try JSONEncoder().encode(parameters)
+            let (data, httpResponse) = try await session.data(for: request)
+            guard let http = httpResponse as? HTTPURLResponse else { throw URLError(.badServerResponse) }
+            guard (200..<300).contains(http.statusCode) else {
+                switch http.statusCode {
+                case 401, 403: throw AIClientError.upstream("The AI server rejected authentication. Check this profile's credentials.")
+                case 404: throw AIClientError.upstream("The AI endpoint or model was not found. Check the API base URL and model name.")
+                case 429: throw AIClientError.upstream("The AI server's usage limit was reached. Wait and try again.")
+                default: throw AIClientError.upstream("The AI server could not complete the request (HTTP \(http.statusCode)).")
+                }
+            }
+            guard data.count <= 4 * 1_048_576 else { throw AIClientError.upstream("The AI response exceeded the size limit.") }
+            let response = try JSONDecoder().decode(ChatCompletionObject.self, from: data)
             guard let content = response.choices?.first?.message?.content, !content.isEmpty else {
                 throw AIClientError.emptyResponse
             }
@@ -136,6 +153,31 @@ actor AIClient {
         } catch {
             throw AIClientError.upstream(error.localizedDescription)
         }
+    }
+
+    func availableModels(profile: AIProfile) async throws -> [String] {
+        guard let base = profile.endpointURL else { throw AIClientError.invalidBaseURL(profile.baseURL) }
+        guard profile.authMethod != .oauth else {
+            throw AIClientError.upstream("Enter the model name manually for an OAuth profile.")
+        }
+        var request = URLRequest(url: base.appendingPathComponent("v1/models"))
+        request.timeoutInterval = 15
+        if profile.authMethod == .apiKey {
+            let key = profile.apiKey.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !key.isEmpty else { throw AIClientError.missingAPIKey }
+            request.setValue("Bearer " + key, forHTTPHeaderField: "Authorization")
+        }
+        let (data, response) = try await session.data(for: request)
+        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
+            throw AIClientError.upstream("Could not load models. Check the server address and authentication.")
+        }
+        guard data.count <= 1_048_576 else { throw AIClientError.upstream("The model list is too large.") }
+        struct ModelList: Decodable {
+            struct Item: Decodable { let id: String }
+            let data: [Item]
+        }
+        let list = try JSONDecoder().decode(ModelList.self, from: data)
+        return Array(Set(list.data.map(\.id))).sorted()
     }
 
     private func applePrivateCloudComputeChat(
@@ -215,8 +257,10 @@ actor AIClient {
             }
         } catch let error as AIClientError {
             throw error
+        } catch is CancellationError {
+            throw CancellationError()
         } catch {
-            throw AIClientError.upstream(error.localizedDescription)
+            throw AIClientError.appleIntelligenceUnavailable("the request could not be completed. Check Apple Intelligence and network access, then try again. If the problem persists, select another profile in Settings → AI.")
         }
 #else
         throw AIClientError.appleIntelligenceUnavailable("this build does not include the macOS/iOS 27 Foundation Models SDK.")

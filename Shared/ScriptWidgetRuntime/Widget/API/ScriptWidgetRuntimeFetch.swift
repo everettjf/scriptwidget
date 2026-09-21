@@ -190,7 +190,7 @@ enum ScriptWidgetNetworkPolicy {
         guard let manifest = package.readManifest() else {
             // Packages without widget.json are legacy-compatible. A present but
             // malformed Package 2.0 manifest must fail closed.
-            return !FileManager.default.fileExists(atPath: package.manifestPath.path)
+            return !package.hasManifest
         }
         guard manifest.permissions.contains(.network), let host = url.host else { return false }
         return self.host(host, matchesAny: manifest.networkDomains)

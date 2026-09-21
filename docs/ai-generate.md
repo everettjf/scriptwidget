@@ -467,3 +467,14 @@ macOS/ScriptWidgetMac.xcodeproj/project.pbxproj
 - 编辑/预览：`iOS/ScriptWidget/View/CodeEditor/ScriptCodeEditorView.swift`、`.../Preview/ScriptCodePreviewView.swift`
 - 设置页：`iOS/ScriptWidget/App/Settings/SettingsView.swift`
 - 包落盘：`Shared/ScriptWidgetRuntime/Common/ScriptManager.swift` — `createScript(content:recommendPackageName:imageCopyPath:)`
+
+
+## Provider reliability and Ollama
+
+- Apple PCC remains the zero-key default for new installations. Adding the Apple profile during migration preserves an existing active profile. PCC availability, entitlement and quota errors do not silently transfer a prompt to another provider.
+- Use **Add Profile → Ollama** for a local server. On a Mac, the default address is `http://localhost:11434`; on iPhone/iPad, enter the address of the computer running Ollama. The server must be reachable from the device, and local-network access must be allowed. ScriptWidget does not start or expose an Ollama server on the network.
+- **Load Models from Server** reads the configured server's compatible `/v1/models` list. Choose an installed text-generation model, or enter its exact name manually. Listing a model does not certify its code-generation quality; embedding-only models cannot generate widgets.
+- Local Ollama uses **No Authentication**, which sends no Authorization header. Choose API Key when your server or proxy requires one. Credentials stay in Keychain. Changing endpoints or provider presets clears the previous credential.
+- OpenAI-compatible profiles accept custom HTTP(S) hosts and path prefixes. Both `https://example.com/gateway` and `https://example.com/gateway/v1/` resolve to `/gateway/v1/chat/completions`. Enter the API base, not the full chat-completions URL. Model names remain editable; presets are examples, not a supported-model whitelist.
+- OAuth is restricted to the OpenAI endpoint. Local AI access is an app-owned setting and does not relax imported widget network permissions.
+- Apple on-device inference is not part of this maintenance patch. The existing PCC backend remains distinct from the Foundation Models framework itself.

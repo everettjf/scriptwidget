@@ -51,12 +51,15 @@ class ScriptLiveActivityDataObject: ObservableObject {
         
         self.systemLog("[START]")
         
-        let (JSX,errorInfo) = self.package.readMainFile()
-        guard let JSX = JSX else {
-            self.rootElement = createTextElement(info: "Failed to open script : \(errorInfo)")
+        let read = package.readMainFileResult()
+        guard let JSX = read.content else {
+            let message = read.icloud == .downloading
+                ? "Downloading script. Open ScriptWidget to finish syncing, then start the activity again."
+                : "Script unavailable. Open ScriptWidget and start the activity again."
+            self.rootElement = createTextElement(info: message)
             return
         }
-        
+
         let runtime = ScriptWidgetRuntime(package: self.package, environments: [
             "widget-size" : "live-activity",
             "widget-param": scriptParameter,

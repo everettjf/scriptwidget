@@ -68,7 +68,7 @@ struct ScriptLiveActivityWidget: Widget {
 
 
 struct ScriptLiveActivityRootView: View {
-    @ObservedObject var data : ScriptLiveActivityDataObject
+    @StateObject private var data: ScriptLiveActivityDataObject
     
     let scriptName: String
     let scriptParameter: String
@@ -79,13 +79,18 @@ struct ScriptLiveActivityRootView: View {
         self.scriptName = scriptName
         self.scriptParameter = scriptParameter
         self.scriptState = scriptState
-        self.data = ScriptLiveActivityDataObject(
+        _data = StateObject(wrappedValue: Self.makeData(
             scriptName: scriptName,
             scriptParameter: scriptParameter,
-            scriptState: scriptState,
-            surface: "lockScreen"
-        )
-        self.data.runScriptSync()
+            scriptState: scriptState
+        ))
+    }
+
+    private static func makeData(scriptName: String, scriptParameter: String, scriptState: String) -> ScriptLiveActivityDataObject {
+        let data = ScriptLiveActivityDataObject(scriptName: scriptName, scriptParameter: scriptParameter,
+                                               scriptState: scriptState, surface: "lockScreen")
+        data.runScriptSync()
+        return data
     }
     
     var body: some View {
@@ -115,6 +120,7 @@ struct LockScreenLiveActivityView: View {
             scriptParameter: context.attributes.scriptParameter,
             scriptState: context.state.scriptState
         )
+        .id(context.state)
 //        .activitySystemActionForegroundColor(.indigo)
 //        .activityBackgroundTint(.cyan)
     }

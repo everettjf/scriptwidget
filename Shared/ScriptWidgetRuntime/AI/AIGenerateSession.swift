@@ -42,7 +42,8 @@ final class AIGenerateSession: ObservableObject {
 
     @Published var size: AIWidgetSize = .medium
 
-    private var currentTask: Task<Void, Never>?
+    private(set) var currentTask: Task<Void, Never>?
+    private var generation = UUID()
 
     var maxIterationsForProgress: Int {
         AISettingsStore.shared.load().maxIterations
@@ -103,7 +104,10 @@ final class AIGenerateSession: ObservableObject {
     }
 
     func cancel() {
+        generation = UUID()
         currentTask?.cancel()
+        isRunning = false
+        phase = .cancelled
     }
 
     func reset() {
@@ -118,6 +122,8 @@ final class AIGenerateSession: ObservableObject {
 
     private func kickoff(request: AgentLoopRequest, initialJSX: String?) {
         currentTask?.cancel()
+        let generation = UUID()
+        self.generation = generation
         iterationHistory = []
         usage = .zero
         lastJSX = initialJSX
@@ -127,11 +133,12 @@ final class AIGenerateSession: ObservableObject {
 
         let loop = AgentLoop()
         currentTask = Task { [weak self] in
-            guard let self else { return }
+            guard let self, self.generation == generation else { return }
             let outcome = await loop.run(request) { [weak self] event in
-                guard let self else { return }
+                guard let self, self.generation == generation else { return }
                 self.apply(event: event)
             }
+            guard self.generation == generation else { return }
             self.apply(outcome: outcome)
         }
     }

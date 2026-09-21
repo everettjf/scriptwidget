@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SettingsICloudView: View {
+    @State private var migrationMessage: String?
     private var isICloudAvailable: Bool {
         sharedScriptManager.isICloudAvaliable()
     }
@@ -29,9 +30,15 @@ struct SettingsICloudView: View {
 
             if isICloudAvailable && sandboxFileCount > 0 {
                 CountDownButton(text: "Move \(sandboxFileCount) Local File\(sandboxFileCount == 1 ? "" : "s")", waitSeconds: 2) {
-                    _ = ScriptManager.moveSandboxFilesToICloud()
+                    migrationMessage = ScriptManager.moveSandboxFilesToICloud()
+                        ? "Local files moved to iCloud."
+                        : "Some files could not be moved. Remaining local files have been kept. Try again when iCloud is available."
                 }
                 .buttonStyle(.borderedProminent)
+            }
+
+            if let migrationMessage {
+                Text(migrationMessage).font(.footnote).foregroundStyle(.secondary)
             }
 
             if isICloudAvailable {

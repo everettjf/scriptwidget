@@ -3,8 +3,8 @@
 ## Implementation status
 
 Implemented for the iOS and macOS main apps. New installations default to PCC,
-existing installations receive a one-time migration that adds and selects the
-Apple profile, and existing OpenAI-compatible profiles remain available. PCC
+existing installations receive a migration that adds the Apple profile while
+preserving the selected profile. Existing OpenAI-compatible profiles remain available. PCC
 requests check OS support, model availability, and daily quota before sending;
 repair loops are capped at three requests. The managed entitlement is limited
 to the main app targets because widget and share extensions never call an AI
