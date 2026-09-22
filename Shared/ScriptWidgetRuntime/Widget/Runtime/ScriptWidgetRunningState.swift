@@ -102,9 +102,12 @@ class ScriptWidgetRunningState {
     var package: ScriptWidgetPackage
     let executionSession: ScriptWidgetExecutionSession
 
+    let isDarkMode: Bool?
+
     var storageNamespace: String { "script.\(package.name)." }
 
-    init(package: ScriptWidgetPackage) {
+    init(package: ScriptWidgetPackage, isDarkMode: Bool? = nil) {
+        self.isDarkMode = isDarkMode
         self.logger = ScriptWidgetConsoleLogger()
         self.package = package
         self.executionSession = ScriptWidgetExecutionSession()

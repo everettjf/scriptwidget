@@ -52,8 +52,12 @@ import UIKit
 #if os(macOS)
     
     
+    static var systemIsDarkMode: Bool {
+        NSAppearance.currentDrawing().bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+    }
+
     static func isdarkmode() -> Bool {
-        return true
+        JSContext.current()?.scriptWidgetRunningState?.isDarkMode ?? systemIsDarkMode
     }
     
     static func screen() -> [AnyHashable : Any]! {
@@ -124,8 +128,12 @@ import UIKit
 #else
     
     
+    static var systemIsDarkMode: Bool {
+        UITraitCollection.current.userInterfaceStyle == .dark
+    }
+
     static func isdarkmode() -> Bool {
-        return UITraitCollection.current.userInterfaceStyle == .dark
+        JSContext.current()?.scriptWidgetRunningState?.isDarkMode ?? systemIsDarkMode
     }
     
     static func screen() -> [AnyHashable : Any]! {

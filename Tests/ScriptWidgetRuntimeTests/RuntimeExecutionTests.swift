@@ -60,6 +60,14 @@ final class RuntimeExecutionTests: XCTestCase {
         return out.joined(separator: " ")
     }
 
+    func testNumericSquareFrameSurvivesJSXBridge() throws {
+        let output = makeRuntime().executeJSXSyncForWidget("$render(<ring value={0.75} frame={64} />);")
+        XCTAssertNil(output.1)
+        let frame = ScriptWidgetAttributeFrameModifier(try XCTUnwrap(output.0))
+        XCTAssertEqual(frame.width, 64)
+        XCTAssertEqual(frame.height, 64)
+    }
+
     // MARK: - Happy path
 
     func testSimpleVStackRenders() {

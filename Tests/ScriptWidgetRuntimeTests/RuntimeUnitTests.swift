@@ -291,6 +291,27 @@ final class ScriptWidgetRuntimeElementTests: XCTestCase {
     }
 }
 
+final class ScriptWidgetFrameTests: XCTestCase {
+    func testSquareFrameShorthandMatchesExplicitDimensions() {
+        for value: Any in ["64", 64, 64.0, NSNumber(value: 64)] {
+            let shorthand = ScriptWidgetAttributeFrameModifier(.init(tagString: "ring", props: ["frame": value], children: nil))
+            let explicit = ScriptWidgetAttributeFrameModifier(.init(tagString: "ring", props: ["frame": "64,64"], children: nil))
+            XCTAssertEqual(shorthand.frameMode, explicit.frameMode)
+            XCTAssertEqual(shorthand.width, 64)
+            XCTAssertEqual(shorthand.height, 64)
+        }
+        for value: Any in ["-1", "nan", "inf", true] {
+            let invalid = ScriptWidgetAttributeFrameModifier(.init(tagString: "ring", props: ["frame": value], children: nil))
+            XCTAssertEqual(invalid.frameMode, .none)
+        }
+    }
+
+    func testExtraLargePreviewMatchesWideDesignHint() {
+        XCTAssertEqual(AIWidgetSize.extraLarge.previewSize.width, 639)
+        XCTAssertEqual(AIWidgetSize.extraLarge.previewSize.height, 345)
+    }
+}
+
 final class ScriptWidgetBackgroundTests: XCTestCase {
     func testNamedColorWithOpacityIsParsed() {
         XCTAssertNotNil(ScriptWidgetAttributeColor("green,0.5").color)

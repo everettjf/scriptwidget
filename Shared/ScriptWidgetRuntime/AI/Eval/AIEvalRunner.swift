@@ -91,7 +91,7 @@ struct AIEvalRunnerProgress {
 /// composition is changed substantively. Reports get tagged with this
 /// so two reports against the same dataset can be diffed meaningfully.
 enum AIEvalPromptVersion {
-    static let current = "v1"
+    static let current = "v2"
 }
 
 actor AIEvalRunner {

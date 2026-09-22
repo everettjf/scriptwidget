@@ -42,7 +42,7 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
         case .small:                  return CGSize(width: 170, height: 170)
         case .medium:                 return CGSize(width: 329, height: 170)
         case .large:                  return CGSize(width: 329, height: 345)
-        case .extraLarge:             return CGSize(width: 345, height: 329)
+        case .extraLarge:             return CGSize(width: 639, height: 345)
         case .extraLargePortrait:     return CGSize(width: 345, height: 639)
         case .accessoryInline:        return CGSize(width: 250, height: 30)
         case .accessoryCircular:      return CGSize(width: 72,  height: 72)
@@ -55,9 +55,9 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
     var designHint: String {
         switch self {
         case .small:
-            return "Square, ~155x155 px. Keep it to one or two key pieces of information."
+            return "Square, ~170x170 px. Keep it to one or two key pieces of information."
         case .medium:
-            return "Wide rectangle, ~329x155 px. Room for a small grid or two columns."
+            return "Wide rectangle, ~329x170 px. Room for a small grid or two columns."
         case .large:
             return "Square, ~329x345 px. Multiple sections / richer layout."
         case .extraLarge:
@@ -69,7 +69,7 @@ enum AIWidgetSize: String, CaseIterable, Identifiable, Codable {
         case .accessoryCircular:
             return "Very small round area (~72x72). Icon + a number at most."
         case .accessoryRectangular:
-            return "Small rectangle (~160x72). A few short lines of text."
+            return "Small rectangle (~170x72). A few short lines of text."
         }
     }
 }
@@ -131,6 +131,23 @@ enum PromptBuilder {
            visual density to the declared widget size.
         10. Keep the output self-contained — no external files, no
            image assets the user hasn't provided.
+        11. Respect light and dark appearances. Prefer color="primary"
+            and color="secondary" for text. On accessory widgets use
+            primary/secondary monochrome content with no background;
+            never hardcode white text on a transparent background.
+        12. Use frame="width,height" for explicit sizes, e.g. frame="60,60"
+            for a ring inside a 72x72 accessory widget. Leave room for
+            stroke thickness and padding. Do not apply frame="max" to
+            every row: it expands height too. Use frame="max,24" for a
+            full-width row with a fixed height when appropriate.
+        13. Charts use data={$json([{label: "Mon", value: 3}])}, not JSX
+            child marks. Keep chart axes legible: avoid a fixed dark
+            background with default light-appearance axes. Prefer the
+            default background or select a matching background using
+            $device.isdarkmode().
+        14. Preserve the requested labels and values. Do not invent
+            meeting locations, extra events, or live data. For fixed
+            demo data do not call network, location or Health APIs.
         """
         let reference = reference.combined
         return rules + "\n\n" + reference

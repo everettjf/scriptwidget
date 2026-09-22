@@ -63,12 +63,20 @@ struct ScriptWidgetAttributeFrameModifier: ViewModifier {
         var width: CGFloat = 0
         var height: CGFloat = 0
         
-        if let frameValue = element.getPropString("frame") {
+        let numericFrame = (element.getProps()["frame"] as? NSNumber).flatMap { value -> String? in
+            guard CFGetTypeID(value) != CFBooleanGetTypeID() else { return nil }
+            return String(value.doubleValue)
+        }
+        if let frameValue = element.getPropString("frame") ?? numericFrame {
             let parts = frameValue.split(separator: ",")
             if parts.count == 1 {
 //                frame="max"
                 if frameValue == "max" {
                     frameMode = .max_alignment
+                } else if let side = Double(frameValue), side.isFinite, side >= 0 {
+                    width = CGFloat(side)
+                    height = CGFloat(side)
+                    frameMode = .width_height_alignment
                 }
             } else if parts.count == 2 {
                 let part1 = String(parts[0])
