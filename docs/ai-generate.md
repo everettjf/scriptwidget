@@ -1,5 +1,7 @@
 # AI Generate — 设计文档
 
+生成效果回归：见 [AI quality testing](ai-quality-testing.md)，包含真实模型生成、深浅色原生截图、OCR 提示和无 API 调用的重放对照。
+
 ScriptWidget 默认使用 Apple Private Cloud Compute (PCC) 生成 Widget，不要求用户提供 API key。用户输入自然语言 prompt 后，模型生成 JSX，App 在本机 runtime 中自动“跑—看错—修”，最后进入审阅和预览态，由用户确认落盘。OpenAI 及兼容端点继续作为可选后端。
 
 本设计为 `feature/ai-generate` 分支的实施依据。实现阶段按第 9 节里程碑推进。

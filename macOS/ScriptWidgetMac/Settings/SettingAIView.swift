@@ -319,7 +319,7 @@ private struct AIProfileEditorPane: View {
 
     private static let providerPresets: [(label: String, host: String, models: [String])] = [
         ("OpenAI",   "https://api.openai.com", ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1", "o4-mini"]),
-        ("DeepSeek", "https://api.deepseek.com", ["deepseek-chat", "deepseek-reasoner"]),
+        ("DeepSeek", "https://api.deepseek.com", ["deepseek-flash", "deepseek-v4-pro"]),
         ("xAI",      "https://api.x.ai", ["grok-2-latest", "grok-2-mini"]),
         ("Ollama",   "http://localhost:11434", []),
     ]
@@ -476,7 +476,7 @@ private struct AIProfileEditorPane: View {
             id: "", name: "", baseURL: baseURL, model: "", apiKey: "", authMethod: .apiKey
         ).normalizedBaseURL)?.host ?? ""
         if host.contains("deepseek") {
-            return ["deepseek-chat", "deepseek-reasoner"]
+            return ["deepseek-flash", "deepseek-v4-pro"]
         } else if host.contains("x.ai") {
             return ["grok-2-latest", "grok-2-mini"]
         } else if host.contains("localhost") || host.contains("127.0.0.1") {

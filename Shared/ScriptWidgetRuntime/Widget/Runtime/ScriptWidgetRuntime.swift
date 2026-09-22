@@ -334,7 +334,10 @@ class ScriptWidgetRuntime {
         self.environments = environments
         // APIs like $file/$console read per-execution state from the
         // owning JSContext.
-        runtimeContext.scriptWidgetRunningState = ScriptWidgetRunningState(package: package)
+        // Capture appearance before JavaScript moves to a worker queue.
+        runtimeContext.scriptWidgetRunningState = ScriptWidgetRunningState(
+            package: package, isDarkMode: ScriptWidgetRuntimeDevice.systemIsDarkMode
+        )
         ScriptWidgetMemoryPressure.install()
         ScriptWidgetPrecompiler.install()
     }

@@ -19,3 +19,9 @@ Removing or changing the meaning of a 1.0 global requires a new major API versio
 Limits are available under `$runtime.limits`. Exceeding one produces a visible resource-limit error instead of a blank widget. Widget extensions remain subject to stricter operating-system CPU and memory budgets.
 
 Bundled templates are contract-tested against the source limit. New examples must keep `main.jsx` UTF-8 encoded and runnable without undocumented globals.
+
+## Frame and appearance
+
+A finite, nonnegative numeric `frame` or a numeric string sets a square size: `frame={64}` and `frame="64"` both mean 64 × 64 points. Existing `frame="64,48"`, `frame="max"`, and alignment forms remain supported. Leave space around stroked shapes for their line width.
+
+`$device.isdarkmode()` uses the appearance captured when its runtime is created, so JavaScript worker threads preserve the rendering context's light/dark choice. On macOS this resolves the native drawing appearance instead of always reporting dark mode.

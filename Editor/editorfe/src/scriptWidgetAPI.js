@@ -16,7 +16,7 @@ export const scriptWidgetAPI = {
     "font": { "type": "enum", "values": ["largeTitle", "title", "title2", "title3", "headline", "subheadline", "body", "callout", "footnote", "caption", "caption2"], "documentation": "Semantic text style." },
     "fontWeight": { "type": "enum", "values": ["ultraLight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"], "documentation": "Font weight." },
     "fontDesign": { "type": "enum", "values": ["default", "rounded", "serif", "monospaced"], "documentation": "Font design." },
-    "frame": { "type": "number|string", "documentation": "Size or frame description." },
+    "frame": { "type": "number|string", "documentation": "Square size (64 or \"64\"), width,height (\"64,48\"), or flexible frame (\"max\", \"max,48\")." },
     "padding": { "type": "number|string", "documentation": "Padding amount or edge description." },
     "corner": { "type": "number", "documentation": "Corner radius." },
     "opacity": { "type": "number", "documentation": "Opacity from 0 through 1." },
