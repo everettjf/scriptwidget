@@ -90,6 +90,13 @@ class PreviewWidgetSize {
     static let extraLargePortrait: CGSize = .init(width: 360, height: 668)
     
     static func size(_ size: Int) -> CGSize {
-        StudioPreviewFamily(rawValue: size)?.size ?? small
+        switch StudioPreviewFamily(rawValue: size) {
+        case .small: return small
+        case .medium: return medium
+        case .large: return large
+        case .extraLarge: return extraLarge
+        case .extraLargePortrait: return extraLargePortrait
+        case nil: return small
+        }
     }
 }

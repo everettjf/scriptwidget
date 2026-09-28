@@ -226,6 +226,7 @@ export function AndroidTabletL({ src, alt = "", style, hideEmpty }: FrameProps) 
 // Store's own aspect, so a full-screen or 16:10 capture fills it uncropped.
 export function MacWindow({ src, alt = "", style, hideEmpty }: FrameProps) {
   const resolved = img(src);
+  const focusEditor = src?.endsWith("/03-editor.png") ?? false;
   const titleBar = `${(MAC_TITLE_BAR / (1 + MAC_TITLE_BAR)) * 100}%`;
   const light = (color: string) => (
     <span
@@ -276,7 +277,15 @@ export function MacWindow({ src, alt = "", style, hideEmpty }: FrameProps) {
             <img
               src={resolved}
               alt={alt}
-              style={{ display: "block", width: "100%", height: "100%", objectFit: "cover", objectPosition: "top" }}
+              style={{
+                display: "block",
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+                objectPosition: "top",
+                transform: focusEditor ? "scale(1.55)" : undefined,
+                transformOrigin: focusEditor ? "55% top" : undefined,
+              }}
               draggable={false}
             />
           ) : hideEmpty ? null : (

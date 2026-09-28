@@ -8,7 +8,7 @@
     "en"
   ],
   "locale": "en",
-  "device": "iphone",
+  "device": "mac",
   "orientation": "portrait",
   "appIcon": "/app-icon.png",
   "slidesByDevice": {
@@ -197,7 +197,7 @@
           "en": "WRITE WIDGETS IN JSX"
         },
         "headline": {
-          "en": "Your code.\nYour widget."
+          "en": "Write widgets.\nIn plain JSX."
         },
         "screenshot": "/screenshots/apple/ipad/en/03-code.png",
         "inverted": false,
@@ -338,61 +338,52 @@
     ],
     "mac": [
       {
-        "id": "s_mukpp47l_n",
+        "id": "scriptwidget-mac-1",
         "layout": "hero",
         "label": {
-          "en": "MEET YOUR APP"
+          "en": "SCRIPTWIDGET · START HERE"
         },
         "headline": {
-          "en": "Made for\nyour Mac."
+          "en": "Pick a template.\nMake it yours."
         },
-        "screenshot": ""
+        "screenshot": "/screenshots/apple/mac/en/02-templates.png",
+        "backgroundColor": "#FFF0E9"
       },
       {
-        "id": "s_mukpp47l_o",
-        "layout": "split-landscape",
+        "id": "scriptwidget-mac-2",
+        "layout": "hero",
         "label": {
-          "en": "FEATURE 01"
+          "en": "YOUR WIDGETS"
         },
         "headline": {
-          "en": "Everything in\none window."
+          "en": "One workspace.\nAll your widgets."
         },
-        "screenshot": ""
+        "screenshot": "/screenshots/apple/mac/en/01-home.png",
+        "backgroundColor": "#EAF4FF"
       },
       {
-        "id": "s_mukpp47l_p",
-        "layout": "device-top",
+        "id": "scriptwidget-mac-3",
+        "layout": "hero",
         "label": {
-          "en": "FEATURE 02"
+          "en": "WRITE WIDGETS IN JSX"
         },
         "headline": {
-          "en": "One shortcut away."
+          "en": "Write widgets.\nIn plain JSX."
         },
-        "screenshot": "",
-        "inverted": true
+        "screenshot": "/screenshots/apple/mac/en/03-editor.png",
+        "backgroundColor": "#E8F8F4"
       },
       {
-        "id": "s_mukpp47l_q",
-        "layout": "two-devices",
+        "id": "scriptwidget-mac-4",
+        "layout": "hero",
         "label": {
-          "en": "FEATURE 03"
+          "en": "WIDGET API REFERENCE"
         },
         "headline": {
-          "en": "Work across windows."
+          "en": "Explore the APIs.\nBuild more."
         },
-        "screenshot": "",
-        "screenshotSecondary": ""
-      },
-      {
-        "id": "s_mukpp47l_r",
-        "layout": "no-device",
-        "label": {
-          "en": "MORE"
-        },
-        "headline": {
-          "en": "And so\nmuch more."
-        },
-        "screenshot": ""
+        "screenshot": "/screenshots/apple/mac/en/04-apis.png",
+        "backgroundColor": "#FFF5D9"
       }
     ],
     "android-7": [
