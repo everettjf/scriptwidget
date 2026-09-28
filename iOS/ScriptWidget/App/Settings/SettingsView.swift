@@ -79,7 +79,7 @@ struct SettingsView: View {
 
                 Section("More Apps") {
                     SettingsLinkRowView(name: "BSSID SCAN", label: "App Store", urlString: "https://apps.apple.com/us/app/bssid-scan/id1442586100")
-                    SettingsLinkRowView(name: "CountMyDays", label: "App Store", urlString: "https://apps.apple.com/us/app/countmydays-days-counter/id6753280745")
+                    SettingsLinkRowView(name: "Dayvella", label: "App Store", urlString: "https://apps.apple.com/app/id6753280745")
                     SettingsLinkRowView(name: "Remote Keyboard", label: "App Store", urlString: "https://apps.apple.com/us/app/remote-keyboard/id1474458879")
                 }
             }

@@ -35,6 +35,27 @@ extension View {
 
 struct ContentView: View {
     var body: some View {
+#if DEBUG
+        if ProcessInfo.processInfo.arguments.contains("-storeScreenshotCode") {
+            NavigationStack {
+                ScriptCodeEditorView(
+                    mode: .editor,
+                    scriptModel: sharedScriptManager.listScripts().first { $0.name == "Daily Agenda" } ?? globalScriptModel
+                )
+            }
+        } else if ProcessInfo.processInfo.arguments.contains("-storeScreenshotAPIs") {
+            NavigationStack {
+                SettingAPIsView()
+            }
+        } else {
+            mainTabs
+        }
+#else
+        mainTabs
+#endif
+    }
+
+    private var mainTabs: some View {
         TabView {
             ScriptWidgetHomeView()
                 .tabItem {

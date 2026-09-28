@@ -73,22 +73,13 @@ struct EmptyListBackgroundView: View {
 
     private var heroSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.purple, .blue],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                Image(systemName: "sparkles.square.filled.on.square")
-                    .font(.system(size: 28, weight: .semibold))
-                    .foregroundStyle(.white)
-            }
-            .frame(width: 58, height: 58)
-            .shadow(color: .purple.opacity(0.2), radius: 12, y: 6)
-            .accessibilityHidden(true)
+            Image("StudioBrandIcon")
+                .resizable()
+                .aspectRatio(contentMode: .fit)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .frame(width: 58, height: 58)
+                .shadow(color: .black.opacity(0.15), radius: 12, y: 6)
+                .accessibilityHidden(true)
 
             Text("SCRIPTWIDGET STUDIO")
                 .font(.caption2.weight(.bold))

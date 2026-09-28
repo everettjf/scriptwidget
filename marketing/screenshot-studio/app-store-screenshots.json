@@ -1,0 +1,466 @@
+{
+  "schemaVersion": 2,
+  "appName": "ScriptWidget",
+  "themeId": "scriptwidget-spectrum",
+  "fontId": "template-default",
+  "connectedCanvas": false,
+  "locales": [
+    "en"
+  ],
+  "locale": "en",
+  "device": "iphone",
+  "orientation": "portrait",
+  "appIcon": "/app-icon.png",
+  "slidesByDevice": {
+    "iphone": [
+      {
+        "id": "scriptwidget-iphone-1",
+        "layout": "hero",
+        "label": {
+          "en": "SCRIPTWIDGET · START HERE"
+        },
+        "headline": {
+          "en": "Pick a template.\nMake it yours."
+        },
+        "screenshot": "/screenshots/apple/iphone/en/01.png",
+        "inverted": false,
+        "backgroundColor": "#FFF0E9"
+      },
+      {
+        "id": "scriptwidget-iphone-2",
+        "layout": "device-bottom",
+        "label": {
+          "en": "YOUR WIDGETS"
+        },
+        "headline": {
+          "en": "Keep your widgets\nin one place."
+        },
+        "screenshot": "/screenshots/apple/iphone/en/02.png",
+        "inverted": false,
+        "backgroundColor": "#EAF4FF"
+      },
+      {
+        "id": "scriptwidget-iphone-3",
+        "layout": "hero",
+        "label": {
+          "en": "WRITE WIDGETS IN JSX"
+        },
+        "headline": {
+          "en": "Your code.\nYour widget."
+        },
+        "screenshot": "/screenshots/apple/iphone/en/03-code.png",
+        "inverted": false,
+        "backgroundColor": "#E8F8F4"
+      },
+      {
+        "id": "scriptwidget-iphone-4",
+        "layout": "device-bottom",
+        "label": {
+          "en": "WIDGET API REFERENCE"
+        },
+        "headline": {
+          "en": "Explore the APIs.\nBuild more."
+        },
+        "screenshot": "/screenshots/apple/iphone/en/04-api.png",
+        "inverted": false,
+        "backgroundColor": "#FFF5D9"
+      }
+    ],
+    "android": [
+      {
+        "id": "s_mppgoot8_5",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Sell one\nidea per slide."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 221.0133038940457,
+            "y": 677.042167580437,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_6",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Your headline\nlives here."
+        },
+        "screenshot": "",
+        "transforms": {
+          "device": {
+            "x": 191.68310412906385,
+            "y": 659.512330975256,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_7",
+        "layout": "two-devices",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Show two\nscreens at once."
+        },
+        "screenshot": "",
+        "screenshotSecondary": "",
+        "transforms": {
+          "deviceSecondary": {
+            "x": 280.3938895417132,
+            "y": 525.2025777437636,
+            "width": 678.5844380403457,
+            "height": 1470.266282420749,
+            "rotation": 0,
+            "zIndex": 2
+          },
+          "device": {
+            "x": 143.75673196815296,
+            "y": 569.6411918847805,
+            "width": 610.7259942363112,
+            "height": 1323.239654178674,
+            "rotation": 0,
+            "zIndex": 3
+          }
+        }
+      },
+      {
+        "id": "s_mppgoot8_8",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 03"
+        },
+        "headline": {
+          "en": "Flip the contrast\nfor visual rhythm."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mppgoot8_9",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
+    "ipad": [
+      {
+        "id": "scriptwidget-ipad-1",
+        "layout": "hero",
+        "label": {
+          "en": "SCRIPTWIDGET · START HERE"
+        },
+        "headline": {
+          "en": "Pick a template.\nMake it yours."
+        },
+        "screenshot": "/screenshots/apple/ipad/en/01.png",
+        "inverted": false,
+        "backgroundColor": "#FFF0E9"
+      },
+      {
+        "id": "scriptwidget-ipad-2",
+        "layout": "hero",
+        "label": {
+          "en": "YOUR WIDGETS"
+        },
+        "headline": {
+          "en": "All your widgets.\nOne workspace."
+        },
+        "screenshot": "/screenshots/apple/ipad/en/02.png",
+        "inverted": false,
+        "backgroundColor": "#EAF4FF"
+      },
+      {
+        "id": "scriptwidget-ipad-3",
+        "layout": "hero",
+        "label": {
+          "en": "WRITE WIDGETS IN JSX"
+        },
+        "headline": {
+          "en": "Your code.\nYour widget."
+        },
+        "screenshot": "/screenshots/apple/ipad/en/03-code.png",
+        "inverted": false,
+        "backgroundColor": "#E8F8F4"
+      },
+      {
+        "id": "scriptwidget-ipad-4",
+        "layout": "hero",
+        "label": {
+          "en": "WIDGET API REFERENCE"
+        },
+        "headline": {
+          "en": "APIs for every\nwidget idea."
+        },
+        "screenshot": "/screenshots/apple/ipad/en/04-api.png",
+        "inverted": false,
+        "backgroundColor": "#FFF5D9"
+      }
+    ],
+    "tvos": [
+      {
+        "id": "s_mukpp47l_d",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nthe living room."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_e",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "One idea\nper screen."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_f",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Flip the contrast."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mukpp47l_g",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
+    "watchos": [
+      {
+        "id": "s_mukpp47l_h",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "On your\nwrist."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_i",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "One glance.\nDone."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_j",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Always\nwith you."
+        },
+        "screenshot": "",
+        "inverted": true
+      }
+    ],
+    "carplay": [
+      {
+        "id": "s_mukpp47l_k",
+        "layout": "split-landscape",
+        "label": {
+          "en": "CARPLAY"
+        },
+        "headline": {
+          "en": "Eyes on\nthe road."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_l",
+        "layout": "device-bottom",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Everything, one tap away."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_m",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "Made for every drive."
+        },
+        "screenshot": "",
+        "inverted": true
+      }
+    ],
+    "mac": [
+      {
+        "id": "s_mukpp47l_n",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nyour Mac."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_o",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Everything in\none window."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mukpp47l_p",
+        "layout": "device-top",
+        "label": {
+          "en": "FEATURE 02"
+        },
+        "headline": {
+          "en": "One shortcut away."
+        },
+        "screenshot": "",
+        "inverted": true
+      },
+      {
+        "id": "s_mukpp47l_q",
+        "layout": "two-devices",
+        "label": {
+          "en": "FEATURE 03"
+        },
+        "headline": {
+          "en": "Work across windows."
+        },
+        "screenshot": "",
+        "screenshotSecondary": ""
+      },
+      {
+        "id": "s_mukpp47l_r",
+        "layout": "no-device",
+        "label": {
+          "en": "MORE"
+        },
+        "headline": {
+          "en": "And so\nmuch more."
+        },
+        "screenshot": ""
+      }
+    ],
+    "android-7": [
+      {
+        "id": "s_mppgoot8_d",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Pocket-sized\npower."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mppgoot8_e",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Wide canvas,\nbigger ideas."
+        },
+        "screenshot": ""
+      }
+    ],
+    "android-10": [
+      {
+        "id": "s_mppgoot8_f",
+        "layout": "hero",
+        "label": {
+          "en": "MEET YOUR APP"
+        },
+        "headline": {
+          "en": "Made for\nthe big screen."
+        },
+        "screenshot": ""
+      },
+      {
+        "id": "s_mppgoot8_g",
+        "layout": "split-landscape",
+        "label": {
+          "en": "FEATURE 01"
+        },
+        "headline": {
+          "en": "Wide canvas,\nbigger ideas."
+        },
+        "screenshot": ""
+      }
+    ],
+    "feature-graphic": [
+      {
+        "id": "s_mppgoot8_h",
+        "layout": "feature-graphic",
+        "label": {},
+        "headline": {
+          "en": "Your tagline goes here."
+        },
+        "screenshot": ""
+      }
+    ]
+  },
+  "crossScreenMockupsByDevice": {
+    "iphone": [],
+    "ipad": [],
+    "android": [],
+    "android-7": [],
+    "android-10": [],
+    "feature-graphic": []
+  }
+}

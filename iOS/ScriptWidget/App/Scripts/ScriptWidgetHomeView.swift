@@ -164,6 +164,13 @@ struct ScriptWidgetHomeView: View {
         } detail: {
             HomeHelloView()
         }
+#if DEBUG
+        .onAppear {
+            if ProcessInfo.processInfo.arguments.contains("-storeScreenshotGallery") {
+                isShowingCreateGuide = true
+            }
+        }
+#endif
     }
     
     @ViewBuilder
