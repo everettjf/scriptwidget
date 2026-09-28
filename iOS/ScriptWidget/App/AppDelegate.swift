@@ -31,6 +31,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Proactively cache scripts locally while iCloud is reachable so widgets
         // keep rendering if iCloud Drive later becomes unavailable (issue #6).
         DispatchQueue.global(qos: .utility).async {
+            guard ScriptWidgetStorageAvailability.isAvailable else { return }
             sharedScriptManager.precacheAllScripts()
         }
     }
