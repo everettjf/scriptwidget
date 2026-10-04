@@ -136,14 +136,10 @@ struct CreateGuideView: View {
             }
         } label: {
             HStack(spacing: 12) {
-                Image(systemName: "sparkles")
-                    .font(.title)
-                    .foregroundStyle(.white)
+                Image(systemName: "sparkle")
+                    .font(.system(size: 32, weight: .light))
+                    .foregroundStyle(.primary)
                     .frame(width: 44, height: 44)
-                    .background(LinearGradient(colors: [.purple, .blue],
-                                               startPoint: .topLeading,
-                                               endPoint: .bottomTrailing))
-                    .clipShape(RoundedRectangle(cornerRadius: 10))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Generate with AI").font(.headline)
                     Text("Describe your widget and let the AI build it.")
