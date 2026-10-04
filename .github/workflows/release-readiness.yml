@@ -40,3 +40,36 @@ jobs:
           xcrun simctl list runtimes
       - run: ./Scripts/release-readiness.sh
       - run: ./Scripts/ipad-icloud-tests.sh
+      - name: Report XCTest results
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import glob
+          import json
+          import subprocess
+
+          for root in ("/tmp/scriptwidget-release-readiness", "/tmp/scriptwidget-ipad-icloud-tests"):
+              for path in sorted(glob.glob(f"{root}/*/Logs/Test/*.xcresult")):
+                  print(f"XCTest result: {path}", flush=True)
+                  result = subprocess.run(
+                      ["xcrun", "xcresulttool", "get", "test-results", "summary", "--path", path],
+                      capture_output=True, text=True,
+                  )
+                  if result.returncode:
+                      print(result.stderr, flush=True)
+                      continue
+                  summary = json.loads(result.stdout)
+                  print(json.dumps({key: summary.get(key) for key in (
+                      "title", "result", "passedTests", "failedTests", "skippedTests", "testFailures"
+                  )}, indent=2), flush=True)
+          PY
+      - name: Upload XCTest diagnostics
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: xctest-results-${{ github.run_attempt }}
+          path: |
+            /tmp/scriptwidget-release-readiness/*/Logs/Test/
+            /tmp/scriptwidget-ipad-icloud-tests/*/Logs/Test/
+          if-no-files-found: warn
+          retention-days: 7
