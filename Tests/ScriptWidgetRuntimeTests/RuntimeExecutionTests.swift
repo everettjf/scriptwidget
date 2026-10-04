@@ -260,7 +260,16 @@ final class RuntimeExecutionTests: XCTestCase {
         }
     }
 
-    func testConcurrentRuntimesKeepEnvironmentStateIsolated() {
+    func testConcurrentRuntimesKeepEnvironmentStateIsolated() throws {
+        let source = "$render(<text>{$getenv(\"widget-param\")}</text>);"
+        // Exercise concurrent environment isolation without racing eight cold
+        // Babel compilations of identical source on constrained CI simulators.
+        // Each concurrent execution still gets its own package and JSContext.
+        let warmup = makeRuntime(environments: ["widget-size": "medium", "widget-param": "warmup"])
+            .executeJSXSyncForWidget(source)
+        XCTAssertNil(warmup.1)
+        XCTAssertEqual(collectText(try XCTUnwrap(warmup.0)), "warmup")
+
         let lock = NSLock()
         var rendered: [Int: String] = [:]
         var failures: [String] = []
@@ -268,9 +277,7 @@ final class RuntimeExecutionTests: XCTestCase {
         DispatchQueue.concurrentPerform(iterations: 8) { index in
             let token = "runtime-\(index)"
             let runtime = makeRuntime(environments: ["widget-size": "medium", "widget-param": token])
-            let (element, error) = runtime.executeJSXSyncForWidget(
-                "$render(<text>{$getenv(\"widget-param\")}</text>);"
-            )
+            let (element, error) = runtime.executeJSXSyncForWidget(source)
             lock.lock()
             defer { lock.unlock() }
             if let error {

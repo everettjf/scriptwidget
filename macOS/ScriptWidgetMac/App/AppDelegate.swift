@@ -9,6 +9,19 @@ import Foundation
 import AppKit
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    var openWidgetURL: (URL) -> Void = { url in
+        NSWorkspace.shared.open(url)
+    }
+
+    func application(_ application: NSApplication, open urls: [URL]) {
+        for url in urls {
+            guard let scheme = url.scheme?.lowercased(),
+                  scheme != kDeepLinkDefaultScheme,
+                  scheme != "scriptwidget" else { continue }
+            openWidgetURL(url)
+        }
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         print("did finish launching")
         // The embedded editor is served via a WKURLSchemeHandler — no

@@ -13,6 +13,7 @@ git diff --exit-code -- \
   macOS/ScriptWidgetMac/StudioEditor.bundle
 
 if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
+  sh Scripts/macos-widget-link-tests.sh
   xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests \
     -destination 'platform=macOS' -derivedDataPath "$DERIVED_DATA/macos-tests" \
     CODE_SIGNING_ALLOWED=NO test
