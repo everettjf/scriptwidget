@@ -70,3 +70,5 @@ $render(
 ScriptWidget 仓库中的源代码使用 [MIT License](LICENSE) 发布。
 
 ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 MIT 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
+
+[Discord](https://discord.gg/eGzEaP6TzR)

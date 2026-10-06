@@ -59,3 +59,5 @@ $render(
 貢献を歓迎します。[コントリビューションガイド](CONTRIBUTING.md)、[ガバナンス](GOVERNANCE.md)、[行動規範](CODE_OF_CONDUCT.md)をご覧ください。セキュリティ問題は[セキュリティポリシー](SECURITY.md)に従い、非公開で報告してください。
 
 このリポジトリのソースコードは [MIT License](LICENSE) で公開されています。ScriptWidget の名称、ロゴ、スクリーンショット、App Store 用宣伝素材は MIT ライセンスの対象外であり、それらの権利は各権利者に帰属します。
+
+[Discord](https://discord.gg/eGzEaP6TzR)

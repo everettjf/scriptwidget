@@ -59,3 +59,5 @@ $render(
 Beiträge sind willkommen. Lies den [Leitfaden für Beiträge](CONTRIBUTING.md), die [Governance](GOVERNANCE.md) und den [Verhaltenskodex](CODE_OF_CONDUCT.md). Melde Sicherheitsprobleme gemäß der [Sicherheitsrichtlinie](SECURITY.md) vertraulich.
 
 Der Quellcode dieses Repositorys wird unter der [MIT-Lizenz](LICENSE) veröffentlicht. Der Name ScriptWidget, Logos, Screenshots und Werbematerialien für den App Store sind nicht von der MIT-Lizenz erfasst; die Rechte daran verbleiben bei den jeweiligen Rechteinhabern.
+
+[Discord](https://discord.gg/eGzEaP6TzR)

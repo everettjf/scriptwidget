@@ -71,3 +71,5 @@ $render(
 يُنشر الكود المصدري في هذا المستودع بموجب [ترخيص MIT](LICENSE). لا يشمل ترخيص MIT اسم ScriptWidget أو الشعارات أو لقطات الشاشة أو مواد App Store الترويجية؛ وتعود حقوقها إلى أصحاب الحقوق المعنيين.
 
 </div>
+
+[Discord](https://discord.gg/eGzEaP6TzR)

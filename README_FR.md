@@ -59,3 +59,5 @@ $render(
 Les contributions sont les bienvenues. Consultez le [guide de contribution](CONTRIBUTING.md), la [gouvernance](GOVERNANCE.md) et le [code de conduite](CODE_OF_CONDUCT.md). Signalez les problèmes de sécurité en privé selon la [politique de sécurité](SECURITY.md).
 
 Le code source de ce dépôt est publié sous [licence MIT](LICENSE). Le nom ScriptWidget, les logos, les captures d’écran et les supports promotionnels de l’App Store ne sont pas couverts par la licence MIT ; leurs droits appartiennent à leurs titulaires respectifs.
+
+[Discord](https://discord.gg/eGzEaP6TzR)

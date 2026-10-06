@@ -59,3 +59,5 @@ $render(
 기여를 환영합니다. [기여 가이드](CONTRIBUTING.md), [거버넌스](GOVERNANCE.md), [행동 강령](CODE_OF_CONDUCT.md)을 확인하세요. 보안 문제는 [보안 정책](SECURITY.md)에 따라 비공개로 제보해 주세요.
 
 이 저장소의 소스 코드는 [MIT License](LICENSE)로 공개됩니다. ScriptWidget 이름, 로고, 스크린샷, App Store 홍보 자료는 MIT 라이선스에 포함되지 않으며 해당 권리는 각 권리자에게 있습니다.
+
+[Discord](https://discord.gg/eGzEaP6TzR)
