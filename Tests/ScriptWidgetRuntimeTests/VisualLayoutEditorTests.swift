@@ -348,6 +348,24 @@ final class VisualLayoutEditorTests: XCTestCase {
         func editor() -> EditorInternalWebView? {
             window.contentView.flatMap { descendants($0).compactMap { $0 as? EditorInternalWebView }.first }
         }
+        // A visible CodeMirror document can precede a usable native snapshot
+        // during asynchronous host registration/handoff. Establish the actual
+        // bridge precondition before injecting edits; keep all handoff and
+        // persisted-content assertions below strict.
+        func snapshotWhenReady(_ web: EditorInternalWebView, documentID: String) async throws -> StudioDocumentSnapshot {
+            let deadline = Date().addingTimeInterval(15)
+            var snapshot: StudioDocumentSnapshot?
+            repeat {
+                snapshot = await withCheckedContinuation { continuation in
+                    EditorService.requestSnapshot(target: StudioEditorTarget(editorID: web.editorID, documentID: documentID)) {
+                        continuation.resume(returning: $0)
+                    }
+                }
+                if snapshot != nil { break }
+                try await Task.sleep(nanoseconds: 100_000_000)
+            } while Date() < deadline
+            return try XCTUnwrap(snapshot, "The current workspace host must provide a native snapshot before editing")
+        }
         let deadline = Date().addingTimeInterval(15)
         while editor() == nil && Date() < deadline { try await Task.sleep(nanoseconds: 50_000_000) }
         let original = try XCTUnwrap(editor())
@@ -356,7 +374,7 @@ final class VisualLayoutEditorTests: XCTestCase {
         for index in 0..<4 {
             let marker = "Pending edit across workspace layout \(index)"
             let fileURL = model.package.path.appendingPathComponent("main.jsx")
-            let before = try await nativeSnapshot(current, documentID: fileURL.standardizedFileURL.path)
+            let before = try await snapshotWhenReady(current, documentID: fileURL.standardizedFileURL.path)
             let inserted = "// \(marker)\n"
             let manual = (before.content as NSString).replacingCharacters(
                 in: NSRange(location: before.selection.lowerBound, length: before.selection.count), with: inserted)

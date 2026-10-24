@@ -13,6 +13,16 @@ const server = await serveDirectory(assembled);
 const chrome = await launchChrome({ width: 1440, height: 1000, scale: 1 });
 try {
   const page = await chrome.newPage();
+  async function savedProject(projectID?: string) {
+    await page.waitFor("document.getElementById('save-state')?.textContent==='Saved in this browser'");
+    return page.evaluate<{ id: string; files: Record<string, unknown> }>(`(async()=>{
+      const db=await new Promise((resolve,reject)=>{const request=indexedDB.open('scriptwidget-studio',1);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
+      try {
+        const id=${projectID ? JSON.stringify(projectID) : "JSON.parse(localStorage.getItem('scriptwidget-studio.project'))"};
+        return await new Promise((resolve,reject)=>{const request=db.transaction('projects').objectStore('projects').get(id);request.onsuccess=()=>resolve(request.result);request.onerror=()=>reject(request.error)});
+      } finally {db.close()}
+    })()`);
+  }
   await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }, { name: "prefers-reduced-motion", value: "reduce" }] });
   await page.goto(`${server.origin}/`);
   await page.waitFor("[...document.querySelectorAll('.widget-showcase img')].every(i=>i.complete&&i.naturalWidth>0)");
@@ -41,6 +51,7 @@ try {
   await page.call("Emulation.setDeviceMetricsOverride", { width: 1440, height: 1000, deviceScaleFactor: 1, mobile: false });
   await page.goto(`${server.origin}/studio/`);
   await page.waitFor("!!document.querySelector('#starter-guide') && !!document.querySelector('.sw-widget')", 20000);
+  const starter = await savedProject();
   if (output) fs.writeFileSync(path.join(output, "studio-starter.png"), await page.screenshot());
   for (const name of ["Habit Heatmap", "Countdown", "Reading Goal"]) {
     await clickReady(page, `[...document.querySelectorAll('#starter-guide button')].find(b=>b.textContent===${JSON.stringify(name)})`);
@@ -54,12 +65,22 @@ try {
   await clickReady(page, "document.querySelector('.template-card')");
   await page.waitFor("!!document.getElementById('template-copy')");
   await clickReady(page, "document.getElementById('template-copy')");
-  await page.waitFor("!document.querySelector('[role=dialog]') && document.querySelector('.sw-widget')?.textContent.includes('7 of 12 books')", 20000);
+  await page.waitFor("!document.querySelector('[role=dialog]') && document.querySelector('.sw-widget')?.textContent.includes('7 of 12')", 20000);
+  // The renderer may ellipsize "books" on Linux. Its visible prefix proves
+  // rendering; the complete persisted source proves which template was copied.
+  console.log("Reading preview:", await page.evaluate("document.querySelector('.sw-widget')?.innerText"));
+  const copied = await savedProject();
+  const catalog = JSON.parse(fs.readFileSync(path.join(repository, "Web/studio/dist/templates.json"), "utf8"));
+  const expected = catalog.templates.find((item: { id: string }) => item.id === "template/Reading Goal");
+  assert.equal(copied.files["main.jsx"], expected.files["main.jsx"]);
+  assert.notEqual(copied.id, starter.id);
   assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
   assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2);
   await page.goto(`${server.origin}/studio/`);
-  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('7 of 12 books')", 20000);
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('7 of 12')", 20000);
   assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
+  assert.deepEqual(await savedProject(), copied);
+  assert.deepEqual(await savedProject(starter.id), starter, "The original draft and all its files must remain byte-for-byte unchanged");
   // The generic Gallery entry must not retain the starter shortcut's filter.
   await clickReady(page, "document.getElementById('open-templates')");
   await page.waitFor("document.getElementById('template-search')?.value==='' && document.querySelectorAll('.template-card').length>3");
