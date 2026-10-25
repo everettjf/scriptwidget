@@ -239,14 +239,16 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     /// locks, which keeps the context-validation lock order acyclic.
     @discardableResult
     func activate(root: URL, isUsingICloud: Bool, allowSwitch: Bool = false,
+                  automaticCandidates: [String: ScriptWidgetStoragePublicationReceipt]? = nil,
                   checkpoint: (String) throws -> Void = { _ in }) throws -> ScriptWidgetPackageStorageContext {
         guard let result = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: "ScriptWidgetStorage.LibraryProfiles.v1.worker", operation: {
-            Result { try self.performActivation(root: root, isUsingICloud: isUsingICloud, allowSwitch: allowSwitch, checkpoint: checkpoint) }
+            Result { try self.performActivation(root: root, isUsingICloud: isUsingICloud, allowSwitch: allowSwitch, automaticCandidates: automaticCandidates, checkpoint: checkpoint) }
         }) else { throw ScriptWidgetStorageNamespaceError.unavailable }
         return try result.get()
     }
 
     private func performActivation(root: URL, isUsingICloud: Bool, allowSwitch: Bool,
+                                   automaticCandidates: [String: ScriptWidgetStoragePublicationReceipt]? = nil,
                                    checkpoint: (String) throws -> Void) throws -> ScriptWidgetPackageStorageContext {
         let descriptor = try Self.source(root)
         let (profile, activation): (ScriptWidgetStorageLibraryProfile, String) = try coordinated {
@@ -294,7 +296,14 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
         let (index, bindings) = try ScriptWidgetStorageNamespaces.reviewState(container: container, defaults: store)
         let original = Dictionary(uniqueKeysWithValues: journal.original.map { ($0.name, $0.receipt) })
         let previousPlans = Dictionary(uniqueKeysWithValues: journal.plans.map { ($0.name, $0) })
-        journal.plans = inventory.entries.keys.sorted().map { name in
+        if let automaticCandidates {
+            guard automaticCandidates.allSatisfy({ inventory.entries[$0.key] == $0.value }) else {
+                throw ScriptWidgetStorageNamespaceError.conflict
+            }
+        }
+        // Automatic recovery only adopts readable candidates from this scan.
+        // Incomplete downloads stay unbound so later checks can retry them.
+        journal.plans = inventory.entries.keys.filter { automaticCandidates == nil || automaticCandidates?[$0] != nil }.sorted().map { name in
             let receipt = inventory.entries[name]!
             let owner = index.owners.first { $0.active && $0.name == name }
             let binding = bindings.first { $0.role == .source && $0.ownerID == owner?.id }
@@ -483,7 +492,7 @@ struct ScriptWidgetLibrarySession: Sendable {
                 // an externally replaced directory cannot select an older owner.
                 _ = try context.boundDirectory(name: name, role: .source)
                 let package = manager.getScriptPackage(packageName: name)
-                let placeholders = try hasPlaceholder(root: directory)
+                let placeholders = try Self.hasPlaceholder(root: directory)
                 if ScriptWidgetMetadataFile.exists(package.manifestPath) {
                     guard let manifest = package.readManifest(), WidgetPackageManifestValidator.validate(manifest, package: package, checkEntryExists: false).isValid else {
                         throw ScriptWidgetStorageNamespaceError.invalidRegistry
@@ -514,7 +523,7 @@ struct ScriptWidgetLibrarySession: Sendable {
         return snapshot
     }
 
-    private func hasPlaceholder(root: URL) throws -> Bool {
+    static func hasPlaceholder(root: URL) throws -> Bool {
         var count = 0, found = false
         func visit(_ relative: String, depth: Int) throws {
             guard depth <= 16, let names = ScriptWidgetPackageFiles.list(root: root, relative: relative.isEmpty ? nil : relative) else { throw ScriptWidgetStorageNamespaceError.unavailable }
@@ -703,6 +712,41 @@ struct ScriptWidgetApplicationLibraryService: Sendable {
         if (try? profiles.readySelection()) != nil { return try ScriptWidgetLibrarySession(profiles: profiles) }
         return try ScriptWidgetEditorPresence.withoutEditors {
             try profiles.prepareApplicationOpen(initialRoot: initialRoot, isUsingICloud: initialIsUsingICloud)
+            return try ScriptWidgetLibrarySession(profiles: profiles)
+        }
+    }
+
+    /// Application-only recovery of directories delivered after initial opening.
+    /// Existing bindings and records remain authoritative. A replaced directory
+    /// receives a fresh owner through the same journaled adoption as a rescan.
+    func refreshRestoredPackages() throws -> ScriptWidgetLibrarySession? {
+        try ScriptWidgetEditorPresence.withoutEditors {
+            let previous = try? profiles.readySelection()
+            let session = try open()
+            guard let context = session.sourceManager?.storageContext else { return nil }
+            let inventory = try ScriptWidgetLibraryInventory.capture(context: context, isUsingICloud: session.selection.profile.isUsingICloud)
+            let (index, bindings) = try ScriptWidgetStorageNamespaces.reviewState(container: context.container, defaults: context.defaults)
+            let activeOwners = Set(index.owners.filter(\.active).map(\.id))
+            let registered = Dictionary(uniqueKeysWithValues: bindings.filter {
+                $0.role == .source && $0.location == context.locationIdentifier && activeOwners.contains($0.ownerID)
+            }.map { ($0.name, $0.receipt) })
+            var candidates: [String: ScriptWidgetStoragePublicationReceipt] = [:]
+            for (name, receipt) in inventory.entries {
+                if registered[name] == receipt { continue }
+                let package = ScriptWidgetPackage(path: context.libraryRoot.appendingPathComponent(name), readonly: true)
+                guard let hasPlaceholder = try? ScriptWidgetLibrarySession.hasPlaceholder(root: package.path) else { continue }
+                if hasPlaceholder {
+                    if session.selection.profile.isUsingICloud {
+                        try? FileManager.default.startDownloadingUbiquitousItem(at: package.path)
+                    }
+                    continue
+                }
+                guard package.readMainFileResult().content != nil else { continue }
+                candidates[name] = receipt
+            }
+            guard !candidates.isEmpty else { return previous == session.selection ? nil : session }
+            _ = try profiles.activate(root: context.libraryRoot, isUsingICloud: session.selection.profile.isUsingICloud,
+                                      automaticCandidates: candidates)
             return try ScriptWidgetLibrarySession(profiles: profiles)
         }
     }

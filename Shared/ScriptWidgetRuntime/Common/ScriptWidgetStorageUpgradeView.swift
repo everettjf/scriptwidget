@@ -179,6 +179,7 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
     private let factory: @Sendable () throws -> ScriptWidgetApplicationLibraryService
     private let cacheOnOpen: Bool
     private var attempted = false
+    private var isDiscoveringRestoredPackages = false
     @Published private(set) var isBusy = false
     @Published private(set) var isReady = false
     @Published private(set) var isOffline = false
@@ -205,6 +206,27 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
             let session = try await Task.detached(priority: .userInitiated) { try factory().open() }.value
             publish(session)
         } catch { report(error) }
+    }
+
+    /// Poll only while a native application scene is active. Failed or partial
+    /// downloads and open editors are retried without replacing the current UI.
+    func refreshRestoredPackages() async {
+        guard !isBusy, !isDiscoveringRestoredPackages, isReady || isOffline else { return }
+        isDiscoveringRestoredPackages = true
+        defer { isDiscoveringRestoredPackages = false }
+        let factory = self.factory
+        do {
+            let session = try await Task.detached(priority: .utility, operation: {
+                let service = try factory()
+                return try service.refreshRestoredPackages() ?? service.open()
+            }).value
+            if !isBusy, session.selection.activationID != selectionID || (session.sourceManager == nil) != isOffline {
+                publish(session)
+            }
+        } catch {
+            // Background discovery must not present transient download/lease
+            // errors as a failed library switch. The next foreground scan retries.
+        }
     }
 
     func loadChoices() async {
@@ -237,6 +259,8 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
     }
 
     private func publish(_ session: ScriptWidgetLibrarySession) {
+        // A user-initiated switch may have completed while discovery awaited I/O.
+        guard (try? session.validate()) != nil else { return }
         selectionID = session.selection.activationID
         selectedRootPath = session.selection.profile.path
         isOffline = session.sourceManager == nil
@@ -308,6 +332,7 @@ struct ScriptWidgetLibrarySelectionView: View {
 /// package/editor UI; tests can render it with a temporary, injected service.
 struct ScriptWidgetLibraryLaunchView<Content: View>: View {
     @ObservedObject var model: ScriptWidgetLibraryLaunchModel
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingLibraries = false
     let content: () -> Content
 
@@ -336,7 +361,15 @@ struct ScriptWidgetLibraryLaunchView<Content: View>: View {
                 }.padding(32).frame(maxWidth: 560)
             }
         }
-        .task { await model.openIfNeeded() }
+        .task(id: scenePhase) {
+            await model.openIfNeeded()
+            guard scenePhase == .active else { return }
+            while !Task.isCancelled {
+                await model.refreshRestoredPackages()
+                do { try await Task.sleep(nanoseconds: 3_000_000_000) }
+                catch { return }
+            }
+        }
         .sheet(isPresented: $showingLibraries) { ScriptWidgetLibrarySelectionView(model: model) }
     }
 }

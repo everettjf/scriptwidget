@@ -4528,6 +4528,115 @@ final class LibrarySessionExecutionTests: XCTestCase {
         XCTAssertEqual(defaults.string(forKey: "script.\(packageName!).count"), "7")
     }
 
+    func testAutomaticRecoveryRegistersLateFilesWithoutChangingHistoricalOwnerOrRecords() throws {
+        let service = applicationService(), first = try service.open()
+        let historical = try first.capture(name: packageName)
+        let late = library.appendingPathComponent("Restored")
+        try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+        XCTAssertNil(try service.refreshRestoredPackages(), "An incomplete download must remain retryable")
+        try Data("$render(<text>restored</text>);".utf8).write(to: late.appendingPathComponent("main.jsx"))
+        XCTAssertThrowsError(try first.capture(name: "Restored"))
+        let recovered = try XCTUnwrap(service.refreshRestoredPackages())
+        XCTAssertEqual(try render(recovered.capture(name: "Restored")), "restored")
+        let current = try recovered.capture(name: packageName)
+        XCTAssertEqual(current.binding.ownerID, historical.binding.ownerID)
+        XCTAssertEqual(current.storageNamespace, historical.storageNamespace)
+        XCTAssertEqual(try render(current), "count:7")
+        XCTAssertEqual(defaults.string(forKey: "script.\(packageName!).count"), "7")
+        XCTAssertNil(try service.refreshRestoredPackages(), "An unchanged library must not rotate its activation")
+        XCTAssertEqual(try service.open().selection, recovered.selection)
+    }
+
+    func testAutomaticRecoveryRetriesPartialDownloadsEvenAfterOtherPackagesWereRegistered() throws {
+        let service = applicationService()
+        _ = try service.open()
+        let pending = library.appendingPathComponent("Pending")
+        let ready = library.appendingPathComponent("Ready")
+        for path in [pending, ready] { try FileManager.default.createDirectory(at: path, withIntermediateDirectories: true) }
+        try Data("{}".utf8).write(to: pending.appendingPathComponent(".widget.json.icloud"))
+        try Data("$render(<text>ready</text>);".utf8).write(to: ready.appendingPathComponent("main.jsx"))
+        let first = try XCTUnwrap(service.refreshRestoredPackages())
+        XCTAssertEqual(try render(first.capture(name: "Ready")), "ready")
+        XCTAssertThrowsError(try first.capture(name: "Pending"))
+        XCTAssertNil(try service.refreshRestoredPackages())
+        try FileManager.default.removeItem(at: pending.appendingPathComponent(".widget.json.icloud"))
+        try Data("$render(<text>downloaded</text>);".utf8).write(to: pending.appendingPathComponent("main.jsx"))
+        let next = try XCTUnwrap(service.refreshRestoredPackages())
+        XCTAssertEqual(try render(next.capture(name: "Pending")), "downloaded")
+        XCTAssertEqual(try render(next.capture(name: packageName)), "count:7")
+    }
+
+    func testAutomaticRecoveryWaitsForNestedResourcesAndSkipsSymlinkPackages() throws {
+        let service = applicationService()
+        _ = try service.open()
+        let pending = library.appendingPathComponent("Nested")
+        try FileManager.default.createDirectory(at: pending.appendingPathComponent("images"), withIntermediateDirectories: true)
+        try Data("$render(<text>nested</text>);".utf8).write(to: pending.appendingPathComponent("main.jsx"))
+        let placeholder = pending.appendingPathComponent("images/.photo.png.icloud")
+        try Data().write(to: placeholder)
+        try FileManager.default.createSymbolicLink(at: library.appendingPathComponent("Linked"), withDestinationURL: other.appendingPathComponent(packageName))
+        XCTAssertNil(try service.refreshRestoredPackages())
+        try FileManager.default.removeItem(at: placeholder)
+        try Data([1, 2, 3]).write(to: pending.appendingPathComponent("images/photo.png"))
+        let recovered = try XCTUnwrap(service.refreshRestoredPackages())
+        XCTAssertEqual(try render(recovered.capture(name: "Nested")), "nested")
+        XCTAssertThrowsError(try recovered.capture(name: "Linked"))
+        XCTAssertEqual(try render(recovered.capture(name: packageName)), "count:7")
+    }
+
+    func testAutomaticRecoveryWaitsForEditorsAndRejectsMalformedRestoredManifest() throws {
+        let service = applicationService(), first = try service.open()
+        let late = library.appendingPathComponent("Restored")
+        try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+        try Data("$render(<text>restored</text>);".utf8).write(to: late.appendingPathComponent("main.jsx"))
+        let lease = ScriptWidgetEditorPresence.register()
+        defer { ScriptWidgetEditorPresence.unregister(lease) }
+        XCTAssertThrowsError(try service.refreshRestoredPackages())
+        XCTAssertEqual(try service.open().selection, first.selection)
+        XCTAssertEqual(try render(first.capture(name: packageName)), "count:7")
+        ScriptWidgetEditorPresence.unregister(lease)
+        try Data("{invalid".utf8).write(to: late.appendingPathComponent("widget.json"))
+        XCTAssertNil(try service.refreshRestoredPackages())
+        XCTAssertEqual(try service.open().selection, first.selection)
+        try FileManager.default.removeItem(at: late.appendingPathComponent("widget.json"))
+        XCTAssertNotNil(try service.refreshRestoredPackages())
+    }
+
+    func testAutomaticRecoveryNeverGivesSameNameReplacementHistoricalRecords() throws {
+        let service = applicationService(), first = try service.open()
+        let historical = try first.capture(name: packageName)
+        let original = library.appendingPathComponent(packageName)
+        try FileManager.default.moveItem(at: original, to: root.appendingPathComponent("original-package"))
+        try FileManager.default.createDirectory(at: original, withIntermediateDirectories: true)
+        try Data("$render(<text>{'count:' + $storage.getString('count')}</text>);".utf8).write(to: original.appendingPathComponent("main.jsx"))
+        let recovered = try XCTUnwrap(service.refreshRestoredPackages())
+        let replacement = try recovered.capture(name: packageName)
+        XCTAssertNotEqual(replacement.binding.ownerID, historical.binding.ownerID)
+        XCTAssertEqual(try render(replacement), "count:")
+        XCTAssertEqual(try replacement.context.defaults.readValue(forKey: historical.storageNamespace + "count") as? String, "7")
+        XCTAssertEqual(defaults.string(forKey: "script.\(packageName!).count"), "7")
+        XCTAssertThrowsError(try historical.validateIdentity())
+    }
+
+    @MainActor
+    func testLaunchModelAutomaticallyPublishesRestoredPackages() async throws {
+        let service = applicationService()
+        let model = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { service })
+        await model.open()
+        let previous = model.selectionID
+        let late = library.appendingPathComponent("Restored")
+        try FileManager.default.createDirectory(at: late, withIntermediateDirectories: true)
+        try Data("$render(<text>restored</text>);".utf8).write(to: late.appendingPathComponent("main.jsx"))
+        await model.refreshRestoredPackages()
+        XCTAssertTrue(model.isReady)
+        XCTAssertNil(model.message)
+        XCTAssertNotEqual(model.selectionID, previous)
+        XCTAssertEqual(try render(service.open().capture(name: "Restored")), "restored")
+        let current = model.selectionID
+        await model.refreshRestoredPackages()
+        XCTAssertEqual(model.selectionID, current)
+    }
+
     func testConcurrentApplicationOpenersKeepOneActivationIdentity() async throws {
         let service = applicationService()
         async let first = Task.detached { try service.open().selection }.value

@@ -227,6 +227,12 @@ Private file stores now anchor their data-directory receipt in a separate bounde
 
 The development worktree connects these coordinator APIs to ordinary iOS/macOS startup, global managers, extension snapshots, native record sheets and actions. Tests use disposable libraries, real JSC and reconstructed action hosts. Native library selection, legacy-writer gating, isolated previews, whole-package cache fallback and scoped compiled fallback are implemented. System-dispatched widget actions, signed App Group, physical-device performance and real iCloud acceptance still require evidence; this work is not published.
 
+### Files restored after startup
+
+While the native app is in the foreground, it checks the selected library every three seconds for restored directories that are not yet registered. Readable packages are adopted through the existing journaled coordinator, cached, and followed by a WidgetKit timeline reload. Partial downloads, malformed manifests, linked paths and unavailable storage are retried or rejected without deleting original files. Open native/Web Studio editors defer adoption until their leases close. Background restoration is checked when the app becomes active again; extensions never perform adoption themselves.
+
+Existing directory receipts keep their owner UUID and records. A different directory with the same name receives a fresh UUID; earlier records remain preserved for native recovery and are never attached solely by name. Unchanged libraries do not rotate their activation. Manual library refresh remains available for explicit recovery.
+
 ## Legacy cutover fence and isolated preview records (development)
 
 Legacy native consumers now use `ScriptWidgetLegacyStorageBackend`. The profile state lock covers each read and each complete mutation, including preference synchronization, and activation uses the same lock to publish `preparing`. A previously opened record sheet or legacy button cannot write after that publication. The callback inside a legacy transaction receives the underlying store while the fence is held; it does not reacquire the state lock. Bound UUID/file consumers continue to use their captured native context.
