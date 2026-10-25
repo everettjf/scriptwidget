@@ -4339,7 +4339,26 @@ final class LibrarySessionExecutionTests: XCTestCase {
             try prepareFunctionalTranspile(try XCTUnwrap(captured.package.readFile(relativePath:"lib/weather.js").0), wrapMain:false)
             let runtime=ScriptWidgetRuntime(package:captured.package,environments:["widget-size":"medium"],executionSnapshot:captured)
             let configuration=URLSessionConfiguration.ephemeral;configuration.protocolClasses=[NativeIdentityURLProtocol.self]
-            runtime.runningState?.fetchManagerForTesting=ScriptWidgetFetchManager(configuration:configuration)
+            let transport = ScriptWidgetFetchManager(configuration: configuration)
+            // Exercise persistence through the real bridge, without timing cold
+            // CFNetwork/URLProtocol startup as widget execution on a CI simulator.
+            // This separate fixture never touches the forecast or its call count.
+            let warmHost = "native-identity-weather-" + UUID().uuidString.lowercased() + ".example.com"
+            NativeIdentityURLProtocol.set(warmHost) { $0.respond("ready") }
+            defer { NativeIdentityURLProtocol.set(warmHost, handler: nil) }
+            let ready = expectation(description: "Mock HTTP transport is ready")
+            let warmup = transport.makeTask(httpMethod: "GET", url: try XCTUnwrap(URL(string: "https://" + warmHost)), params: nil) { data, _, error in
+                XCTAssertNil(error)
+                XCTAssertEqual(data, Data("ready".utf8))
+                ready.fulfill()
+            }
+            warmup.resume()
+            guard XCTWaiter.wait(for: [ready], timeout: 15) == .completed else {
+                warmup.cancel()
+                XCTFail("Mock HTTP transport did not become ready")
+                throw URLError(.timedOut)
+            }
+            runtime.runningState?.fetchManagerForTesting = transport
             let result=runtime.executeJSXSyncForWidget(captured.source)
             XCTAssertNil(result.1,result.1?.displayMessage ?? "")
             return text(try XCTUnwrap(result.0))
