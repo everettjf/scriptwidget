@@ -4163,6 +4163,69 @@ final class LibrarySessionExecutionTests: XCTestCase {
         }
     }
 
+    func testICloudSessionEstablishesProcessAccessBeforeReadingSelectedSource() throws {
+        let original = try profiles.activate(root: library, isUsingICloud: true)
+        let owner = try original.boundDirectory(name: packageName, role: .source).ownerID
+        let inaccessible = root.appendingPathComponent("awaiting-container-access")
+        try FileManager.default.moveItem(at: library, to: inaccessible)
+        var calls = 0
+        let session = try ScriptWidgetLibrarySession(profiles: profiles, prepareICloudAccess: {
+            calls += 1
+            // Model access becoming available only after the process requests
+            // its container. The directory identity and user bytes stay intact.
+            do { try FileManager.default.moveItem(at: inaccessible, to: self.library) }
+            catch { XCTFail("Could not establish fixture access: \(error)") }
+        })
+        XCTAssertEqual(calls, 1)
+        XCTAssertNotNil(session.sourceManager)
+        XCTAssertEqual(session.selection.profile.path, library.resolvingSymlinksInPath().path)
+        let captured = try session.capture(name: packageName)
+        XCTAssertEqual(captured.binding.ownerID, owner)
+        XCTAssertEqual(captured.binding.role, ScriptWidgetStorageDirectoryRole.source)
+        XCTAssertEqual(try render(captured), "count:7")
+    }
+
+    func testLocalSessionDoesNotRequestICloudAccess() throws {
+        _ = try start()
+        let session = try ScriptWidgetLibrarySession(profiles: profiles, prepareICloudAccess: {
+            XCTFail("A local library must not initialize iCloud access")
+        })
+        XCTAssertEqual(try render(session.capture(name: packageName)), "count:7")
+    }
+
+    func testICloudAccessAttemptRetainsAuthorizedCacheWhenSourceIsOffline() throws {
+        _ = try profiles.activate(root: library, isUsingICloud: true)
+        let initial = try ScriptWidgetLibrarySession(profiles: profiles, prepareICloudAccess: {})
+        let original = try initial.capture(name: packageName)
+        _ = try build(initial)
+        try FileManager.default.moveItem(at: library, to: root.appendingPathComponent("offline-library"))
+        var calls = 0
+        let session = try ScriptWidgetLibrarySession(profiles: profiles, prepareICloudAccess: { calls += 1 })
+        XCTAssertEqual(calls, 1)
+        XCTAssertNil(session.sourceManager)
+        XCTAssertEqual(session.selection, initial.selection)
+        let cached = try session.capture(name: packageName)
+        XCTAssertEqual(cached.binding.role, ScriptWidgetStorageDirectoryRole.cache)
+        XCTAssertEqual(cached.binding.ownerID, original.binding.ownerID)
+        XCTAssertEqual(try render(cached), "count:7")
+    }
+
+    @MainActor
+    func testICloudAccessInitializationRunsOffMainThreadAndFinishesBeforeReturning() {
+        final class State: @unchecked Sendable {
+            let lock = NSLock()
+            var finished = false
+            func finish() { lock.lock(); finished = true; lock.unlock() }
+            func read() -> Bool { lock.lock(); defer { lock.unlock() }; return finished }
+        }
+        let state = State()
+        ScriptWidgetICloudContainerAccess.establish {
+            XCTAssertFalse(Thread.isMainThread)
+            state.finish()
+        }
+        XCTAssertTrue(state.read())
+    }
+
     func testLiveActivityIdentitySurvivesRenameButCannotFollowReinstallationOrAnotherLibrary() throws {
         let session=try start(),manager=try XCTUnwrap(session.sourceManager)
         let (binding,first)=try ScriptWidgetLiveActivityBinding.capture(name:packageName,cacheOnly:false,container:container)

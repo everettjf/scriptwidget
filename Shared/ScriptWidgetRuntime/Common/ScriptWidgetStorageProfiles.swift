@@ -438,6 +438,32 @@ enum ScriptWidgetCutoverProcessProbe {
 }
 #endif
 
+/// An absolute path saved by the app does not grant an extension access to its
+/// iCloud container. Each process must ask Foundation to extend its own sandbox
+/// before inspecting the selected source. Do not use the returned URL to select
+/// another library or change any installation identity.
+enum ScriptWidgetICloudContainerAccess {
+    static func prepare() {
+        // Deterministic tests use temporary libraries, never the host's iCloud.
+        guard !ScriptManager.usesIsolatedUnitTestBuildCache else { return }
+        establish {
+            _ = FileManager.default.url(forUbiquityContainerIdentifier: "iCloud.ScriptWidget")
+        }
+    }
+
+    static func establish(_ operation: @escaping @Sendable () -> Void) {
+        guard Thread.isMainThread else { operation(); return }
+        // Foundation requires this potentially blocking call off the main
+        // thread. Synchronous rendering must wait until access is established.
+        let finished = DispatchSemaphore(value: 0)
+        DispatchQueue.global(qos: .userInitiated).async {
+            operation()
+            finished.signal()
+        }
+        finished.wait()
+    }
+}
+
 /// Ready-library factory shared by app, widget and action hosts. It never
 /// bootstraps from an extension or silently picks another library when the
 /// selected source disappears. Cached executions use an entire bound package.
@@ -454,8 +480,10 @@ struct ScriptWidgetLibrarySession: Sendable {
         return try Self(profiles: profiles)
     }
 
-    init(profiles: ScriptWidgetStorageProfiles) throws {
+    init(profiles: ScriptWidgetStorageProfiles,
+         prepareICloudAccess: () -> Void = ScriptWidgetICloudContainerAccess.prepare) throws {
         let selected = try profiles.readySelection()
+        if selected.profile.isUsingICloud { prepareICloudAccess() }
         let cache = try profiles.widgetCacheRoot()
         let cached = try profiles.currentContext(cacheRoot: cache)
         let source: ScriptWidgetPackageStorageContext?
