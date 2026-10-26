@@ -675,29 +675,14 @@ final class RuntimeExecutionTests: XCTestCase {
         }
     }
 
-    /// CPU seconds this process consumes over `interval`.
-    private func processCPUSeconds(over interval: TimeInterval) -> Double {
-        func cpuSeconds() -> Double {
-            var usage = rusage()
-            getrusage(RUSAGE_SELF, &usage)
-            func seconds(_ time: timeval) -> Double { Double(time.tv_sec) + Double(time.tv_usec) / 1_000_000 }
-            return seconds(usage.ru_utime) + seconds(usage.ru_stime)
-        }
-        let before = cpuSeconds()
-        Thread.sleep(forTimeInterval: interval)
-        return cpuSeconds() - before
-    }
-
     /// Asserts the runaway script released its thread and its VM.
     /// JavaScriptCore serialises entry into a VM, so while a loop spins a
     /// follow-up execution on the same runtime blocks until it, too, hits the
     /// execution limit. Runtimes are single-use, so the follow-up fails on
     /// redeclaring util.js globals; reaching that error promptly proves the
-    /// VM accepted new work.
+    /// VM accepted new work. Process-wide CPU sampling is not evidence about
+    /// this VM: compiler, WebKit and other hosted-test work can run concurrently.
     private func assertRuntimeStopped(_ runtime: ScriptWidgetRuntime, file: StaticString = #filePath, line: UInt = #line) {
-        let idleCPU = processCPUSeconds(over: 1)
-        XCTAssertLessThan(idleCPU, 0.5, "a runaway script is still burning CPU", file: file, line: line)
-
         let start = Date()
         let (_, error) = runtime.executeJSXSyncForWidget("$render(<text>after</text>);")
         XCTAssertLessThan(Date().timeIntervalSince(start), 3, "runtime VM still locked", file: file, line: line)
@@ -4401,6 +4386,26 @@ final class LibrarySessionExecutionTests: XCTestCase {
             try prepareFunctionalTranspile(captured.source)
             try prepareFunctionalTranspile(try XCTUnwrap(captured.package.readFile(relativePath:"lib/weather.js").0), wrapMain:false)
             let runtime=ScriptWidgetRuntime(package:captured.package,environments:["widget-size":"medium"],executionSnapshot:captured)
+            // This test covers HTTP/cache persistence, not the simulator's
+            // location daemon. Even a manually configured city checks location
+            // availability so it can discard revoked location cache entries.
+            let locationChecked = expectation(description: "Weather uses isolated location availability")
+            runtime.validationHostInstaller = { context in
+                let unavailable: @convention(block) () -> Bool = {
+                    locationChecked.fulfill()
+                    return false
+                }
+                context["__weatherLocationUnavailable"] = unsafeBitCast(unavailable, to: JSValue.self)
+                context.evaluateScript("""
+                    globalThis.$location = Object.freeze({
+                        isAvailable: __weatherLocationUnavailable,
+                        authorizationStatus: () => 'unavailable',
+                        isAuthorizedForWidgetUpdates: () => false,
+                        current: () => { throw new Error('Manual weather must not request location'); }
+                    });
+                    delete globalThis.__weatherLocationUnavailable;
+                    """)
+            }
             let configuration=URLSessionConfiguration.ephemeral;configuration.protocolClasses=[NativeIdentityURLProtocol.self]
             let transport = ScriptWidgetFetchManager(configuration: configuration)
             // Exercise persistence through the real bridge, without timing cold
@@ -4423,7 +4428,9 @@ final class LibrarySessionExecutionTests: XCTestCase {
             }
             runtime.runningState?.fetchManagerForTesting = transport
             let result=runtime.executeJSXSyncForWidget(captured.source)
-            XCTAssertNil(result.1,result.1?.displayMessage ?? "")
+            XCTAssertEqual(XCTWaiter.wait(for: [locationChecked], timeout: 0), .completed)
+            let trace = ScriptWidgetRuntimeTrace.recentSnapshots().last
+            XCTAssertNil(result.1, "\(result.1?.displayMessage ?? ""); HTTP calls: \(calls); phases: \(trace?.durations ?? [:]); counters: \(trace?.counters ?? [:])")
             return text(try XCTUnwrap(result.0))
         }
         XCTAssertTrue(try execute(first).contains("18°C"));XCTAssertEqual(calls,1)
