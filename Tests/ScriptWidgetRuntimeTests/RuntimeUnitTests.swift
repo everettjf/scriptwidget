@@ -26,6 +26,7 @@ import ImageIO
 import CryptoKit
 import Darwin
 import SwiftUI
+import UniformTypeIdentifiers
 #if os(iOS)
 import UIKit
 #elseif os(macOS)
@@ -1510,6 +1511,22 @@ final class ScriptManagerLifecycleTests: XCTestCase {
         _ = manager.deleteScript(packageName: "Renamed")
         XCTAssertFalse(manager.isExist(packageName: "Renamed"))
         XCTAssertEqual(manager.listScripts().map(\.name), ["Renamed Remix"])
+    }
+
+    func testExportedWidgetArchiveIsSelectableByZIPImporter() throws {
+        let manager = try makeManager("ArchiveFileType")
+        XCTAssertTrue(manager.createScript(content: "$render(<text>Archive</text>)",
+                                           recommendPackageName: "Archive", imageCopyPath: nil).0)
+        let model = try XCTUnwrap(manager.listScripts().first)
+        let ext = URL(fileURLWithPath: model.exportFileName).pathExtension
+        XCTAssertEqual(ext, "swt", "Keep existing exported archives compatible")
+        let declarations = try XCTUnwrap(Bundle.main.object(forInfoDictionaryKey: "UTExportedTypeDeclarations") as? [[String: Any]])
+        let archive = try XCTUnwrap(declarations.first { ($0["UTTypeIdentifier"] as? String) == "com.everettjf.scriptwidget.archive" })
+        XCTAssertEqual(archive["UTTypeConformsTo"] as? [String], [UTType.zip.identifier])
+        let tags = try XCTUnwrap(archive["UTTypeTagSpecification"] as? [String: Any])
+        XCTAssertEqual(tags["public.filename-extension"] as? [String], [ext])
+        let type = try XCTUnwrap(UTType(filenameExtension: ext))
+        XCTAssertTrue(type.conforms(to: .zip), "The system ZIP picker must accept the app's own .swt export")
     }
 
     func testExportImportRoundTripDeduplicatesWithoutOverwrite() throws {
