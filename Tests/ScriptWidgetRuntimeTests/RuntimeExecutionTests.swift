@@ -686,9 +686,10 @@ final class RuntimeExecutionTests: XCTestCase {
         let start = Date()
         let (_, error) = runtime.executeJSXSyncForWidget("$render(<text>after</text>);")
         XCTAssertLessThan(Date().timeIntervalSince(start), 3, "runtime VM still locked", file: file, line: line)
-        if case .resourceLimit = error {
-            XCTFail("runtime VM still busy: \(String(describing: error))", file: file, line: line)
+        guard case .scriptError(let message) = error else {
+            return XCTFail("Expected the same VM to report a JavaScript redeclaration, got \(String(describing: error))", file: file, line: line)
         }
+        XCTAssertTrue(message.hasPrefix("SyntaxError:"), "Expected JavaScriptCore to accept follow-up work, got \(message)", file: file, line: line)
     }
 
     func testRunawaySynchronousLoopIsTerminatedAtTimeLimit() {
