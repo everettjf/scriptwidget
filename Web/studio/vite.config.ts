@@ -97,7 +97,9 @@ export default defineConfig({
     chunkSizeWarningLimit: 600,
     // Libraries change less often than the app: separate chunks cache longer.
     rollupOptions: {
+      input: { studio: path.join(root, "index.html"), hero: path.join(repository, "site/hero.js") },
       output: {
+        entryFileNames: (chunk) => chunk.name === "hero" ? "hero/demo.js" : "assets/[name]-[hash].js",
         manualChunks(id) {
           if (/node_modules\/(react|react-dom|scheduler|radix-ui|@radix-ui|sonner|@floating-ui)\//.test(id)) return "ui";
           if (/node_modules\/(@codemirror|@lezer|crelt|style-mod|w3c-keyname)\//.test(id)) return "editor";
