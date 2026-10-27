@@ -36,7 +36,7 @@ struct ScriptWidgetSystemAccessView: View {
                         }))
                     }
                     Button("Save Access and Selections") { run {
-                        let store = try Self.store(package); try store.save(grant, expected: original); reload(); message = "Access saved. System authorization may also be required below."
+                        let store = try Self.store(package); try store.save(grant, expected: original); reload(); ScriptWidgetSystemRefresh.request(); message = "Access saved. System authorization may also be required below."
                     } }
                     Text("Turning access off takes effect for subsequent system calls. It does not delete imported files or cancel previously scheduled notifications or alarms; cancel those before revoking access.").font(.footnote)
                 }

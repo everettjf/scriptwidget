@@ -28,6 +28,7 @@ import Darwin
 import SwiftUI
 import UniformTypeIdentifiers
 #if os(iOS)
+import AppIntents
 import UIKit
 #elseif os(macOS)
 import AppKit
@@ -6625,3 +6626,15 @@ extension NativeStorageFileTests {
         XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
     }
 }
+
+#if os(iOS)
+@available(iOS 17.0, *)
+final class ScriptWidgetActionHostTests: XCTestCase {
+    func testDeclaredActionsUseTheApplicationHostBeforeIOS27() {
+        let actionType: Any.Type = RunScriptWidgetActionIntent.self
+        let toggleType: Any.Type = SetScriptWidgetActionValueIntent.self
+        XCTAssertTrue(actionType is any LiveActivityIntent.Type)
+        XCTAssertTrue(toggleType is any LiveActivityIntent.Type)
+    }
+}
+#endif

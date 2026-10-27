@@ -90,6 +90,8 @@ await $alarms.stop("focus"); await $alarms.cancel("focus");
 
 Use exactly one of `seconds` (60–86400) or `date` (future, at most 366 days). Titles are at most 128 UTF-8 bytes. Up to 32 named keys are tracked per installation. IDs are derived natively from installation + key; scripts cannot supply another alarm UUID. An active alarm is not silently replaced: cancel it explicitly first. Pause/resume depend on the system's current countdown state. Schedule uses the same bounded seven-day replay-receipt rules as calendar writes. Preserve pending requests when an outcome is unknown.
 
+On iOS 17–26, declared actions and control value actions use the application host via `LiveActivityIntent`, matching direct widget buttons; iOS 27 also declares the main execution target. AlarmKit authorization is process-scoped on iOS 26: a widget extension can report `notDetermined` even after the containing app is authorized, and pending reads can be denied there. Keep action controls visible when extension reads are unavailable; scheduling and control actions check the app’s live authorization.
+
 The extension includes native AlarmKit countdown Live Activity/Dynamic Island UI. It displays system dates without rerunning JavaScript. AlarmKit authorization, presentation, locked-device behavior, delivery and acknowledgments require physical-device acceptance. This API does not enumerate or edit alarms owned by Apple's Clock app.
 
 [Runnable Focus Timer](examples/alarm-focus-timer).
