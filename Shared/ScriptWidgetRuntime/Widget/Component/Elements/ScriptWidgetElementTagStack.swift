@@ -12,6 +12,11 @@ class ScriptWidgetElementTagStack {
     ///--------------------------------------------------------------------------------------------------------
 
     static func buildViewVStack(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
+        if let column = ScriptWidgetRectangleColumn.make(element, context: context) { return AnyView(column) }
+        return buildGeneralViewVStack(element, context)
+    }
+
+    static func buildGeneralViewVStack(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
         return AnyView(Self.buildVStack(
             element: element,
             context: context
