@@ -2,6 +2,13 @@ import Foundation
 import JavaScriptCore
 import WidgetKit
 
+/// JSON documents belong to the store explicitly connected in the native app.
+/// Each installed package has its own grant; users may connect several packages
+/// to the same store to share documents, or separate stores to isolate them.
+/// JavaScript supplies only a document name, never a store ID or arbitrary path.
+/// Home Screen instances of one package share its connection. Cross-device
+/// exchange is eventual and can retain conflicts; $storage stays local and is
+/// never automatically migrated by connecting a cloud store.
 @objc protocol ScriptWidgetRuntimeCloudJSONExports: JSExport {
     static func readJSON(_ name: String) -> ScriptWidgetRuntimePromise
     static func writeJSON(_ name: String, _ value: [String: Any], _ expectedRevision: String) -> ScriptWidgetRuntimePromise

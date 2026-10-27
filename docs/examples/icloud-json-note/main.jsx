@@ -1,4 +1,8 @@
 // Connect this installed package through the native "iCloud Data" menu first.
+// Choose a new store for isolation, or explicitly connect another widget to
+// the same store ID to share note.json. JS cannot select that ID or a path.
+// Shared widgets must agree on the schema and handle eventual-sync conflicts.
+// Connecting does not migrate existing local $storage records.
 // Writes are actions only; normal render never creates a cloud record.
 async function syncNote() { await $icloud.sync(); }
 async function saveNote() {

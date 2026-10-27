@@ -915,7 +915,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 - `$icloud.writeJSON`: Save a new immutable JSON revision locally from a user action. Requires the revision from readJSON. Background exchange is eventual.
 - `$icloud.resolveJSON`: Explicitly resolve all observed conflicting heads into a new revision. Stale tokens fail; originals remain.
 - `$icloud.sync`: Exchange materialized revisions with iCloud; requires a user action. Upload completion is unknown.
-- `$icloud.status`: Read native connection state. Cloud store IDs are granted in the app, never by the script. Web uses preview mocks.
+- `$icloud.status`: Read native connection state. In the app, explicitly connect packages to separate stores for isolation or the same store ID to share JSON documents. Scripts cannot choose store IDs. Sync is eventual; local $storage is not migrated. Web uses preview mocks.
 - `$file.exists`: Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.
 - `$file.read`: Read package-relative UTF-8 text. Missing or unavailable files return an empty string.
 - `$file.readJSON`: Read a package-relative JSON object.
