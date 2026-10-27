@@ -1,0 +1,12 @@
+ScriptWidget
+Copyright 2021-2026 everettjf and ScriptWidget contributors
+
+The repository's original source is distributed under the Apache License 2.0.
+Earlier versions were distributed under MIT; the previous notice is preserved
+in LICENSES/MIT-previous.txt. Existing MIT grants are not withdrawn.
+
+Third-party dependencies and files with their own license notices retain those
+licenses. In particular, retain the ClockHandKit and bundled/Gallery asset
+license notices. The ScriptWidget name, logos, screenshots and App Store
+marketing materials remain excluded from the source license; no trademark
+rights are granted.

@@ -3,7 +3,7 @@
 <div align="center" dir="rtl">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **أنشئ أدوات مصغّرة أصلية لـ iPhone وiPad وMac باستخدام JavaScript وJSX والذكاء الاصطناعي**
@@ -16,7 +16,7 @@
 
 <div dir="rtl">
 
-ScriptWidget منصة مفتوحة المصدر بترخيص MIT لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
+ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
 
 ## لماذا ScriptWidget؟
 
@@ -68,7 +68,7 @@ $render(
 
 نرحب بالمساهمات. راجع [دليل المساهمة](CONTRIBUTING.md)، و[الحوكمة](GOVERNANCE.md)، و[قواعد السلوك](CODE_OF_CONDUCT.md). أبلغ عن المشكلات الأمنية بشكل خاص وفق [سياسة الأمان](SECURITY.md).
 
-يُنشر الكود المصدري في هذا المستودع بموجب [ترخيص MIT](LICENSE). لا يشمل ترخيص MIT اسم ScriptWidget أو الشعارات أو لقطات الشاشة أو مواد App Store الترويجية؛ وتعود حقوقها إلى أصحاب الحقوق المعنيين.
+يُنشر الكود المصدري في هذا المستودع بموجب [ترخيص Apache 2.0](LICENSE). لا يشمل ترخيص Apache 2.0 اسم ScriptWidget أو الشعارات أو لقطات الشاشة أو مواد App Store الترويجية؛ وتعود حقوقها إلى أصحاب الحقوق المعنيين.
 
 </div>
 

@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **Erstelle native Widgets für iPhone, iPad und Mac mit JavaScript, JSX und KI**
@@ -14,7 +14,7 @@
 
 ![ScriptWidget-Vorlagengalerie](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget ist eine Open-Source-Plattform unter der MIT-Lizenz zum Erstellen von Widgets. Du musst kein Swift lernen: Bearbeite `main.jsx` in ScriptWidget Studio auf Mac, iPhone oder iPad, und die Laufzeit bildet deklaratives JSX auf native SwiftUI- und WidgetKit-Oberflächen ab.
+ScriptWidget ist eine Open-Source-Plattform unter der Apache 2.0-Lizenz zum Erstellen von Widgets. Du musst kein Swift lernen: Bearbeite `main.jsx` in ScriptWidget Studio auf Mac, iPhone oder iPad, und die Laufzeit bildet deklaratives JSX auf native SwiftUI- und WidgetKit-Oberflächen ab.
 
 ## Warum ScriptWidget?
 
@@ -58,6 +58,6 @@ $render(
 
 Beiträge sind willkommen. Lies den [Leitfaden für Beiträge](CONTRIBUTING.md), die [Governance](GOVERNANCE.md) und den [Verhaltenskodex](CODE_OF_CONDUCT.md). Melde Sicherheitsprobleme gemäß der [Sicherheitsrichtlinie](SECURITY.md) vertraulich.
 
-Der Quellcode dieses Repositorys wird unter der [MIT-Lizenz](LICENSE) veröffentlicht. Der Name ScriptWidget, Logos, Screenshots und Werbematerialien für den App Store sind nicht von der MIT-Lizenz erfasst; die Rechte daran verbleiben bei den jeweiligen Rechteinhabern.
+Der Quellcode dieses Repositorys wird unter der [Apache 2.0-Lizenz](LICENSE) veröffentlicht. Der Name ScriptWidget, Logos, Screenshots und Werbematerialien für den App Store sind nicht von der Apache 2.0-Lizenz erfasst; die Rechte daran verbleiben bei den jeweiligen Rechteinhabern.
 
 [Discord](https://discord.gg/eGzEaP6TzR)

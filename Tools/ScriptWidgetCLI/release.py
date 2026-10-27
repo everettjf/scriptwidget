@@ -51,7 +51,9 @@ def main():
             thin.replace(executable)
         licenses=app/'Contents/Resources/licenses';licenses.mkdir(parents=True,exist_ok=True)
         for source,name in [
-            (ROOT/'LICENSE','ScriptWidget-MIT.txt'),
+            (ROOT/'LICENSE','ScriptWidget-Apache-2.0.txt'),
+            (ROOT/'NOTICE','ScriptWidget-NOTICE.txt'),
+            (ROOT/'LICENSES/MIT-previous.txt','ScriptWidget-previous-MIT.txt'),
             (args.derived_data/'SourcePackages/checkouts/SwiftyJSON/LICENSE','SwiftyJSON-MIT.txt'),
             (args.derived_data/'SourcePackages/checkouts/ZipArchive/LICENSE.txt','ZipArchive.txt'),
             (args.derived_data/'SourcePackages/checkouts/ZipArchive/SSZipArchive/minizip/LICENSE','minizip.txt'),

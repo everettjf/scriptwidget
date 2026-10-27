@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **JavaScript, JSX, AI로 iPhone, iPad, Mac용 네이티브 위젯을 만드세요**
@@ -14,7 +14,7 @@
 
 ![ScriptWidget 템플릿 갤러리](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget은 MIT 라이선스로 공개된 위젯 제작 플랫폼입니다. Swift를 배울 필요 없이 Mac, iPhone, iPad의 ScriptWidget Studio에서 `main.jsx`를 편집하면 런타임이 선언적 JSX를 네이티브 SwiftUI/WidgetKit UI로 변환합니다.
+ScriptWidget은 Apache 2.0 라이선스로 공개된 위젯 제작 플랫폼입니다. Swift를 배울 필요 없이 Mac, iPhone, iPad의 ScriptWidget Studio에서 `main.jsx`를 편집하면 런타임이 선언적 JSX를 네이티브 SwiftUI/WidgetKit UI로 변환합니다.
 
 ## ScriptWidget을 선택하는 이유
 
@@ -58,6 +58,6 @@ $render(
 
 기여를 환영합니다. [기여 가이드](CONTRIBUTING.md), [거버넌스](GOVERNANCE.md), [행동 강령](CODE_OF_CONDUCT.md)을 확인하세요. 보안 문제는 [보안 정책](SECURITY.md)에 따라 비공개로 제보해 주세요.
 
-이 저장소의 소스 코드는 [MIT License](LICENSE)로 공개됩니다. ScriptWidget 이름, 로고, 스크린샷, App Store 홍보 자료는 MIT 라이선스에 포함되지 않으며 해당 권리는 각 권리자에게 있습니다.
+이 저장소의 소스 코드는 [Apache 2.0 License](LICENSE)로 공개됩니다. ScriptWidget 이름, 로고, 스크린샷, App Store 홍보 자료는 Apache 2.0 라이선스에 포함되지 않으며 해당 권리는 각 권리자에게 있습니다.
 
 [Discord](https://discord.gg/eGzEaP6TzR)

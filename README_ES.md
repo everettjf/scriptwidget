@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **Crea widgets nativos para iPhone, iPad y Mac con JavaScript, JSX e IA**
@@ -14,7 +14,7 @@
 
 ![Galería de plantillas de ScriptWidget](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget es una plataforma de código abierto con licencia MIT para crear widgets. No necesitas aprender Swift: edita `main.jsx` en ScriptWidget Studio para Mac, iPhone o iPad y el entorno de ejecución convertirá el JSX declarativo en interfaces nativas de SwiftUI y WidgetKit.
+ScriptWidget es una plataforma de código abierto con licencia Apache 2.0 para crear widgets. No necesitas aprender Swift: edita `main.jsx` en ScriptWidget Studio para Mac, iPhone o iPad y el entorno de ejecución convertirá el JSX declarativo en interfaces nativas de SwiftUI y WidgetKit.
 
 ## Por qué elegir ScriptWidget
 
@@ -58,6 +58,6 @@ $render(
 
 Las contribuciones son bienvenidas. Consulta la [guía de contribución](CONTRIBUTING.md), el [modelo de gobernanza](GOVERNANCE.md) y el [código de conducta](CODE_OF_CONDUCT.md). Informa de problemas de seguridad de forma privada siguiendo la [política de seguridad](SECURITY.md).
 
-El código fuente de este repositorio se publica bajo la [licencia MIT](LICENSE). El nombre ScriptWidget, sus logotipos, capturas de pantalla y materiales promocionales de App Store no están cubiertos por la licencia MIT; sus derechos pertenecen a sus respectivos titulares.
+El código fuente de este repositorio se publica bajo la [licencia Apache 2.0](LICENSE). El nombre ScriptWidget, sus logotipos, capturas de pantalla y materiales promocionales de App Store no están cubiertos por la licencia Apache 2.0; sus derechos pertenecen a sus respectivos titulares.
 
 [Discord](https://discord.gg/eGzEaP6TzR)

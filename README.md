@@ -6,7 +6,7 @@ Website: <https://xnu.app/scriptwidget/>
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/everettjf/ScriptWidget?style=flat-square)](https://github.com/everettjf/ScriptWidget/network)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS-lightgrey?style=flat-square&logo=apple)](https://developer.apple.com)
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
@@ -362,9 +362,9 @@ See the [public roadmap](ROADMAP.md), [governance model](GOVERNANCE.md), and [Ga
 
 ## 📜 License
 
-The source code in this repository is released under the [MIT License](LICENSE).
+The source code in this repository is released under the [Apache 2.0 License](LICENSE).
 
-The ScriptWidget name, logos, screenshots, and App Store marketing materials are not licensed under the MIT License. All rights to those brand and marketing assets are reserved by their respective owners.
+The ScriptWidget name, logos, screenshots, and App Store marketing materials are not licensed under the Apache 2.0 License. All rights to those brand and marketing assets are reserved by their respective owners.
 
 ---
 

@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **Создавайте нативные виджеты для iPhone, iPad и Mac с помощью JavaScript, JSX и ИИ**
@@ -14,7 +14,7 @@
 
 ![Галерея шаблонов ScriptWidget](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget — это открытая платформа для создания виджетов под лицензией MIT. Swift изучать не нужно: редактируйте `main.jsx` в ScriptWidget Studio на Mac, iPhone или iPad, а среда выполнения преобразует декларативный JSX в нативный интерфейс SwiftUI/WidgetKit.
+ScriptWidget — это открытая платформа для создания виджетов под лицензией Apache 2.0. Swift изучать не нужно: редактируйте `main.jsx` в ScriptWidget Studio на Mac, iPhone или iPad, а среда выполнения преобразует декларативный JSX в нативный интерфейс SwiftUI/WidgetKit.
 
 ## Почему ScriptWidget
 
@@ -58,6 +58,6 @@ $render(
 
 Мы рады вкладам сообщества. Ознакомьтесь с [руководством](CONTRIBUTING.md), [моделью управления](GOVERNANCE.md) и [кодексом поведения](CODE_OF_CONDUCT.md). О проблемах безопасности сообщайте конфиденциально согласно [политике безопасности](SECURITY.md).
 
-Исходный код этого репозитория опубликован под [лицензией MIT](LICENSE). Название ScriptWidget, логотипы, снимки экрана и маркетинговые материалы App Store не подпадают под лицензию MIT; права на них принадлежат соответствующим правообладателям.
+Исходный код этого репозитория опубликован под [лицензией Apache 2.0](LICENSE). Название ScriptWidget, логотипы, снимки экрана и маркетинговые материалы App Store не подпадают под лицензию Apache 2.0; права на них принадлежат соответствующим правообладателям.
 
 [Discord](https://discord.gg/eGzEaP6TzR)

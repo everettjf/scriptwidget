@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **Crie widgets nativos para iPhone, iPad e Mac com JavaScript, JSX e IA**
@@ -14,7 +14,7 @@
 
 ![Galeria de modelos do ScriptWidget](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget é uma plataforma de código aberto sob a licença MIT para criar widgets. Não é preciso aprender Swift: edite `main.jsx` no ScriptWidget Studio para Mac, iPhone ou iPad, e o ambiente de execução transforma JSX declarativo em interfaces nativas SwiftUI e WidgetKit.
+ScriptWidget é uma plataforma de código aberto sob a licença Apache 2.0 para criar widgets. Não é preciso aprender Swift: edite `main.jsx` no ScriptWidget Studio para Mac, iPhone ou iPad, e o ambiente de execução transforma JSX declarativo em interfaces nativas SwiftUI e WidgetKit.
 
 ## Por que escolher o ScriptWidget
 
@@ -58,6 +58,6 @@ $render(
 
 Contribuições são bem-vindas. Consulte o [guia de contribuição](CONTRIBUTING.md), a [governança](GOVERNANCE.md) e o [código de conduta](CODE_OF_CONDUCT.md). Relate problemas de segurança em particular conforme a [política de segurança](SECURITY.md).
 
-O código-fonte deste repositório é publicado sob a [Licença MIT](LICENSE). O nome ScriptWidget, os logotipos, as capturas de tela e os materiais promocionais da App Store não estão cobertos pela Licença MIT; seus direitos pertencem aos respectivos titulares.
+O código-fonte deste repositório é publicado sob a [Licença Apache 2.0](LICENSE). O nome ScriptWidget, os logotipos, as capturas de tela e os materiais promocionais da App Store não estão cobertos pela Licença Apache 2.0; seus direitos pertencem aos respectivos titulares.
 
 [Discord](https://discord.gg/eGzEaP6TzR)

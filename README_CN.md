@@ -3,7 +3,7 @@
 <div align="center">
 
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
 **使用 JavaScript、JSX 和 AI，为 iPhone、iPad 与 Mac 创建原生 Widget**
@@ -27,7 +27,7 @@ scriptwidget preview ./MyWidget
 
 ![ScriptWidget 模板画廊](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
-ScriptWidget 是一个 MIT 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
+ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
 ## 为什么选择 ScriptWidget
 
@@ -80,8 +80,8 @@ $render(
 
 安全问题请按照[安全政策](SECURITY.md)私下报告，不要在公开 Issue 中披露利用细节或个人数据。
 
-ScriptWidget 仓库中的源代码使用 [MIT License](LICENSE) 发布。
+ScriptWidget 仓库中的源代码使用 [Apache 2.0 License](LICENSE) 发布。
 
-ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 MIT 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
+ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 Apache 2.0 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
 
 [Discord](https://discord.gg/eGzEaP6TzR)
