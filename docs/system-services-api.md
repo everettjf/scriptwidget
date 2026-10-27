@@ -154,6 +154,14 @@ Native CLI check/pack validate manifests and syntax. CLI renders use isolated re
 
 Run `node Scripts/test-system-services.mjs` for deterministic native validators, grants, file imports and private-key isolation. Application-host tests also verify real JSExport calls deny unmanaged/preview packages. Preview tests cover scopes, writes, replay/uncertainty, lifecycle simulation and budgets. Native builds/fixtures are not proof of real permissions, delivery or hardware behavior.
 
+## Preview examples
+
+These captures show Web Studio simulated data; they do not represent real-device system authorization or delivery.
+
+![Daily steps with editable simulated data](images/system-services/health-history-web.png)
+
+![Daily notification example in Web Studio](images/system-services/notification-reminder-web.png)
+
 ## Physical-device acceptance before release
 
 - Fresh install, deny/grant/revoke each OS permission; verify missing native grant, copied widget and retired owner stay denied.
