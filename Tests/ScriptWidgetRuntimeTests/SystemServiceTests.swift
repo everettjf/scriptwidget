@@ -111,6 +111,39 @@ final class SystemServiceTests: XCTestCase {
         XCTAssertFalse(store.privateKey("alarmKeys").hasPrefix(prefix))
     }
 
+    func testServicePrivateStateUsesTheProductionFileBackend() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("SystemFileBackend-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let domain = "SystemFileBackend-" + UUID().uuidString
+        let legacy = UserDefaults(suiteName: domain)!
+        defer { legacy.removePersistentDomain(forName: domain) }
+        let backend = try ScriptWidgetFileStorageBackend(container: root, legacy: legacy)
+        let owner = UUID().uuidString.lowercased()
+        let access = ScriptWidgetSystemAccessStore(container: root, owner: owner, validate: {})
+        let kinds = ["alarmKeys", "alarmReceipts", "ownedEvents", "calendarReceipts", "homeReceipts", "weatherCache"]
+        for kind in kinds {
+            let key = access.privateKey(kind)
+            XCTAssertNil(try backend.readValue(forKey: key))
+            try backend.writeValue(Data("{}".utf8), forKey: key)
+            XCTAssertEqual(try backend.readValue(forKey: key) as? Data, Data("{}".utf8))
+        }
+        try ScriptWidgetSystemAccessStore.writeNativeValue(["focus"], key: access.privateKey("alarmKeys"), backend: backend)
+        try ScriptWidgetSystemAccessStore.writeNativeValue(["event": "calendar"], key: access.privateKey("ownedEvents"), backend: backend)
+        let reopened = try ScriptWidgetFileStorageBackend(container: root, legacy: legacy)
+        XCTAssertEqual(try ScriptWidgetSystemAccessStore.readNativeValue([String].self, key: access.privateKey("alarmKeys"), backend: reopened), ["focus"])
+        XCTAssertEqual(try ScriptWidgetSystemAccessStore.readNativeValue([String: String].self, key: access.privateKey("ownedEvents"), backend: reopened), ["event": "calendar"])
+        XCTAssertTrue(try backend.values(in: "ScriptWidgetStorage.v2:" + owner + ":").isEmpty)
+        for key in [access.privateKey("unknown"), "ScriptWidget.SystemServices.alarmKeys.v1.not-an-owner", "ScriptWidget.SystemServices.alarmKeys.v2." + owner] {
+            XCTAssertThrowsError(try backend.readValue(forKey: key))
+            XCTAssertThrowsError(try backend.writeValue(Data(), forKey: key))
+        }
+        XCTAssertThrowsError(try backend.writeValue(["focus"], forKey: access.privateKey("alarmKeys")))
+        try backend.writeValue(Data("invalid".utf8), forKey: access.privateKey("alarmKeys"))
+        XCTAssertThrowsError(try ScriptWidgetSystemAccessStore.readNativeValue([String].self, key: access.privateKey("alarmKeys"), backend: reopened))
+        XCTAssertEqual(try backend.readValue(forKey: access.privateKey("alarmKeys")) as? Data, Data("invalid".utf8))
+    }
+
     func testDailyNotificationUsesOneRepeatingSlotAndStrictLocalClock() throws {
         let input: [String:Any] = ["key":"daily", "title":"Read", "body":"A chapter", "daily":["hour":20,"minute":0]]
         let parsed=try ScriptWidgetNotificationOptions(input)

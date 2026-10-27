@@ -45,7 +45,7 @@ struct ScriptWidgetAlarmOptions {
     static func retire(owner: String, backend: any ScriptWidgetStorageBackend) {
         #if os(iOS) && canImport(AlarmKit)
         if #available(iOS 26.0, *) {
-            guard let keys = try? backend.readValue(forKey: "ScriptWidget.SystemServices.alarmKeys.v1." + owner) as? [String], keys.count <= 32 else { return }
+            guard let keys = try? ScriptWidgetSystemAccessStore.readNativeValue([String].self, key: "ScriptWidget.SystemServices.alarmKeys.v1." + owner, backend: backend), keys.count <= 32 else { return }
             for key in keys where ScriptWidgetSystemOptions.validKey(key) {
                 if let id = try? ScriptWidgetAlarmOptions.id(owner: owner, key: key) { try? AlarmManager.shared.cancel(id: id) }
             }
@@ -63,8 +63,8 @@ struct ScriptWidgetAlarmOptions {
             let indexKey = context.access.privateKey("alarmKeys")
             guard let operationResult = ScriptWidgetStorageLock.withExclusiveAccess(container: context.access.container, namespace: indexKey, operation: { Result<Any, Error> {
             guard backend.synchronize() else { throw ScriptWidgetSystemServiceError.unavailable }
-            let raw = try backend.readValue(forKey: indexKey)
-            guard raw == nil || raw is [String], let keys = (raw as? [String] ?? []) as [String]?, keys.count <= 32, keys.allSatisfy(ScriptWidgetSystemOptions.validKey), Set(keys).count == keys.count else { throw ScriptWidgetSystemServiceError.unavailable }
+            let keys = try ScriptWidgetSystemAccessStore.readNativeValue([String].self, key: indexKey, backend: backend) ?? []
+            guard keys.count <= 32, keys.allSatisfy(ScriptWidgetSystemOptions.validKey), Set(keys).count == keys.count else { throw ScriptWidgetSystemServiceError.unavailable }
             if method == "pending" {
                 let alarms = try manager.alarms
                 let rows = try keys.compactMap { key -> [String: Any]? in
@@ -88,7 +88,7 @@ struct ScriptWidgetAlarmOptions {
                 guard keys.contains(key) || keys.count < 32 else { throw ScriptWidgetSystemServiceError.limitExceeded }
                 // Never silently replace a running alarm. Cancel explicitly first.
                 guard try !manager.alarms.contains(where: { $0.id == id }) else { throw ScriptWidgetSystemServiceError.staleRequest }
-                try backend.writeValue(Array(Set(keys + [key])).sorted(), forKey: indexKey)
+                try ScriptWidgetSystemAccessStore.writeNativeValue(Array(Set(keys + [key])).sorted(), key: indexKey, backend: backend)
                 guard backend.synchronize() else { throw ScriptWidgetSystemServiceError.unavailable }
                 try beforeCommit()
                 let box = ScriptWidgetSystemCompletionBox()

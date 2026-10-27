@@ -41,6 +41,16 @@ struct ScriptWidgetSystemAccessStore {
     var directory: String { "SystemAccess.v1/" + owner }
     var path: String { directory + "/grant.json" }
     func privateKey(_ kind: String) -> String { "ScriptWidget.SystemServices." + kind + ".v1." + owner }
+    static func readNativeValue<T: Decodable>(_ type: T.Type, key: String, backend: any ScriptWidgetStorageBackend) throws -> T? {
+        guard let raw = try backend.readValue(forKey: key) else { return nil }
+        guard let bytes = raw as? Data, bytes.count <= 128 * 1024 else { throw ScriptWidgetSystemServiceError.unavailable }
+        return try JSONDecoder().decode(type, from: bytes)
+    }
+    static func writeNativeValue<T: Encodable>(_ value: T, key: String, backend: any ScriptWidgetStorageBackend) throws {
+        let bytes = try JSONEncoder().encode(value)
+        guard bytes.count <= 128 * 1024 else { throw ScriptWidgetSystemServiceError.limitExceeded }
+        try backend.writeValue(bytes, forKey: key)
+    }
     func load() throws -> ScriptWidgetSystemAccessGrant {
         try validate()
         guard UUID(uuidString: owner)?.uuidString.lowercased() == owner else { throw ScriptWidgetSystemServiceError.permissionDenied }

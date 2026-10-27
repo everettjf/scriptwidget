@@ -25,7 +25,7 @@ try{
  const testSource=(await read("Tests/ScriptWidgetRuntimeTests/SystemServiceTests.swift")).replace("@testable import ScriptWidget","");
  await writeFile(join(temporary,"main.swift"),testSource+`\nlet suite=SystemServiceTests.defaultTestSuite\nsuite.run()\nguard let run=suite.testRun,run.executionCount>=8,run.totalFailureCount==0 else {exit(1)}\n`);
  const binary=join(temporary,"tests");
- await exec("xcrun",["swiftc","-F",frameworks,"-I",libraries,"-L",libraries,...[frameworks,libraries,join(platform,"Library/PrivateFrameworks"),resolve(developer,"../SharedFrameworks")].flatMap(p=>["-Xlinker","-rpath","-Xlinker",p]),
- ...["Widget/API/ScriptWidgetStorageLock.swift","Widget/API/ScriptWidgetStorageNamespaces.swift","Common/ScriptWidgetCloudJSON.swift"].map(p=>resolve(repo,"Shared/ScriptWidgetRuntime",p)),join(temporary,"helpers.swift"),join(temporary,"main.swift"),"-o",binary],{timeout:60000});
+ await exec("xcrun",["swiftc","-D","SCRIPTWIDGET_CLI","-F",frameworks,"-I",libraries,"-L",libraries,...[frameworks,libraries,join(platform,"Library/PrivateFrameworks"),resolve(developer,"../SharedFrameworks")].flatMap(p=>["-Xlinker","-rpath","-Xlinker",p]),
+ ...["Widget/API/ScriptWidgetStorageLock.swift","Widget/API/ScriptWidgetStorageNamespaces.swift","Widget/API/ScriptWidgetStorageFiles.swift","Common/ScriptWidgetCloudJSON.swift"].map(p=>resolve(repo,"Shared/ScriptWidgetRuntime",p)),join(temporary,"helpers.swift"),join(temporary,"main.swift"),"-o",binary],{timeout:60000});
  const result=await exec(binary,[],{timeout:30000});process.stdout.write(result.stdout+result.stderr);
 }catch(error){process.stderr.write(error.stdout??"");process.stderr.write(error.stderr??"");throw error;}finally{await rm(temporary,{recursive:true,force:true});}

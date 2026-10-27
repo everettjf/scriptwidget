@@ -502,6 +502,14 @@ final class ScriptWidgetFileStorageBackend: ScriptWidgetStorageBackend {
 
     private func metadata(_ key: String) -> Bool {
         if Self.metadataKeys.contains(key) { return true }
+        let servicePrefix = "ScriptWidget.SystemServices."
+        if key.hasPrefix(servicePrefix) {
+            let parts = key.dropFirst(servicePrefix.count).split(separator: ".", omittingEmptySubsequences: false)
+            let kinds: Set<String> = ["alarmKeys", "alarmReceipts", "ownedEvents", "calendarReceipts", "homeReceipts", "weatherCache"]
+            guard parts.count == 3, kinds.contains(String(parts[0])), parts[1] == "v1" else { return false }
+            let owner = String(parts[2])
+            return UUID(uuidString: owner)?.uuidString.lowercased() == owner
+        }
         return ["ScriptWidget.CalendarCache.v1.", "ScriptWidget.RemindersCache.v1.", "ScriptWidget.RemindersWrites.v1.", "ScriptWidget.PhotosCache.v1."].contains { prefix in
             let suffix = key.dropFirst(prefix.count)
             return key.hasPrefix(prefix) && suffix.count == 64 && suffix.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }

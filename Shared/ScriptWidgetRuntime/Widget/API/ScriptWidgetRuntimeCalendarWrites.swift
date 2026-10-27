@@ -39,9 +39,7 @@ enum ScriptWidgetRuntimeCalendarWrites {
             let ownershipKey = context.access.privateKey("ownedEvents")
             guard let response = ScriptWidgetStorageLock.withExclusiveAccess(container: snapshot.context.container, namespace: ownershipKey, operation: { Result<Any, Error> {
             guard snapshot.context.defaults.synchronize() else { throw ScriptWidgetSystemServiceError.unavailable }
-            let raw = try snapshot.context.defaults.readValue(forKey: ownershipKey)
-            guard raw == nil || raw is [String: String] else { throw ScriptWidgetSystemServiceError.unavailable }
-            var owned = raw as? [String: String] ?? [:]
+            var owned = try ScriptWidgetSystemAccessStore.readNativeValue([String: String].self, key: ownershipKey, backend: snapshot.context.defaults) ?? [:]
             guard owned.count <= 128, owned.allSatisfy({ !$0.key.isEmpty && $0.key.utf8.count <= 2048 && $0.value.utf8.count <= 256 }) else { throw ScriptWidgetSystemServiceError.limitExceeded }
             let event: EKEvent
             if let id = request.eventID {
@@ -67,7 +65,7 @@ enum ScriptWidgetRuntimeCalendarWrites {
             }
             guard let id = result["id"] as? String else { throw ScriptWidgetSystemServiceError.outcomeUnknown }
             owned[id] = request.listID
-            try snapshot.context.defaults.writeValue(owned, forKey: ownershipKey)
+            try ScriptWidgetSystemAccessStore.writeNativeValue(owned, key: ownershipKey, backend: snapshot.context.defaults)
             guard snapshot.context.defaults.synchronize() else { throw ScriptWidgetSystemServiceError.outcomeUnknown }
             return ["id": id, "calendarID": request.listID, "status": "applied", "replayed": result["replayed"] ?? false]
             } }) else { throw ScriptWidgetSystemServiceError.unavailable }
