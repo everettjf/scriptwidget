@@ -82,7 +82,7 @@ enum ScriptWidgetRuntimeContract {
 
     static let globalAPIs = [
         "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
-        "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$import",
+        "$error", "$fetch", "$file", "$icloud", "$getenv", "$health", "$http", "$import",
         "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
     ]
 
@@ -525,6 +525,7 @@ class ScriptWidgetRuntime {
             runtimeContext["$device"] = ScriptWidgetRuntimeDevice.self
             runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
+            runtimeContext["$icloud"] = ScriptWidgetRuntimeCloudJSON.self
             runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
             runtimeContext["$photos"] = ScriptWidgetRuntimePhotos.self

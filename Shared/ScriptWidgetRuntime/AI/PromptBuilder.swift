@@ -124,6 +124,13 @@ enum PromptBuilder {
            `$storage.getString(key)` for strings; `$storage.setJSON(key, object)`
            and `$storage.getJSON(key)` for objects. Check write success.
            Do not invent `$storage.set` or `$storage.get`.
+           `$storage` stays local. Opt-in `$icloud` requires permission `icloud`,
+           minimumRuntimeVersion 1.5 and an explicit native app connection.
+           readJSON(name) returns {value,revision,state,conflicts}; user actions
+           can writeJSON(name,value,revision) or explicitly resolveJSON after
+           reviewing every head. Never claim a local save is already uploaded,
+           silently migrate existing records or choose a store ID in scripts.
+           Browser previews use isolated mocks, not real iCloud.
         7. Only use tags, props, and APIs that appear in the REFERENCE
            section below. Do not invent new ones.
         8. When calling `fetch`, always wrap it in try/catch so the

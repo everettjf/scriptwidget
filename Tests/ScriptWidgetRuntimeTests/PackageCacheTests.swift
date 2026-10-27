@@ -618,3 +618,177 @@ final class PackageBoundaryTests: XCTestCase {
         XCTAssertEqual(ScriptWidgetPackageFiles.read(root: root, relative: "Resource.txt"), Data("safe".utf8))
     }
 }
+
+final class CloudJSONTests: XCTestCase {
+    private var root: URL!
+    private var cloud: URL!
+    private var account = String(repeating: "a", count: 64)
+    private var cloudAvailable = true
+    private var active = true
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("CloudJSONTests-" + UUID().uuidString)
+        cloud = root.appendingPathComponent("Cloud")
+        try FileManager.default.createDirectory(at: cloud, withIntermediateDirectories: true)
+    }
+    override func tearDownWithError() throws { try FileManager.default.removeItem(at: root) }
+    private func device(_ name: String) throws -> ScriptWidgetCloudJSONStore {
+        let local = root.appendingPathComponent(name)
+        try FileManager.default.createDirectory(at: local, withIntermediateDirectories: true)
+        return try ScriptWidgetCloudJSONStore(container: local, owner: UUID().uuidString.lowercased(), environment: { [self] in
+            .init(account: account, documents: cloudAvailable ? cloud : nil)
+        }, validate: { [self] in if !active { throw ScriptWidgetCloudJSONError.identityChanged } })
+    }
+    private func object(_ response: [String: Any]) throws -> [String: Any] { try XCTUnwrap(response["value"] as? [String: Any]) }
+    func testLocalFirstOfflineCacheAndTwoDeviceRoundTrip() throws {
+        let a = try device("A"), b = try device("B")
+        XCTAssertThrowsError(try a.read("habits.json"))
+        try a.connect(); try b.connect(existingStore: a.connection())
+        cloudAvailable = false
+        let written = try a.write("habits.json", value: ["read": ["2026-10-26"]], expected: "")
+        XCTAssertEqual(written["state"] as? String, "pending")
+        XCTAssertEqual(try object(a.read("habits.json"))["read"] as? [String], ["2026-10-26"])
+        XCTAssertThrowsError(try a.synchronize())
+        cloudAvailable = true
+        _ = try a.synchronize(); _ = try b.synchronize()
+        XCTAssertEqual(try object(b.read("habits.json"))["read"] as? [String], ["2026-10-26"])
+        XCTAssertTrue(try a.status()["uploaded"] is NSNull)
+    }
+    func testDisconnectedWritersRetainBothVersionsAndExplicitResolution() throws {
+        let a = try device("A"), b = try device("B")
+        try a.connect(); try b.connect(existingStore: a.connection())
+        let original = try a.write("habits.json", value: ["days": []], expected: "")
+        _ = try a.synchronize(); _ = try b.synchronize()
+        let base = try XCTUnwrap(original["revision"] as? String)
+        cloudAvailable = false
+        _ = try a.write("habits.json", value: ["days": ["2026-10-25"]], expected: base)
+        _ = try b.write("habits.json", value: ["days": ["2026-10-26"]], expected: base)
+        cloudAvailable = true
+        _ = try a.synchronize(); _ = try b.synchronize(); _ = try a.synchronize()
+        let conflict = try a.read("habits.json")
+        XCTAssertEqual(conflict["state"] as? String, "conflict")
+        XCTAssertEqual((conflict["conflicts"] as? [Any])?.count, 2)
+        let revision = try XCTUnwrap(conflict["revision"] as? String)
+        XCTAssertThrowsError(try a.write("habits.json", value: ["lost": true], expected: revision))
+        XCTAssertThrowsError(try a.write("habits.json", value: [:], expected: base, resolving: true))
+        _ = try a.write("habits.json", value: ["days": ["2026-10-25", "2026-10-26"]], expected: revision, resolving: true)
+        _ = try a.synchronize(); _ = try b.synchronize()
+        XCTAssertEqual((try object(b.read("habits.json"))["days"] as? [String])?.count, 2)
+        let files = try FileManager.default.contentsOfDirectory(atPath: cloud.appendingPathComponent("WidgetData/\(try a.connection())/habits.json").path)
+        XCTAssertEqual(files.count, 4, "Original, both branches and resolution must all remain")
+    }
+    func testNamesQuotasStaleWritesAndIdentityRetirement() throws {
+        let a = try device("A"); try a.connect()
+        for name in ["../x.json", "/x.json", "X.json", "a/b.json", "a\\b.json", "a.JSON", ".json"] {
+            XCTAssertThrowsError(try a.write(name, value: [:], expected: ""), name)
+        }
+        let first = try a.write("note.json", value: ["keep": true], expected: "")
+        XCTAssertThrowsError(try a.write("note.json", value: ["lost": true], expected: ""))
+        XCTAssertThrowsError(try a.write("huge.json", value: ["huge": String(repeating: "日", count: 100_000)], expected: ""))
+        XCTAssertEqual(try a.read("note.json")["revision"] as? String, first["revision"] as? String)
+        active = false
+        XCTAssertThrowsError(try a.read("note.json")); XCTAssertThrowsError(try a.synchronize())
+    }
+    func testAccountSwitchAndNewInstallationCannotReadOldCache() throws {
+        let a = try device("A"); try a.connect(); _ = try a.write("private.json", value: ["keep": true], expected: "")
+        let fresh = try device("A")
+        XCTAssertThrowsError(try fresh.read("private.json"))
+        account = String(repeating: "b", count: 64)
+        XCTAssertThrowsError(try a.read("private.json")); XCTAssertThrowsError(try a.synchronize())
+        account = String(repeating: "a", count: 64)
+        XCTAssertEqual(try object(a.read("private.json"))["keep"] as? Bool, true)
+    }
+    func testTamperedRemoteRevisionAndSymlinkNeverOverwriteHistory() throws {
+        let a = try device("A"); try a.connect(); _ = try a.write("note.json", value: ["keep": true], expected: ""); _ = try a.synchronize()
+        let id = try a.connection()
+        let directory = cloud.appendingPathComponent("WidgetData/\(id)/note.json")
+        let revision = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first)
+        let original = try Data(contentsOf: revision)
+        try Data("{}".utf8).write(to: revision)
+        XCTAssertThrowsError(try a.synchronize())
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+        XCTAssertEqual(try Data(contentsOf: revision), Data("{}".utf8))
+        try original.write(to: revision)
+        try FileManager.default.removeItem(at: revision)
+        let external = root.appendingPathComponent("outside.json"); try Data("private".utf8).write(to: external)
+        try FileManager.default.createSymbolicLink(at: revision, withDestinationURL: external)
+        XCTAssertThrowsError(try a.synchronize()); XCTAssertEqual(try String(contentsOf: external, encoding: .utf8), "private")
+    }
+    func testCloudFolderRemovalDoesNotResurrectDeletedStore() throws {
+        let a = try device("A"); try a.connect(); _ = try a.write("note.json", value: ["keep": true], expected: "")
+        let folder = cloud.appendingPathComponent("WidgetData/\(try a.connection())")
+        try FileManager.default.removeItem(at: folder)
+        XCTAssertThrowsError(try a.synchronize())
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+}
+
+
+extension CloudJSONTests {
+    func testDisconnectRevokesOnlyGrantAndReconnectionPreservesRecords() throws {
+        let a = try device("A"); try a.connect()
+        let id = try a.connection()
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        _ = try a.synchronize()
+        try a.disconnect()
+        XCTAssertThrowsError(try a.read("note.json"))
+        XCTAssertThrowsError(try a.write("note.json", value: [:], expected: ""))
+        try a.connect(existingStore: id)
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+}
+
+
+extension CloudJSONTests {
+    func testEvictedLocalCacheIsRestoredFromCloudWithoutChangingGrant() throws {
+        let a = try device("A"); try a.connect()
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        _ = try a.synchronize()
+        try FileManager.default.removeItem(at: root.appendingPathComponent("A/CloudJSON.v1/cache"))
+        XCTAssertTrue(try a.read("note.json")["value"] is NSNull)
+        _ = try a.synchronize()
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+    func testHardLinkedRevisionFailsClosedWithoutChangingExternalFile() throws {
+        let a = try device("A"); try a.connect()
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        _ = try a.synchronize()
+        let directory = cloud.appendingPathComponent("WidgetData/\(try a.connection())/note.json")
+        let revision = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: directory, includingPropertiesForKeys: nil).first)
+        let bytes = try Data(contentsOf: revision)
+        let external = root.appendingPathComponent("hardlink.json")
+        try FileManager.default.linkItem(at: revision, to: external)
+        XCTAssertThrowsError(try a.synchronize())
+        XCTAssertEqual(try Data(contentsOf: external), bytes)
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+    func testTwoNativeGrantsShareOneStoreLock() throws {
+        let a = try device("A"), b = try device("A")
+        try a.connect(); try b.connect(existingStore: a.connection())
+        let container = root.appendingPathComponent("A")
+        let id = try a.connection()
+        let held = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: "CloudJSON.v1.store.\(account).\(id)") {
+            let result = Result { try b.write("note.json", value: ["lost": true], expected: "") }
+            if case .success = result { XCTFail("A second native grant must respect the shared store lock") }
+            return true
+        }
+        XCTAssertEqual(held, true)
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        XCTAssertThrowsError(try b.write("note.json", value: ["lost": true], expected: ""))
+        XCTAssertEqual(try object(b.read("note.json"))["keep"] as? Bool, true)
+    }
+}
+
+
+extension CloudJSONTests {
+    func testFinderMetadataDoesNotBlockInspectableCloudFiles() throws {
+        let a = try device("A"); try a.connect()
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        _ = try a.synchronize()
+        let directory = cloud.appendingPathComponent("WidgetData/\(try a.connection())")
+        try Data([0, 1]).write(to: directory.appendingPathComponent(".DS_Store"))
+        try Data([0, 1]).write(to: directory.appendingPathComponent("note.json/.DS_Store"))
+        _ = try a.synchronize()
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+}

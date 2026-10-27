@@ -59,6 +59,7 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case services
     case music
     case storage
+    case icloud
     case files
 
     var id: String { rawValue }
@@ -304,6 +305,9 @@ enum WidgetPackageManifestValidator {
             } else if !WidgetRuntimeRequirement.supports(minimum) {
                 error("unsupported_minimum_runtime", "This package requires a newer or incompatible ScriptWidget Runtime. Update the app before running it.")
             }
+        }
+        if manifest.permissions.contains(.icloud), !WidgetRuntimeRequirement.supports("1.5", current: manifest.minimumRuntimeVersion ?? "0.0") {
+            error("icloud_runtime", "iCloud JSON requires minimumRuntimeVersion 1.5 or later.")
         }
         if let timeline = manifest.timeline, !timeline.isValid {
             error("invalid_timeline", "timeline requires 1–4 sorted unique dailyTimes in HH:mm and a valid timeZone.")

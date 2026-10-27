@@ -7,8 +7,8 @@ import { decodeManifest, newManifest, supportsMinimumRuntime, validateManifest }
 const files = (manifest, source = '$render(<text>ok</text>);') => ({ "widget.json": JSON.stringify(manifest), "main.jsx": source });
 
 test("minimum API versions use canonical numeric same-major comparison", () => {
-  for (const version of ["1.0", "1.1", "1.2", "1.3", "1.4"]) assert.equal(supportsMinimumRuntime(version), true, version);
-  for (const version of ["1.5", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"]) assert.equal(supportsMinimumRuntime(version), false, version);
+  for (const version of ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"]) assert.equal(supportsMinimumRuntime(version), true, version);
+  for (const version of ["1.6", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"]) assert.equal(supportsMinimumRuntime(version), false, version);
   assert.equal(supportsMinimumRuntime("1.9", "1.10"), true);
   assert.equal(supportsMinimumRuntime("1.10", "1.9"), false);
   for (const minimum of [undefined, null, "1.0", "1.3", "1.4", "2.0", "01.3"]) {
@@ -22,7 +22,7 @@ test("minimum API versions use canonical numeric same-major comparison", () => {
 
 test("invalid packages are rejected before the compiler or script can run", () => {
   const compiler = new Proxy({}, { get() { throw new Error("Compiler must not run"); } });
-  for (const patch of [{ minimumRuntimeVersion: "1.5" }, { minimumRuntimeVersion: "01.3" }, { formatVersion: 99 }, { extraCapability: true }]) {
+  for (const patch of [{ minimumRuntimeVersion: "1.6" }, { minimumRuntimeVersion: "01.3" }, { formatVersion: 99 }, { extraCapability: true }]) {
     const result = preparePackage(compiler, { files: files({ ...newManifest("Preflight"), ...patch }, "while(true) {}") });
     assert.equal(result.ok, false);
     assert.equal(result.error.kind, "scriptError");
@@ -32,7 +32,7 @@ test("invalid packages are rejected before the compiler or script can run", () =
 
 test("file manifest is authoritative over a permissive host object", async () => {
   const host = { ...newManifest("Host grant"), permissions: ["calendar"] };
-  for (const text of ["{bad", JSON.stringify({ ...host, formatVersion: 999 }), JSON.stringify({ ...host, minimumRuntimeVersion: "1.5" })]) {
+  for (const text of ["{bad", JSON.stringify({ ...host, formatVersion: 999 }), JSON.stringify({ ...host, minimumRuntimeVersion: "1.6" })]) {
     const result = await executePackageInNode({ files: { "widget.json": text, "main.jsx": 'throw new Error("executed");' }, manifest: host });
     assert.equal(result.error.kind, "scriptError");
     assert.match(result.error.message, /\[package:/);

@@ -68,6 +68,7 @@ struct ScriptWidgetHomeView: View {
     @State private var selectedEditItem: ScriptModel?
     @State private var selectedShareItem: ScriptModel?
     @State private var selectedRecordItem: ScriptModel?
+    @State private var selectedCloudItem: ScriptModel?
     @State private var selectedDeleteItem: ScriptModel?
     @State private var isShowingDeleteAlert = false
     
@@ -95,6 +96,7 @@ struct ScriptWidgetHomeView: View {
                 } message: { item in
                     Text("“\(item.name)” and its project files will be removed. This can’t be undone.")
                 }
+                .sheet(item: $selectedCloudItem) { item in ScriptWidgetCloudJSONView(package: item.package) }
                 .sheet(item: $selectedRecordItem) { item in
                     ScriptWidgetRecordsView(package: item.package)
                 }
@@ -226,6 +228,9 @@ struct ScriptWidgetHomeView: View {
                             WidgetRowView(model: item)
                         }
                         .contextMenu {
+                            if item.package.readManifest()?.permissions.contains(.icloud) == true {
+                                Button("iCloud Data", systemImage: "icloud") { selectedCloudItem = item }
+                            }
                             if (try? ScriptWidgetRecordKind.load(package: item.package)) != nil {
                                 Button { selectedRecordItem = item } label: { Label("Records & Configuration", systemImage: "list.bullet.rectangle") }
                             }

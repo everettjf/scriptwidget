@@ -366,6 +366,7 @@ struct ScriptWidgetLibraryLaunchView<Content: View>: View {
             guard scenePhase == .active else { return }
             while !Task.isCancelled {
                 await model.refreshRestoredPackages()
+                ScriptWidgetCloudJSONView.refreshConnectedPackages()
                 do { try await Task.sleep(nanoseconds: 3_000_000_000) }
                 catch { return }
             }
