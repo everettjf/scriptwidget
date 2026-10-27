@@ -46,13 +46,15 @@ final class WebStudioServer: ObservableObject {
     private var leaseWorkItem: DispatchWorkItem?
     private let maximumRequestBytes = 2 * 1024 * 1024
     private let sessionLease: TimeInterval
+    private let managerOverride: ScriptManager?
     private var eventSequence = 0
     private var events = [WebStudioEvent]()
     private var previewSnapshot: Data?
     private let eventLock = NSLock()
 
-    init(sessionLease: TimeInterval = 15) {
+    init(sessionLease: TimeInterval = 15, manager: ScriptManager? = nil) {
         self.sessionLease = sessionLease
+        self.managerOverride = manager
     }
 
     var displayURLs: [String] {
@@ -74,7 +76,7 @@ final class WebStudioServer: ObservableObject {
         let lease = ScriptWidgetEditorPresence.register()
         libraryEditorLease = lease
         do {
-            let library = try ScriptWidgetEditingLibrary(manager: sharedScriptManager)
+            let library = try ScriptWidgetEditingLibrary(manager: managerOverride ?? sharedScriptManager)
             let listener = try NWListener(using: .tcp, on: .any)
             listener.service = NWListener.Service(name: "ScriptWidget", type: "_scriptwidget._tcp")
             listener.stateUpdateHandler = { [weak self] state in
