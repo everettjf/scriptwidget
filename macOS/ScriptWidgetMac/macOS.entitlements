@@ -31,5 +31,9 @@
 	<array>
 		<string>group.everettjf.scriptwidget</string>
 	</array>
+	<key>com.apple.security.personal-information.addressbook</key>
+	<true/>
+	<key>com.apple.security.files.user-selected.read-only</key>
+	<true/>
 </dict>
 </plist>

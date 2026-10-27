@@ -24,6 +24,7 @@ struct SidebarView: View {
     @State private var searchText = ""
     @State private var selectedRecordItem: ScriptModel?
     @State private var selectedCloudItem: ScriptModel?
+    @State private var selectedSystemItem: ScriptModel?
 
     // rename
     @State private var renameCurrentName = ""
@@ -38,6 +39,7 @@ struct SidebarView: View {
     var body: some View {
         content
             .frame(minWidth: 230, idealWidth: 260, maxWidth: 320)
+            .sheet(item: $selectedSystemItem) { item in ScriptWidgetSystemAccessView(package: item.package) }
             .sheet(item: $selectedCloudItem) { item in ScriptWidgetCloudJSONView(package: item.package) }
             .sheet(item: $selectedRecordItem) { item in ScriptWidgetRecordsView(package: item.package) }
             .sheet(isPresented: $renameShowingSheet) {
@@ -143,6 +145,9 @@ struct SidebarView: View {
                                 .padding(.vertical, 2)
                         }
                         .contextMenu(menuItems: {
+                            if ScriptWidgetSystemAccessView.supports(item.package) {
+                                Button("System Access", systemImage: "hand.raised") { selectedSystemItem = item }
+                            }
                             if item.package.readManifest()?.permissions.contains(.icloud) == true {
                                 Button("iCloud Data", systemImage: "icloud") { selectedCloudItem = item }
                             }

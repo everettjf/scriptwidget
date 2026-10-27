@@ -27,7 +27,7 @@
     },
     "permissions": {
       "type": "array", "uniqueItems": true,
-      "items": { "enum": ["network", "location", "health", "calendar", "reminders", "remindersWrite", "photos", "services", "music", "storage", "icloud", "files"] }
+      "items": { "enum": ["network", "location", "health", "calendar", "reminders", "remindersWrite", "photos", "services", "music", "storage", "icloud", "notifications", "calendarWrite", "maps", "weather", "alarms", "documents", "contacts", "home", "files"] }
     },
     "networkDomains": {
       "type": "array", "uniqueItems": true,

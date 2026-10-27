@@ -413,3 +413,6 @@ Inspired by:
 **Project Link:** [https://github.com/everettjf/ScriptWidget](https://github.com/everettjf/ScriptWidget)
 
 </div>
+## System capabilities under development
+
+Runtime 1.6 adds opt-in notifications, HealthKit daily history, owned calendar writes, normalized forecasts, AlarmKit timers, imported JSON/CSV, selected contacts, MapKit places/snapshots and selected HomeKit controls. Native user grants and OS permissions are separate from exported widgets; Web Studio offers isolated editable mocks. See the [contracts, nine examples and device acceptance checklist](docs/system-services-api.md). Physical-device verification is required before release.

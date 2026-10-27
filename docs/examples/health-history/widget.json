@@ -1,0 +1,18 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.health-history",
+  "name": "Seven Day Steps",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "health"
+  ],
+  "networkDomains": [],
+  "license": "Apache-2.0"
+}

@@ -136,6 +136,17 @@ class NativeCLITests(unittest.TestCase):
         self.run_cli('render','--output',self.root/'out',code=1)
         self.source('$render(<madeuptag>Hello</madeuptag>);')
         self.run_cli('render','--output',self.root/'out',code=1)
+    def test_runtime_16_system_fixtures_remain_offline_and_writes_are_denied(self):
+        self.manifest.update(minimumRuntimeVersion='1.6', permissions=['notifications'])
+        self.save_manifest()
+        self.source('const status=await $notifications.status(); if(status.authorization!=="authorized")throw new Error("mock status"); let denied=false; try{await $notifications.schedule({key:"test",title:"Test",body:"Body",daily:{hour:20,minute:0}});}catch(e){denied=String(e).includes("read_only");} if(!denied)throw new Error("write allowed"); $render(<text>Offline only</text>);')
+        self.run_cli('render','--output',self.root/'out')
+        self.manifest.pop('minimumRuntimeVersion'); self.save_manifest()
+        self.source('await $notifications.status(); $render(<text>unexpected</text>);')
+        self.run_cli('render','--output',self.root/'version-denied',code=1)
+        self.manifest.update(minimumRuntimeVersion='1.6',permissions=[]); self.save_manifest()
+        self.run_cli('render','--output',self.root/'permission-denied',code=1)
+
     def test_execution_deadline_and_current_environment(self):
         self.run_cli('doctor')
         self.source('while(true) {}')

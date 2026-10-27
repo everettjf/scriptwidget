@@ -118,6 +118,7 @@ struct ValidationWorkerMain {
                         guard let target=URL(string:url), ScriptWidgetFetchPolicy.validationError(for:target) == nil else { return false }
                         return ScriptWidgetNetworkPolicy.packageAllows(target,package:package)
                     }
+                    if capability == "runtime1.6" { return WidgetRuntimeRequirement.supports("1.6", current: manifest?.minimumRuntimeVersion ?? "0.0") }
                     return manifest == nil || manifest!.permissions.contains(where:{$0.rawValue == capability})
                 }
                 let note:@convention(block)(String,String)->Void={ code,message in if diagnostics.count < 128 {diagnostics.append(["severity":"warning","code":code,"message":String(message.prefix(2048))])} }

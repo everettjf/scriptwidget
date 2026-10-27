@@ -1,0 +1,21 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.weather-forecast",
+  "name": "Weather Ahead",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "weather",
+    "network"
+  ],
+  "networkDomains": [
+    "api.met.no"
+  ],
+  "license": "Apache-2.0"
+}

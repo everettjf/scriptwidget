@@ -44,6 +44,7 @@ enum ScriptWidgetHealthAccessPolicy {
     static func sleepSummary(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
     static func activitySummary(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
     static func workouts(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
+    static func dailyStatistics(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
 }
 
 #if canImport(HealthKit)
@@ -74,7 +75,7 @@ import HealthKit
         readTypes.insert(HKObjectType.categoryType(forIdentifier: .sleepAnalysis)!)
         readTypes.insert(HKObjectType.activitySummaryType())
         readTypes.insert(HKObjectType.workoutType())
-        for identifier in [HKQuantityTypeIdentifier.distanceWalkingRunning, .distanceCycling, .distanceSwimming] {
+        for identifier in [HKQuantityTypeIdentifier.distanceWalkingRunning, .distanceCycling, .distanceSwimming, .dietaryWater, .bodyMass] {
             if let type = HKObjectType.quantityType(forIdentifier: identifier) { readTypes.insert(type) }
         }
         return readTypes
@@ -672,3 +673,5 @@ extension ScriptWidgetRuntimeHealth {
         }
     }
 }
+
+extension ScriptWidgetRuntimeHealth { @objc static func dailyStatistics(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise { ScriptWidgetRuntimeHealthHistory.read(options ?? [:]) } }

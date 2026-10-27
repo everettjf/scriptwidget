@@ -1,0 +1,32 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.notification-reminder",
+  "name": "Reading Reminder",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "notifications"
+  ],
+  "networkDomains": [],
+  "license": "Apache-2.0",
+  "actions": [
+    {
+      "id": "schedule",
+      "title": "Remind at 20:00",
+      "systemImage": "play.circle",
+      "function": "scheduleReminder"
+    },
+    {
+      "id": "cancel",
+      "title": "Cancel",
+      "systemImage": "play.circle",
+      "function": "cancelReminder"
+    }
+  ]
+}

@@ -390,7 +390,7 @@ final class ScriptWidgetErrorTests: XCTestCase {
 
 final class RuntimeContractTests: XCTestCase {
     func testPublicAPIVersionAndGlobalsAreFixed() {
-        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.5")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.6")
         XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))
@@ -2150,8 +2150,8 @@ final class CalendarSourceSelectionTests: XCTestCase {
 
 final class WidgetRuntimeRequirementTests: XCTestCase {
     func testOnlyCanonicalSameMajorRequirementsAreSupported() {
-        for value in ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
-        for value in ["1.6", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
+        for value in ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
+        for value in ["1.7", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
             XCTAssertFalse(WidgetRuntimeRequirement.supports(value), value)
         }
         XCTAssertTrue(WidgetRuntimeRequirement.supports("1.9", current: "1.10"))

@@ -12,6 +12,8 @@ import EventKit
     static func authorizationStatus() -> String
     static func requestAuthorization() -> ScriptWidgetRuntimePromise
     static func calendars() -> ScriptWidgetRuntimePromise
+    static func create(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
+    static func update(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
     static func events(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
 }
 
@@ -409,6 +411,8 @@ struct ScriptWidgetCalendarProvider {
 
     static func calendars() -> ScriptWidgetRuntimePromise { read(query: nil, error: nil) }
 
+    static func create(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise { ScriptWidgetRuntimeCalendarWrites.mutate(options ?? [:], updating: false) }
+    static func update(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise { ScriptWidgetRuntimeCalendarWrites.mutate(options ?? [:], updating: true) }
     static func events(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         do { return read(query: try ScriptWidgetCalendarQuery(options), error: nil) }
         catch { return read(query: nil, error: error.localizedDescription) }

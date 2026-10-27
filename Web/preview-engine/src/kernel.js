@@ -1158,6 +1158,136 @@ export function scriptWidgetKernel(global, host, configJSON) {
       } catch (error) { reject(StringCtor(error.message ?? error)); }
     });
   }
+  // Runtime 1.6: isolated system simulations. Manifest/action checks execute
+  // before editable fixtures; no fixture grants native access or real I/O.
+  const systemIncludes = Function.prototype.call.bind(Array.prototype.includes);
+  const systemFinite = Number.isFinite;
+  const systemState = JSON.parse(JSONStringify(fixtures.systemState ?? {version:1,notifications:[],alarms:[],events:[],home:{},receipts:[]}));
+  const systemMethods = {
+    notifications: ["status","pending","schedule","cancel"], alarms: ["status","pending","schedule","cancel","stop","pause","resume"],
+    maps: ["search","geocode","reverseGeocode","snapshot"], weather: ["forecast"], documents: ["list","readJSON","readCSV"], contacts: ["selected"], home: ["items","setPower","runScene"], health: ["dailyStatistics"], calendar: ["create","update"]
+  };
+  const systemUUID = value => typeof value === "string" && /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/.test(value);
+  const systemKey = value => typeof value === "string" && /^[a-zA-Z0-9_-]{1,64}$/.test(value);
+  const systemText = (value, max=256) => typeof value === "string" && value.trim().length > 0 && utf8ByteLength(value) <= max && !/[\x00-\x1f\x7f]/.test(value);
+  const systemNumber = (value,min,max) => typeof value === "number" && systemFinite(value) && value >= min && value <= max;
+  const systemDate = value => typeof value === "string" && value.length<=64 && value.includes("T") && systemFinite(DateCtor.parse(value));
+  function systemCall(group, method, args) {
+    return nativePromise((resolve,reject) => {
+      const fail = code => { throw new Error(`[${code}] Simulated system operation rejected; real device data is unchanged.`); };
+      try {
+        const permissions = config.manifest?.permissions ?? [];
+        const permission = group === "calendar" ? "calendarWrite" : group;
+        if (!config.hasManifest || !systemIncludes(permissions,permission) || (group === "calendar" && !systemIncludes(permissions,"calendar"))) fail("permission_denied");
+        if (!/^1\.(?:[6-9]|[1-9][0-9]+)$/.test(config.manifest.minimumRuntimeVersion ?? "")) fail("system_runtime");
+        const writing = (group === "notifications" && systemIncludes(["schedule","cancel"],method)) || (group === "alarms" && !systemIncludes(["status","pending"],method)) || group === "calendar" || (group === "home" && method !== "items");
+        if (timelineProjection || liveActivityPresentation || (writing && !actionMode)) fail("read_only");
+        if (++dataQueries > contract.maximumDataQueries) fail("query_limit");
+        const scope = fixtures.systemAccess;
+        if (group !== "health" && scope !== undefined && (!scope || !ArrayIsArray(scope.permissions) || !systemIncludes(scope.permissions,permission))) fail("permission_denied");
+        if (!systemState || systemState.version !== 1 || ObjectKeys(systemState).some(key => !systemIncludes(["version","notifications","alarms","events","home","receipts"],key)) || !ArrayIsArray(systemState.notifications) || !ArrayIsArray(systemState.alarms) || !ArrayIsArray(systemState.events) || !ArrayIsArray(systemState.receipts) || !systemState.home || typeof systemState.home !== "object" || systemState.receipts.length > 128 || systemState.events.length > 128 || systemState.alarms.length > 32 || systemState.notifications.length > 32 || utf8ByteLength(JSONStringify(systemState)) > 262144) fail("mock_invalid");
+        const rule = apiMocks[`$${group}.${method}`];
+        if (rule && Object.prototype.hasOwnProperty.call(rule,"error")) throw new Error(nativeString(rule.error));
+        const sample = rule && Object.prototype.hasOwnProperty.call(rule,"value") ? bridgeValue(rule.value,0) : undefined;
+        const raw = args[0];
+        const input = raw && typeof raw === "object" && !ArrayIsArray(raw) ? bridgeDictionary(raw,0) : null;
+        const fields = allowed => { if (!input || ObjectKeys(input).some(k => !systemIncludes(allowed,k)) || utf8ByteLength(JSONStringify(input))>16384) fail("invalid_options"); };
+        const coordinates = () => { if (!systemNumber(input?.latitude,-90,90) || !systemNumber(input?.longitude,-180,180) || (input.radiusMeters!==undefined && !systemNumber(input.radiusMeters,100,50000))) fail("invalid_options"); };
+        const receipt = (operation) => {
+          if (!systemUUID(input?.requestID)) fail("invalid_options");
+          const fingerprint=JSONStringify([group,method,ObjectKeys(input).sort().map(k=>[k,input[k]])]);
+          const prior=systemState.receipts.find(r=>r.requestID===input.requestID);
+          if (prior) { if(prior.fingerprint!==fingerprint) fail("request_conflict"); if(prior.state!=="completed") fail("outcome_unknown"); return {...prior.result,replayed:true}; }
+          if(systemState.receipts.length>=128)fail("limit_exceeded");
+          const result=operation();
+          systemState.receipts.push({requestID:input.requestID,fingerprint,state:fixtures.systemCommitUncertain===true?"prepared":"completed",result});
+          if(fixtures.systemCommitUncertain===true)fail("outcome_unknown");
+          return {...result,replayed:false};
+        };
+        let result;
+        if(group==="notifications") {
+          if(method==="status") result=sample??{authorization:"authorized"};
+          else if(method==="pending") result=systemState.notifications.length?systemState.notifications.map(item=>{
+            let date=item.date;
+            if(item.daily){const next=new DateCtor();next.setHours(item.daily.hour,item.daily.minute,0,0);if(next.getTime()<=DateCtor.now())next.setDate(next.getDate()+1);date=next.toISOString();}
+            return {key:item.key,title:item.title,body:item.body,repeats:!!item.daily,date};
+          }):(sample??[]);
+          else if(method==="schedule") {
+            fields(["key","title","body","date","daily"]);
+            if(!systemKey(input.key)||!systemText(input.title)||!systemText(input.body,1024)||(input.date===undefined)===(input.daily===undefined))fail("invalid_options");
+            if(input.date!==undefined&&(!systemDate(input.date)||DateCtor.parse(input.date)<=DateCtor.now()||DateCtor.parse(input.date)-DateCtor.now()>366*86400000))fail("invalid_options");
+            if(input.daily!==undefined&&(!input.daily||typeof input.daily!=="object"||ArrayIsArray(input.daily)||ObjectKeys(input.daily).some(k=>!systemIncludes(["hour","minute"],k))||!systemNumber(input.daily.hour,0,23)||!systemNumber(input.daily.minute,0,59)||input.daily.hour%1!==0||input.daily.minute%1!==0))fail("invalid_options");
+            if(apiMocks["$notifications.status"]?.value?.authorization!==undefined&&!systemIncludes(["authorized","provisional"],apiMocks["$notifications.status"].value.authorization))fail("permission_denied");
+            const index=systemState.notifications.findIndex(n=>n.key===input.key);
+            if(index<0&&systemState.notifications.length>=32)fail("limit_exceeded");
+            if(index>=0)systemState.notifications.splice(index,1);
+            systemState.notifications.push({...input}); result={key:input.key,status:"scheduled"};
+          } else {if(!systemKey(raw))fail("invalid_options");systemState.notifications=systemState.notifications.filter(n=>n.key!==raw);result={key:raw,status:"cancellationRequested"};}
+        } else if(group==="calendar") {
+          fields(["requestID","calendarID","title","start","end","allDay",...(method==="update"?["id"]:[])]);
+          if(!systemText(input.calendarID)||!systemText(input.title,512)||!systemDate(input.start)||!systemDate(input.end)||DateCtor.parse(input.end)<=DateCtor.parse(input.start)||DateCtor.parse(input.end)-DateCtor.parse(input.start)>366*86400000||(input.allDay!==undefined&&typeof input.allDay!=="boolean"))fail("invalid_options");
+          if(ArrayIsArray(fixtures.calendarSelection)&&!systemIncludes(fixtures.calendarSelection,input.calendarID))fail("permission_denied");
+          result=receipt(()=>{
+            if(method==="update"&&!systemState.events.some(e=>e.id===input.id&&e.calendarID===input.calendarID))fail("permission_denied");
+            if(method==="create"&&systemState.events.length>=128)fail("limit_exceeded");
+            const id=method==="update"?input.id:`event-${input.requestID}`;
+            systemState.events=systemState.events.filter(e=>e.id!==id);systemState.events.push({...input,id});return {id,calendarID:input.calendarID,status:"applied"};
+          });
+        } else if(group==="alarms") {
+          if(method==="status")result=sample??{authorization:"authorized"};
+          else if(method==="pending")result=systemState.alarms.length?systemState.alarms.map(item=>({key:item.key,state:item.state})):(sample??[]);
+          else if(method==="schedule") {
+            fields(["requestID","key","title","date","seconds"]);
+            if(!systemKey(input.key)||!systemText(input.title,128)||(input.date===undefined)===(input.seconds===undefined)||(input.seconds!==undefined&&!systemNumber(input.seconds,60,86400))||(input.date!==undefined&&(!systemDate(input.date)||DateCtor.parse(input.date)<=DateCtor.now()||DateCtor.parse(input.date)-DateCtor.now()>366*86400000)))fail("invalid_options");
+            if(apiMocks["$alarms.status"]?.value?.authorization!==undefined&&apiMocks["$alarms.status"].value.authorization!=="authorized")fail("permission_denied");
+            result=receipt(()=>{if(systemState.alarms.some(a=>a.key===input.key))fail("request_conflict");if(systemState.alarms.length>=32)fail("limit_exceeded");systemState.alarms.push({...input,state:input.seconds===undefined?"scheduled":"countdown"});return {key:input.key,status:"scheduled"};});
+          } else {
+            if(!systemKey(raw))fail("invalid_options");const alarm=systemState.alarms.find(a=>a.key===raw);if(!alarm)fail("unavailable");
+            if(method==="cancel")systemState.alarms=systemState.alarms.filter(a=>a.key!==raw);else alarm.state=method==="pause"?"paused":method==="stop"?"stopped":"countdown";
+            result={key:raw,status:"requested"};
+          }
+        } else if(group==="health") {
+          fields(["metric","days"]);if(!systemIncludes(["steps","activeEnergy","walkingDistance","water","bodyMass","heartRate"],input.metric)||!systemNumber(input.days??7,1,31)||(input.days??7)%1!==0)fail("invalid_options");
+          result=sample??{metric:input.metric,unit:"count",aggregation:"sum",timeZone:"UTC",items:[]};
+          if(!result||!ArrayIsArray(result.items)||result.items.length>31)fail("mock_invalid");
+          if(apiMocks["$health.isAvailable"]?.value===false)fail("unavailable");
+          const units={steps:"count",activeEnergy:"kcal",walkingDistance:"m",water:"mL",bodyMass:"kg",heartRate:"count/min"};
+          const averages=systemIncludes(["bodyMass","heartRate"],input.metric);
+          if(result.metric!==input.metric){const typical={steps:6840,activeEnergy:285,walkingDistance:4200,water:1800,bodyMass:68.2,heartRate:72};result={...result,unit:units[input.metric],aggregation:averages?"average":"sum",items:result.items.map((row,i)=>({...row,value:row.hasSamples?typical[input.metric]+(averages?i/10:i*10):null}))};}
+          result={...result,metric:input.metric,items:result.items.slice(-(input.days??7))};
+        } else if(group==="weather") {
+          fields(["latitude","longitude","hours"]);coordinates();if(!systemNumber(input.hours??24,1,48)||(input.hours??24)%1!==0)fail("invalid_options");
+          if(!systemIncludes(permissions,"network")||!hostMatches("api.met.no",config.manifest.networkDomains??[]))fail("permission_denied");
+          if(!sample||!ArrayIsArray(sample.hours))fail("mock_missing");result={...sample,latitude:Math.round(input.latitude*100)/100,longitude:Math.round(input.longitude*100)/100,hours:sample.hours.slice(0,input.hours??24)};
+        } else if(group==="maps") {
+          if(method==="geocode"){if(!systemText(raw))fail("invalid_options");}
+          else{fields(method==="search"?["latitude","longitude","radiusMeters","query"]:method==="snapshot"?["latitude","longitude","radiusMeters","size"]:["latitude","longitude","radiusMeters"]);coordinates();if(method==="search"&&!systemText(input.query))fail("invalid_options");if(method==="snapshot"&&(!systemNumber(input.size??256,128,512)||(input.size??256)%1!==0))fail("invalid_options");}
+          result=sample??(method==="snapshot"?null:[]);if(result===null)fail("mock_missing");
+        } else if(group==="documents") {
+          const list=apiMocks["$documents.list"]?.value??[];
+          if(method==="list")result=list;
+          else{if(!systemUUID(raw)||!ArrayIsArray(list)||!list.some(d=>d.id===raw&&d.type===(method==="readJSON"?"json":"csv")))fail("permission_denied");if(sample===undefined)fail("mock_missing");result=sample;}
+        } else if(group==="contacts") {
+          if(!ArrayIsArray(sample??[]))fail("mock_invalid");result=(sample??[]).filter(c=>!ArrayIsArray(scope?.contacts)||systemIncludes(scope.contacts,c.id)).slice(0,20);
+        } else if(group==="home") {
+          const items=apiMocks["$home.items"]?.value??[];
+          if(!ArrayIsArray(items))fail("mock_invalid");const selected=items.filter(i=>!ArrayIsArray(scope?.home)||systemIncludes(scope.home,i.id)).slice(0,20);
+          if(method==="items")result=selected.map(i=>({...i,value:systemState.home[i.id]??i.value,isCached:true}));
+          else{
+            fields(method==="runScene"?["id","requestID"]:["id","on"]);const item=selected.find(i=>i.id===input.id);if(!item)fail("permission_denied");
+            if(method==="runScene"){if(item.kind!=="scene")fail("permission_denied");result=receipt(()=>({id:item.id,status:"acknowledged"}));}
+            else {if(item.kind!=="power"||typeof input.on!=="boolean")fail("invalid_options");systemState.home[item.id]=input.on;result={id:item.id,value:input.on,status:"acknowledged"};}
+          }
+        }
+        resolve(bridgeValue(result,0));
+      } catch(error) {reject(StringCtor(error.message??error));}
+    });
+  }
+  for(const group of ObjectKeys(systemMethods)){
+    apis[`$${group}`]??={};
+    for(const method of systemMethods[group])apis[`$${group}`][method]=(...args)=>systemCall(group,method,args);
+  }
+
   apis.$fetch = apis.fetch;
   apis.console = apis.$console;
   apis.Promise = global.Promise;
@@ -1189,7 +1319,7 @@ export function scriptWidgetKernel(global, host, configJSON) {
       if (validation) error = { kind: validation.kind, message: validation.message };
       else tree = encodeElement(state.resultElement);
     }
-    return JSONStringify({ tree, error, logs, diagnostics, ...(actionMode ? { mockState: { storage: Object.fromEntries(storage), remindersState: { formatVersion: 1, items: reminderRows, receipts: reminderReceipts } } } : {}) });
+    return JSONStringify({ tree, error, logs, diagnostics, ...(actionMode ? { mockState: { systemState, storage: Object.fromEntries(storage), remindersState: { formatVersion: 1, items: reminderRows, receipts: reminderReceipts } } } : {}) });
   }
 
   return {

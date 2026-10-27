@@ -8,7 +8,7 @@ import type { WidgetManifest } from "../../preview-engine/src/types.js";
 import { createProject } from "../src/project.ts";
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
 const execute = (source: string, fixtures = parseMocks(defaultFixtures)) => {
-  const manifest: WidgetManifest = { ...newManifest("API Mocks"), permissions: ["calendar", "reminders", "photos", "location", "health", "services", "music", "network"], networkDomains: ["api.github.com"] };
+  const manifest: WidgetManifest = { ...newManifest("API Mocks"), minimumRuntimeVersion: "1.6", permissions: ["calendar", "calendarWrite", "reminders", "photos", "location", "health", "services", "music", "network", "notifications", "maps", "weather", "alarms", "documents", "contacts", "home"], networkDomains: ["api.github.com", "api.met.no"] };
   return executePackageInNode({ files: { "main.jsx": source, "widget.json": JSON.stringify(manifest) }, fixtures, manifest });
 };
 
@@ -39,6 +39,13 @@ test("new projects can read healthy system samples and authorize without setup",
 function mockCall(api: {id:string}, fixtures: ReturnType<typeof parseMocks>): string {
   if(api.id.startsWith("$services."))return `${api.id}("github")`;
   const value=(fixtures.api as any)[api.id]?.value;
+  const inputs: Record<string,unknown> = {
+    "$health.dailyStatistics":{metric:"steps",days:7}, "$weather.forecast":{latitude:37.33,longitude:-122.01,hours:24},
+    "$maps.search":{query:"park",latitude:37.33,longitude:-122.01}, "$maps.geocode":"park", "$maps.reverseGeocode":{latitude:37.33,longitude:-122.01}, "$maps.snapshot":{latitude:37.33,longitude:-122.01,size:256},
+    "$documents.readJSON":"550e8400-e29b-41d4-a716-446655440000", "$documents.readCSV":"550e8400-e29b-41d4-a716-446655440001"
+  };
+  if(api.id in inputs)return `${api.id}(${JSON.stringify(inputs[api.id])})`;
+
   const options=api.id==="$health.sleepSummary"||api.id==="$health.workouts"?{start:value.start,end:value.end}:api.id==="$health.activitySummary"?{date:value.date}:null;
   return `${api.id}(${options?JSON.stringify(options):""})`;
 }
@@ -49,14 +56,16 @@ test("every read API returns its configured value with the right sync or async s
     const fixtures=parseMocks(defaultFixtures);
     const result=await execute(`$render(<text>{JSON.stringify(await ${mockCall(api,fixtures)})}</text>);`,fixtures);
     assert.equal(result.error,null,api.id);
-    assert.deepEqual(JSON.parse(JSON.parse(result.tree!).children[0]),(fixtures.api as any)[api.id].value,api.id);
+    const configured=(fixtures.api as any)[api.id].value;
+    const expected=api.id==="$weather.forecast"?{...configured,hours:configured.hours.slice(0,24)}:configured;
+    assert.deepEqual(JSON.parse(JSON.parse(result.tree!).children[0]),expected,api.id);
   }
 });
 
 test("catalog Promise semantics hold before awaiting, including simulated failures", async () => {
   for(const api of dataAPICatalog) {
     const fixtures=parseMocks(defaultFixtures);
-    const code=`const response=${mockCall(api,fixtures)};const asynchronous=response!==null&&typeof response==='object'&&typeof response.then==='function';if(asynchronous!==${api.asynchronous})throw new Error('Promise shape mismatch');${api.operation==="write"?"try{await response;throw new Error('unexpected write');}catch(e){if(!String(e).includes('permission_denied'))throw e;}":"await response;"}$render(<text>ok</text>);`;
+    const code=`const response=${mockCall(api,fixtures)};const asynchronous=response!==null&&typeof response==='object'&&typeof response.then==='function';if(asynchronous!==${api.asynchronous})throw new Error('Promise shape mismatch');${api.operation==="write"?"try{await response;throw new Error('unexpected write');}catch(e){if(!/permission_denied|read_only/.test(String(e)))throw e;}":"await response;"}$render(<text>ok</text>);`;
     const result=await execute(code,fixtures);assert.equal(result.error,null,api.id);
   }
   for (const id of ["$health.stepCountToday", "$location.current", "$system.locale", "$device.battery", "$services.profile"]) {

@@ -6,7 +6,7 @@ import { dataAPICatalog } from "./dataAPICatalog.js";
 // authority; tests verify that this metadata stays aligned with it.
 export const scriptWidgetAPI = {
   "schemaVersion": 1,
-  "runtimeVersion": "1.5",
+  "runtimeVersion": "1.6",
   "documentation": "Public JSX surface shared by ScriptWidget Runtime and Studio.",
   "platforms": {
     "ios": "16.0",
@@ -68,6 +68,7 @@ export const scriptWidgetAPI = {
     ...Object.fromEntries(storageAPICatalog.map((api) => [api.id, api])),
     ...Object.fromEntries(dataAPICatalog.map((api) => [api.id, {
       documentation: api.notes,
+      minimumRuntimeVersion: api.minimumRuntimeVersion,
       arguments: api.arguments,
       returns: api.asynchronous ? "Promise<json>" : typeof api.value === "object" ? "json" : typeof api.value,
     }])),

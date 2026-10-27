@@ -37,6 +37,7 @@ if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
   node Scripts/test-service-authorization.mjs
   node Scripts/test-storage-atomic.mjs
   node Scripts/test-icloud-json.mjs
+  node Scripts/test-system-services.mjs
   node Scripts/test-storage-files.mjs
   sh Scripts/macos-widget-link-tests.sh
   xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests \

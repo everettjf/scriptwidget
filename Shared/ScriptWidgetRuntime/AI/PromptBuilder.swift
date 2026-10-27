@@ -219,6 +219,27 @@ enum PromptBuilder {
             query/prompt from future entries or Live Activity presentations.
             Health Overview supports overview/sleep/activity/workouts parameters;
             Web Studio supplies editable simulated aggregates, not native access.
+            Runtime 1.6 adds $notifications.status/pending/schedule/cancel,
+            $alarms.status/pending/schedule/cancel/stop/pause/resume,
+            $calendar.create/update, $health.dailyStatistics,
+            $documents.list/readJSON/readCSV, $contacts.selected,
+            $maps.search/geocode/reverseGeocode/snapshot,
+            $weather.forecast and $home.items/setPower/runScene.
+            These require Package 2.0 minimumRuntimeVersion 1.6. Declare the
+            matching permission; Calendar writes also require calendarWrite.
+            Weather requires weather, network and api.met.no; return and display
+            provider attribution. New capabilities need native per-widget System
+            Access except Health, which uses Health Settings review. Copies do
+            not inherit grants. All calls share eight queries and reject in future
+            entries/Live Activities; writes require explicit native user actions.
+            Persist a canonical requestID UUID before calendar/alarm/scene writes;
+            uncertain outcomes require inspection, never a blind new operation.
+            Native replay receipts are bounded and completed ones expire after
+            seven days. Documents use imported native UUIDs, never arbitrary paths.
+            Contacts/Home expose native selections only. Home values are cached,
+            and scene actions may require system authentication. AlarmKit needs
+            iOS/iPadOS 26; native macOS must show unavailable. Mocks do not prove
+            native authorization, system delivery or physical accessory state.
         16. Location needs the location package permission and approval in the
             main app. Widget access is separate: use isAuthorizedForWidgetUpdates
             when explaining widget setup, never infer permission from cached data.

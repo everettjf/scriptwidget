@@ -1,3 +1,4 @@
+import { systemAPICatalog } from "./systemAPICatalog.js";
 // Descriptive data API metadata, shared by Studio completion and Web mocks.
 // Native JSExport protocols remain authoritative. This catalog grants no access.
 const sampleStart = "2026-01-01T00:00:00Z";
@@ -67,7 +68,7 @@ const groupPolicy = {
   health: { platforms: ["ios"], authorization: "healthRead", notes: "Read-only HealthKit. Request access in the app. Runtime 1.4 adds sleepSummary (up to 7 days / 256 samples, union with explicit stage-conflict precedence), activitySummary (one local Gregorian day including active-energy or move-time mode and optional goals), and workouts (up to 31 days / 50 fully-contained summaries, optional kcal/meters). These require an explicit health manifest; all share the query budget and cannot run in future/Live Activity presentations. No Health readings are persisted by the API. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain." },
   location: { platforms: ["ios"], authorization: "locationWhenInUse", notes: "Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale." },
 };
-export const dataAPICatalog = samples.map((sample) => {
+export const dataAPICatalog = [...samples.map((sample) => {
   const method = sample.id.split(".")[1];
   const asynchronous = (sample.group === "music" && method === "current") || sample.group === "services" || (["calendar", "reminders", "photos"].includes(sample.group) && !["isAvailable", "authorizationStatus"].includes(method)) || (sample.group === "health" && !["isAvailable", "authorizationStatus"].includes(method)) ||
     (sample.group === "location" && ["current", "requestAuthorization"].includes(method));
@@ -83,4 +84,4 @@ export const dataAPICatalog = samples.map((sample) => {
     operation: sample.group === "reminders" && ["create", "update", "setCompleted"].includes(method) ? "write" : method === "requestAuthorization" ? "authorization" : ["isAvailable", "authorizationStatus", "isAuthorizedForWidgetUpdates"].includes(method) ? "availability" : "read",
     mock: "editable",
   };
-});
+}), ...systemAPICatalog];

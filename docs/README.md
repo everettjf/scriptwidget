@@ -54,3 +54,5 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.
 
 - [Opt-in iCloud JSON API](icloud-json-api.md) — native grants, immutable revisions, conflicts and Web mocks.
+
+- [System services API (Runtime 1.6)](system-services-api.md): notifications, health history, calendar writes, weather, alarms, imported data, contacts, maps and HomeKit.

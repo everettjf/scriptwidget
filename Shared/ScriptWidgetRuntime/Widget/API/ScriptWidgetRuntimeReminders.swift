@@ -609,7 +609,7 @@ enum ScriptWidgetReminderMutationLedger {
         let formatVersion: Int
         var entries: [Entry]
     }
-    static func perform(_ request: ScriptWidgetReminderMutation, container: URL,
+    static func perform<Request: ScriptWidgetSystemMutationRequest>(_ request: Request, container: URL,
                         backend: any ScriptWidgetStorageBackend, key: String, now: Date = Date(),
                         validate: @escaping () throws -> Void,
                         write: (_ beforeCommit: () throws -> Void) throws -> String) throws -> [String: Any] {

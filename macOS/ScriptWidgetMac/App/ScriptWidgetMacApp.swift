@@ -32,6 +32,7 @@ struct ScriptWidgetMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
+        ScriptWidgetSystemServices.startLifecycle()
         #if DEBUG
         ScriptWidgetCutoverProcessProbe.runIfRequested()
         #endif

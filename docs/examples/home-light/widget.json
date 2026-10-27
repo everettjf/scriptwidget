@@ -1,0 +1,32 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.home-light",
+  "name": "A Calmer Home",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "home"
+  ],
+  "networkDomains": [],
+  "license": "Apache-2.0",
+  "actions": [
+    {
+      "id": "on",
+      "title": "Light on",
+      "systemImage": "play.circle",
+      "function": "lightOn"
+    },
+    {
+      "id": "off",
+      "title": "Light off",
+      "systemImage": "play.circle",
+      "function": "lightOff"
+    }
+  ]
+}

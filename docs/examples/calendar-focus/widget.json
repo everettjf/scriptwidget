@@ -1,0 +1,28 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.calendar-focus",
+  "name": "Focus Session",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "calendar",
+    "calendarWrite",
+    "storage"
+  ],
+  "networkDomains": [],
+  "license": "Apache-2.0",
+  "actions": [
+    {
+      "id": "create",
+      "title": "Add focus session",
+      "systemImage": "play.circle",
+      "function": "createFocus"
+    }
+  ]
+}

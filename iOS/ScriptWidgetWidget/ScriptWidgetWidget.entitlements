@@ -27,5 +27,7 @@
 	<array>
 		<string>group.everettjf.scriptwidget</string>
 	</array>
+	<key>com.apple.developer.homekit</key>
+	<true/>
 </dict>
 </plist>
