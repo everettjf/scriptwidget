@@ -7,12 +7,14 @@ on:
   push:
     paths:
       - 'Web/**'
+      - 'site/**'
       - 'Editor/editorfe/src/**'
       - 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**'
       - '.github/workflows/web-browsers.yml'
   pull_request:
     paths:
       - 'Web/**'
+      - 'site/**'
       - 'Editor/editorfe/src/**'
       - '.github/workflows/web-browsers.yml'
   workflow_dispatch:
@@ -56,3 +58,6 @@ jobs:
       - name: Cross-browser checks
         working-directory: Web/studio
         run: node scripts/cross-browser.ts chromium firefox webkit
+      - name: Homepage code and preview across browsers
+        working-directory: Web/studio
+        run: node scripts/hero-browsers.ts chromium firefox webkit
