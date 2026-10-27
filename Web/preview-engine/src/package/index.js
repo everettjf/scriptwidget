@@ -53,7 +53,7 @@ export function exportPackage(files) {
   return { bytes: writeArchive(directory, files), fileName: `${directory}.swt`, manifest: decoded.manifest, report };
 }
 
-export function newProjectFiles(name, source = "$render(\n  <vstack>\n    <text font=\"title\">Hello</text>\n  </vstack>\n);\n") {
+export function newProjectFiles(name, source = "$render(\n  <vstack>\n    <text font=\"title\">Hello ScriptWidget :)</text>\n  </vstack>\n);\n") {
   const manifest = newManifest(name);
   return { "widget.json": `${JSON.stringify(manifest, null, 2)}\n`, "main.jsx": source };
 }
