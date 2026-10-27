@@ -53,3 +53,6 @@
 @media(max-width:520px){.navlinks{gap:10px}.navlinks a{font-size:12px}.widget-showcase{gap:12px}.widget-showcase img{border-radius:14px}.copy-block .code{padding-inline:16px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.button{transition:none}.button:hover{transform:none}}
 .copy-block code{white-space:pre-wrap;overflow-wrap:anywhere}
+
+.hero h1{font-size:clamp(32px,5vw,60px);line-height:1.04}
+.hero h1 span{display:block}
