@@ -2183,7 +2183,9 @@ final class RuntimeExecutionTests: XCTestCase {
     }
 
     func testPackagePreflightRejectsFutureRuntimeBeforeAllExecutionSurfaces() throws {
-        for minimum in ["1.5", "2.0", "01.3"] {
+        let current = ScriptWidgetRuntimeContract.apiVersion.split(separator: ".")
+        let future = "\(current[0]).\(Int(current[1])! + 1)"
+        for minimum in [future, "2.0", "01.3"] {
             let package = makeTempPackage()
             defer { try? FileManager.default.removeItem(at: package.path) }
             var manifest = WidgetPackageManifest.newProject(name: package.name)

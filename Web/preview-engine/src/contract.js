@@ -17,11 +17,7 @@ export const runtimeContract = Object.freeze({
   maximumElementDepth: 64,
   maximumPropsPerElement: 128,
   maximumDataQueries: 8,
-  globalAPIs: Object.freeze([
-    "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
-    "$error", "$fetch", "$file", "$icloud", "$getenv", "$health", "$http", "$import",
-    "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
-  ]),
+  globalAPIs: Object.freeze(["$calendar", "$component", "$console", "$device", "$dynamic_island", "$element", "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$icloud", "$import", "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch"]),
 });
 
 /// Bumped whenever the web host changes observable execution semantics.

@@ -80,11 +80,7 @@ enum ScriptWidgetRuntimeContract {
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
 
-    static let globalAPIs = [
-        "$calendar", "$component", "$console", "$device", "$dynamic_island", "$element",
-        "$error", "$fetch", "$file", "$icloud", "$getenv", "$health", "$http", "$import",
-        "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch",
-    ]
+    static let globalAPIs = ["$calendar","$component","$console","$device","$dynamic_island","$element","$error","$fetch","$file","$getenv","$health","$http","$icloud","$import","$location","$music","$photos","$reminders","$render","$runtime","$services","$storage","$system","$xml","console","fetch"]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
         validateByteCount(source.utf8.count, maximum: maximumSourceBytes, label: "Source")
