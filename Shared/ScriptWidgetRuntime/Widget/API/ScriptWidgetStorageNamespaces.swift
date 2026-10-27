@@ -92,13 +92,15 @@ struct ScriptWidgetStoragePublicationReceipt: Codable, Equatable, Sendable {
 enum ScriptWidgetStorageVolume {
     static let markerName = "volume"
     static let markerMagic = Data("SWVOL001".utf8)
-    static var nativeGroupRoot: URL? {
+    // The OS group URL is stable for this process. Cache the lookup, not the
+    // volume/anchor proof, which is revalidated for every receipt.
+    static let nativeGroupRoot: URL? = {
 #if SCRIPTWIDGET_CLI
         return nil
 #else
         FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
 #endif
-    }
+    }()
 
     static func identifier(_ fd: Int32) throws -> Data {
         var attrs = attrlist()

@@ -1326,6 +1326,14 @@ final class ScriptWidgetActionTests: XCTestCase {
         XCTAssertTrue(catalog.actions().isEmpty, "Malformed Package 2.0 manifests must fail closed on system surfaces")
     }
 
+    func testResolvedButtonIntentPreservesLocalActionWithoutGlobalDiscovery() throws {
+        let (package, _) = try makeActionPackage()
+        let resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)
+        let intent = RunScriptWidgetActionIntent(resolved: resolved)
+        XCTAssertEqual(intent.action.id, resolved.identifier)
+        XCTAssertEqual(intent.action.title, resolved.action.title)
+    }
+
     func testExecutorProvidesSharedActionAndLegacyControlEnvironments() throws {
         let (package, manifest) = try makeActionPackage()
         let resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)

@@ -385,6 +385,10 @@ struct RunScriptWidgetActionIntent: AppIntent {
 
     init() {}
 
+    init(resolved: ResolvedScriptWidgetAction) {
+        action = ScriptWidgetActionEntity(resolved: resolved)
+    }
+
     init(identifier: String) {
         if let resolved = ScriptWidgetActionCatalog.live.resolve(identifier: identifier) {
             action = ScriptWidgetActionEntity(resolved: resolved)
