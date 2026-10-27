@@ -1,6 +1,7 @@
 import Foundation
 import CoreFoundation
 import CryptoKit
+import Darwin
 
 /// Native-owned identities. Package manifests and backup files cannot choose an
 /// identity. The prefix deliberately sits outside the old `script.` domain.
@@ -61,6 +62,109 @@ struct ScriptWidgetLegacyStoragePreview {
 struct ScriptWidgetStoragePublicationReceipt: Codable, Equatable, Sendable {
     let device: UInt64
     let inode: UInt64
+
+    static func capture(directory: Int32, groupRoot: URL? = ScriptWidgetStorageVolume.nativeGroupRoot) throws -> Self {
+        var info = stat()
+        guard fstat(directory, &info) == 0, info.st_mode & S_IFMT == S_IFDIR else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        let physicalDevice = UInt64(UInt32(bitPattern: info.st_dev))
+        guard let identity = try ScriptWidgetStorageVolume.groupIdentity(root: groupRoot) else {
+            return .init(device: physicalDevice, inode: info.st_ino)
+        }
+        let volume = try ScriptWidgetStorageVolume.identifier(directory)
+        // Keep the original logical domain so owner IDs, existing journals and
+        // location hashes survive a reboot. A mount number is not a volume ID.
+        if volume == identity.volume { return .init(device: identity.device, inode: info.st_ino) }
+        // Another filesystem cannot collide with this app's legacy domain.
+        let digest = SHA256.hash(data: volume).prefix(8).reduce(UInt64(0)) { ($0 << 8) | UInt64($1) }
+        return .init(device: digest | (1 << 63), inode: info.st_ino)
+    }
+
+    func matches(parent: Int32, name: String) -> Bool {
+        let fd = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return false }
+        defer { close(fd) }
+        return (try? Self.capture(directory: fd)) == self
+    }
+}
+
+/// Volume UUIDs survive remounts; st_dev does not. The marker is native private
+/// metadata and remains paired with the original directory inode and anchor.
+enum ScriptWidgetStorageVolume {
+    static let markerName = "volume"
+    static let markerMagic = Data("SWVOL001".utf8)
+    static var nativeGroupRoot: URL? {
+#if SCRIPTWIDGET_CLI
+        return nil
+#else
+        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
+#endif
+    }
+
+    static func identifier(_ fd: Int32) throws -> Data {
+        var attrs = attrlist()
+        attrs.bitmapcount = UInt16(ATTR_BIT_MAP_COUNT)
+        attrs.volattr = UInt32(ATTR_VOL_INFO) | UInt32(ATTR_VOL_UUID)
+        var data = Data(count: 20)
+        let status = data.withUnsafeMutableBytes { fgetattrlist(fd, &attrs, $0.baseAddress, $0.count, 0) }
+        guard status == 0, data.withUnsafeBytes({ $0.loadUnaligned(as: UInt32.self) }) == 20,
+              data.dropFirst(4).contains(where: { $0 != 0 }) else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        return Data(data.dropFirst(4))
+    }
+
+    static func anchorReceipt(_ bytes: Data) throws -> ScriptWidgetStoragePublicationReceipt {
+        guard bytes.count == 24, [Data("SWANCH01".utf8), Data("SWANCH02".utf8)].contains(Data(bytes.prefix(8))) else { throw ScriptWidgetStorageNamespaceError.invalidRegistry }
+        return .init(device: bytes[8..<16].reduce(0) { ($0 << 8) | UInt64($1) },
+                     inode: bytes[16..<24].reduce(0) { ($0 << 8) | UInt64($1) })
+    }
+
+    static func permitsLegacyRecovery(container: URL, groupRoot: URL?, volume: Data) -> Bool {
+        guard let groupRoot else { return false }
+        let group = groupRoot.standardizedFileURL.resolvingSymlinksInPath()
+        let candidate = container.standardizedFileURL.resolvingSymlinksInPath()
+        guard candidate.pathComponents.starts(with: group.pathComponents) else { return false }
+        let fd = open(group.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { return false }
+        defer { close(fd) }
+        return (try? identifier(fd)) == volume
+    }
+
+    static func groupIdentity(root: URL?) throws -> (volume: Data, device: UInt64)? {
+        guard let root else { return nil }
+        let parent = open(root.standardizedFileURL.resolvingSymlinksInPath().path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard parent >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        defer { close(parent) }
+        let directory = openat(parent, "__WidgetStorage.v2", O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        if directory < 0 {
+            if errno == ENOENT { return nil }
+            throw ScriptWidgetStorageNamespaceError.unavailable
+        }
+        defer { close(directory) }
+        guard let marker = try readMarker(directory, markerName) else { return nil }
+        guard let anchor = try readMarker(parent, ".ScriptWidgetStorage.v2.anchor") else { throw ScriptWidgetStorageNamespaceError.invalidRegistry }
+        let receipt = try anchorReceipt(anchor)
+        var info = stat()
+        let volume = try identifier(directory)
+        guard fstat(directory, &info) == 0, info.st_ino == receipt.inode,
+              marker == markerMagic + volume else { throw ScriptWidgetStorageNamespaceError.invalidRegistry }
+        return (volume, receipt.device)
+    }
+
+    private static func readMarker(_ parent: Int32, _ name: String) throws -> Data? {
+        let fd = openat(parent, name, O_RDONLY | O_NOFOLLOW | O_NONBLOCK | O_CLOEXEC)
+        if fd < 0 {
+            if errno == ENOENT { return nil }
+            throw ScriptWidgetStorageNamespaceError.unavailable
+        }
+        defer { close(fd) }
+        var info = stat()
+        guard fstat(fd, &info) == 0, info.st_mode & S_IFMT == S_IFREG, info.st_nlink == 1, info.st_size == 24 else {
+            throw ScriptWidgetStorageNamespaceError.invalidRegistry
+        }
+        var bytes = Data(count: 24)
+        let count = bytes.withUnsafeMutableBytes { Darwin.read(fd, $0.baseAddress, $0.count) }
+        guard count == 24 else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        return bytes
+    }
 }
 
 enum ScriptWidgetStorageDirectoryRole: String, Codable, Sendable {

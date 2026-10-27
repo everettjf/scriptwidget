@@ -6543,3 +6543,85 @@ final class PublicAnimationTests: XCTestCase {
         XCTAssertEqual(quarter-zero,8,accuracy:0.5); XCTAssertEqual(reduced,quarter,accuracy:0.5)
     }
 }
+
+extension NativeStorageFileTests {
+    private func legacyVolumeFixture(changedMount: Bool, retainMarker: Bool = false) throws -> (Data, UInt64) {
+        let store = try ScriptWidgetStorageFiles(container: root)
+        var values = ScriptWidgetStorageFileMap(); values["kept"] = "original record"
+        try store.commitNamespace(ownerID: owner, values: values)
+        let bytes = try Data(contentsOf: recordURL)
+        let original = store.storageReceipt.device
+        let logical = changedMount ? original ^ 1 : original
+        var anchor = Data("SWANCH01".utf8)
+        for value in [logical, store.storageReceipt.inode] {
+            for shift in (0..<8).reversed() { anchor.append(UInt8((value >> (shift * 8)) & 255)) }
+        }
+        try anchor.write(to: root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor"))
+        if !retainMarker { try FileManager.default.removeItem(at: root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")) }
+        return (bytes, logical)
+    }
+
+    func testRemountedNativeVolumePreservesRecordsReceiptsAndLogicalDevice() throws {
+        let (bytes, logical) = try legacyVolumeFixture(changedMount: true)
+        let reopened = try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root)
+        XCTAssertEqual(reopened.storageReceipt.device, logical)
+        XCTAssertEqual(try reopened.readNamespace(ownerID: owner)["kept"] as? String, "original record")
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+        let source = root.appendingPathComponent("Scripts")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        let fd = open(source.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
+        guard fd >= 0 else { return XCTFail("Fixture directory could not open") }
+        defer { close(fd) }
+        let receipt = try ScriptWidgetStoragePublicationReceipt.capture(directory: fd, groupRoot: root)
+        XCTAssertEqual(receipt.device, logical)
+        let nested = try reopened.profileFiles(id: UUID().uuidString.lowercased())
+        XCTAssertEqual(nested.storageReceipt.device, logical)
+        XCTAssertEqual(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil).storageReceipt, reopened.storageReceipt)
+    }
+
+    func testChangedLegacyMountOutsideNativeGroupIsNotAutomaticallyAdopted() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true)
+        let anchorURL = root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor")
+        let anchor = try Data(contentsOf: anchorURL)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil))
+        XCTAssertEqual(try Data(contentsOf: anchorURL), anchor)
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testLegacyVolumeUpgradeResumesAfterMarkerPublicationWithoutChangingRecords() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true, retainMarker: true)
+        let reopened = try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil)
+        XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor")).prefix(8), Data("SWANCH02".utf8))
+        XCTAssertEqual(try reopened.readNamespace(ownerID: owner)["kept"] as? String, "original record")
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testModernVolumeProofCannotBeRemovedAndRecreatedAsLegacy() throws {
+        let store = try ScriptWidgetStorageFiles(container: root)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        try FileManager.default.removeItem(at: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        XCTAssertThrowsError(try store.readNamespace(ownerID: owner))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+    }
+
+    func testForeignVolumeProofIsRejectedEvenForTheNativeRecoveryRoot() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true, retainMarker: true)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        try (Data("SWVOL001".utf8) + Data(repeating: 0xff, count: 16)).write(to: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testVolumeProofSymlinkAndHardlinkDoNotAuthorizeAStore() throws {
+        _ = try ScriptWidgetStorageFiles(container: root)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        let kept = root.appendingPathComponent("kept-volume-proof")
+        try FileManager.default.moveItem(at: marker, to: kept)
+        try FileManager.default.createSymbolicLink(at: marker, withDestinationURL: kept)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        try FileManager.default.removeItem(at: marker)
+        try FileManager.default.linkItem(at: kept, to: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+    }
+}

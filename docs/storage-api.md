@@ -291,3 +291,9 @@ The `launcher` configuration-only kind saves title, accent and ordered link defi
 ## Optional iCloud JSON
 
 `$storage` remains local and is not migrated automatically. New packages can opt into the separate [iCloud JSON API](icloud-json-api.md) (Runtime 1.5), with explicit native user connection, cache-first reads and preserved conflicting revisions.
+
+## Filesystem identity across device restarts
+
+Native record storage now pairs its directory anchor with the filesystem's volume UUID. A POSIX mount device number (`st_dev`) can change after a device restart or system upgrade even when the directory inode and its contents are unchanged. The original logical record domain is retained, so package owner UUIDs, directory bindings, location hashes and saved records do not need to be recreated.
+
+On first opening an older store, a changed mount number can be recovered only inside the OS-provided ScriptWidget App Group, on the same current volume and with the original directory inode. The native service validates the existing anchor and version before publishing the volume proof, then marks the upgraded anchor. Interrupted proof publication can resume. Once upgraded, missing, malformed, symlinked or foreign-volume proofs fail closed instead of creating an empty store. A genuinely replaced directory still fails its inode check. Record payloads and original preferences are not rewritten by this compatibility upgrade.

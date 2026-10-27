@@ -27,7 +27,7 @@ suite.run()
 guard let result = suite.testRun, result.executionCount >= 10, result.totalFailureCount == 0 else { exit(1) }
 `);
   const binary = join(temporary, "tests");
-  await exec("xcrun", ["swiftc", "-F", frameworks, "-I", libraries, "-L", libraries,
+  await exec("xcrun", ["swiftc", "-D", "SCRIPTWIDGET_CLI", "-F", frameworks, "-I", libraries, "-L", libraries,
     ...[frameworks, libraries, join(platform, "Library/PrivateFrameworks"), resolve(developer, "../SharedFrameworks")]
       .flatMap(path => ["-Xlinker", "-rpath", "-Xlinker", path]),
     ...["Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetStorageLock.swift",
