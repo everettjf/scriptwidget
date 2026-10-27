@@ -15,15 +15,6 @@ import UIKit
 
 class ScriptWidgetAppState {
     
-#if os(macOS)
-    let screenBounds = NSScreen.main!.frame
-    let screenScale = 0.5
-#else
-    let screenBounds = UIScreen.main.bounds
-    let screenScale = UIScreen.main.scale
-#endif
-    
-    
     init() {
         #if os(macOS)
         #else

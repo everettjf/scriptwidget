@@ -6730,3 +6730,80 @@ final class CompactRectangleTests: XCTestCase {
         }
     }
 }
+
+#if os(iOS)
+final class TemplateCardLayoutTests: XCTestCase {
+    @MainActor func testPhotoPickerControlsAndPreviewFitResizableScenes() throws {
+        let controller = try XCTUnwrap(UIStoryboard(name: "PhotoPicker", bundle: .main).instantiateViewController(identifier: "PhotoPickerViewController") as? PhotoPickerViewController)
+        controller.loadViewIfNeeded()
+        let view = try XCTUnwrap(controller.view)
+        let buttons = view.subviews.compactMap { $0 as? UIButton }
+        let save = try XCTUnwrap(buttons.first { $0.currentTitle == "Save" })
+        let options = buttons.filter { ["Inline", "Circular", "Rectangular"].contains($0.currentTitle ?? "") }
+        XCTAssertEqual(options.count, 3)
+        for size in [CGSize(width: 375, height: 600), CGSize(width: 382, height: 626), CGSize(width: 653, height: 641)] {
+            view.frame = CGRect(origin: .zero, size: size)
+            view.setNeedsLayout()
+            view.layoutIfNeeded()
+            for option in options {
+                XCTAssertLessThanOrEqual(option.frame.maxY + 12, save.frame.minY + 0.5, "\(option.currentTitle ?? "Option") overlaps Save at \(size).")
+            }
+            let imageView = try XCTUnwrap(controller.imageView)
+            let container = try XCTUnwrap(imageView.superview)
+            XCTAssertGreaterThan(imageView.frame.width, 0)
+            XCTAssertGreaterThan(imageView.frame.height, 0)
+            XCTAssertGreaterThanOrEqual(imageView.frame.minX, -0.5, "\(size)")
+            XCTAssertGreaterThanOrEqual(imageView.frame.minY, -0.5, "\(size)")
+            XCTAssertLessThanOrEqual(imageView.frame.maxX, container.bounds.width + 0.5, "\(size)")
+            XCTAssertLessThanOrEqual(imageView.frame.maxY, container.bounds.height + 0.5, "\(size)")
+        }
+    }
+
+    @MainActor func testWidePreviewStaysWithinTwoColumnCards() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let preview = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 100), format: format).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 600, height: 100))
+        }
+        try XCTUnwrap(preview.pngData()).write(to: directory.appendingPathComponent("preview.png"))
+        let model = ScriptModel(package: ScriptWidgetPackage(path: directory, readonly: true))
+        XCTAssertNotNil(model.package.previewImageURL())
+        let cards = HStack(alignment: .top, spacing: 12) {
+            TemplateCardView(model: model).frame(width: 160)
+            TemplateCardView(model: model).frame(width: 160)
+        }
+        .padding(16)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
+        let renderer = ImageRenderer(content: cards); renderer.scale = 1
+        let image = try XCTUnwrap(renderer.cgImage)
+        XCTAssertEqual(image.width, 364)
+        var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        let bitmap = try XCTUnwrap(CGContext(data: &bytes, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        bitmap.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        var redPixels = 0
+        for y in 0..<image.height {
+            for x in 0..<image.width {
+                let offset = (y * image.width + x) * 4
+                if bytes[offset] > 240 && bytes[offset + 1] < 15 && bytes[offset + 2] < 15 { redPixels += 1 }
+            }
+        }
+        XCTAssertGreaterThan(redPixels, 100, "The actual package image must render, rather than only a placeholder.")
+        for (name, columns) in [("left margin", 0..<12), ("column gap", 179..<185), ("right margin", 352..<364)] {
+            var coveredPixels = 0
+            for y in 0..<image.height {
+                for x in columns {
+                    let offset = (y * image.width + x) * 4
+                    let transparent = bytes[offset + 3] == 0
+                    let white = bytes[offset] >= 250 && bytes[offset + 1] >= 250 && bytes[offset + 2] >= 250
+                    if !transparent && !white { coveredPixels += 1 }
+                }
+            }
+            XCTAssertEqual(coveredPixels, 0, "Preview content escaped into the \(name).")
+        }
+    }
+}
+#endif

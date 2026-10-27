@@ -327,10 +327,13 @@ struct TemplateCardView: View {
 
                 if let url = model.package.previewImageURL(),
                    let uiImage = UIImage(contentsOfFile: url.path) {
-                    Image(uiImage: uiImage)
-                        .resizable()
-                        .scaledToFill()
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
+                    GeometryReader { proxy in
+                        Image(uiImage: uiImage)
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: proxy.size.width, height: proxy.size.height)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                    }
                 } else {
                     Image(systemName: model.iconSystemName)
                         .font(.system(size: 34, weight: .regular))

@@ -8,8 +8,8 @@
 import SwiftUI
 
 struct APIsHomeView: View {
-    @State private var tabBar: UITabBar! = nil
-    private var idiom : UIUserInterfaceIdiom { UIDevice.current.userInterfaceIdiom }
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var isTabBarVisible = true
     
     var body: some View {
         NavigationStack {
@@ -19,23 +19,11 @@ struct APIsHomeView: View {
                 showTabBar(true)
             }
         }
-        .background(TabBarAccessor { tabbar in   // << here !!
-            if idiom != .pad {
-                self.tabBar = tabbar
-            }
-        })
+        .toolbar(horizontalSizeClass == .regular || isTabBarVisible ? .visible : .hidden, for: .tabBar)
     }
     
     func showTabBar(_ visible: Bool) {
-        guard let tabBar = tabBar else {
-            return
-        }
-
-        if visible {
-            tabBar.isHidden = false
-        } else {
-            tabBar.isHidden = true
-        }
+        isTabBarVisible = visible
     }
 }
 
