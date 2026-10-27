@@ -29,9 +29,9 @@
 	<key>NSRemindersUsageDescription</key>
 	<string>Allow ScriptWidget to read reminders from lists you choose and apply reminder actions you trigger.</string>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<string>Allow ScriptWidget to read events from calendars you choose and create or update widget-owned events through actions you trigger.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<string>Allow ScriptWidget to read events from calendars you choose and create or update widget-owned events through actions you trigger.</string>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
