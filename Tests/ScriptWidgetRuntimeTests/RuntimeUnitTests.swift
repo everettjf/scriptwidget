@@ -5068,6 +5068,10 @@ final class StorageCapacityStudyTests: XCTestCase {
 }
 
 final class NativeStorageFileTests: XCTestCase {
+    func testIsolatedTestHostDoesNotDiscoverTheUsersNativeAppGroup() {
+        XCTAssertNil(ScriptWidgetStorageVolume.nativeGroupRoot)
+    }
+
     private var root: URL!
     private var owner: String!
     override func setUpWithError() throws {

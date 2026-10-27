@@ -98,7 +98,13 @@ enum ScriptWidgetStorageVolume {
 #if SCRIPTWIDGET_CLI
         return nil
 #else
-        FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
+        // Isolated test/preview libraries must not depend on, or inspect, the
+        // user's real App Group (which unsigned Mac test hosts cannot access).
+        guard ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+              ProcessInfo.processInfo.environment["XCTestBundlePath"] == nil,
+              ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] != "1",
+              NSClassFromString("XCTestCase") == nil, NSClassFromString("XCTest.XCTestCase") == nil else { return nil }
+        return FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget")
 #endif
     }()
 

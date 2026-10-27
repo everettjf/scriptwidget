@@ -2622,8 +2622,8 @@ final class NativeAPIIdentityTests: XCTestCase {
     }
     override func tearDownWithError() throws {
         NativeIdentityURLProtocol.set(host, handler: nil)
-        defaults.removePersistentDomain(forName: suite)
-        if let build = ScriptManager.getSandboxBuildDirectoryURL() { _ = ScriptWidgetPackageFiles.removeTree(root: build, relative: packageName) }
+        if let defaults, let suite { defaults.removePersistentDomain(forName: suite) }
+        if let packageName, let build = ScriptManager.getSandboxBuildDirectoryURL() { _ = ScriptWidgetPackageFiles.removeTree(root: build, relative: packageName) }
         try FileManager.default.removeItem(at: root)
     }
     private func captured(_ source: String? = nil) throws -> ScriptWidgetExecutionSnapshot {
