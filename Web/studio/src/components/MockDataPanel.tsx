@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addSampleMocks, isObject, mockAPIs, musicScenario, parseMocks, permissionScenario, responseFor, sampleFixtures, serviceScenario, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
 
-const groups = ["services", "music", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "icloud", "dataSource", "json"];
-const labels: Record<string, string> = { services: "Connected services", music: "Music playback", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", icloud: "iCloud JSON", dataSource: "Data Source Plugins", json: "Full JSON" };
+const groups = ["services", "music", "notifications", "alarms", "maps", "weather", "documents", "contacts", "home", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "icloud", "systemAccess", "dataSource", "json"];
+const labels: Record<string, string> = { services: "Connected services", notifications: "Local notifications", alarms: "Alarms & timers", maps: "Maps & places", weather: "Weather forecast", documents: "Imported documents", contacts: "Selected contacts", home: "Home accessories", music: "Music playback", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", icloud: "iCloud JSON", systemAccess: "System access grants", dataSource: "Data Source Plugins", json: "Full JSON" };
 
 // Primitive leaves use normal form fields. Arrays and uncommon payloads can
 // always be edited in the return JSON without losing unknown properties.
@@ -37,7 +37,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
   const response = responseFor(data, api);
   const writeResponse = api.operation === "write";
   const special = group === "network" ? "fetch" : group;
-  const structured = ["network", "storage", "icloud", "dataSource"].includes(group);
+  const structured = ["network", "storage", "icloud", "systemAccess", "dataSource"].includes(group);
   const encoded = structured ? JSON.stringify(data[special] ?? (["storage", "icloud"].includes(group) ? {} : []), null, 2)
     : JSON.stringify("error" in response ? response.error : response.value, null, 2);
   useEffect(() => {

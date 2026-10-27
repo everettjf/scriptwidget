@@ -28,6 +28,7 @@ import Darwin
 import SwiftUI
 import UniformTypeIdentifiers
 #if os(iOS)
+import AppIntents
 import UIKit
 #elseif os(macOS)
 import AppKit
@@ -390,7 +391,7 @@ final class ScriptWidgetErrorTests: XCTestCase {
 
 final class RuntimeContractTests: XCTestCase {
     func testPublicAPIVersionAndGlobalsAreFixed() {
-        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.5")
+        XCTAssertEqual(ScriptWidgetRuntimeContract.apiVersion, "1.6")
         XCTAssertEqual(ScriptWidgetRuntimeContract.globalAPIs, ScriptWidgetRuntimeContract.globalAPIs.sorted())
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$render"))
         XCTAssertTrue(ScriptWidgetRuntimeContract.globalAPIs.contains("$runtime"))
@@ -1325,6 +1326,14 @@ final class ScriptWidgetActionTests: XCTestCase {
         XCTAssertTrue(catalog.actions().isEmpty, "Malformed Package 2.0 manifests must fail closed on system surfaces")
     }
 
+    func testResolvedButtonIntentPreservesLocalActionWithoutGlobalDiscovery() throws {
+        let (package, _) = try makeActionPackage()
+        let resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)
+        let intent = RunScriptWidgetActionIntent(resolved: resolved)
+        XCTAssertEqual(intent.action.id, resolved.identifier)
+        XCTAssertEqual(intent.action.title, resolved.action.title)
+    }
+
     func testExecutorProvidesSharedActionAndLegacyControlEnvironments() throws {
         let (package, manifest) = try makeActionPackage()
         let resolved = try XCTUnwrap(ScriptWidgetActionCatalog(packages: [package]).actions().first)
@@ -1649,6 +1658,20 @@ final class PackageListRefreshTests: XCTestCase {
 #else
         let store = ScriptWidgetHomeViewDataObject(packages: listing)
 #endif
+        defer { listing.allowFirstToFinish.signal() }
+        let latestPublished = expectation(description: "The latest reload is published")
+        let stalePublished = expectation(description: "The stale reload is discarded")
+        stalePublished.isInverted = true
+#if os(macOS)
+        let publisher = store.$scriptModels
+#else
+        let publisher = store.$models
+#endif
+        let subscription = publisher.sink { items in
+            if items.map(\.name) == ["Latest"] { latestPublished.fulfill() }
+            if items.map(\.name) == ["Stale"] { stalePublished.fulfill() }
+        }
+        defer { subscription.cancel() }
         XCTAssertEqual(listing.firstStarted.wait(timeout: .now() + 2), .success)
 #if os(macOS)
         store.reloadUserScripts()
@@ -1656,7 +1679,7 @@ final class PackageListRefreshTests: XCTestCase {
         store.reload()
 #endif
         XCTAssertEqual(listing.secondFinished.wait(timeout: .now() + 2), .success)
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        wait(for: [latestPublished], timeout: 5)
 #if os(macOS)
         XCTAssertEqual(store.scriptModels.map(\.name), ["Latest"])
 #else
@@ -1664,7 +1687,7 @@ final class PackageListRefreshTests: XCTestCase {
 #endif
 
         listing.allowFirstToFinish.signal()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        wait(for: [stalePublished], timeout: 0.5)
 #if os(macOS)
         XCTAssertEqual(store.scriptModels.map(\.name), ["Latest"])
 #else
@@ -2150,8 +2173,8 @@ final class CalendarSourceSelectionTests: XCTestCase {
 
 final class WidgetRuntimeRequirementTests: XCTestCase {
     func testOnlyCanonicalSameMajorRequirementsAreSupported() {
-        for value in ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
-        for value in ["1.6", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
+        for value in ["1.0", "1.1", "1.2", "1.3", "1.4", "1.5", "1.6"] { XCTAssertTrue(WidgetRuntimeRequirement.supports(value), value) }
+        for value in ["1.7", "1.10", "2.0", "0.9", "01.3", "1.03", "1.3.0", "1", "1.9999", ">=1.3", " 1.3"] {
             XCTAssertFalse(WidgetRuntimeRequirement.supports(value), value)
         }
         XCTAssertTrue(WidgetRuntimeRequirement.supports("1.9", current: "1.10"))
@@ -5059,6 +5082,10 @@ final class StorageCapacityStudyTests: XCTestCase {
 }
 
 final class NativeStorageFileTests: XCTestCase {
+    func testIsolatedTestHostDoesNotDiscoverTheUsersNativeAppGroup() {
+        XCTAssertNil(ScriptWidgetStorageVolume.nativeGroupRoot)
+    }
+
     private var root: URL!
     private var owner: String!
     override func setUpWithError() throws {
@@ -6543,3 +6570,240 @@ final class PublicAnimationTests: XCTestCase {
         XCTAssertEqual(quarter-zero,8,accuracy:0.5); XCTAssertEqual(reduced,quarter,accuracy:0.5)
     }
 }
+
+extension NativeStorageFileTests {
+    private func legacyVolumeFixture(changedMount: Bool, retainMarker: Bool = false) throws -> (Data, UInt64) {
+        let store = try ScriptWidgetStorageFiles(container: root)
+        var values = ScriptWidgetStorageFileMap(); values["kept"] = "original record"
+        try store.commitNamespace(ownerID: owner, values: values)
+        let bytes = try Data(contentsOf: recordURL)
+        let original = store.storageReceipt.device
+        let logical = changedMount ? original ^ 1 : original
+        var anchor = Data("SWANCH01".utf8)
+        for value in [logical, store.storageReceipt.inode] {
+            for shift in (0..<8).reversed() { anchor.append(UInt8((value >> (shift * 8)) & 255)) }
+        }
+        try anchor.write(to: root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor"))
+        if !retainMarker { try FileManager.default.removeItem(at: root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")) }
+        return (bytes, logical)
+    }
+
+    func testRemountedNativeVolumePreservesRecordsReceiptsAndLogicalDevice() throws {
+        let (bytes, logical) = try legacyVolumeFixture(changedMount: true)
+        let reopened = try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root)
+        XCTAssertEqual(reopened.storageReceipt.device, logical)
+        XCTAssertEqual(try reopened.readNamespace(ownerID: owner)["kept"] as? String, "original record")
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+        let source = root.appendingPathComponent("Scripts")
+        try FileManager.default.createDirectory(at: source, withIntermediateDirectories: true)
+        let fd = open(source.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW)
+        guard fd >= 0 else { return XCTFail("Fixture directory could not open") }
+        defer { close(fd) }
+        let receipt = try ScriptWidgetStoragePublicationReceipt.capture(directory: fd, groupRoot: root)
+        XCTAssertEqual(receipt.device, logical)
+        let nested = try reopened.profileFiles(id: UUID().uuidString.lowercased())
+        XCTAssertEqual(nested.storageReceipt.device, logical)
+        XCTAssertEqual(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil).storageReceipt, reopened.storageReceipt)
+    }
+
+    func testChangedLegacyMountOutsideNativeGroupIsNotAutomaticallyAdopted() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true)
+        let anchorURL = root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor")
+        let anchor = try Data(contentsOf: anchorURL)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil))
+        XCTAssertEqual(try Data(contentsOf: anchorURL), anchor)
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testLegacyVolumeUpgradeResumesAfterMarkerPublicationWithoutChangingRecords() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true, retainMarker: true)
+        let reopened = try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: nil)
+        XCTAssertEqual(try Data(contentsOf: root.appendingPathComponent(".ScriptWidgetStorage.v2.anchor")).prefix(8), Data("SWANCH02".utf8))
+        XCTAssertEqual(try reopened.readNamespace(ownerID: owner)["kept"] as? String, "original record")
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testModernVolumeProofCannotBeRemovedAndRecreatedAsLegacy() throws {
+        let store = try ScriptWidgetStorageFiles(container: root)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        try FileManager.default.removeItem(at: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        XCTAssertThrowsError(try store.readNamespace(ownerID: owner))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: marker.path))
+    }
+
+    func testForeignVolumeProofIsRejectedEvenForTheNativeRecoveryRoot() throws {
+        let (bytes, _) = try legacyVolumeFixture(changedMount: true, retainMarker: true)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        try (Data("SWVOL001".utf8) + Data(repeating: 0xff, count: 16)).write(to: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        XCTAssertEqual(try Data(contentsOf: recordURL), bytes)
+    }
+
+    func testVolumeProofSymlinkAndHardlinkDoNotAuthorizeAStore() throws {
+        _ = try ScriptWidgetStorageFiles(container: root)
+        let marker = root.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("volume")
+        let kept = root.appendingPathComponent("kept-volume-proof")
+        try FileManager.default.moveItem(at: marker, to: kept)
+        try FileManager.default.createSymbolicLink(at: marker, withDestinationURL: kept)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+        try FileManager.default.removeItem(at: marker)
+        try FileManager.default.linkItem(at: kept, to: marker)
+        XCTAssertThrowsError(try ScriptWidgetStorageFiles(container: root, legacyRecoveryRoot: root))
+    }
+}
+
+#if os(iOS)
+@available(iOS 17.0, *)
+final class ScriptWidgetActionHostTests: XCTestCase {
+    func testDeclaredActionsUseTheApplicationHostBeforeIOS27() {
+        let actionType: Any.Type = RunScriptWidgetActionIntent.self
+        let toggleType: Any.Type = SetScriptWidgetActionValueIntent.self
+        XCTAssertTrue(actionType is any LiveActivityIntent.Type)
+        XCTAssertTrue(toggleType is any LiveActivityIntent.Type)
+    }
+}
+#endif
+
+final class CompactRectangleTests: XCTestCase {
+    func testOnlyFixedSolidCellsWithoutOtherModifiersUseTheCompactPath() {
+        let base: [AnyHashable: Any] = ["frame": "7,7", "color": "#239A3B", "corner": "1.75"]
+        func style(_ props: [AnyHashable: Any], debug: Bool = false) -> ScriptWidgetElementTagRectangle.CompactStyle? {
+            ScriptWidgetElementTagRectangle.compactStyle(.init(tagString: "rect", props: props, children: nil), debugMode: debug)
+        }
+        XCTAssertNotNil(style(base))
+        XCTAssertNil(style(base, debug: true))
+        for key in ["padding", "background", "opacity", "trim", "stroke", "shadow", "linkurl", "widgetAccentable", "animation", "unknown"] {
+            var props = base; props[key] = "1"; XCTAssertNil(style(props), key)
+        }
+        for value in ["max", "7,max", "-1,7", "nan,7"] {
+            var props = base; props["frame"] = value; XCTAssertNil(style(props), value)
+        }
+    }
+
+    @MainActor func testCompactCellsMatchGeneralRendererPixelsInBothAppearances() throws {
+        let package = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
+        let context = ScriptWidgetElementContext(runtime: nil, debugMode: false, scriptName: "Cell fixture", scriptParameter: "", package: package)
+        func pixels(_ view: AnyView, _ scheme: ColorScheme) throws -> [UInt8] {
+            let renderer = ImageRenderer(content: view.frame(width: 32, height: 128).background(Color.white).environment(\.colorScheme, scheme))
+            renderer.scale = 2
+            let image = try XCTUnwrap(renderer.cgImage)
+            var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)
+            let bitmap = try XCTUnwrap(CGContext(data: &bytes, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+            bitmap.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+            return bytes
+        }
+        let children = (0..<7).map { index in ScriptWidgetRuntimeElement(tagString: "rect", props: ["frame": "7,7", "color": index % 3 == 0 ? "red,0.5" : index % 3 == 1 ? "clear" : "#239A3B", "corner": index % 2 == 0 ? "1.75" as Any : 1.75], children: nil) }
+        let column = ScriptWidgetRuntimeElement(tagString: "vstack", props: ["spacing": 3.0], children: children)
+        XCTAssertNotNil(ScriptWidgetRectangleColumn.make(column, context: context))
+        for spacing in [-1.0, Double.nan, Double.infinity, 200.0] {
+            let invalid = ScriptWidgetRuntimeElement(tagString: "vstack", props: ["spacing": spacing], children: children)
+            XCTAssertNil(ScriptWidgetRectangleColumn.make(invalid, context: context))
+        }
+        let decorated = ScriptWidgetRuntimeElement(tagString: "vstack", props: ["spacing": 3.0, "opacity": 0.5], children: children)
+        XCTAssertNil(ScriptWidgetRectangleColumn.make(decorated, context: context))
+        let oversized = ScriptWidgetRuntimeElement(tagString: "rect", props: ["frame": "33,7", "color": "red"], children: nil)
+        let mixed = ScriptWidgetRuntimeElement(tagString: "vstack", props: ["spacing": 3.0], children: [children[0], oversized])
+        XCTAssertNil(ScriptWidgetRectangleColumn.make(mixed, context: context))
+        var linked = children[0].getProps(); linked["linkurl"] = "https://example.com"; children[0].props = linked
+        XCTAssertNil(ScriptWidgetRectangleColumn.make(column, context: context))
+        linked.removeValue(forKey: "linkurl"); children[0].props = linked
+        for scheme in [ColorScheme.light, .dark] {
+            let flat = try pixels(ScriptWidgetElementTagStack.buildViewVStack(column, context), scheme)
+            let stacked = try pixels(ScriptWidgetElementTagStack.buildGeneralViewVStack(column, context), scheme)
+            let differences = zip(flat, stacked).filter { $0 != $1 }.count
+            let maximumDelta = zip(flat, stacked).map { abs(Int($0) - Int($1)) }.max() ?? 0
+            XCTAssertEqual(differences, 0, "column \(scheme), maximum channel delta=\(maximumDelta)")
+            for color in ["#239A3B", "clear", "red", "red,0.5"] {
+                for corner in [nil, "1.75", 1.75] as [Any?] {
+                    var props: [AnyHashable: Any] = ["frame": "7,11", "color": color]
+                    props["corner"] = corner
+                    let element = ScriptWidgetRuntimeElement(tagString: "rect", props: props, children: nil)
+                    XCTAssertNotNil(ScriptWidgetElementTagRectangle.compactStyle(element, debugMode: false))
+                    let compact = try pixels(ScriptWidgetElementTagRectangle.buildView(element, context), scheme)
+                    let general = try pixels(ScriptWidgetElementTagRectangle.buildGeneralView(element, context), scheme)
+                    let differences = zip(compact, general).filter { $0 != $1 }.count
+                    let maximumDelta = zip(compact, general).map { abs(Int($0) - Int($1)) }.max() ?? 0
+                    XCTAssertEqual(differences, 0, "\(scheme) \(color) corner=\(String(describing: corner)), maximum channel delta=\(maximumDelta)")
+                }
+            }
+        }
+    }
+}
+
+#if os(iOS)
+final class TemplateCardLayoutTests: XCTestCase {
+    @MainActor func testPhotoPickerControlsAndPreviewFitResizableScenes() throws {
+        let controller = try XCTUnwrap(UIStoryboard(name: "PhotoPicker", bundle: .main).instantiateViewController(identifier: "PhotoPickerViewController") as? PhotoPickerViewController)
+        controller.loadViewIfNeeded()
+        let view = try XCTUnwrap(controller.view)
+        let buttons = view.subviews.compactMap { $0 as? UIButton }
+        let save = try XCTUnwrap(buttons.first { $0.currentTitle == "Save" })
+        let options = buttons.filter { ["Inline", "Circular", "Rectangular"].contains($0.currentTitle ?? "") }
+        XCTAssertEqual(options.count, 3)
+        for size in [CGSize(width: 375, height: 600), CGSize(width: 382, height: 626), CGSize(width: 653, height: 641)] {
+            view.frame = CGRect(origin: .zero, size: size)
+            view.setNeedsLayout()
+            view.layoutIfNeeded()
+            for option in options {
+                XCTAssertLessThanOrEqual(option.frame.maxY + 12, save.frame.minY + 0.5, "\(option.currentTitle ?? "Option") overlaps Save at \(size).")
+            }
+            let imageView = try XCTUnwrap(controller.imageView)
+            let container = try XCTUnwrap(imageView.superview)
+            XCTAssertGreaterThan(imageView.frame.width, 0)
+            XCTAssertGreaterThan(imageView.frame.height, 0)
+            XCTAssertGreaterThanOrEqual(imageView.frame.minX, -0.5, "\(size)")
+            XCTAssertGreaterThanOrEqual(imageView.frame.minY, -0.5, "\(size)")
+            XCTAssertLessThanOrEqual(imageView.frame.maxX, container.bounds.width + 0.5, "\(size)")
+            XCTAssertLessThanOrEqual(imageView.frame.maxY, container.bounds.height + 0.5, "\(size)")
+        }
+    }
+
+    @MainActor func testWidePreviewStaysWithinTwoColumnCards() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let format = UIGraphicsImageRendererFormat(); format.scale = 1
+        let preview = UIGraphicsImageRenderer(size: CGSize(width: 600, height: 100), format: format).image { context in
+            UIColor.red.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 600, height: 100))
+        }
+        try XCTUnwrap(preview.pngData()).write(to: directory.appendingPathComponent("preview.png"))
+        let model = ScriptModel(package: ScriptWidgetPackage(path: directory, readonly: true))
+        XCTAssertNotNil(model.package.previewImageURL())
+        let cards = HStack(alignment: .top, spacing: 12) {
+            TemplateCardView(model: model).frame(width: 160)
+            TemplateCardView(model: model).frame(width: 160)
+        }
+        .padding(16)
+        .background(Color.white)
+        .environment(\.colorScheme, .light)
+        let renderer = ImageRenderer(content: cards); renderer.scale = 1
+        let image = try XCTUnwrap(renderer.cgImage)
+        XCTAssertEqual(image.width, 364)
+        var bytes = [UInt8](repeating: 0, count: image.width * image.height * 4)
+        let bitmap = try XCTUnwrap(CGContext(data: &bytes, width: image.width, height: image.height, bitsPerComponent: 8, bytesPerRow: image.width * 4, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        bitmap.draw(image, in: CGRect(x: 0, y: 0, width: image.width, height: image.height))
+        var redPixels = 0
+        for y in 0..<image.height {
+            for x in 0..<image.width {
+                let offset = (y * image.width + x) * 4
+                if bytes[offset] > 240 && bytes[offset + 1] < 15 && bytes[offset + 2] < 15 { redPixels += 1 }
+            }
+        }
+        XCTAssertGreaterThan(redPixels, 100, "The actual package image must render, rather than only a placeholder.")
+        for (name, columns) in [("left margin", 0..<12), ("column gap", 179..<185), ("right margin", 352..<364)] {
+            var coveredPixels = 0
+            for y in 0..<image.height {
+                for x in columns {
+                    let offset = (y * image.width + x) * 4
+                    let transparent = bytes[offset + 3] == 0
+                    let white = bytes[offset] >= 250 && bytes[offset + 1] >= 250 && bytes[offset + 2] >= 250
+                    if !transparent && !white { coveredPixels += 1 }
+                }
+            }
+            XCTAssertEqual(coveredPixels, 0, "Preview content escaped into the \(name).")
+        }
+    }
+}
+#endif

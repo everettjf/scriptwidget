@@ -385,6 +385,10 @@ struct RunScriptWidgetActionIntent: AppIntent {
 
     init() {}
 
+    init(resolved: ResolvedScriptWidgetAction) {
+        action = ScriptWidgetActionEntity(resolved: resolved)
+    }
+
     init(identifier: String) {
         if let resolved = ScriptWidgetActionCatalog.live.resolve(identifier: identifier) {
             action = ScriptWidgetActionEntity(resolved: resolved)
@@ -431,6 +435,15 @@ struct SetScriptWidgetActionValueIntent: SetValueIntent {
         return .result()
     }
 }
+
+#if os(iOS)
+// System permissions such as AlarmKit belong to the app, not the widget
+// extension. Match the direct-button intent on iOS 17–26 as well as iOS 27.
+@available(iOS 17.0, *)
+extension RunScriptWidgetActionIntent: LiveActivityIntent {}
+@available(iOS 17.0, *)
+extension SetScriptWidgetActionValueIntent: LiveActivityIntent {}
+#endif
 
 #if os(macOS)
 private typealias ScriptWidgetActionIntentProtocol = AppIntent

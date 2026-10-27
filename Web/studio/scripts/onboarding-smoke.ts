@@ -37,6 +37,10 @@ try {
   assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth"), true);
   if (output) fs.writeFileSync(path.join(output, "home-mobile.png"), await page.screenshot());
   await page.goto(`${server.origin}/creator/`);
+  // Page.navigate returns before the new document and its stylesheet are ready.
+  // Wait for the destination, fonts and layout before measuring mobile overflow.
+  await page.waitFor("!!document.getElementById('install-command') && document.readyState==='complete'");
+  await page.evaluate("(async()=>{await document.fonts.ready;await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)))})()");
   assert.equal(await page.evaluate("document.documentElement.scrollWidth<=innerWidth"), true);
   // Deterministic clipboard success/denial, including exact multiline payload.
   await page.evaluate("window.copied=[]; Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async text=>window.copied.push(text)}})");

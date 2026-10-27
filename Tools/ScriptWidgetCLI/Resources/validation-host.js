@@ -12,14 +12,16 @@
   const asyncValue = call => ({then(resolve, reject) { try { return resolve(call()); } catch (e) { if (reject) return reject(String(e)); throw e; }}});
   const includes = Function.prototype.call.bind(Array.prototype.includes);
   const groups = {};
-  const caps = {health:'health',location:'location',calendar:'calendar',photos:'photos',reminders:'reminders',services:'services',music:'music'};
+  const caps = {health:'health',location:'location',calendar:'calendar',photos:'photos',reminders:'reminders',services:'services',music:'music',notifications:'notifications',alarms:'alarms',maps:'maps',weather:'weather',documents:'documents',contacts:'contacts',home:'home'};
   for (const item of catalog) {
     const [group, method] = item.id.split('.');
     const object = groups[group] ?? (groups[group] = {});
     object[method] = function () {
       const args = Array.from(arguments);
       const call = () => {
-        const capability = item.group === 'reminders' && includes(['create','update','setCompleted'],method) ? 'remindersWrite' : caps[item.group];
+        if (item.minimumRuntimeVersion === '1.6' && !permit('runtime1.6','')) throw Error('[system_runtime] Declare minimumRuntimeVersion 1.6 or later');
+        if (item.minimumRuntimeVersion === '1.6' && item.operation === 'write') throw Error('[read_only] Native CLI renders cannot run system actions');
+        const capability = item.group === 'calendar' && includes(['create','update'],method) ? 'calendarWrite' : item.group === 'reminders' && includes(['create','update','setCompleted'],method) ? 'remindersWrite' : caps[item.group];
         if (capability && !includes(['isAvailable','authorizationStatus','isAuthorizedForWidgetUpdates'],method) && !permit(capability,'')) throw Error('[permission_denied] Declare '+capability+' in widget.json');
         if (args.length && !reported.has(item.id)) {reported.add(item.id); note('mock.arguments_not_validated','Offline reply for '+item.id+' does not certify real system query arguments.');}
         if (capability && item.operation === 'read' && !reserve()) throw Error('[resource_limit] System-data query budget exceeded');
@@ -35,7 +37,7 @@
       return item.asynchronous ? asyncValue(call) : call();
     };
   }
-  for (const group of ['$device','$system','$calendar','$health','$location','$photos','$reminders','$services','$music']) globalThis[group] = Object.freeze(groups[group] || {});
+  for (const group of Object.keys(groups)) globalThis[group] = Object.freeze(groups[group] || {});
   function http(method, url, metadata) {
     return asyncValue(() => {
       if (++networkRequests > 32) throw Error('[resource_limit] Network fixture query budget exceeded');

@@ -71,6 +71,32 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$location.isAuthorizedForWidgetUpdates()` | 1.3 | ios | Synchronous | locationWhenInUse | availability |
 | `$location.requestAuthorization(options?)` | 1.0 | ios | Promise | locationWhenInUse | authorization |
 | `$location.current(options?)` | 1.0 | ios | Promise | locationWhenInUse | read |
+| `$notifications.status()` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$notifications.pending()` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$notifications.schedule(options)` | 1.6 | ios, macos | Promise | systemAccess | write |
+| `$notifications.cancel(key)` | 1.6 | ios, macos | Promise | systemAccess | write |
+| `$health.dailyStatistics(options)` | 1.6 | ios | Promise | healthRead | read |
+| `$calendar.create(options)` | 1.6 | ios, macos | Promise | systemAccess | write |
+| `$calendar.update(options)` | 1.6 | ios, macos | Promise | systemAccess | write |
+| `$weather.forecast(options)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$alarms.status()` | 1.6 | ios | Promise | systemAccess | read |
+| `$alarms.pending()` | 1.6 | ios | Promise | systemAccess | read |
+| `$alarms.schedule(options)` | 1.6 | ios | Promise | systemAccess | write |
+| `$alarms.cancel(key)` | 1.6 | ios | Promise | systemAccess | write |
+| `$alarms.stop(key)` | 1.6 | ios | Promise | systemAccess | write |
+| `$alarms.pause(key)` | 1.6 | ios | Promise | systemAccess | write |
+| `$alarms.resume(key)` | 1.6 | ios | Promise | systemAccess | write |
+| `$documents.list()` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$documents.readJSON(id)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$documents.readCSV(id)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$contacts.selected()` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$maps.search(options)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$maps.geocode(address)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$maps.reverseGeocode(options)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$maps.snapshot(options)` | 1.6 | ios, macos | Promise | systemAccess | read |
+| `$home.items()` | 1.6 | ios | Promise | systemAccess | read |
+| `$home.setPower(options)` | 1.6 | ios | Promise | systemAccess | write |
+| `$home.runScene(options)` | 1.6 | ios | Promise | systemAccess | write |
 
 ## music
 
@@ -520,6 +546,32 @@ Default editable preview sample:
 }
 ```
 
+### `$calendar.create`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.event",
+  "calendarID": "sample.calendar",
+  "status": "applied",
+  "replayed": false
+}
+```
+
+### `$calendar.update`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.event",
+  "calendarID": "sample.calendar",
+  "status": "applied",
+  "replayed": false
+}
+```
+
 ## reminders
 
 Requires reminders in widget.json and full system Reminders access. Reads require native Settings selected lists. create/update/setCompleted additionally require remindersWrite and a native declared action, stable requestID, durable replay receipts and an unchanged selected list. Web writes update preview-only items/receipts; receipt identities are derived from that state, with configurable API errors. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission.
@@ -775,6 +827,26 @@ Default editable preview sample:
 }
 ```
 
+### `$health.dailyStatistics`
+
+Default editable preview sample:
+
+```json
+{
+  "metric": "steps",
+  "unit": "count",
+  "aggregation": "sum",
+  "timeZone": "UTC",
+  "items": [
+    {
+      "date": "2026-01-01",
+      "value": 6840,
+      "hasSamples": true
+    }
+  ]
+}
+```
+
 ## location
 
 Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
@@ -828,5 +900,359 @@ Default editable preview sample:
   "accuracyAuthorization": "full",
   "age": 0,
   "isStale": false
+}
+```
+
+## notifications
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$notifications.status`
+
+Default editable preview sample:
+
+```json
+{
+  "authorization": "authorized"
+}
+```
+
+### `$notifications.pending`
+
+Default editable preview sample:
+
+```json
+[]
+```
+
+### `$notifications.schedule`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "daily",
+  "status": "scheduled"
+}
+```
+
+### `$notifications.cancel`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "daily",
+  "status": "cancellationRequested"
+}
+```
+
+## weather
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$weather.forecast`
+
+Default editable preview sample:
+
+```json
+{
+  "provider": "MET Norway",
+  "attribution": {
+    "text": "Weather data from MET Norway",
+    "url": "https://www.met.no/en/free-meteorological-data/Download-services"
+  },
+  "latitude": 37.33,
+  "longitude": -122.01,
+  "fetchedAt": "2026-01-01T12:00:00Z",
+  "isStale": false,
+  "hours": [
+    {
+      "time": "2026-01-01T12:00:00Z",
+      "temperatureC": 21,
+      "windMetersPerSecond": 2,
+      "precipitationMM": 0,
+      "condition": "partlycloudy_day"
+    }
+  ]
+}
+```
+
+## alarms
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$alarms.status`
+
+Default editable preview sample:
+
+```json
+{
+  "authorization": "authorized"
+}
+```
+
+### `$alarms.pending`
+
+Default editable preview sample:
+
+```json
+[]
+```
+
+### `$alarms.schedule`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "focus",
+  "status": "scheduled",
+  "replayed": false
+}
+```
+
+### `$alarms.cancel`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "focus",
+  "status": "requested"
+}
+```
+
+### `$alarms.stop`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "focus",
+  "status": "requested"
+}
+```
+
+### `$alarms.pause`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "focus",
+  "status": "requested"
+}
+```
+
+### `$alarms.resume`
+
+Default editable preview sample:
+
+```json
+{
+  "key": "focus",
+  "status": "requested"
+}
+```
+
+## documents
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$documents.list`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "name": "Sample.json",
+    "type": "json",
+    "bytes": 17
+  },
+  {
+    "id": "550e8400-e29b-41d4-a716-446655440001",
+    "name": "Sample.csv",
+    "type": "csv",
+    "bytes": 24
+  }
+]
+```
+
+### `$documents.readJSON`
+
+Default editable preview sample:
+
+```json
+{
+  "goal": 12,
+  "done": 7
+}
+```
+
+### `$documents.readCSV`
+
+Default editable preview sample:
+
+```json
+{
+  "headers": [
+    "day",
+    "value"
+  ],
+  "rows": [
+    [
+      "Monday",
+      "7"
+    ],
+    [
+      "Tuesday",
+      "9"
+    ]
+  ],
+  "truncated": false
+}
+```
+
+## contacts
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$contacts.selected`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "id": "sample.contact",
+    "name": "Alex Example",
+    "organization": "Sample",
+    "phones": [
+      "+1 202 555 0100"
+    ],
+    "emails": [
+      "alex@example.com"
+    ]
+  }
+]
+```
+
+## maps
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$maps.search`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "name": "Example Park",
+    "address": "Sample address",
+    "latitude": 37.33,
+    "longitude": -122.01
+  }
+]
+```
+
+### `$maps.geocode`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "name": "Example Park",
+    "address": "Sample address",
+    "latitude": 37.33,
+    "longitude": -122.01
+  }
+]
+```
+
+### `$maps.reverseGeocode`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "name": "Example Park",
+    "address": "Sample address",
+    "latitude": 37.33,
+    "longitude": -122.01
+  }
+]
+```
+
+### `$maps.snapshot`
+
+Default editable preview sample:
+
+```json
+{
+  "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQIHWP4z8DwHwAFgAI/ScLbtAAAAABJRU5ErkJggg==",
+  "width": 256,
+  "height": 256,
+  "provider": "Apple Maps"
+}
+```
+
+## home
+
+Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+### `$home.items`
+
+Default editable preview sample:
+
+```json
+[
+  {
+    "id": "sample.light",
+    "name": "Living Room Lamp",
+    "kind": "power",
+    "value": true,
+    "isCached": true,
+    "metric": "power",
+    "unit": "boolean"
+  },
+  {
+    "id": "scene-sample",
+    "name": "Evening",
+    "kind": "scene",
+    "value": null,
+    "isCached": true,
+    "metric": "scene",
+    "unit": "none"
+  }
+]
+```
+
+### `$home.setPower`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "sample.light",
+  "value": true,
+  "status": "acknowledged"
+}
+```
+
+### `$home.runScene`
+
+Default editable preview sample:
+
+```json
+{
+  "id": "scene-sample",
+  "status": "acknowledged",
+  "replayed": false
 }
 ```

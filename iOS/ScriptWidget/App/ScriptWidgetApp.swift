@@ -130,6 +130,7 @@ struct ScriptWidgetApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
+        ScriptWidgetSystemServices.startLifecycle()
         if #available(iOS 16.2,*) { _ = sharedLiveActivityManager }
         ScriptWidgetPrecompiler.install()
     }

@@ -60,6 +60,7 @@ enum WidgetPackagePermission: String, Codable, CaseIterable, Identifiable {
     case music
     case storage
     case icloud
+    case notifications, calendarWrite, maps, weather, alarms, documents, contacts, home
     case files
 
     var id: String { rawValue }
@@ -305,6 +306,13 @@ enum WidgetPackageManifestValidator {
             } else if !WidgetRuntimeRequirement.supports(minimum) {
                 error("unsupported_minimum_runtime", "This package requires a newer or incompatible ScriptWidget Runtime. Update the app before running it.")
             }
+        }
+        let systemPermissions: Set<WidgetPackagePermission> = [.notifications, .calendarWrite, .maps, .weather, .alarms, .documents, .contacts, .home]
+        if manifest.permissions.contains(where: { systemPermissions.contains($0) }), !WidgetRuntimeRequirement.supports("1.6", current: manifest.minimumRuntimeVersion ?? "0.0") {
+            error("system_runtime", "System service capabilities require minimumRuntimeVersion 1.6 or later.")
+        }
+        if manifest.permissions.contains(.calendarWrite), !manifest.permissions.contains(.calendar) {
+            error("calendar_write_permission", "calendarWrite also requires calendar.")
         }
         if manifest.permissions.contains(.icloud), !WidgetRuntimeRequirement.supports("1.5", current: manifest.minimumRuntimeVersion ?? "0.0") {
             error("icloud_runtime", "iCloud JSON requires minimumRuntimeVersion 1.5 or later.")

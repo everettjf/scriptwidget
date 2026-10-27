@@ -2622,8 +2622,8 @@ final class NativeAPIIdentityTests: XCTestCase {
     }
     override func tearDownWithError() throws {
         NativeIdentityURLProtocol.set(host, handler: nil)
-        defaults.removePersistentDomain(forName: suite)
-        if let build = ScriptManager.getSandboxBuildDirectoryURL() { _ = ScriptWidgetPackageFiles.removeTree(root: build, relative: packageName) }
+        if let defaults, let suite { defaults.removePersistentDomain(forName: suite) }
+        if let packageName, let build = ScriptManager.getSandboxBuildDirectoryURL() { _ = ScriptWidgetPackageFiles.removeTree(root: build, relative: packageName) }
         try FileManager.default.removeItem(at: root)
     }
     private func captured(_ source: String? = nil) throws -> ScriptWidgetExecutionSnapshot {
@@ -5821,6 +5821,26 @@ extension RuntimeExecutionTests {
             let tree = try XCTUnwrap(result.0)
             XCTAssertTrue(snapshot(tree).contains("icloud:unavailable"))
             XCTAssertFalse(snapshot(tree).contains("unexpected"))
+        }
+    }
+}
+
+
+extension RuntimeExecutionTests {
+    func testSystemCapabilitiesDenyUnmanagedAndPreviewPackages() throws {
+        let calls = ["$notifications.status()", "$calendar.create({})", "$health.dailyStatistics({metric:'steps'})", "$weather.forecast({latitude:0,longitude:0})", "$alarms.pending()", "$documents.list()", "$contacts.selected()", "$maps.geocode('park')", "$home.items()"]
+        for readonly in [false, true] {
+            for call in calls {
+                let temp = makeTempPackage()
+                defer { try? FileManager.default.removeItem(at:temp.path) }
+                let package = ScriptWidgetPackage(path:temp.path,readonly:readonly)
+                let runtime = ScriptWidgetRuntime(package:package,environments:["widget-size":"medium"])
+                let result = runtime.executeJSXSyncForWidget("try { await \(call); $render(<text>unexpected</text>); } catch(e) { $render(<text>{String(e)}</text>); }")
+                XCTAssertNil(result.1)
+                let tree = snapshot(try XCTUnwrap(result.0))
+                XCTAssertTrue(tree.contains("permission_denied"),call)
+                XCTAssertFalse(tree.contains("unexpected"),call)
+            }
         }
     }
 }

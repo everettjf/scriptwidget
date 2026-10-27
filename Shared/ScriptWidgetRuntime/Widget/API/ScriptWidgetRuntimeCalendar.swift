@@ -12,6 +12,8 @@ import EventKit
     static func authorizationStatus() -> String
     static func requestAuthorization() -> ScriptWidgetRuntimePromise
     static func calendars() -> ScriptWidgetRuntimePromise
+    static func create(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
+    static func update(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
     static func events(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise
 }
 
@@ -409,6 +411,8 @@ struct ScriptWidgetCalendarProvider {
 
     static func calendars() -> ScriptWidgetRuntimePromise { read(query: nil, error: nil) }
 
+    static func create(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise { ScriptWidgetRuntimeCalendarWrites.mutate(options ?? [:], updating: false) }
+    static func update(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise { ScriptWidgetRuntimeCalendarWrites.mutate(options ?? [:], updating: true) }
     static func events(_ options: [String: Any]?) -> ScriptWidgetRuntimePromise {
         do { return read(query: try ScriptWidgetCalendarQuery(options), error: nil) }
         catch { return read(query: nil, error: error.localizedDescription) }
@@ -646,8 +650,8 @@ struct CalendarAccessSettingsView: View {
             Label(connected ? "Calendar Connected" : "Connect Calendar", systemImage: connected ? "checkmark.circle" : "calendar.badge.clock")
                 .font(.headline)
             Text(connected
-                 ? "Calendar widgets can read events. Each package must also declare Calendar access. ScriptWidget does not expose event editing."
-                 : "Allow access to display real events. Apple requires full Calendar permission to read events; ScriptWidget uses it only for reading.")
+                 ? "Calendar widgets can read events from selected calendars. Creating or updating events also requires calendarWrite permission, access saved for that widget, and an explicit action. Only events created by that widget can be updated."
+                 : "Apple requires full Calendar permission to read events. ScriptWidget reads selected calendars; widgets with separately granted Calendar write access can create events and update their own events through explicit actions.")
                 .font(.footnote)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)

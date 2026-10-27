@@ -1,0 +1,45 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.alarm-focus-timer",
+  "name": "Focus Timer",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.6",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "alarms",
+    "storage"
+  ],
+  "networkDomains": [],
+  "license": "Apache-2.0",
+  "actions": [
+    {
+      "id": "start",
+      "title": "Start 25 min",
+      "systemImage": "play.circle",
+      "function": "startTimer"
+    },
+    {
+      "id": "pause",
+      "title": "Pause",
+      "systemImage": "play.circle",
+      "function": "pauseTimer"
+    },
+    {
+      "id": "resume",
+      "title": "Resume",
+      "systemImage": "play.circle",
+      "function": "resumeTimer"
+    },
+    {
+      "id": "cancel",
+      "title": "Cancel",
+      "systemImage": "play.circle",
+      "function": "cancelTimer"
+    }
+  ]
+}

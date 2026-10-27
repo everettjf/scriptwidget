@@ -51,66 +51,66 @@ struct ImageListView: View {
     @State private var isAddingImage: Bool = false
     @StateObject private var dataObject: ImageDataObject
     
-    let size: CGFloat
-    let columns: [GridItem]
     let title: String
     
     init(model: ScriptModel) {
-        // Cap thumbnail size so the grid stays well-proportioned on iPad / wide
-        // multitasking windows instead of rendering a few oversized images.
-        self.size = min(screenShortLength / 3 - 10, 110)
-        self.columns = [
-            GridItem(.adaptive(minimum: size), spacing: 5),
-        ]
         _dataObject = StateObject(wrappedValue: ImageDataObject(model: model))
         self.title = "Images"
     }
     
     var body: some View {
-        ScrollView {
-            LazyVGrid(columns: columns, spacing: 16) {
-                if dataObject.images.isEmpty {
-                    VStack(spacing: 10) {
-                        Image(systemName: "photo.on.rectangle.angled")
-                            .font(.largeTitle)
-                        Text("No images yet")
-                            .font(.headline)
-                        Text("Add an image to use it from your widget script.")
-                            .font(.caption)
-                            .multilineTextAlignment(.center)
-                    }
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                }
-                ForEach(dataObject.images) { item in
-                    Button(action: {
-                        self.previewingImage = item
-                    }) {
-                        
-                        VStack(alignment: .leading, spacing: 8) {
-                            WebImage(url: item.path)
-                                .placeholder {
-                                    RoundedRectangle(cornerRadius: 12)
-                                        .fill(.quaternary)
-                                }
-                                .resizable()
-                                .aspectRatio(contentMode: .fill)
-                                .frame(height: size)
-                                .frame(maxWidth: .infinity)
-                                .clipShape(.rect(cornerRadius: 12))
-                            Text(item.name)
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.primary)
-                                .lineLimit(1)
+        GeometryReader { proxy in
+            // Use this view's available width so thumbnails follow scene resizing.
+            let size = min(max((proxy.size.width - 32) / 3 - 10, 1), 110)
+            let columns = [GridItem(.adaptive(minimum: size), spacing: 5)]
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 16) {
+                    if dataObject.images.isEmpty {
+                        VStack(spacing: 10) {
+                            Image(systemName: "photo.on.rectangle.angled")
+                                .font(.largeTitle)
+                            Text("No images yet")
+                                .font(.headline)
+                            Text("Add an image to use it from your widget script.")
+                                .font(.caption)
+                                .multilineTextAlignment(.center)
                         }
-                        .padding(10)
-                        .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
+                        .foregroundStyle(.secondary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 60)
                     }
-                    .buttonStyle(.plain)
+                    ForEach(dataObject.images) { item in
+                        Button(action: {
+                            self.previewingImage = item
+                        }) {
+                        
+                            VStack(alignment: .leading, spacing: 8) {
+                                GeometryReader { thumbnail in
+                                    WebImage(url: item.path)
+                                        .placeholder {
+                                            RoundedRectangle(cornerRadius: 12)
+                                                .fill(.quaternary)
+                                        }
+                                        .resizable()
+                                        .aspectRatio(contentMode: .fill)
+                                        .frame(width: thumbnail.size.width, height: size)
+                                        .clipped()
+                                }
+                                .frame(height: size)
+                                .clipShape(.rect(cornerRadius: 12))
+                                Text(item.name)
+                                    .font(.caption.weight(.medium))
+                                    .foregroundStyle(.primary)
+                                    .lineLimit(1)
+                            }
+                            .padding(10)
+                            .background(Color(.secondarySystemGroupedBackground), in: .rect(cornerRadius: 16))
+                        }
+                        .buttonStyle(.plain)
+                    }
                 }
+                .padding()
             }
-            .padding()
         }
         .background(Color(.systemGroupedBackground))
         .navigationTitle(title)

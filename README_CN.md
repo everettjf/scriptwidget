@@ -85,3 +85,7 @@ ScriptWidget 仓库中的源代码使用 [Apache 2.0 License](LICENSE) 发布。
 ScriptWidget 名称、Logo、截图与 App Store 商店宣传素材不包含在 Apache 2.0 许可范围内；这些品牌及宣传资产的权利归各自权利人所有。
 
 [Discord](https://discord.gg/eGzEaP6TzR)
+
+## 正在开发的系统能力
+
+Runtime 1.6 新增通知提醒、健康历史、日历写入、天气、闹钟、文件导入、联系人、地图和 HomeKit。每个组件独立授权，Web Studio 提供隔离的模拟数据。[API 文档、九个示例及真机验收清单](docs/system-services-api.md)。当前仍需完成真机验收后再发布。

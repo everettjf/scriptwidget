@@ -5,7 +5,7 @@
 
 export type WidgetFamilyName = "systemSmall" | "systemMedium" | "systemLarge" | "systemExtraLarge" | "systemExtraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
 export type WidgetSize = "small" | "medium" | "large" | "extraLarge" | "extraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
-export type Permission = "network" | "location" | "health" | "calendar" | "reminders" | "remindersWrite" | "photos" | "services" | "music" | "storage" | "icloud" | "files";
+export type Permission = "network" | "location" | "health" | "calendar" | "reminders" | "remindersWrite" | "photos" | "services" | "music" | "storage" | "icloud" | "notifications" | "calendarWrite" | "maps" | "weather" | "alarms" | "documents" | "contacts" | "home" | "files";
 export type Severity = "error" | "warning" | "info";
 export type Appearance = "light" | "dark";
 export type RenderingMode = "fullColor" | "accented" | "vibrant";
@@ -61,6 +61,6 @@ export interface ExecutionResult {
   error: { kind: string; message: string } | null;
   logs: LogEntry[];
   diagnostics: Issue[];
-  mockState?: { storage: Record<string, unknown>; remindersState: { formatVersion: number; items: Array<Record<string, unknown>>; receipts: Array<Record<string, unknown>> } };
+  mockState?: { systemState?: Record<string, unknown>; storage: Record<string, unknown>; remindersState: { formatVersion: number; items: Array<Record<string, unknown>>; receipts: Array<Record<string, unknown>> } };
   timing?: { compileMilliseconds: number; executeMilliseconds: number };
 }

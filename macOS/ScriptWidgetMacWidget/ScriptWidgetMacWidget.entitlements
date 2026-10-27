@@ -29,5 +29,7 @@
 	<array>
 		<string>group.everettjf.scriptwidget</string>
 	</array>
+	<key>com.apple.security.personal-information.addressbook</key>
+	<true/>
 </dict>
 </plist>

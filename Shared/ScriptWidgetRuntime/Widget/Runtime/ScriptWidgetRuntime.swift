@@ -80,7 +80,15 @@ enum ScriptWidgetRuntimeContract {
     static let maximumElementDepth = 64
     static let maximumPropsPerElement = 128
 
-    static let globalAPIs = ["$calendar","$component","$console","$device","$dynamic_island","$element","$error","$fetch","$file","$getenv","$health","$http","$icloud","$import","$location","$music","$photos","$reminders","$render","$runtime","$services","$storage","$system","$xml","console","fetch"]
+    static let globalAPIs = [
+        "$alarms", "$calendar", "$component", "$console", "$contacts",
+        "$device", "$documents", "$dynamic_island", "$element", "$error",
+        "$fetch", "$file", "$getenv", "$health", "$home",
+        "$http", "$icloud", "$import", "$location", "$maps",
+        "$music", "$notifications", "$photos", "$reminders", "$render",
+        "$runtime", "$services", "$storage", "$system", "$weather",
+        "$xml", "console", "fetch"
+    ]
 
     static func validateSource(_ source: String) -> ScriptWidgetError? {
         validateByteCount(source.utf8.count, maximum: maximumSourceBytes, label: "Source")
@@ -522,6 +530,13 @@ class ScriptWidgetRuntime {
             runtimeContext["$http"] = ScriptWidgetRuntimeHttp.self
             runtimeContext["$file"] = ScriptWidgetRuntimeFile.self
             runtimeContext["$icloud"] = ScriptWidgetRuntimeCloudJSON.self
+            runtimeContext["$notifications"] = ScriptWidgetRuntimeNotifications.self
+            runtimeContext["$maps"] = ScriptWidgetRuntimeMaps.self
+            runtimeContext["$weather"] = ScriptWidgetRuntimeWeather.self
+            runtimeContext["$alarms"] = ScriptWidgetRuntimeAlarms.self
+            runtimeContext["$documents"] = ScriptWidgetRuntimeDocuments.self
+            runtimeContext["$contacts"] = ScriptWidgetRuntimeContacts.self
+            runtimeContext["$home"] = ScriptWidgetRuntimeHome.self
             runtimeContext["$system"] = ScriptWidgetRuntimeSystem.self
             runtimeContext["$calendar"] = ScriptWidgetRuntimeCalendar.self
             runtimeContext["$photos"] = ScriptWidgetRuntimePhotos.self

@@ -433,7 +433,7 @@ struct ScriptWidgetBuildManifest: Codable, Equatable {
 
 enum ScriptWidgetBuildContract {
     static let runtimeAPIVersion = "1.0"
-    static let nativeRuntimeAPIVersion = "1.5"
+    static let nativeRuntimeAPIVersion = "1.6"
     static let compilerFingerprint = "scriptwidget-babel-v3"
 }
 
@@ -852,8 +852,7 @@ enum ScriptWidgetPackageFiles {
             guard fstatat(sourceDirectory, sourceName, &info, AT_SYMLINK_NOFOLLOW) == 0,
                   info.st_mode & S_IFMT == S_IFREG || info.st_mode & S_IFMT == S_IFDIR else { return false }
             if let expectedReceipt {
-                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)),
-                      expectedReceipt.inode == info.st_ino else { return false }
+                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.matches(parent: sourceDirectory, name: sourceName) else { return false }
             }
             return withParent(root: root, relative: destination) { destinationDirectory, destinationName in
                 renameatx_np(sourceDirectory, sourceName, destinationDirectory, destinationName, UInt32(RENAME_EXCL)) == 0
@@ -881,7 +880,8 @@ enum ScriptWidgetPackageFiles {
             guard fstat(child, &opened) == 0, opened.st_dev == entry.st_dev, opened.st_ino == entry.st_ino else {
                 return .failure(ScriptWidgetStorageNamespaceError.conflict)
             }
-            return .success(.init(device: UInt64(UInt32(bitPattern: opened.st_dev)), inode: opened.st_ino))
+            do { return .success(try ScriptWidgetStoragePublicationReceipt.capture(directory: child)) }
+            catch { return .failure(error) }
         }
         guard let result else { throw ScriptWidgetStorageNamespaceError.unavailable }
         return try result.get()
@@ -893,7 +893,7 @@ enum ScriptWidgetPackageFiles {
             var info = stat()
             guard fstatat(sourceParent, sourceName, &info, AT_SYMLINK_NOFOLLOW) == 0, info.st_mode & S_IFMT == S_IFDIR else { return false }
             if let expectedReceipt {
-                guard expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)), expectedReceipt.inode == info.st_ino else { return false }
+                guard expectedReceipt.matches(parent: sourceParent, name: sourceName) else { return false }
             }
             return withParent(root: root, relative: name) { parent, finalName in
                 renameatx_np(sourceParent, sourceName, parent, finalName, UInt32(RENAME_EXCL)) == 0
@@ -908,8 +908,7 @@ enum ScriptWidgetPackageFiles {
         return withParent(root: source.deletingLastPathComponent(), relative: source.lastPathComponent) { sourceParent, sourceName in
             var prepared = stat()
             guard fstatat(sourceParent, sourceName, &prepared, AT_SYMLINK_NOFOLLOW) == 0,
-                  prepared.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: prepared.st_dev)),
-                  expectedReceipt.inode == prepared.st_ino else { return false }
+                  prepared.st_mode & S_IFMT == S_IFDIR, expectedReceipt.matches(parent: sourceParent, name: sourceName) else { return false }
             return withParent(root: root, relative: name) { parent, finalName in
                 var existing = stat()
                 if fstatat(parent, finalName, &existing, AT_SYMLINK_NOFOLLOW) != 0 {
@@ -932,8 +931,7 @@ enum ScriptWidgetPackageFiles {
             var info = stat()
             guard fstatat(parent, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else { return false }
             if depth == 0, let expectedReceipt {
-                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.device == UInt64(UInt32(bitPattern: info.st_dev)),
-                      expectedReceipt.inode == info.st_ino else { return false }
+                guard info.st_mode & S_IFMT == S_IFDIR, expectedReceipt.matches(parent: parent, name: name) else { return false }
             }
             if info.st_mode & S_IFMT == S_IFDIR {
                 let child = openat(parent, name, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
@@ -974,7 +972,7 @@ enum ScriptWidgetPackageFiles {
                 guard source >= 0 else { throw ScriptWidgetStorageNamespaceError.unavailable }
                 defer { close(source) }
                 var info = stat()
-                guard fstat(source, &info) == 0, UInt64(UInt32(bitPattern: info.st_dev)) == receipt.device, info.st_ino == receipt.inode else {
+                guard fstat(source, &info) == 0, try ScriptWidgetStoragePublicationReceipt.capture(directory: source) == receipt else {
                     throw ScriptWidgetStorageNamespaceError.conflict
                 }
                 let target = open(destination.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)

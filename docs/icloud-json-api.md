@@ -10,6 +10,16 @@ In the native widget list, open the context menu → **iCloud Data**. Create a n
 
 Grants and caches are bound to a native installation UUID and current iCloud identity. Sign-out/account change denies old-account cached reads and writes. Reconnect explicitly for a new account. A system change to the identity token's archive can require reconnection rather than guessing authority.
 
+## Separate and shared data spaces
+
+The `Scripts/<PackageName>/` folder contains widget source and resources. It is separate from the JSON data stores under `WidgetData/<store UUID>/`. A widget does not automatically receive a cloud data store just because its package is saved in iCloud.
+
+Each installed package has its own native read/write grant. In **iCloud Data**, the user can create a separate store for each package, or explicitly connect multiple packages to the **same store ID**. Connected packages share documents: a reading heatmap and reading statistics widget connected to the same store can both read and update `reading.json`. The same filename in different stores refers to independent data. Multiple Home Screen instances of the same installed package use that package's connection.
+
+JavaScript supplies only the document filename, such as `$icloud.readJSON("reading.json")`; it cannot choose a store ID, switch stores, access another unconnected store, or browse arbitrary iCloud files. Sharing grants read/write access to the connected store, so connect only widgets you trust with that data. Matching package names alone never establish sharing. On another device signed into the same iCloud account, explicitly connect the installed package to the same store ID.
+
+Shared data is eventually synchronized, not instantly shared memory. Widgets must agree on their JSON schema and handle retained conflicting revisions when devices edit offline or concurrently. `$storage` remains local and separate; connecting a store does not move existing habit records into iCloud.
+
 ## Methods
 
 Every method returns a Promise. `name` is a flat lowercase ASCII filename matching `/^[a-z][a-z0-9_-]{0,58}\.json$/`. No directories, absolute paths, URLs or arbitrary iCloud access.

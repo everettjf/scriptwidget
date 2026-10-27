@@ -1027,17 +1027,21 @@ final class ScriptManager: @unchecked Sendable {
         guard let scriptDirPath = self.getPackagePathFromPackageName(packageName: packageName) else { return false }
         let package = ScriptWidgetPackage(path: scriptDirPath)
         let deleteResult: Bool
+        var retiredOwner: String?
         if let storageContext {
             do {
                 guard scriptDirectory.standardizedFileURL.resolvingSymlinksInPath() == storageContext.libraryRoot else {
                     throw ScriptWidgetStorageNamespaceError.conflict
                 }
+                retiredOwner = (try? storageContext.boundDirectory(name: packageName, role: .source))?.ownerID
                 try storageContext.relocate(name: packageName)
                 deleteResult = true
             } catch { return false }
         } else { deleteResult = package.delete() }
         if deleteResult {
-            NotificationCenter.default.post(name: Self.packageRemovedNotification, object: packageName)
+            var info: [String: Any] = [:]
+            if let retiredOwner, let storageContext { info = ["retiredOwner": retiredOwner, "storageContext": storageContext] }
+            NotificationCenter.default.post(name: Self.packageRemovedNotification, object: packageName, userInfo: info)
         }
         
         let deleteBuildResult = removeBuildScriptPackage(package: package)

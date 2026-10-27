@@ -12,7 +12,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         
-        let _ = sharedAppState.screenBounds
+        let _ = sharedAppState
         
         #if !DEBUG
         DispatchQueue.main.asyncAfter(deadline: .now() + .seconds(1)) {

@@ -2,6 +2,27 @@ import XCTest
 @testable import ScriptWidget
 
 final class WebStudioServerTests: XCTestCase {
+    private var root: URL!
+    private var manager: ScriptManager!
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("WebStudioServerTests-" + UUID().uuidString)
+        manager = ScriptManager(isBuild: false, scriptDirectoryOverride: root)
+    }
+    override func tearDownWithError() throws {
+        manager = nil
+        try? FileManager.default.removeItem(at: root)
+        root = nil
+    }
+    @MainActor func testUnavailableLibraryFailsClosedBeforeListening() {
+        let unavailable = ScriptManager(isBuild: false, unavailableReason: "Unavailable test library")
+        let server = WebStudioServer(manager: unavailable)
+        server.start()
+        defer { server.stop() }
+        XCTAssertFalse(server.isRunning)
+        XCTAssertEqual(server.port, 0)
+        XCTAssertNotNil(server.lastError)
+    }
+
     func testParsesBoundedJSONRequest() throws {
         let payload = Data(#"{"code":"123456"}"#.utf8)
         var data = Data("POST /api/v1/pair HTTP/1.1\r\nHost: device\r\nContent-Type: application/json\r\nContent-Length: \(payload.count)\r\n\r\n".utf8)
@@ -40,7 +61,7 @@ final class WebStudioServerTests: XCTestCase {
     }
 
     func testHTTPServerServesStudioAndAuthenticatedSession() async throws {
-        let server = WebStudioServer(sessionLease: 5)
+        let server = WebStudioServer(sessionLease: 5, manager: manager)
         await MainActor.run { server.start() }
         let port = try await waitForPort(server)
         defer { server.stop() }
@@ -61,8 +82,8 @@ final class WebStudioServerTests: XCTestCase {
 
         let packageName = "WebStudio-P0-\(UUID().uuidString)"
         let initialSource = "const widget = <Text text=\"before\" />;"
-        XCTAssertTrue(sharedScriptManager.saveScript(packageName: packageName, content: initialSource, imageCopyPath: nil).0)
-        defer { _ = sharedScriptManager.deleteScript(packageName: packageName) }
+        XCTAssertTrue(manager.saveScript(packageName: packageName, content: initialSource, imageCopyPath: nil).0)
+        defer { _ = manager.deleteScript(packageName: packageName) }
 
         var packagesRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/packages")!)
         packagesRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
@@ -87,7 +108,7 @@ final class WebStudioServerTests: XCTestCase {
         createRequest.httpBody = try JSONSerialization.data(withJSONObject: ["package": packageName, "path": "source/helper.js"])
         let (_, createResponse) = try await URLSession.shared.data(for: createRequest)
         XCTAssertEqual((createResponse as? HTTPURLResponse)?.statusCode, 201)
-        XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0, "")
+        XCTAssertEqual(manager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0, "")
 
         let updatedSource = "const widget = <Text text=\"saved through Web Studio\" />;"
         var saveRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/document")!)
@@ -103,7 +124,7 @@ final class WebStudioServerTests: XCTestCase {
         let (saveData, saveResponse) = try await URLSession.shared.data(for: saveRequest)
         XCTAssertEqual((saveResponse as? HTTPURLResponse)?.statusCode, 200)
         let savedRevision = try XCTUnwrap((try JSONSerialization.jsonObject(with: saveData) as? [String: Any])?["revision"] as? String)
-        XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
+        XCTAssertEqual(manager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
 
         var eventsRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/events?after=0")!)
         eventsRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
@@ -119,7 +140,7 @@ final class WebStudioServerTests: XCTestCase {
         deleteRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
         let (_, deleteFileResponse) = try await URLSession.shared.data(for: deleteRequest)
         XCTAssertEqual((deleteFileResponse as? HTTPURLResponse)?.statusCode, 200)
-        XCTAssertNil(sharedScriptManager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0)
+        XCTAssertNil(manager.getScriptPackage(packageName: packageName).readFile(relativePath: "source/helper.js").0)
 
         let conflictingSource = "const widget = <Text text=\"must not overwrite\" />;"
         saveRequest.httpBody = try JSONSerialization.data(withJSONObject: [
@@ -133,7 +154,7 @@ final class WebStudioServerTests: XCTestCase {
         let conflict = try XCTUnwrap(try JSONSerialization.jsonObject(with: conflictData) as? [String: Any])
         XCTAssertEqual(conflict["currentContent"] as? String, updatedSource)
         XCTAssertEqual(conflict["currentRevision"] as? String, savedRevision)
-        XCTAssertEqual(sharedScriptManager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
+        XCTAssertEqual(manager.getScriptPackage(packageName: packageName).readMainFile().0, updatedSource)
 
         var sessionRequest = URLRequest(url: URL(string: "http://127.0.0.1:\(port)/api/v1/session")!)
         sessionRequest.setValue(token, forHTTPHeaderField: "X-Studio-Token")
@@ -151,7 +172,7 @@ final class WebStudioServerTests: XCTestCase {
     }
 
     func testSessionLeaseReleasesClosedBrowser() async throws {
-        let server = WebStudioServer(sessionLease: 0.25)
+        let server = WebStudioServer(sessionLease: 0.25, manager: manager)
         await MainActor.run { server.start() }
         let port = try await waitForPort(server)
         defer { server.stop() }
@@ -172,7 +193,7 @@ final class WebStudioServerTests: XCTestCase {
     }
 
     func testHTTPServerRejectsOversizedRequestAndStaysAvailable() async throws {
-        let server = WebStudioServer(sessionLease: 5)
+        let server = WebStudioServer(sessionLease: 5, manager: manager)
         await MainActor.run { server.start() }
         let port = try await waitForPort(server)
         defer { server.stop() }
@@ -193,7 +214,8 @@ final class WebStudioServerTests: XCTestCase {
             if port != 0 { return port }
             try await Task.sleep(nanoseconds: 20_000_000)
         }
-        XCTFail("Web Studio listener did not become ready")
+        let diagnostics = await MainActor.run { server.diagnosticReport }
+        XCTFail("Web Studio listener did not become ready: \(diagnostics)")
         throw URLError(.cannotConnectToHost)
     }
 }

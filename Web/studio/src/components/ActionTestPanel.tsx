@@ -34,7 +34,7 @@ export function ActionTestPanel({ project, onFixtures }: { project: Project; onF
   const reset = () => {
     try {
       const fixtures = parseMocks(project.fixtures);
-      delete fixtures.remindersState; fixtures.storage = {};
+      delete fixtures.remindersState; delete fixtures.systemState; fixtures.storage = {};
       onFixtures(JSON.stringify(fixtures, null, 2));
       setMessage("Simulated action state reset. System reminders were not changed.");
     } catch (error) { setMessage((error as Error).message); }

@@ -7,7 +7,7 @@ import { scriptWidgetAPI } from "../src/scriptWidgetAPI.js";
 test("editor metadata uses the native public API version rather than an app version", async () => {
   const source = await readFile(new URL("../../../Shared/ScriptWidgetRuntime/Common/ScriptWidgetPackage.swift", import.meta.url), "utf8");
   assert.ok(source.includes(`static let nativeRuntimeAPIVersion = "${scriptWidgetAPI.runtimeVersion}"`));
-  for (const api of dataAPICatalog) assert.ok(["1.0", "1.3", "1.4"].includes(api.minimumRuntimeVersion));
+  for (const api of dataAPICatalog) assert.ok(["1.0", "1.3", "1.4", "1.6"].includes(api.minimumRuntimeVersion));
 });
 
 test("data catalog exactly covers native JSExport data methods and Promise semantics", async () => {
@@ -26,7 +26,7 @@ test("data catalog exactly covers native JSExport data methods and Promise seman
       assert.ok(scriptWidgetAPI.functions[entry.id], `${entry.id} missing from completion metadata`);
       assert.ok(entry.notes.length > 20);
       assert.ok(entry.platforms.length);
-      assert.ok(["none", "healthRead", "locationWhenInUse", "calendarRead", "remindersRead", "remindersWrite", "photosRead", "serviceAccount", "musicRead"].includes(entry.authorization));
+      assert.ok(["none", "healthRead", "locationWhenInUse", "calendarRead", "remindersRead", "remindersWrite", "photosRead", "serviceAccount", "musicRead", "systemAccess"].includes(entry.authorization));
       assert.ok(["availability", "authorization", "read", "write"].includes(entry.operation));
       assert.equal(entry.mock, "editable");
       assert.notEqual(JSON.stringify(entry.value), undefined, entry.id);

@@ -34,6 +34,7 @@ final class ScriptWidgetStorageFiles {
     private let rootDevice: dev_t
     private let rootInode: ino_t
     private let storeReceipt: ScriptWidgetStoragePublicationReceipt
+    private let volumeIdentity: Data
     private static let anchorName = ".ScriptWidgetStorage.v2.anchor"
     var storageReceipt: ScriptWidgetStoragePublicationReceipt { storeReceipt }
     private static let maximumRecordFileBytes = 3 * 1024 * 1024
@@ -70,7 +71,8 @@ final class ScriptWidgetStorageFiles {
         return true
     }
 
-    init(container: URL, expectedStoreReceipt: ScriptWidgetStoragePublicationReceipt? = nil) throws {
+    init(container: URL, expectedStoreReceipt: ScriptWidgetStoragePublicationReceipt? = nil,
+         legacyRecoveryRoot: URL? = ScriptWidgetStorageVolume.nativeGroupRoot, inheritedDevice: UInt64? = nil) throws {
         let root = container.standardizedFileURL.resolvingSymlinksInPath()
         var original = stat()
         guard lstat(container.path, &original) == 0, original.st_mode & S_IFMT == S_IFDIR else { throw ScriptWidgetStorageFileError.unavailable }
@@ -80,29 +82,54 @@ final class ScriptWidgetStorageFiles {
         var info = stat()
         guard fstat(fd, &info) == 0, info.st_dev == original.st_dev, info.st_ino == original.st_ino else { throw ScriptWidgetStorageFileError.unavailable }
         self.container = root; rootDevice = info.st_dev; rootInode = info.st_ino
+        let volume = try ScriptWidgetStorageVolume.identifier(fd)
+        volumeIdentity = volume
         guard let result = ScriptWidgetStorageLock.withExclusiveAccess(container: root, namespace: "ScriptWidgetStorage.FileInitialization.v1", operation: { () -> Result<ScriptWidgetStoragePublicationReceipt, Error> in
             Result {
                 let directory = try Self.child(fd, name: Self.directoryName)
                 defer { close(directory) }
                 var storeInfo = stat()
-                guard fstat(directory, &storeInfo) == 0 else { throw ScriptWidgetStorageFileError.unavailable }
-                let receipt = Self.receipt(storeInfo)
-                guard expectedStoreReceipt == nil || expectedStoreReceipt == receipt else { throw ScriptWidgetStorageFileError.unavailable }
-                let anchor = Self.anchor(receipt)
+                guard fstat(directory, &storeInfo) == 0, storeInfo.st_dev == info.st_dev else { throw ScriptWidgetStorageFileError.unavailable }
+                let physicalDevice = UInt64(UInt32(bitPattern: storeInfo.st_dev))
+                let marker = try Self.read(directory, name: ScriptWidgetStorageVolume.markerName, maximum: 24)
+                let receipt: ScriptWidgetStoragePublicationReceipt
                 if let existing = try Self.read(fd, name: Self.anchorName, maximum: 24) {
-                    guard existing == anchor else { throw ScriptWidgetStorageFileError.invalidData }
+                    receipt = try ScriptWidgetStorageVolume.anchorReceipt(existing)
+                    guard receipt.inode == storeInfo.st_ino else { throw ScriptWidgetStorageFileError.invalidData }
+                    if let marker {
+                        guard marker == ScriptWidgetStorageVolume.markerMagic + volume else { throw ScriptWidgetStorageFileError.invalidData }
+                    } else {
+                        guard existing.prefix(8) == Data("SWANCH01".utf8) else { throw ScriptWidgetStorageFileError.invalidData }
+                        // Legacy anchors stored a boot-local mount number. Only
+                        // native OS-group descendants may recover a changed one;
+                        // never adopt a replaced directory or arbitrary volume.
+                        guard receipt.device == physicalDevice || ScriptWidgetStorageVolume.permitsLegacyRecovery(container: root, groupRoot: legacyRecoveryRoot, volume: volume) else {
+                            throw ScriptWidgetStorageFileError.invalidData
+                        }
+                    }
                 } else {
                     // Anchor publication precedes the version marker. A retry
                     // may complete an empty store, but never adopts existing
                     // data whose durable identity has gone missing.
                     guard try Self.names(directory).isEmpty else { throw ScriptWidgetStorageFileError.invalidData }
-                    try Self.write(anchor, directory: fd, name: Self.anchorName)
+                    receipt = .init(device: inheritedDevice ?? physicalDevice, inode: storeInfo.st_ino)
+                    try Self.write(Self.anchor(receipt, legacy: true), directory: fd, name: Self.anchorName)
                 }
+                guard expectedStoreReceipt == nil || expectedStoreReceipt == receipt else { throw ScriptWidgetStorageFileError.unavailable }
                 if let marker = try Self.read(directory, name: "version", maximum: 32) {
                     guard marker == Self.rootMagic else { throw ScriptWidgetStorageFileError.invalidData }
                 } else {
                     guard try Self.names(directory).isEmpty else { throw ScriptWidgetStorageFileError.invalidData }
                     try Self.write(Self.rootMagic, directory: directory, name: "version")
+                }
+                if marker == nil {
+                    try Self.write(ScriptWidgetStorageVolume.markerMagic + volume, directory: directory, name: ScriptWidgetStorageVolume.markerName)
+                }
+                // The upgraded anchor requires the volume marker. A removed
+                // marker can never be mistaken for a legacy store on reopen.
+                let upgraded = Self.anchor(receipt)
+                if try Self.read(fd, name: Self.anchorName, maximum: 24) != upgraded {
+                    try Self.write(upgraded, directory: fd, name: Self.anchorName)
                 }
                 return receipt
             }
@@ -110,12 +137,8 @@ final class ScriptWidgetStorageFiles {
         storeReceipt = try result.get()
     }
 
-    private static func receipt(_ info: stat) -> ScriptWidgetStoragePublicationReceipt {
-        .init(device: UInt64(UInt32(bitPattern: info.st_dev)), inode: UInt64(info.st_ino))
-    }
-
-    private static func anchor(_ receipt: ScriptWidgetStoragePublicationReceipt) -> Data {
-        var bytes = Data("SWANCH01".utf8)
+    private static func anchor(_ receipt: ScriptWidgetStoragePublicationReceipt, legacy: Bool = false) -> Data {
+        var bytes = Data((legacy ? "SWANCH01" : "SWANCH02").utf8)
         for value in [receipt.device, receipt.inode] {
             for index in (0..<8).reversed() { bytes.append(UInt8((value >> (index * 8)) & 255)) }
         }
@@ -131,9 +154,11 @@ final class ScriptWidgetStorageFiles {
         let directory = try Self.child(root, name: Self.directoryName)
         defer { close(directory) }
         var storeInfo = stat()
-        guard fstat(directory, &storeInfo) == 0, Self.receipt(storeInfo) == storeReceipt,
+        guard fstat(directory, &storeInfo) == 0, storeInfo.st_dev == rootDevice, storeInfo.st_ino == storeReceipt.inode,
               try Self.read(root, name: Self.anchorName, maximum: 24) == Self.anchor(storeReceipt) else { throw ScriptWidgetStorageFileError.unavailable }
         guard try Self.read(directory, name: "version", maximum: 32) == Self.rootMagic else { throw ScriptWidgetStorageFileError.invalidData }
+        guard try Self.read(directory, name: ScriptWidgetStorageVolume.markerName, maximum: 24) == ScriptWidgetStorageVolume.markerMagic + volumeIdentity,
+              try ScriptWidgetStorageVolume.identifier(directory) == volumeIdentity else { throw ScriptWidgetStorageFileError.invalidData }
         let bucket = try Self.child(directory, name: name)
         defer { close(bucket) }
         return try operation(bucket)
@@ -193,7 +218,7 @@ final class ScriptWidgetStorageFiles {
             var receipt = stat()
             guard fstat(descriptor, &receipt) == 0 else { throw ScriptWidgetStorageFileError.unavailable }
             let path = container.appendingPathComponent(Self.directoryName).appendingPathComponent("profiles").appendingPathComponent(id)
-            let files = try ScriptWidgetStorageFiles(container: path, expectedStoreReceipt: expectedStoreReceipt)
+            let files = try ScriptWidgetStorageFiles(container: path, expectedStoreReceipt: expectedStoreReceipt, inheritedDevice: storeReceipt.device)
             guard files.rootDevice == receipt.st_dev, files.rootInode == receipt.st_ino else { throw ScriptWidgetStorageFileError.unavailable }
             return files
         }
@@ -477,6 +502,14 @@ final class ScriptWidgetFileStorageBackend: ScriptWidgetStorageBackend {
 
     private func metadata(_ key: String) -> Bool {
         if Self.metadataKeys.contains(key) { return true }
+        let servicePrefix = "ScriptWidget.SystemServices."
+        if key.hasPrefix(servicePrefix) {
+            let parts = key.dropFirst(servicePrefix.count).split(separator: ".", omittingEmptySubsequences: false)
+            let kinds: Set<String> = ["alarmKeys", "alarmReceipts", "ownedEvents", "calendarReceipts", "homeReceipts", "weatherCache"]
+            guard parts.count == 3, kinds.contains(String(parts[0])), parts[1] == "v1" else { return false }
+            let owner = String(parts[2])
+            return UUID(uuidString: owner)?.uuidString.lowercased() == owner
+        }
         return ["ScriptWidget.CalendarCache.v1.", "ScriptWidget.RemindersCache.v1.", "ScriptWidget.RemindersWrites.v1.", "ScriptWidget.PhotosCache.v1."].contains { prefix in
             let suffix = key.dropFirst(prefix.count)
             return key.hasPrefix(prefix) && suffix.count == 64 && suffix.utf8.allSatisfy { (48...57).contains($0) || (97...102).contains($0) }

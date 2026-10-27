@@ -46,6 +46,7 @@ struct ScriptWidgets: WidgetBundle {
     var body: some Widget {
         ScriptWidgetMainWidget()
         ScriptLiveActivityWidget()
+        if #available(iOSApplicationExtension 26.0, *) { ScriptWidgetAlarmLiveActivity() }
         ScriptWidgetButtonControlWidget()
         ScriptWidgetControlWidget()
     }

@@ -39,7 +39,7 @@ class ScriptWidgetElementTagButton {
                     .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
                 case .declared(let actionID):
                     if let resolved = context.actionCatalog.resolve(package: context.package, actionID: actionID) {
-                        Button(intent: RunScriptWidgetActionIntent(identifier: resolved.identifier)) {
+                        Button(intent: RunScriptWidgetActionIntent(resolved: resolved)) {
                             buttonLabel(element: element, context: context)
                         }
                         .modifier(ScriptWidgetAttributeGeneralModifier(element, context))

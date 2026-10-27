@@ -56,5 +56,11 @@
 		<string>Larabiefont Free.ttf</string>
 		<string>Apple ][.ttf</string>
 	</array>
+	<key>NSContactsUsageDescription</key>
+	<string>Select contacts to share with your chosen widgets.</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>Read selected home accessories and run selected controls or scenes from widgets.</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Schedule alarms and timers you explicitly request from a widget.</string>
 </dict>
 </plist>

@@ -35,9 +35,9 @@
 		</dict>
 	</array>
 	<key>NSCalendarsFullAccessUsageDescription</key>
-	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<string>Allow ScriptWidget to read events from calendars you choose and create or update widget-owned events through actions you trigger.</string>
 	<key>NSCalendarsUsageDescription</key>
-	<string>Allow ScriptWidget to read events for calendar widgets you choose.</string>
+	<string>Allow ScriptWidget to read events from calendars you choose and create or update widget-owned events through actions you trigger.</string>
 	<key>CFBundleDisplayName</key>
 	<string>ScriptWidget Studio</string>
 	<key>CFBundleName</key>
@@ -68,5 +68,11 @@
 	</array>
 	<key>ATSApplicationFontsPath</key>
 	<string>.</string>
+	<key>NSContactsUsageDescription</key>
+	<string>Select contacts to share with your chosen widgets.</string>
+	<key>NSHomeKitUsageDescription</key>
+	<string>Read selected home accessories and run selected controls or scenes from widgets.</string>
+	<key>NSAlarmKitUsageDescription</key>
+	<string>Schedule alarms and timers you explicitly request from a widget.</string>
 </dict>
 </plist>

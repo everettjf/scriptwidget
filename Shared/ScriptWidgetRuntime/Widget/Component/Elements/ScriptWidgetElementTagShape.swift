@@ -74,7 +74,52 @@ extension Shape {
 
 
 class ScriptWidgetElementTagRectangle {
+    struct CompactStyle {
+        let width: CGFloat
+        let height: CGFloat
+        let color: Color
+        let corner: CGFloat?
+        let clippingCorner: CGFloat?
+
+        @ViewBuilder private var framedShape: some View {
+            if let corner {
+                RoundedRectangle(cornerRadius: corner).foregroundColor(color)
+                    .frame(width: width, height: height)
+            } else {
+                Rectangle().foregroundColor(color).frame(width: width, height: height)
+            }
+        }
+        @ViewBuilder var view: some View {
+            // Preserve the existing shape + outer corner clip, including the
+            // distinction between string and numeric corner properties.
+            if let clippingCorner { framedShape.cornerRadius(clippingCorner).widgetAccentable(false) }
+            else { framedShape.widgetAccentable(false) }
+        }
+    }
+
+    static func compactStyle(_ element: ScriptWidgetRuntimeElement, debugMode: Bool) -> CompactStyle? {
+        // Dense heatmaps otherwise build the full conditional modifier chain
+        // for every cell, exhausting WidgetKit's 30 MB process limit.
+        let allowed: Set<AnyHashable> = ["frame", "color", "corner"]
+        guard !debugMode, Set(element.getProps().keys).isSubset(of: allowed),
+              let value = element.getPropString("color"),
+              let color = ScriptWidgetAttributeColor(value).color else { return nil }
+        let frame = ScriptWidgetAttributeFrameModifier(element)
+        guard frame.frameMode == .width_height_alignment,
+              frame.width.isFinite, frame.height.isFinite, frame.width >= 0, frame.height >= 0 else { return nil }
+        let corner = element.getPropString("corner").flatMap { Double($0) }.map { CGFloat($0) }
+        if let corner, !corner.isFinite || corner < 0 { return nil }
+        let clippingCorner = element.getPropDouble("corner").map { CGFloat($0) }
+        if let clippingCorner, !clippingCorner.isFinite || clippingCorner < 0 { return nil }
+        return .init(width: frame.width, height: frame.height, color: color, corner: corner, clippingCorner: clippingCorner)
+    }
+
     static func buildView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
+        if let style = compactStyle(element, debugMode: context.debugMode) { return AnyView(style.view) }
+        return buildGeneralView(element, context)
+    }
+
+    static func buildGeneralView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
         
         var cornerRadius: CGFloat?
         if let cornerValue = element.getPropString("corner") {

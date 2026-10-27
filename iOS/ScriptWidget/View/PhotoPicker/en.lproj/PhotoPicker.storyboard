@@ -133,15 +133,17 @@
                                         <rect key="frame" x="122" y="122" width="170" height="170"/>
                                         <color key="backgroundColor" systemColor="systemGray2Color"/>
                                         <constraints>
-                                            <constraint firstAttribute="width" constant="170" id="9XK-OP-hTW"/>
-                                            <constraint firstAttribute="height" constant="170" id="hIC-7o-1KN"/>
+                                            <constraint firstAttribute="width" priority="750" constant="170" id="9XK-OP-hTW"/>
+                                            <constraint firstAttribute="height" priority="750" constant="170" id="hIC-7o-1KN"/>
                                         </constraints>
                                     </imageView>
                                 </subviews>
                                 <color key="backgroundColor" systemColor="tertiarySystemBackgroundColor"/>
                                 <constraints>
                                     <constraint firstItem="THf-We-X5m" firstAttribute="centerX" secondItem="yVR-to-eoT" secondAttribute="centerX" id="B1f-gW-lzc"/>
-                                    <constraint firstAttribute="width" secondItem="yVR-to-eoT" secondAttribute="height" multiplier="1:1" id="U9f-OT-bzL"/>
+                                    <constraint firstItem="THf-We-X5m" firstAttribute="width" relation="lessThanOrEqual" secondItem="yVR-to-eoT" secondAttribute="width" constant="-32" id="qa7-PI-width"/>
+                                    <constraint firstItem="THf-We-X5m" firstAttribute="height" relation="lessThanOrEqual" secondItem="yVR-to-eoT" secondAttribute="height" constant="-32" id="qa7-PI-height"/>
+                                    <constraint firstAttribute="width" secondItem="yVR-to-eoT" secondAttribute="height" multiplier="1:1" priority="500" id="U9f-OT-bzL"/>
                                     <constraint firstItem="THf-We-X5m" firstAttribute="centerY" secondItem="yVR-to-eoT" secondAttribute="centerY" id="wOg-bv-U1g"/>
                                 </constraints>
                                 <userDefinedRuntimeAttributes>
@@ -237,6 +239,7 @@
                             <constraint firstItem="yVR-to-eoT" firstAttribute="top" secondItem="WBb-HS-9Yu" secondAttribute="top" id="528-oi-XEa"/>
                             <constraint firstItem="DlK-of-HrK" firstAttribute="leading" secondItem="WBb-HS-9Yu" secondAttribute="leading" constant="20" id="5fs-KZ-rhs"/>
                             <constraint firstItem="0d7-ve-qRX" firstAttribute="leading" secondItem="WBb-HS-9Yu" secondAttribute="leading" constant="20" id="73N-Hy-Kqm"/>
+                            <constraint firstItem="0d7-ve-qRX" firstAttribute="top" relation="greaterThanOrEqual" secondItem="DlK-of-HrK" secondAttribute="bottom" constant="12" id="qa7-PI-actions"/>
                             <constraint firstItem="DlK-of-HrK" firstAttribute="top" secondItem="s8o-4J-tB5" secondAttribute="bottom" constant="8" symbolic="YES" id="96m-Ed-GTk"/>
                             <constraint firstItem="VII-tS-2Ll" firstAttribute="leading" secondItem="WBb-HS-9Yu" secondAttribute="leading" constant="20" id="LFm-s4-pmX"/>
                             <constraint firstItem="VII-tS-2Ll" firstAttribute="top" secondItem="0d7-ve-qRX" secondAttribute="bottom" constant="8" symbolic="YES" id="P5z-48-TFo"/>

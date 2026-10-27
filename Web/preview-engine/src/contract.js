@@ -5,7 +5,7 @@
 export const runtimeContract = Object.freeze({
   // Native 1.3 uses cooperative checks and disallows dynamic code. The web
   // host keeps its disposable Worker; both expose Calendar, with distinct caches.
-  nativeAPIVersion: "1.5",
+  nativeAPIVersion: "1.6",
   nativeCompilerFingerprint: "scriptwidget-babel-v3",
   apiVersion: "1.2",
   compilerFingerprint: "scriptwidget-babel-v2",
@@ -17,7 +17,7 @@ export const runtimeContract = Object.freeze({
   maximumElementDepth: 64,
   maximumPropsPerElement: 128,
   maximumDataQueries: 8,
-  globalAPIs: Object.freeze(["$calendar", "$component", "$console", "$device", "$dynamic_island", "$element", "$error", "$fetch", "$file", "$getenv", "$health", "$http", "$icloud", "$import", "$location", "$music", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$xml", "console", "fetch"]),
+  globalAPIs: Object.freeze(["$alarms", "$calendar", "$component", "$console", "$contacts", "$device", "$documents", "$dynamic_island", "$element", "$error", "$fetch", "$file", "$getenv", "$health", "$home", "$http", "$icloud", "$import", "$location", "$maps", "$music", "$notifications", "$photos", "$reminders", "$render", "$runtime", "$services", "$storage", "$system", "$weather", "$xml", "console", "fetch"]),
 });
 
 /// Bumped whenever the web host changes observable execution semantics.
