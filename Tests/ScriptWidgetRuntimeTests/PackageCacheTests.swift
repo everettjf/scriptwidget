@@ -778,3 +778,17 @@ extension CloudJSONTests {
         XCTAssertEqual(try object(b.read("note.json"))["keep"] as? Bool, true)
     }
 }
+
+
+extension CloudJSONTests {
+    func testFinderMetadataDoesNotBlockInspectableCloudFiles() throws {
+        let a = try device("A"); try a.connect()
+        _ = try a.write("note.json", value: ["keep": true], expected: "")
+        _ = try a.synchronize()
+        let directory = cloud.appendingPathComponent("WidgetData/\(try a.connection())")
+        try Data([0, 1]).write(to: directory.appendingPathComponent(".DS_Store"))
+        try Data([0, 1]).write(to: directory.appendingPathComponent("note.json/.DS_Store"))
+        _ = try a.synchronize()
+        XCTAssertEqual(try object(a.read("note.json"))["keep"] as? Bool, true)
+    }
+}

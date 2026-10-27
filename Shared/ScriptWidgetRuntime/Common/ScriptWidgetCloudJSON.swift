@@ -159,9 +159,11 @@ final class ScriptWidgetCloudJSONStore {
         guard let files = ScriptWidgetPackageFiles.list(root: root, relative: path, maximumCount: 128) else { throw ScriptWidgetCloudJSONError.limitExceeded }
         var result: [Revision] = []; var total = 0
         for name in files {
+            if name == ".DS_Store", ScriptWidgetPackageFiles.kind(root: root, relative: path + "/" + name) == S_IFREG { continue }
             guard Self.validName(name), ScriptWidgetPackageFiles.kind(root: root, relative: path + "/" + name) == S_IFDIR,
                   let revisions = ScriptWidgetPackageFiles.list(root: root, relative: path + "/" + name, maximumCount: Self.maximumRevisions) else { throw ScriptWidgetCloudJSONError.invalidData }
             for file in revisions {
+                if file == ".DS_Store", ScriptWidgetPackageFiles.kind(root: root, relative: path + "/" + name + "/" + file) == S_IFREG { continue }
                 if file.hasPrefix(".revision-"), UUID(uuidString: String(file.dropFirst(10))) != nil { continue }
                 if file.range(of: "^\\.[a-f0-9]{64}\\.json\\.icloud$", options: .regularExpression) != nil {
                     if let url = ScriptWidgetPackageFiles.safeURL(root: root, relative: path + "/" + name + "/" + String(file.dropFirst().dropLast(7))) {
