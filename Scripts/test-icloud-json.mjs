@@ -28,7 +28,8 @@ guard let result = suite.testRun, result.executionCount >= 10, result.totalFailu
 `);
   const binary = join(temporary, "tests");
   await exec("xcrun", ["swiftc", "-F", frameworks, "-I", libraries, "-L", libraries,
-    "-Xlinker", "-rpath", "-Xlinker", frameworks, "-Xlinker", "-rpath", "-Xlinker", libraries,
+    ...[frameworks, libraries, join(platform, "Library/PrivateFrameworks"), resolve(developer, "../SharedFrameworks")]
+      .flatMap(path => ["-Xlinker", "-rpath", "-Xlinker", path]),
     ...["Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetStorageLock.swift",
       "Shared/ScriptWidgetRuntime/Widget/API/ScriptWidgetStorageNamespaces.swift",
       "Shared/ScriptWidgetRuntime/Common/ScriptWidgetCloudJSON.swift"].map(path => resolve(repo, path)),
