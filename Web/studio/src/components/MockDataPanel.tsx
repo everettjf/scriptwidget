@@ -5,8 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { addSampleMocks, isObject, mockAPIs, musicScenario, parseMocks, permissionScenario, responseFor, sampleFixtures, serviceScenario, setResponse, type MockObject, type MockValue } from "@/mockData.ts";
 
-const groups = ["services", "music", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "dataSource", "json"];
-const labels: Record<string, string> = { services: "Connected services", music: "Music playback", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", dataSource: "Data Source Plugins", json: "Full JSON" };
+const groups = ["services", "music", "calendar", "reminders", "photos", "health", "location", "device", "system", "network", "storage", "icloud", "dataSource", "json"];
+const labels: Record<string, string> = { services: "Connected services", music: "Music playback", calendar: "Calendar", reminders: "Reminders", photos: "Photos", health: "Health", location: "Location", device: "Device", system: "System", network: "Network responses", storage: "Storage", icloud: "iCloud JSON", dataSource: "Data Source Plugins", json: "Full JSON" };
 
 // Primitive leaves use normal form fields. Arrays and uncommon payloads can
 // always be edited in the return JSON without losing unknown properties.
@@ -37,8 +37,8 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
   const response = responseFor(data, api);
   const writeResponse = api.operation === "write";
   const special = group === "network" ? "fetch" : group;
-  const structured = ["network", "storage", "dataSource"].includes(group);
-  const encoded = structured ? JSON.stringify(data[special] ?? (group === "storage" ? {} : []), null, 2)
+  const structured = ["network", "storage", "icloud", "dataSource"].includes(group);
+  const encoded = structured ? JSON.stringify(data[special] ?? (["storage", "icloud"].includes(group) ? {} : []), null, 2)
     : JSON.stringify("error" in response ? response.error : response.value, null, 2);
   useEffect(() => {
     try { setCalendarSelectionDraft(JSON.stringify(parseMocks(fixtures)[group === "reminders" ? "remindersSelection" : "calendarSelection"] ?? null, null, 2)); } catch { /* Preserve malformed Full JSON for repair. */ }
@@ -96,6 +96,7 @@ export function MockDataPanel({ fixtures, onChange }: { fixtures: string; onChan
           parseMocks(next); return next;
         })}>Apply source selection</Button>
       </>}
+      {group === "icloud" && <p className="text-xs text-muted-foreground">Preview only. Set connected/available and documents. Each document has value, revision, state and conflicts. No Apple account or real iCloud files are accessed. New writes require a declared action; cloud upload completion is unknown.</p>}
       {group === "network" && <p className="text-xs text-muted-foreground">Match an exact URL and method. body is response text (JSON as a string); error simulates failure. Unmatched requests show a warning. Package network permissions still apply.</p>}
       {group === "storage" && <div className="flex items-center gap-2"><Label htmlFor="mock-storage-atomic" className="text-xs">Atomic updates</Label><select id="mock-storage-atomic" className="h-8 rounded-md border bg-background px-2 text-xs" value={data.storageAtomicAvailable === false ? "false" : "true"} onChange={(event) => commit(() => JSON.stringify({ ...parseMocks(fixtures), storageAtomicAvailable: event.target.value === "true" }, null, 2))}><option value="true">Available</option><option value="false">Unavailable / busy</option></select></div>}
       {group === "storage" && <p className="text-xs text-muted-foreground">Initial key/value pairs for each run. Reads and writes work within that run; the next preview starts from these values. Edit package files in the file tree to mock $file data.</p>}

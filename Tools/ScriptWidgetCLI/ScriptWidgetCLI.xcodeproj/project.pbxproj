@@ -56,10 +56,12 @@
 		727350AEDCC719A184D5995C /* ScriptWidgetRuntimeFetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */; };
 		72AA114107506BE3AE708C13 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC799313C3197689F1A906C /* ScriptModel.swift */; };
 		72DC6D622A75391C9582ECB9 /* ScriptWidgetRecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */; };
+		F0EF7680531C44E78A77ECAB /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */; };
 		768C0215C3BB8EF7DA908EC6 /* ScriptWidgetElementTagDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F28D26C0C5131742555232 /* ScriptWidgetElementTagDate.swift */; };
 		77CDFEBAA10BF9D8D2B34F84 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C9FD4B4DC6C668AF39EE39 /* ScriptWidgetAttributeRotation3DEffectModifier.swift */; };
 		7BADA9DF2237397473BA33C3 /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C6D05A624D8D0DB750AF9E /* ScriptWidgetStorageProfiles.swift */; };
 		7C15B0E6C184D7473773C48A /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */; };
+		4765703F555240FD8B843727 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */; };
 		7C1E07AEE5B4391EDE276A26 /* ScriptWidgetRuntimeConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7718541A936C5B6158CEC828 /* ScriptWidgetRuntimeConsole.swift */; };
 		7C26F00AB29E25F691A20494 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D158D6BC46CC44E9E461AE /* ScriptWidgetAttributeGeneral.swift */; };
 		7DAEC073E680BD60C3FBABAB /* api-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 5011ED35898ED75BA7F1A1F2 /* api-catalog.json */; };
@@ -102,6 +104,7 @@
 		F39A3930C8EAB66F701C8391 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6BEBC3683C90625859290B /* AppConfigFrequency.swift */; };
 		F4050D05A6E6E480EF3E0913 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D089792767B8B7DA80ECD818 /* ScriptWidgetAttributeTextAlignmentModifier.swift */; };
 		F4AE8E8FA3E8632765628B63 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */; };
+		311E16A1025A41A991EB15DF /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */; };
 		F504231C3A820C5D33559618 /* ScriptWidgetRuntimeDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */; };
 		F817B9F3BAA27FC30C2CB638 /* ScriptWidgetElementTagZStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8F1EC9AEA3879763F939F4 /* ScriptWidgetElementTagZStack.swift */; };
 		FC3294E8EC609D1FFB342A5D /* ScriptWidgetElementPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFF61E2368ADA15729BAA89 /* ScriptWidgetElementPoint.swift */; };
@@ -167,6 +170,7 @@
 		52B1B2736C7B55C7BE7C2F52 /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppState.swift; sourceTree = "<group>"; };
 		52F28D26C0C5131742555232 /* ScriptWidgetElementTagDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagDate.swift; sourceTree = "<group>"; };
 		56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordsView.swift; sourceTree = "<group>"; };
+		C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
 		58A58E5429F7356FA9F5C203 /* ScriptManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		5BF63F313011E594BD60F288 /* ScriptWidgetCLI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScriptWidgetCLI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFetch.swift; sourceTree = "<group>"; };
@@ -196,6 +200,7 @@
 		991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDevice.swift; sourceTree = "<group>"; };
 		9D60B046B70D59D4F539B7E7 /* ScriptWidgetRuntimeReminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeReminders.swift; sourceTree = "<group>"; };
 		9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFile.swift; sourceTree = "<group>"; };
+		52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCloudJSON.swift; sourceTree = "<group>"; };
 		9FCA745E5877B5491EF6AD86 /* WorkerMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerMain.swift; sourceTree = "<group>"; };
 		A0BE8865811BC2E348AFB47A /* ScriptWidgetAttributeShadowModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeShadowModifier.swift; sourceTree = "<group>"; };
 		A1F360ABE599E880EB4925ED /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonActionAppIntent.swift; sourceTree = "<group>"; };
@@ -221,6 +226,7 @@
 		DC3E966BD127060336A2C4BC /* support.bundle */ = {isa = PBXFileReference; lastKnownFileType = wrapper.cfbundle; path = support.bundle; sourceTree = "<group>"; };
 		DD66F0D5D5A8268A8FBD3344 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
 		E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordStore.swift; sourceTree = "<group>"; };
+		81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSON.swift; sourceTree = "<group>"; };
 		E2A1805571ADB208EF91A111 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 		E37571D6847A4E73CEB54C43 /* components.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = components.json; sourceTree = "<group>"; };
 		E4AB88C833B5E4D9F460F79F /* ScriptWidgetStorageLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageLock.swift; sourceTree = "<group>"; };
@@ -305,7 +311,9 @@
 				3AC799313C3197689F1A906C /* ScriptModel.swift */,
 				0B579A896F623D25DDC8395C /* ScriptWidgetPackage.swift */,
 				E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */,
+				81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */,
 				56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */,
+				C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */,
 				66C6D05A624D8D0DB750AF9E /* ScriptWidgetStorageProfiles.swift */,
 				88FBB82C566EF24581DBB278 /* ScriptWidgetStorageUpgrade.swift */,
 				4898BF5AB25F5560504579BE /* ScriptWidgetStorageUpgradeView.swift */,
@@ -559,6 +567,7 @@
 				991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */,
 				66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */,
 				9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */,
+				52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */,
 				72999E36BA973789D4B9833E /* ScriptWidgetRuntimeHealth.swift */,
 				DD66F0D5D5A8268A8FBD3344 /* ScriptWidgetRuntimeLocation.swift */,
 				91E69BD0DC00230A3E1BF379 /* ScriptWidgetRuntimeMusic.swift */,
@@ -759,7 +768,9 @@
 				C596ADCCACAC75B64D739AB4 /* ScriptWidgetElementView.swift in Sources */,
 				5B1EC3DF3E7DD621EF1DA039 /* ScriptWidgetPackage.swift in Sources */,
 				F4AE8E8FA3E8632765628B63 /* ScriptWidgetRecordStore.swift in Sources */,
+				311E16A1025A41A991EB15DF /* ScriptWidgetCloudJSON.swift in Sources */,
 				72DC6D622A75391C9582ECB9 /* ScriptWidgetRecordsView.swift in Sources */,
+				F0EF7680531C44E78A77ECAB /* ScriptWidgetCloudJSONView.swift in Sources */,
 				96FF84D543C3926DD61FBDCF /* ScriptWidgetRunningState.swift in Sources */,
 				56B7B77DE398881D7CF732EC /* ScriptWidgetRuntime.swift in Sources */,
 				2619A4F58CFC814CEC1AD878 /* ScriptWidgetRuntimeCalendar.swift in Sources */,
@@ -770,6 +781,7 @@
 				BA3091820D3F8EFFACF32D8E /* ScriptWidgetRuntimeElement.swift in Sources */,
 				727350AEDCC719A184D5995C /* ScriptWidgetRuntimeFetch.swift in Sources */,
 				7C15B0E6C184D7473773C48A /* ScriptWidgetRuntimeFile.swift in Sources */,
+				4765703F555240FD8B843727 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */,
 				B94F843A0032914002F41258 /* ScriptWidgetRuntimeHealth.swift in Sources */,
 				85E640C7E6A10F44B81BAE0C /* ScriptWidgetRuntimeLocation.swift in Sources */,
 				AF7AD22F3F68DBF68AD9C1B0 /* ScriptWidgetRuntimeMusic.swift in Sources */,

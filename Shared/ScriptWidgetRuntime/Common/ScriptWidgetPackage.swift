@@ -433,7 +433,7 @@ struct ScriptWidgetBuildManifest: Codable, Equatable {
 
 enum ScriptWidgetBuildContract {
     static let runtimeAPIVersion = "1.0"
-    static let nativeRuntimeAPIVersion = "1.4"
+    static let nativeRuntimeAPIVersion = "1.5"
     static let compilerFingerprint = "scriptwidget-babel-v3"
 }
 
@@ -671,7 +671,7 @@ enum ScriptWidgetPackageFiles {
     }()
     #endif
 
-    private static func preserveWidgetProtection(_ fd: Int32) -> Bool {
+    static func preserveWidgetProtection(_ fd: Int32) -> Bool {
         #if os(iOS) && !targetEnvironment(simulator)
         guard let value = unprotectedClass else { return false }
         return fcntl(fd, F_SETPROTECTIONCLASS, value) == 0

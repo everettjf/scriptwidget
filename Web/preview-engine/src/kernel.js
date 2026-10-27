@@ -427,6 +427,36 @@ export function scriptWidgetKernel(global, host, configJSON) {
   }
 
   const storage = new Map(Object.entries(config.storage ?? fixtures.storage ?? {}));
+  // iCloud is always an isolated preview model. No network, account or native
+  // connection is acquired by a fixture or a package-supplied store ID.
+  const cloudFixture = fixtures.icloud ?? {};
+  const cloudDocuments = new Map(Object.entries(cloudFixture.documents ?? {}));
+  let cloudRevision = 0;
+  function cloudJSON(method, name, value, expected) {
+    return nativePromise((resolve, reject) => {
+      const fail = (reason) => reject(`[icloud:${reason}] Preview operation rejected; existing data is preserved.`);
+      if (!config.hasManifest || !config.manifest?.permissions?.includes("icloud")) { reject("[permission_denied] Declare icloud in widget.json"); return; }
+      if (timelineProjection || liveActivityPresentation || (["write", "resolve", "sync"].includes(method) && !actionMode)) { fail("read_only"); return; }
+      if (++dataQueries > contract.maximumDataQueries) { reject("[query_limit] Too many system data queries"); return; }
+      if (cloudFixture.connected !== true) { fail("notConnected"); return; }
+      if (method === "status") { resolve({ state: cloudFixture.available === false ? "unavailable" : "connected", store: "preview-only", uploaded: null, uploadState: "unknown", conflictPolicy: "preserveAllVersions" }); return; }
+      if (method === "sync") { if (cloudFixture.available === false) fail("unavailable"); else resolve({ state: "pending", materializedRevisions: cloudDocuments.size, downloadedRevisions: 0, uploaded: null }); return; }
+      if (typeof name !== "string" || !/^[a-z][a-z0-9_-]{0,58}\.json$/.test(name)) { fail("invalidName"); return; }
+      const previous = cloudDocuments.get(name) ?? { value: null, revision: "", state: "cached", conflicts: [] };
+      if (method === "read") { resolve(bridgeValue(previous, 0)); return; }
+      if (expected !== previous.revision) { fail("staleRevision"); return; }
+      if (method !== "resolve" && previous.state === "conflict") { fail("conflict"); return; }
+      const valid = (item, depth = 0) => depth <= 32 && (item === null || typeof item === "string" || typeof item === "boolean" || (typeof item === "number" && Number.isFinite(item)) || (typeof item === "object" && Object.values(item).every(child => valid(child, depth + 1))));
+      if (!value || typeof value !== "object" || ArrayIsArray(value) || !valid(value)) { fail("invalidData"); return; }
+      const encoded = JSONStringify(value);
+      if (utf8ByteLength(encoded) > 64 * 1024) { fail("limitExceeded"); return; }
+      cloudRevision += 1;
+      if (cloudRevision > 256) { fail("limitExceeded"); return; }
+      const current = { value: JSON.parse(encoded), revision: `preview-${cloudRevision}`, state: "pending", conflicts: [] };
+      cloudDocuments.set(name, current); resolve(bridgeValue(current, 0));
+    });
+  }
+
   const validStorageKey = (key) => key !== "" && utf8ByteLength(key) <= 256;
   function storageJSON(value) {
     if (value === null || typeof value !== "object") return null;
@@ -550,6 +580,13 @@ export function scriptWidgetKernel(global, host, configJSON) {
       authorizationStatus: () => (fixtures.location !== undefined ? "authorizedWhenInUse" : "notDetermined"),
       requestAuthorization: unavailablePromise("location.authorization"),
       current: unavailablePromise("location"),
+    },
+    $icloud: {
+      readJSON: (name) => cloudJSON("read", name),
+      writeJSON: (name, value, expectedRevision) => cloudJSON("write", name, value, expectedRevision),
+      resolveJSON: (name, value, expectedRevision) => cloudJSON("resolve", name, value, expectedRevision),
+      sync: () => cloudJSON("sync"),
+      status: () => cloudJSON("status"),
     },
     $storage: {
       getString(key) { const name = nativeString(key); const value = validStorageKey(name) ? storage.get(name) : undefined; return typeof value === "string" ? value : ""; },

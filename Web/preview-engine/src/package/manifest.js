@@ -6,7 +6,7 @@ import { normalizePackagePath } from "../packageFiles.js";
 
 export const runtimeAPIVersion = "1.0";
 export const families = ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge", "systemExtraLargePortrait", "accessoryCircular", "accessoryRectangular", "accessoryInline"];
-export const permissions = ["network", "location", "health", "calendar", "reminders", "remindersWrite", "photos", "services", "music", "storage", "files"];
+export const permissions = ["network", "location", "health", "calendar", "reminders", "remindersWrite", "photos", "services", "music", "storage", "icloud", "files"];
 const manifestKeys = new Set(["formatVersion", "id", "name", "version", "runtimeVersion", "minimumRuntimeVersion", "timeline", "entry", "supportedFamilies", "permissions", "networkDomains", "plugins", "actions", "controls", "pushUpdates", "description", "category", "tags", "icon", "preview", "author", "license"]);
 const actionKeys = new Set(["id", "title", "description", "systemImage", "function"]);
 const controlKeys = new Set(["id", "type", "title", "subtitle", "systemImage", "action", "actionID", "stateKey"]);
@@ -142,6 +142,7 @@ export function validateManifest(manifest, paths, { checkEntryExists = true } = 
   if (manifest.supportedFamilies.length === 0) error("missing_families", "At least one supported widget family is required.");
   if (new Set(manifest.supportedFamilies).size !== manifest.supportedFamilies.length) error("duplicate_families", "supportedFamilies must not contain duplicates.");
   if (new Set(manifest.permissions).size !== manifest.permissions.length) error("duplicate_permissions", "permissions must not contain duplicates.");
+  if (manifest.permissions.includes("icloud") && (!/^1\.[0-9]+$/.test(manifest.minimumRuntimeVersion ?? "") || Number(manifest.minimumRuntimeVersion.split(".")[1]) < 5)) error("icloud_runtime", "iCloud JSON requires minimumRuntimeVersion 1.5 or later.");
   const network = manifest.permissions.includes("network");
   if (manifest.networkDomains.length && !network) error("undeclared_network", "networkDomains requires the network permission.");
   if (network && manifest.networkDomains.length === 0) error("missing_network_domains", "Network access must declare at least one host.");

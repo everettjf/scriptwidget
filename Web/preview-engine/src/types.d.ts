@@ -5,7 +5,7 @@
 
 export type WidgetFamilyName = "systemSmall" | "systemMedium" | "systemLarge" | "systemExtraLarge" | "systemExtraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
 export type WidgetSize = "small" | "medium" | "large" | "extraLarge" | "extraLargePortrait" | "accessoryCircular" | "accessoryRectangular" | "accessoryInline";
-export type Permission = "network" | "location" | "health" | "calendar" | "reminders" | "remindersWrite" | "photos" | "services" | "music" | "storage" | "files";
+export type Permission = "network" | "location" | "health" | "calendar" | "reminders" | "remindersWrite" | "photos" | "services" | "music" | "storage" | "icloud" | "files";
 export type Severity = "error" | "warning" | "info";
 export type Appearance = "light" | "dark";
 export type RenderingMode = "fullColor" | "accented" | "vibrant";

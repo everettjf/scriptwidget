@@ -6,7 +6,7 @@ import { dataAPICatalog } from "./dataAPICatalog.js";
 // authority; tests verify that this metadata stays aligned with it.
 export const scriptWidgetAPI = {
   "schemaVersion": 1,
-  "runtimeVersion": "1.4",
+  "runtimeVersion": "1.5",
   "documentation": "Public JSX surface shared by ScriptWidget Runtime and Studio.",
   "platforms": {
     "ios": "16.0",
@@ -71,6 +71,11 @@ export const scriptWidgetAPI = {
       arguments: api.arguments,
       returns: api.asynchronous ? "Promise<json>" : typeof api.value === "object" ? "json" : typeof api.value,
     }])),
+    "$icloud.readJSON": {"documentation": "Read cached JSON and revision; conflicts preserve all heads. Requires icloud permission and a native connection. Never certifies upload.", "arguments": ["name"], "returns": "Promise<json>", "minimumRuntimeVersion": "1.5"},
+    "$icloud.writeJSON": {"documentation": "Save a new immutable JSON revision locally from a user action. Requires the revision from readJSON. Background exchange is eventual.", "arguments": ["name", "value", "expectedRevision"], "returns": "Promise<json>", "minimumRuntimeVersion": "1.5"},
+    "$icloud.resolveJSON": {"documentation": "Explicitly resolve all observed conflicting heads into a new revision. Stale tokens fail; originals remain.", "arguments": ["name", "value", "expectedRevision"], "returns": "Promise<json>", "minimumRuntimeVersion": "1.5"},
+    "$icloud.sync": {"documentation": "Exchange materialized revisions with iCloud; requires a user action. Upload completion is unknown.", "arguments": [], "returns": "Promise<json>", "minimumRuntimeVersion": "1.5"},
+    "$icloud.status": {"documentation": "Read native connection state. Cloud store IDs are granted in the app, never by the script. Web uses preview mocks.", "arguments": [], "returns": "Promise<json>", "minimumRuntimeVersion": "1.5"},
     "$file.exists": { "documentation": "Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.", "arguments": ["path"], "returns": "boolean", "minimumRuntimeVersion": "1.3" },
     "$file.read": { "documentation": "Read package-relative UTF-8 text. Missing or unavailable files return an empty string.", "arguments": ["path"], "returns": "string" },
     "$file.readJSON": { "documentation": "Read a package-relative JSON object.", "arguments": ["path"], "returns": "json" },

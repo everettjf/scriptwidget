@@ -287,3 +287,7 @@ The `healthCard` kind also manages only `recordTemplate.config.v1`, containing `
 The `repoStats` kind backs up only saved `repository` and `accent` configuration. Its transient `github.stats.v1` cache and daily public-count history are excluded. It grants no network permission and cannot contain credentials; the built-in template declares only api.github.com. Unknown repositories, settings and accents fail validation. See [Public data cards](public-data-cards.md).
 
 The `launcher` configuration-only kind saves title, accent and ordered link definitions (including explicitly supplied shortcut text). It has a 32 KiB configuration allowance; other kinds retain 4 KiB. Backups can contain personal link/input data. Neither restore nor URL validation opens a target app. See [Launchers and system actions](launcher-actions.md).
+
+## Optional iCloud JSON
+
+`$storage` remains local and is not migrated automatically. New packages can opt into the separate [iCloud JSON API](icloud-json-api.md) (Runtime 1.5), with explicit native user connection, cache-first reads and preserved conflicting revisions.

@@ -406,7 +406,9 @@
 		F2C6AC7B26004B0F009CECE9 /* ScriptWidgetShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = F2C6AC7126004B0F009CECE9 /* ScriptWidgetShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		F2D738C925D0CA8900021E08 /* SettingTemplatesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */; };
 		F2F0A7AE27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */; };
+		FBABB490DFDA409D8D266385 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC92A21DC4745FB8B1F582E /* ScriptWidgetRuntimeCloudJSON.swift */; };
 		F2F0A7AF27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */; };
+		0F853DA1A57C46DCB7F10E8E /* ScriptWidgetRuntimeCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8EC92A21DC4745FB8B1F582E /* ScriptWidgetRuntimeCloudJSON.swift */; };
 		F2F8398E27CBBC8800D74288 /* HomeHelloView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2F8398D27CBBC8800D74288 /* HomeHelloView.swift */; };
 		F2FC062327DC5D9000A6A99D /* MirrorEditorScriptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FC062227DC5D9000A6A99D /* MirrorEditorScriptView.swift */; };
 		F2FC062827DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FC062527DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift */; };
@@ -418,9 +420,12 @@
 		F2FE0A3525ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FE0A3425ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift */; };
 		F2FE0A3725ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F2FE0A3625ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift */; };
 		D8A3713A02C54DAFB492D491 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C847E9CCBC140F6B53AC772 /* ScriptWidgetRecordStore.swift */; };
+		A815305D31B24EFE9AE72321 /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113B591460C0428199E1B2D3 /* ScriptWidgetCloudJSON.swift */; };
 		4635FD7C47944227987DB767 /* ScriptWidgetRecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B96A79828AD84572AB1D6170 /* ScriptWidgetRecordsView.swift */; };
+		6E5ACA07639849578EAF9019 /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */; };
 		A666715063344E9EBBE6E4E9 /* ScriptWidgetStorageUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */; };
 		D96A3CEA7A35471B83EE7BD1 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C847E9CCBC140F6B53AC772 /* ScriptWidgetRecordStore.swift */; };
+		65E61B2E0949425591993A22 /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113B591460C0428199E1B2D3 /* ScriptWidgetCloudJSON.swift */; };
 		A99A85B69E4E431491CEBB28 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */; };
 		6867766C531D41E7ACF91FE6 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */; };
 		EC5474191DA74B96B7A5A7A2 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */; };
@@ -791,6 +796,7 @@
 		F2C6AC7826004B0F009CECE9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		F2D738C825D0CA8900021E08 /* SettingTemplatesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingTemplatesView.swift; sourceTree = "<group>"; };
 		F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFile.swift; sourceTree = "<group>"; };
+		8EC92A21DC4745FB8B1F582E /* ScriptWidgetRuntimeCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCloudJSON.swift; sourceTree = "<group>"; };
 		F2F8398D27CBBC8800D74288 /* HomeHelloView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeHelloView.swift; sourceTree = "<group>"; };
 		F2FC062227DC5D9000A6A99D /* MirrorEditorScriptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MirrorEditorScriptView.swift; sourceTree = "<group>"; };
 		F2FC062527DC5DB300A6A99D /* WKWebViewJavascriptBridge.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = WKWebViewJavascriptBridge.swift; sourceTree = "<group>"; };
@@ -802,7 +808,9 @@
 		F2FE0A3425ED3ABF00B4B6B2 /* EmptyListBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyListBackgroundView.swift; sourceTree = "<group>"; };
 		F2FE0A3625ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetPlaceholderView.swift; sourceTree = "<group>"; };
 		6C847E9CCBC140F6B53AC772 /* ScriptWidgetRecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordStore.swift; sourceTree = "<group>"; };
+		113B591460C0428199E1B2D3 /* ScriptWidgetCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSON.swift; sourceTree = "<group>"; };
 		B96A79828AD84572AB1D6170 /* ScriptWidgetRecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordsView.swift; sourceTree = "<group>"; };
+		5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
 		BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgradeView.swift; sourceTree = "<group>"; };
 		A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
@@ -1292,7 +1300,9 @@
 			children = (
 				F29119922793223300B860B0 /* ScriptWidgetPackage.swift */,
 				6C847E9CCBC140F6B53AC772 /* ScriptWidgetRecordStore.swift */,
+				113B591460C0428199E1B2D3 /* ScriptWidgetCloudJSON.swift */,
 				B96A79828AD84572AB1D6170 /* ScriptWidgetRecordsView.swift */,
+				5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */,
 				BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */,
 				F29118EC2793034D00B860B0 /* ScriptModel.swift */,
 				D1A0000000E0000000000001 /* ScriptMetadata.swift */,
@@ -1450,6 +1460,7 @@
 				F291192F2793035E00B860B0 /* ScriptWidgetRuntimeConsole.swift */,
 				F29119302793035E00B860B0 /* ScriptWidgetRuntimeDevice.swift */,
 				F2F0A7AD27F6841700D7911B /* ScriptWidgetRuntimeFile.swift */,
+				8EC92A21DC4745FB8B1F582E /* ScriptWidgetRuntimeCloudJSON.swift */,
 				1AE63BF6B17D4C800EFF80E9 /* ScriptWidgetRuntimeSystem.swift */,
 				654916CAF3464C1D5149BB77 /* ScriptWidgetRuntimeHealth.swift */,
 				28960B338B1C363177987F8C /* ScriptWidgetRuntimeCalendar.swift */,
@@ -2019,6 +2030,7 @@
 				F277CBA427CB5A2C003AB97D /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
 				F29119582793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
 				F2F0A7AE27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
+				FBABB490DFDA409D8D266385 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */,
 				7D960C5FE159D8D1CB823654 /* ScriptWidgetRuntimeSystem.swift in Sources */,
 				8B3078FA29098AA7314D1B74 /* ScriptWidgetRuntimeHealth.swift in Sources */,
 				08A34358AD98E4A7706B116B /* ScriptWidgetRuntimeCalendar.swift in Sources */,
@@ -2038,7 +2050,9 @@
 				A99A85B69E4E431491CEBB28 /* ScriptWidgetStorageNamespaces.swift in Sources */,
 				6867766C531D41E7ACF91FE6 /* ScriptWidgetStorageFiles.swift in Sources */,
 				D8A3713A02C54DAFB492D491 /* ScriptWidgetRecordStore.swift in Sources */,
+				A815305D31B24EFE9AE72321 /* ScriptWidgetCloudJSON.swift in Sources */,
 				4635FD7C47944227987DB767 /* ScriptWidgetRecordsView.swift in Sources */,
+				6E5ACA07639849578EAF9019 /* ScriptWidgetCloudJSONView.swift in Sources */,
 				A666715063344E9EBBE6E4E9 /* ScriptWidgetStorageUpgradeView.swift in Sources */,
 				D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F2BA1DA725D500B400363EEA /* EditAttributesView.swift in Sources */,
@@ -2191,6 +2205,7 @@
 				F28D681D27CE8874000C2D03 /* ScriptWidgetElementTagStack.swift in Sources */,
 				F28D681327CE764B000C2D03 /* ScriptWidgetAttributeClippedModifier.swift in Sources */,
 				F2F0A7AF27F6841700D7911B /* ScriptWidgetRuntimeFile.swift in Sources */,
+				0F853DA1A57C46DCB7F10E8E /* ScriptWidgetRuntimeCloudJSON.swift in Sources */,
 				219AD8869A85F18C81A30804 /* ScriptWidgetRuntimeSystem.swift in Sources */,
 				D84E5F5BA6A8C145C140773A /* ScriptWidgetRuntimeHealth.swift in Sources */,
 				379480111C85C446898E519E /* ScriptWidgetRuntimeCalendar.swift in Sources */,
@@ -2210,6 +2225,7 @@
 				EC5474191DA74B96B7A5A7A2 /* ScriptWidgetStorageNamespaces.swift in Sources */,
 				A3B7A5EF82604B99B3DB4707 /* ScriptWidgetStorageFiles.swift in Sources */,
 				D96A3CEA7A35471B83EE7BD1 /* ScriptWidgetRecordStore.swift in Sources */,
+				65E61B2E0949425591993A22 /* ScriptWidgetCloudJSON.swift in Sources */,
 				683E7A63FCBC7EA6D91BE81D /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F0C7ECF82AD0759F0039D30D /* ScriptWidgetAppIntent.swift in Sources */,
 				F291194D2793035E00B860B0 /* ScriptWidgetRuntimeElement.swift in Sources */,

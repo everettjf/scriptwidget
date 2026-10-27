@@ -1,0 +1,16 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.example.icloud-json-note",
+  "name": "iCloud JSON Note",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.5",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"],
+  "permissions": ["icloud"],
+  "networkDomains": [],
+  "actions": [
+    {"id":"sync","title":"Sync","systemImage":"arrow.triangle.2.circlepath","function":"syncNote"},
+    {"id":"save","title":"Save note","systemImage":"square.and.pencil","function":"saveNote"}
+  ]
+}

@@ -5806,3 +5806,19 @@ extension LibrarySessionExecutionTests {
     }
     #endif
 }
+
+extension RuntimeExecutionTests {
+    func testICloudAPICannotAccessUnmanagedOrPreviewPackages() throws {
+        for readonly in [false, true] {
+            let temp = makeTempPackage()
+            defer { try? FileManager.default.removeItem(at: temp.path) }
+            let package = ScriptWidgetPackage(path: temp.path, readonly: readonly)
+            let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size": "medium"])
+            let result = runtime.executeJSXSyncForWidget("try { await $icloud.readJSON('note.json'); $render(<text>unexpected</text>); } catch(e) { $render(<text>{String(e)}</text>); }")
+            XCTAssertNil(result.1)
+            let tree = try XCTUnwrap(result.0)
+            XCTAssertTrue(snapshot(tree).contains("icloud:unavailable"))
+            XCTAssertFalse(snapshot(tree).contains("unexpected"))
+        }
+    }
+}

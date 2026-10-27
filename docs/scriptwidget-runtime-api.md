@@ -1,6 +1,6 @@
 # ScriptWidget Runtime API
 
-> Generated from Studio's static API metadata (schema v1, runtime 1.4). The native runtime switch is authoritative. Do not edit by hand.
+> Generated from Studio's static API metadata (schema v1, runtime 1.5). The native runtime switch is authoritative. Do not edit by hand.
 
 ## Components
 
@@ -885,6 +885,11 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 - `$location.isAuthorizedForWidgetUpdates`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
 - `$location.requestAuthorization`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
 - `$location.current`: Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
+- `$icloud.readJSON`: Read cached JSON and revision; conflicts preserve all heads. Requires icloud permission and a native connection. Never certifies upload.
+- `$icloud.writeJSON`: Save a new immutable JSON revision locally from a user action. Requires the revision from readJSON. Background exchange is eventual.
+- `$icloud.resolveJSON`: Explicitly resolve all observed conflicting heads into a new revision. Stale tokens fail; originals remain.
+- `$icloud.sync`: Exchange materialized revisions with iCloud; requires a user action. Upload completion is unknown.
+- `$icloud.status`: Read native connection state. Cloud store IDs are granted in the app, never by the script. Web uses preview mocks.
 - `$file.exists`: Return whether a regular file is locally present inside this package, including binary assets. Missing files, directories, unsafe paths and links return false. Does not download iCloud files or read outside the package. Web preview uses workspace file presence.
 - `$file.read`: Read package-relative UTF-8 text. Missing or unavailable files return an empty string.
 - `$file.readJSON`: Read a package-relative JSON object.

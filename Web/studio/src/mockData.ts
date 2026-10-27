@@ -25,14 +25,14 @@ export function sampleFixtures(): MockObject {
     api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && isObject(api.value) ? healthSample(api.id,api.value) : api.group === "photos" && api.id.endsWith(".items") ? {...api.value as MockObject,fetchedAt:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
     fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
       {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
-    storage: {}, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null, photosSelection: ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"], photosSnapshotPrepared: true,
+    storage: {}, icloud: { connected: true, available: true, documents: {} }, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null, photosSelection: ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"], photosSnapshotPrepared: true,
   };
 }
 export const defaultFixtures = JSON.stringify(sampleFixtures(), null, 2);
 export function parseMocks(text: string): MockObject {
   const value: unknown = JSON.parse(text || "{}");
   if (!isObject(value)) throw new Error("Mock data must be a JSON object.");
-  for (const key of ["api", "device", "system", "storage"]) {
+  for (const key of ["api", "device", "system", "storage", "icloud"]) {
     if (value[key] !== undefined && !isObject(value[key])) throw new Error(`${key} must be a JSON object.`);
   }
   if (value.remindersState !== undefined && (!isObject(value.remindersState) || value.remindersState.formatVersion !== 1 ||
