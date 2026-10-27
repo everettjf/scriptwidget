@@ -71,9 +71,10 @@ try {
   await clickReady(page, "document.querySelector('.template-card')");
   await page.waitFor("!!document.getElementById('template-copy')");
   await clickReady(page, "document.getElementById('template-copy')");
-  await page.waitFor("!document.querySelector('[role=dialog]') && document.querySelector('.sw-widget')?.textContent.includes('7 of 12')", 20000);
-  // The renderer may ellipsize "books" on Linux. Its visible prefix proves
-  // rendering; the complete persisted source proves which template was copied.
+  await page.waitFor("!document.querySelector('[role=dialog]') && document.querySelector('.sw-widget')?.textContent.includes('READING GOAL')", 20000);
+  // Text wrapping and ellipsizing vary with browser fonts. The stable heading
+  // proves rendering; byte-for-byte source comparison below proves the full
+  // template and its 7/12 values, without asserting a particular truncation.
   console.log("Reading preview:", await page.evaluate("document.querySelector('.sw-widget')?.innerText"));
   const copied = await savedProject();
   const catalog = JSON.parse(fs.readFileSync(path.join(repository, "Web/studio/dist/templates.json"), "utf8"));
@@ -83,7 +84,7 @@ try {
   assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
   assert.equal(await page.evaluate("document.querySelectorAll('#project-list li').length"), 2);
   await page.goto(`${server.origin}/studio/`);
-  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('7 of 12')", 20000);
+  await page.waitFor("document.querySelector('.sw-widget')?.textContent.includes('READING GOAL')", 20000);
   assert.equal(await page.evaluate("!!document.querySelector('#starter-guide')"), false);
   assert.deepEqual(await savedProject(), copied);
   assert.deepEqual(await savedProject(starter.id), starter, "The original draft and all its files must remain byte-for-byte unchanged");
