@@ -25,11 +25,11 @@ try {
   }
   await page.call("Emulation.setEmulatedMedia", { features: [{ name: "prefers-color-scheme", value: "light" }, { name: "prefers-reduced-motion", value: "reduce" }] });
   await page.goto(`${server.origin}/`);
-  await page.waitFor("[...document.querySelectorAll('.widget-showcase img')].every(i=>i.complete&&i.naturalWidth>0)");
+  await page.waitFor("!!document.querySelector('#hero-preview .sw-widget')");
   assert.equal(await page.evaluate("document.querySelectorAll('.hero .actions a').length"), 3);
   assert.equal(await page.evaluate("document.querySelector('.hero .actions a:first-child').classList.contains('primary')"), true);
   assert.equal(await page.evaluate("document.querySelector('.hero .actions a:first-child').href"), "https://apps.apple.com/us/app/scriptwidget/id1555600758");
-  assert.equal(await page.evaluate("document.querySelectorAll('.widget-showcase img').length"), 3);
+  assert.equal(await page.evaluate("document.querySelectorAll('[data-hero-example]').length"), 3);
   assert.equal(await page.evaluate("new URL(document.querySelector('.hero .actions a:last-child').href).pathname"), "/studio/");
   const output = process.env.SCRIPTWIDGET_ONBOARDING_SCREENSHOTS;
   if (output) { fs.mkdirSync(output, { recursive: true }); fs.writeFileSync(path.join(output, "home-desktop.png"), await page.screenshot()); }

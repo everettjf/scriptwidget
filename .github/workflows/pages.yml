@@ -37,6 +37,8 @@ jobs:
       - name: Build Web Studio
         working-directory: Web/studio
         run: npm ci && npm test && npm run build
+      - name: Verify homepage code and preview
+        run: node Web/studio/scripts/hero-smoke.ts
       - name: Assemble site
         run: |
           mkdir -p _site
