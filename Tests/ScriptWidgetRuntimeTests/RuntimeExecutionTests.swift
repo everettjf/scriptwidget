@@ -1344,10 +1344,14 @@ final class RuntimeExecutionTests: XCTestCase {
             for variant in ["empty","today","older"] { for dark in [false,true] { for family in ["small","medium","large","extraLarge","extraLargePortrait","accessoryInline","accessoryCircular","accessoryRectangular"] {
                 let raw=try XCTUnwrap(states[name+"/"+variant]),encoded=String(decoding:try JSONEncoder().encode(raw),as:UTF8.self)
                 let prefix="\n$device.isdarkmode=()=>\(dark ? "true" : "false");$storage={getString:key=>key==='\(kind).v1'?\(encoded):''};\n"
+                let source=prelude+prefix+main,key=name+"/"+variant+"/"+family+"/"+(dark ? "dark" : "light")
+                // This corpus checks render parity; cold Babel compilation has
+                // separate coverage and can consume the runtime deadline on CI.
+                try prepareFunctionalTranspile(source)
                 let runtime=ScriptWidgetRuntime(package:package,environments:["widget-size":family,"widget-param":"","timeline-date":"2026-01-01T12:00:00Z","timeline-is-projection":"false"])
-                let result=await Task.detached { runtime.executeJSXSyncForWidget(prelude+prefix+main) }.value
-                XCTAssertNil(result.1,result.1?.displayMessage ?? "")
-                let element=try XCTUnwrap(result.0),key=name+"/"+variant+"/"+family+"/"+(dark ? "dark" : "light")
+                let result=await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+                XCTAssertNil(result.1,key+": "+(result.1?.displayMessage ?? ""))
+                let element=try XCTUnwrap(result.0,key)
                 trees[key]=ScriptWidgetElementTreeJSON.encode(element)
                 #if os(macOS)
                 if let directory=ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_COMPANIONS"],["small","medium","large"].contains(family) {
