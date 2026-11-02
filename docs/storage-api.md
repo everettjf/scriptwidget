@@ -1,6 +1,6 @@
 # Package storage and atomic updates
 
-`$storage` stores local values under the current package namespace. It does not sync records through iCloud. String and JSON keys cannot exceed 256 UTF-8 bytes, and each stored value cannot exceed 256 KiB. Reads return an empty string/object for a missing key; writes return a Boolean that the script must check.
+`$storage` stores local values under the current package namespace. It does not sync records through iCloud. Local record APIs remain available for legacy compatibility, including packages with an empty permissions list. String and JSON keys cannot exceed 256 UTF-8 bytes, and each stored value cannot exceed 256 KiB. Reads return an empty string/object for a missing key; writes return a Boolean that the script must check.
 
 - `getString(key)` / `setString(key, value)` read and write strings.
 - `getJSON(key)` / `setJSON(key, object)` read and write JSON objects.
@@ -256,6 +256,18 @@ After adding widget directories through Files or iCloud Drive, use **Refresh Sel
 
 Web Studio stays attached to the library selected when the server starts. Newly created names can appear during that session; an already-seen name retains its installation identity. After deleting/replacing an installation or changing libraries, stop and restart Web Studio to obtain a new session. Old browser drafts cannot overwrite the replacement installation.
 
+### Exporting library diagnostic logs
+
+In iOS Settings, use **Diagnostics → Export Diagnostic Logs**. On macOS the same action is in **Settings → Data Access → Diagnostics**. Export is also available from the library chooser and the **Library Unavailable / Your Library Is Offline** screen, so a failed library does not prevent collecting evidence. Save the JSON file and attach it when reporting the problem. Exporting does not send anything to support automatically.
+
+**Report an Issue on GitHub** is available beside the export action at all these locations. It explains that GitHub issues and attachments are public, provides the log export action, and opens the repository's bug report form with app/build/OS versions prefilled. Sign in to GitHub, add reproduction steps and expected/actual behavior, attach the reviewed JSON file, and choose **Create**. The app does not publish an issue or upload logs automatically; diagnostic events and user contents are never included in the URL. The form uses GitHub's [documented URL query prefills](https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/creating-an-issue).
+
+Diagnostics begin with the version that includes this feature; they cannot recover earlier failures. They record native application startup, library opening/selection/refresh, iCloud and App Group availability, activation milestones, and fixed error categories for private storage, profile indexes, caches and source directory identity. Identity mismatch events include numeric expected/current device and inode receipts. Events include a process session UUID, timestamp, uptime and numeric app/build/OS versions so failures retained across launches and updates can be distinguished. These are application library diagnostics on the exporting device, not a combined log of other devices, widget extensions or arbitrary JavaScript console output.
+
+Logs are kept in the application's local Application Support directory independently of the selected library and its private record store. Two rotating files hold at most 128 KiB each; identical events are limited to one per minute per process. If writing diagnostics fails, startup continues and up to 128 unsaved events remain available in memory until that process exits. Export reads bounded files and re-encodes only recognized structured events; corrupt or incomplete lines are omitted. A failed log read is reported in the exported file.
+
+No script contents, widget names, file paths, personal records, network payloads, credentials, error descriptions or arbitrary error userInfo are recorded. Export does not change source files, record ownership, selection or migration state. Keep the failing installation intact until its logs have been exported; uninstalling removes application-local diagnostic history.
+
 
 ## Countdown configuration
 
@@ -297,3 +309,16 @@ The `launcher` configuration-only kind saves title, accent and ordered link defi
 Native record storage now pairs its directory anchor with the filesystem's volume UUID. A POSIX mount device number (`st_dev`) can change after a device restart or system upgrade even when the directory inode and its contents are unchanged. The original logical record domain is retained, so package owner UUIDs, directory bindings, location hashes and saved records do not need to be recreated.
 
 On first opening an older store, a changed mount number can be recovered only inside the OS-provided ScriptWidget App Group, on the same current volume and with the original directory inode. The native service validates the existing anchor and version before publishing the volume proof, then marks the upgraded anchor. Interrupted proof publication can resume. Once upgraded, missing, malformed, symlinked or foreign-volume proofs fail closed instead of creating an empty store. A genuinely replaced directory still fails its inode check. Record payloads and original preferences are not rewritten by this compatibility upgrade.
+
+
+### Legacy script compatibility and explicit recovery
+
+`$storage` string/JSON reads, writes, CAS, listing and removal remain available for a package's own bounded namespace, including older Package 2.0 manifests with an empty `permissions` array. The `storage` declaration remains supported for template/control metadata; these local APIs never grant access to another package, personal system data, or iCloud records. Preview writes remain in memory and snapshot identities, stale execution rejection and all record budgets still apply.
+
+Library discovery does not depend on decoding the private profile index. When a directory was recreated or private metadata is damaged, **Choose Library → Reconnect Library** offers an explicit recovery action. A working library opens normally; recovery creates independent owners and records. Old files, index frames and private stores are retained, and old executions are invalidated. Existing records are not guessed from matching folder names or automatically assigned to the recovered installation. A durable recovery fence prevents an interrupted recovery from reverting to legacy name-based writers.
+
+On iOS the editor keyboard includes the system **Paste** control. It accepts plain text directly from the system item provider and inserts it at the current editor selection; it does not depend on a web clipboard permission or long-press menu. Late paste results are ignored after a document/session switch, closure or a change to read-only access.
+
+### Deleting restored folders
+
+A folder delivered later by Files or iCloud may be visible before it has a record-owner binding, including an empty folder or a recreated old name. Confirmed deletion can remove that exact folder without registering it or assigning previous records to it. Existing record identities and values are retained. A directory replaced after the deletion prompt opens is rejected; refresh the library and confirm again. Deletion failures appear in the app and in exported diagnostics, without logging folder names, paths or file contents. Disposable cache cleanup failure does not report an already completed project deletion as failed.

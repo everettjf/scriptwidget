@@ -1073,3 +1073,68 @@ final class VisualLayoutEditorTests: XCTestCase {
         XCTAssertThrowsError(try StudioEditorBundleSchemeHandler(root:nil).resource(for:request("/index.html")))
     }
 }
+
+#if os(iOS)
+extension VisualLayoutEditorTests {
+    @MainActor func testSystemPasteReplacesSelectionAndSavesThroughNativeBridge() async throws {
+        let (root, first, _) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let replacement = "// Pasted code\n$render(<text>粘贴 ✅</text>);"
+        let previousWindow = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows).first { $0.isKeyWindow }
+        let window = previousWindow?.windowScene.map(UIWindow.init(windowScene:)) ?? UIWindow(frame: .zero)
+        window.frame = CGRect(x: 0, y: 0, width: 393, height: 852)
+        window.rootViewController = UIViewController()
+        web.frame = window.bounds
+        window.rootViewController?.view.addSubview(web)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previousWindow?.makeKey(); web.removeFromSuperview() }
+        _ = try await evaluate(web, "const input=document.querySelector('.cm-content');input.focus();input.dispatchEvent(new KeyboardEvent('keydown',{key:'a',code:'KeyA',keyCode:65,metaKey:true,bubbles:true,cancelable:true}));void 0;")
+        let selected = try await nativeSnapshot(web, documentID: first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path)
+        // A real visible WebKit document is needed for iOS Select All. The
+        // hidden-view editor tests exercise the bridge, not system selection.
+        XCTAssertEqual(selected.content, source)
+        XCTAssertEqual(selected.selection, 0..<source.utf16.count)
+        web.pasteTextProviders([NSItemProvider(object: replacement as NSString)])
+        try await waitForFile(first.package.path.appendingPathComponent("main.jsx"), replacement)
+        let state = try await nativeSnapshot(web, documentID: first.package.path.appendingPathComponent("main.jsx").standardizedFileURL.path)
+        XCTAssertEqual(state.content, replacement)
+        let paste = web.accessoryView?.subviews.compactMap { $0 as? UIPasteControl }.first
+        XCTAssertNotNil(paste)
+        XCTAssertEqual(paste?.accessibilityIdentifier, "editor.paste")
+        if let accessory = web.accessoryView {
+            accessory.overrideUserInterfaceStyle = .light
+            accessory.frame = CGRect(x: 0, y: 0, width: 393, height: 44)
+            accessory.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(size: accessory.bounds.size).image { accessory.layer.render(in: $0.cgContext) }
+            let attachment = XCTAttachment(image: image)
+            attachment.name = "ios-system-paste-accessory"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+        }
+    }
+
+    @MainActor func testSystemPasteDoesNotWriteReadOnlyOrAnotherDocument() async throws {
+        let (root, first, second) = try nativeModels()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let web = try await nativeEditor(first)
+        defer { web.stopLoading() }
+        let text = "PASTE-MUST-NOT-RETARGET"
+        _ = try await evaluate(web, "const receive=window.WKWebViewJavascriptBridge._handleMessageFromiOS;window.WKWebViewJavascriptBridge._handleMessageFromiOS=json=>{const message=JSON.parse(json);if(message.handlerName==='document.open')window.__pasteOpenedID=message.data.documentID;return receive(json);};void 0;")
+        web.pasteTextProviders([NSItemProvider(object: text as NSString)])
+        openNative(web, second)
+        let secondURL = second.package.path.appendingPathComponent("main.jsx")
+        try await wait(web, "window.__pasteOpenedID === \(try json(secondURL.standardizedFileURL.path))")
+        _ = try await nativeSnapshot(web, documentID: secondURL.standardizedFileURL.path)
+        let secondText = try String(contentsOf: secondURL, encoding: .utf8)
+        XCTAssertEqual(secondText, source)
+        var action = MirrorEditorScriptView(model: second, filePath: secondURL).createActionProvider()
+        action.onIsReadOnly = { true }
+        web.updateDocument(action: action)
+        web.pasteTextProviders([NSItemProvider(object: text as NSString)])
+        _ = try await nativeSnapshot(web, documentID: secondURL.standardizedFileURL.path)
+        XCTAssertEqual(try String(contentsOf: secondURL, encoding: .utf8), source)
+    }
+}
+#endif

@@ -232,12 +232,15 @@
 		F29118FB2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
 		82F0BE8C848E4EB8AFA2FE30 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17F0FB5C9DC4412B82AF47C /* ScriptWidgetStorageUpgrade.swift */; };
 		A85EAE825457490BB4BFBB8D /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BFBCF33FD04A7FB3345F73 /* ScriptWidgetStorageProfiles.swift */; };
+		A268ACBEECB748C6A16BF23C /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4336FC910C4B4C1FA5D8B0A9 /* ScriptWidgetDiagnosticLog.swift */; };
 		F29118FC2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
 		168BF41927BC40EE8A2E9013 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17F0FB5C9DC4412B82AF47C /* ScriptWidgetStorageUpgrade.swift */; };
 		E4896170F30948BDBBEE5A1D /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BFBCF33FD04A7FB3345F73 /* ScriptWidgetStorageProfiles.swift */; };
+		84F6604BF4384B4F96ED81ED /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4336FC910C4B4C1FA5D8B0A9 /* ScriptWidgetDiagnosticLog.swift */; };
 		F29118FE2793034D00B860B0 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29118EE2793034D00B860B0 /* ScriptManager.swift */; };
 		B8987340B21A46629AC92435 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = C17F0FB5C9DC4412B82AF47C /* ScriptWidgetStorageUpgrade.swift */; };
 		B176807A3CF84C8FB9289C13 /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57BFBCF33FD04A7FB3345F73 /* ScriptWidgetStorageProfiles.swift */; };
+		A5D9B74F9422474BBABD1C13 /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4336FC910C4B4C1FA5D8B0A9 /* ScriptWidgetDiagnosticLog.swift */; };
 		F29119382793035E00B860B0 /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119012793035E00B860B0 /* MineGaugeView.swift */; };
 		F29119392793035E00B860B0 /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119012793035E00B860B0 /* MineGaugeView.swift */; };
 		F291193A2793035E00B860B0 /* ScriptWidgetElementColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = F29119022793035E00B860B0 /* ScriptWidgetElementColor.swift */; };
@@ -447,6 +450,7 @@
 		6E5ACA07639849578EAF9019 /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */; };
 		8AFAEADE37DE4A0589FB69CB /* ScriptWidgetSystemAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3870C1E2FAC54FA2B5CC888A /* ScriptWidgetSystemAccessView.swift */; };
 		A666715063344E9EBBE6E4E9 /* ScriptWidgetStorageUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */; };
+		2047E64535124D99BDF9E6ED /* ScriptWidgetDiagnosticExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E6E75B7877B3401E99E78AC0 /* ScriptWidgetDiagnosticExportView.swift */; };
 		D96A3CEA7A35471B83EE7BD1 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6C847E9CCBC140F6B53AC772 /* ScriptWidgetRecordStore.swift */; };
 		65E61B2E0949425591993A22 /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 113B591460C0428199E1B2D3 /* ScriptWidgetCloudJSON.swift */; };
 		A99A85B69E4E431491CEBB28 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */; };
@@ -691,6 +695,7 @@
 		F29118EE2793034D00B860B0 /* ScriptManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		C17F0FB5C9DC4412B82AF47C /* ScriptWidgetStorageUpgrade.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgrade.swift; sourceTree = "<group>"; };
 		57BFBCF33FD04A7FB3345F73 /* ScriptWidgetStorageProfiles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageProfiles.swift; sourceTree = "<group>"; };
+		4336FC910C4B4C1FA5D8B0A9 /* ScriptWidgetDiagnosticLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticLog.swift; sourceTree = "<group>"; };
 		F29119012793035E00B860B0 /* MineGaugeView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		F29119022793035E00B860B0 /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
 		F29119032793035E00B860B0 /* ScriptWidgetElementPoint.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementPoint.swift; sourceTree = "<group>"; };
@@ -848,6 +853,7 @@
 		5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
 		3870C1E2FAC54FA2B5CC888A /* ScriptWidgetSystemAccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSystemAccessView.swift; sourceTree = "<group>"; };
 		BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgradeView.swift; sourceTree = "<group>"; };
+		E6E75B7877B3401E99E78AC0 /* ScriptWidgetDiagnosticExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticExportView.swift; sourceTree = "<group>"; };
 		A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -1343,11 +1349,13 @@
 				5802CF1E2FEF4FFCAAC3BEC9 /* ScriptWidgetCloudJSONView.swift */,
 				3870C1E2FAC54FA2B5CC888A /* ScriptWidgetSystemAccessView.swift */,
 				BE3501C2E4244E879AD942D7 /* ScriptWidgetStorageUpgradeView.swift */,
+				E6E75B7877B3401E99E78AC0 /* ScriptWidgetDiagnosticExportView.swift */,
 				F29118EC2793034D00B860B0 /* ScriptModel.swift */,
 				D1A0000000E0000000000001 /* ScriptMetadata.swift */,
 				F29118EE2793034D00B860B0 /* ScriptManager.swift */,
 				C17F0FB5C9DC4412B82AF47C /* ScriptWidgetStorageUpgrade.swift */,
 				57BFBCF33FD04A7FB3345F73 /* ScriptWidgetStorageProfiles.swift */,
+				4336FC910C4B4C1FA5D8B0A9 /* ScriptWidgetDiagnosticLog.swift */,
 			);
 			name = Common;
 			path = ../Shared/ScriptWidgetRuntime/Common;
@@ -2115,6 +2123,7 @@
 				6E5ACA07639849578EAF9019 /* ScriptWidgetCloudJSONView.swift in Sources */,
 				8AFAEADE37DE4A0589FB69CB /* ScriptWidgetSystemAccessView.swift in Sources */,
 				A666715063344E9EBBE6E4E9 /* ScriptWidgetStorageUpgradeView.swift in Sources */,
+				2047E64535124D99BDF9E6ED /* ScriptWidgetDiagnosticExportView.swift in Sources */,
 				D58FF19E4AF865ACBDAF306A /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F2BA1DA725D500B400363EEA /* EditAttributesView.swift in Sources */,
 				F29119802793035E00B860B0 /* ScriptWidgetRuntimeConsole.swift in Sources */,
@@ -2152,6 +2161,7 @@
 				F29118FB2793034D00B860B0 /* ScriptManager.swift in Sources */,
 				82F0BE8C848E4EB8AFA2FE30 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				A85EAE825457490BB4BFBB8D /* ScriptWidgetStorageProfiles.swift in Sources */,
+				A268ACBEECB748C6A16BF23C /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				D14AC88A2531419700016FBE /* AppDelegate.swift in Sources */,
 				F29119422793035E00B860B0 /* ScriptWidgetAppState.swift in Sources */,
 				F05227B52AD1B0A10014BE09 /* ButtonActionAppIntent.swift in Sources */,
@@ -2248,6 +2258,7 @@
 				F29118FC2793034D00B860B0 /* ScriptManager.swift in Sources */,
 				168BF41927BC40EE8A2E9013 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				E4896170F30948BDBBEE5A1D /* ScriptWidgetStorageProfiles.swift in Sources */,
+				84F6604BF4384B4F96ED81ED /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				F291196F2793035E00B860B0 /* ScriptWidgetElementTagImage.swift in Sources */,
 				F29119592793035E00B860B0 /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
 				F2FE0A3725ED3BFA00B4B6B2 /* ScriptWidgetPlaceholderView.swift in Sources */,
@@ -2357,6 +2368,7 @@
 				F29118FE2793034D00B860B0 /* ScriptManager.swift in Sources */,
 				B8987340B21A46629AC92435 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				B176807A3CF84C8FB9289C13 /* ScriptWidgetStorageProfiles.swift in Sources */,
+				A5D9B74F9422474BBABD1C13 /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				F2C6AC7426004B0F009CECE9 /* ShareViewController.swift in Sources */,
 				F29119962793223300B860B0 /* ScriptWidgetPackage.swift in Sources */,
 			);
@@ -2560,7 +2572,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2572,7 +2584,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2593,7 +2605,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2604,7 +2616,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -2621,7 +2633,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2630,7 +2642,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2647,7 +2659,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2656,7 +2668,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				OTHER_SWIFT_FLAGS = "-D IsWidgetTarget";
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.widget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -2672,7 +2684,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2681,7 +2693,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;
@@ -2696,7 +2708,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2705,7 +2717,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.share;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SKIP_INSTALL = YES;

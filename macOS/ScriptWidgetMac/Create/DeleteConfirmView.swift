@@ -9,6 +9,7 @@ import SwiftUI
 
 struct DeleteConfirmView: View {
     @Environment(\.dismiss) var dismiss
+    @State private var deleteReceipt: ScriptWidgetStoragePublicationReceipt?
     
     var currentName: Binding<String>
     
@@ -31,9 +32,9 @@ struct DeleteConfirmView: View {
                         return
                     }
                     
-                    let result = sharedScriptManager.deleteScript(packageName: inputText)
+                    let result = deleteReceipt.map { sharedScriptManager.deleteScript(packageName: inputText, expectedReceipt: $0) } ?? false
                     if !result {
-                        MacKitUtil.alertWarn(title: "Delete Failed", message: "Could not delete the widget. Please try again.")
+                        MacKitUtil.alertWarn(title: "Delete Failed", message: ScriptManager.deleteFailureMessage)
                         return
                     }
                     
@@ -45,6 +46,7 @@ struct DeleteConfirmView: View {
         }
         .frame(width: 300, height: 70)
         .padding()
+        .onAppear { deleteReceipt = sharedScriptManager.deletionReceipt(packageName: currentName.wrappedValue) }
     }
 }
 

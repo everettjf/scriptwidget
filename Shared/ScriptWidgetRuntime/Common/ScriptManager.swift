@@ -294,14 +294,39 @@ final class ScriptWidgetPackageStorageContext: @unchecked Sendable {
         }
     }
 
-    func relocate(name: String, destination: String? = nil) throws {
+    func relocate(name: String, destination: String? = nil, expectedReceipt: ScriptWidgetStoragePublicationReceipt? = nil) throws {
         try requireSameRoot()
         _ = try recoverInstallation()
         let recovered = try recoverRelocation()
         _ = try recoverReplacement()
         if case .committed(let original, let target, let deleting) = recovered,
            original == name, (deleting ? destination == nil : destination == target) { return }
-        let source = try boundDirectory(name: name, role: .source)
+        guard let receipt = try ScriptWidgetPackageFiles.directoryReceipt(root: libraryRoot, relative: name),
+              expectedReceipt == nil || expectedReceipt == receipt else { throw ScriptWidgetStorageNamespaceError.conflict }
+        let source: ScriptWidgetStorageDirectoryBinding
+        do { source = try boundDirectory(name: name, role: .source) }
+        catch ScriptWidgetStorageNamespaceError.unregistered where destination == nil {
+            // A late iCloud/Files directory can be listed without having an
+            // owner. Remove only this exact directory; never adopt old records.
+            let target = ScriptWidgetStorageNamespaces.retiredDirectoryPrefix + UUID().uuidString.lowercased()
+            try ScriptWidgetStorageNamespaces.removeUnregisteredSource(name: name, location: locationIdentifier, receipt: receipt,
+                container: container, defaults: defaults) {
+                    try self.requireSameRoot()
+                    guard ScriptWidgetPackageFiles.move(root: self.libraryRoot, source: name, destination: target, expectedReceipt: receipt) else {
+                        throw ScriptWidgetStorageNamespaceError.conflict
+                    }
+                    guard try self.inspect(name: target, receipt: receipt) == .matching else {
+                        throw ScriptWidgetStorageNamespaceError.conflict
+                    }
+                }
+            // After the atomic rename it is no longer a visible project. A
+            // cleanup failure must not turn a completed deletion into failure.
+            if !ScriptWidgetPackageFiles.removeTree(root: libraryRoot, relative: target, expectedReceipt: receipt) {
+                ScriptWidgetDiagnosticLog.shared.record(.deleteCleanup, outcome: .failure, failure: .fileUnavailable)
+            }
+            return
+        }
+        guard source.receipt == receipt else { throw ScriptWidgetStorageNamespaceError.conflict }
         let deleting = destination == nil
         let target = destination ?? ScriptWidgetStorageNamespaces.retiredDirectoryPrefix + source.ownerID
         _ = try ScriptWidgetStorageNamespaces.relocate(source: source, destination: target, deleting: deleting,
@@ -1023,8 +1048,20 @@ final class ScriptManager: @unchecked Sendable {
             managedScope: storageContext.map { .init(context: $0, role: storageRole, binding: try? $0.boundDirectory(name: packageName, role: storageRole)) })
     }
     
-    func deleteScript(packageName: String) -> Bool {
-        guard let scriptDirPath = self.getPackagePathFromPackageName(packageName: packageName) else { return false }
+    static let deleteFailureMessage = "The widget could not be deleted. Its folder may have changed or its storage may be unavailable. Refresh the selected library and try again. If this continues, export diagnostic logs in Settings."
+
+    func deletionReceipt(packageName: String) -> ScriptWidgetStoragePublicationReceipt? {
+        guard storageRole == .source, let path = getPackagePathFromPackageName(packageName: packageName) else { return nil }
+        if let storageContext, (try? storageContext.validateLibraryRoot()) == nil { return nil }
+        return try? ScriptWidgetPackageFiles.directoryReceipt(root: path.deletingLastPathComponent(), relative: packageName)
+    }
+
+    func deleteScript(packageName: String, expectedReceipt: ScriptWidgetStoragePublicationReceipt? = nil) -> Bool {
+        ScriptWidgetDiagnosticLog.shared.record(.deleteProject, outcome: .started)
+        guard storageRole == .source, let scriptDirPath = self.getPackagePathFromPackageName(packageName: packageName) else {
+            ScriptWidgetDiagnosticLog.shared.record(.deleteProject, outcome: .failure, failure: .invalidName)
+            return false
+        }
         let package = ScriptWidgetPackage(path: scriptDirPath)
         let deleteResult: Bool
         var retiredOwner: String?
@@ -1034,10 +1071,15 @@ final class ScriptManager: @unchecked Sendable {
                     throw ScriptWidgetStorageNamespaceError.conflict
                 }
                 retiredOwner = (try? storageContext.boundDirectory(name: packageName, role: .source))?.ownerID
-                try storageContext.relocate(name: packageName)
+                try storageContext.relocate(name: packageName, expectedReceipt: expectedReceipt)
                 deleteResult = true
-            } catch { return false }
-        } else { deleteResult = package.delete() }
+            } catch {
+                ScriptWidgetDiagnosticLog.shared.record(.deleteProject, outcome: .failure, error: error)
+                return false
+            }
+        } else {
+            deleteResult = ScriptWidgetPackageFiles.removeTree(root: scriptDirectory, relative: packageName, expectedReceipt: expectedReceipt)
+        }
         if deleteResult {
             var info: [String: Any] = [:]
             if let retiredOwner, let storageContext { info = ["retiredOwner": retiredOwner, "storageContext": storageContext] }
@@ -1045,8 +1087,12 @@ final class ScriptManager: @unchecked Sendable {
         }
         
         let deleteBuildResult = removeBuildScriptPackage(package: package)
-        
-        return deleteResult && (storageContext != nil || deleteBuildResult.0)
+        if deleteResult && !deleteBuildResult.0 {
+            ScriptWidgetDiagnosticLog.shared.record(.deleteCleanup, outcome: .failure, failure: .fileUnavailable)
+        }
+        ScriptWidgetDiagnosticLog.shared.record(.deleteProject, outcome: deleteResult ? .success : .failure,
+                                                failure: deleteResult ? nil : .fileUnavailable)
+        return deleteResult
     }
     
     static func readBundleFile(bundle: String, fileName: String) ->  String? {

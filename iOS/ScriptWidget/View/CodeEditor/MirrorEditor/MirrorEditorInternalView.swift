@@ -9,6 +9,14 @@ import SwiftUI
 import WebKit
 import Combine
 
+private final class ScriptWidgetEditorPasteTarget: NSObject, UIPasteConfigurationSupporting {
+    var pasteConfiguration: UIPasteConfiguration? = UIPasteConfiguration(forAccepting: NSString.self)
+    var receive: (([NSItemProvider]) -> Void)?
+    func paste(itemProviders: [NSItemProvider]) { receive?(itemProviders) }
+    func canPaste(_ itemProviders: [NSItemProvider]) -> Bool {
+        pasteConfiguration != nil && itemProviders.contains { $0.canLoadObject(ofClass: NSString.self) }
+    }
+}
 
 @MainActor final class MirrorEditorService {
     static let saveNotification = Notification.Name("MirrorEditorService_SaveNotification")
@@ -50,6 +58,7 @@ struct MirrorEditorInternalActionProvider {
 }
 
 class MirrorEditorInternalView: WKWebView {
+    private let textPasteTarget = ScriptWidgetEditorPasteTarget()
     var libraryEditorLease: UUID?
     public var accessoryView: UIView?
     
@@ -86,6 +95,7 @@ class MirrorEditorInternalView: WKWebView {
         self.isOpaque = false
         self.backgroundColor = UIColor.clear
         self.scrollView.backgroundColor = UIColor.clear
+        textPasteTarget.receive = { [weak self] in self?.pasteTextProviders($0) }
         
         // accessoryView
         self.accessoryView = self.createAccessoryView()
@@ -273,7 +283,26 @@ class MirrorEditorInternalView: WKWebView {
 
     func editorSetReadOnly(_ readOnly: Bool) {
         guard !isTearingDown else { return }
+        textPasteTarget.pasteConfiguration = readOnly ? nil : UIPasteConfiguration(forAccepting: NSString.self)
         callStudio(handlerName: StudioProtocol.documentSetReadOnly, payload: ["readOnly": readOnly])
+    }
+
+    /// System Paste delivers text explicitly, independent of WebKit's page
+    /// origin and context menu. Never retarget an asynchronous paste to another
+    /// file/session, or a document that became read-only while loading.
+    func pasteTextProviders(_ providers: [NSItemProvider]) {
+        guard !isTearingDown, isEditorReady, action?.onIsReadOnly?() != true,
+              let documentID = currentDocumentID,
+              let provider = providers.first(where: { $0.canLoadObject(ofClass: NSString.self) }) else { return }
+        let generation = documentGeneration
+        provider.loadObject(ofClass: NSString.self) { [weak self] value, _ in
+            guard let text = value as? String else { return }
+            DispatchQueue.main.async {
+                guard let self, !self.isTearingDown, self.documentGeneration == generation,
+                      self.currentDocumentID == documentID, self.action?.onIsReadOnly?() != true else { return }
+                self.editorInsert(value: text)
+            }
+        }
     }
     
     func editorGetValue(callback: @escaping (Bool, String) -> Void) {
@@ -429,6 +458,7 @@ class MirrorEditorInternalView: WKWebView {
     
     func reloadCurrentScript() {
         if let onRead = action?.onRead {
+            textPasteTarget.pasteConfiguration = action?.onIsReadOnly?() == true ? nil : UIPasteConfiguration(forAccepting: NSString.self)
             let fileContent = onRead()
             guard let currentDocumentID else { return }
             documentGeneration = UUID()
@@ -477,11 +507,22 @@ extension MirrorEditorInternalView {
         scrollView.showsHorizontalScrollIndicator = false
         containerView.addSubview(scrollView)
 
-        for view in [formatButton, doneButton, scrollView] {
+        let pasteConfiguration = UIPasteControl.Configuration()
+        pasteConfiguration.displayMode = .iconAndLabel
+        let pasteControl = UIPasteControl(configuration: pasteConfiguration)
+        pasteControl.target = textPasteTarget
+        pasteControl.accessibilityIdentifier = "editor.paste"
+        containerView.addSubview(pasteControl)
+
+        for view in [formatButton, doneButton, scrollView, pasteControl] {
             view.translatesAutoresizingMaskIntoConstraints = false
         }
         NSLayoutConstraint.activate([
-            scrollView.leadingAnchor.constraint(equalTo: containerView.leadingAnchor),
+            pasteControl.leadingAnchor.constraint(equalTo: containerView.leadingAnchor, constant: 4),
+            pasteControl.centerYAnchor.constraint(equalTo: containerView.centerYAnchor),
+            pasteControl.widthAnchor.constraint(equalToConstant: 90),
+            pasteControl.heightAnchor.constraint(equalToConstant: 36),
+            scrollView.leadingAnchor.constraint(equalTo: pasteControl.trailingAnchor, constant: 4),
             scrollView.topAnchor.constraint(equalTo: containerView.topAnchor),
             scrollView.bottomAnchor.constraint(equalTo: containerView.bottomAnchor),
             scrollView.trailingAnchor.constraint(equalTo: formatButton.leadingAnchor),

@@ -36,6 +36,7 @@ final class ScriptWidgetStorageFiles {
     private let storeReceipt: ScriptWidgetStoragePublicationReceipt
     private let volumeIdentity: Data
     private static let anchorName = ".ScriptWidgetStorage.v2.anchor"
+    private static let recoveryFenceName = ".ScriptWidgetStorage.v2.recovering"
     var storageReceipt: ScriptWidgetStoragePublicationReceipt { storeReceipt }
     private static let maximumRecordFileBytes = 3 * 1024 * 1024
 
@@ -66,7 +67,10 @@ final class ScriptWidgetStorageFiles {
             return value.st_mode & S_IFMT
         }
         let anchor = try kind(anchorName), directory = try kind(directoryName)
-        if anchor == nil && directory == nil { return false }
+        if anchor == nil && directory == nil {
+            guard try kind(recoveryFenceName) == nil else { throw ScriptWidgetStorageFileError.invalidData }
+            return false
+        }
         guard anchor == S_IFREG, directory == S_IFDIR else { throw ScriptWidgetStorageFileError.invalidData }
         return true
     }
@@ -135,6 +139,12 @@ final class ScriptWidgetStorageFiles {
             }
         }) else { throw ScriptWidgetStorageFileError.unavailable }
         storeReceipt = try result.get()
+        // A durable fence outside the moved store closes the crash window
+        // between quarantine and creation of the new private index.
+        if try Self.read(fd, name: Self.recoveryFenceName, maximum: 32) != nil,
+           try readMetadata(key: "ScriptWidgetStorage.LibraryProfiles.v1") == nil {
+            try writeMetadata(key: "ScriptWidgetStorage.LibraryRecovery.v1", data: Data("reconnecting".utf8))
+        }
     }
 
     private static func anchor(_ receipt: ScriptWidgetStoragePublicationReceipt, legacy: Bool = false) -> Data {
@@ -293,6 +303,49 @@ final class ScriptWidgetStorageFiles {
     }
 
     /// Metadata coordination/journaling belongs to the native identity layer.
+    /// Explicit native recovery preserves the original frame without decoding
+    /// it. This also handles a damaged frame, not just invalid JSON inside it.
+    func preserveMetadata(key: String) throws {
+        let name = SHA256.hash(data: Data(key.utf8)).map { String(format: "%02x", $0) }.joined() + ".bin"
+        try bucket("metadata") { directory in
+            try Self.exact(directory, name)
+            var info = stat()
+            guard fstatat(directory, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else {
+                if errno == ENOENT { return }
+                throw ScriptWidgetStorageFileError.unavailable
+            }
+            guard info.st_mode & S_IFMT == S_IFREG, info.st_nlink == 1 else { throw ScriptWidgetStorageFileError.invalidData }
+            guard renameat(directory, name, directory, "preserved-" + UUID().uuidString.lowercased() + ".bin") == 0,
+                  fsync(directory) == 0 else { throw ScriptWidgetStorageFileError.unavailable }
+        }
+    }
+
+    /// Used only after explicit native recovery confirmation. A damaged store
+    /// and its anchor are retained together, never deleted or reinterpreted.
+    static func preserveDamagedStore(container: URL) throws {
+        var named = stat()
+        guard lstat(container.path, &named) == 0, named.st_mode & S_IFMT == S_IFDIR else { throw ScriptWidgetStorageFileError.unavailable }
+        let fd = open(container.path, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+        guard fd >= 0 else { throw ScriptWidgetStorageFileError.unavailable }
+        defer { close(fd) }
+        var opened = stat()
+        guard fstat(fd, &opened) == 0, opened.st_dev == named.st_dev, opened.st_ino == named.st_ino else { throw ScriptWidgetStorageFileError.unavailable }
+        try write(Data("SWRECOVERY01".utf8), directory: fd, name: recoveryFenceName)
+        let saved = try child(fd, name: "__WidgetStorageRecovery-" + UUID().uuidString.lowercased())
+        defer { close(saved) }
+        for (name, kind) in [(directoryName, S_IFDIR), (anchorName, S_IFREG)] {
+            try exact(fd, name)
+            var info = stat()
+            guard fstatat(fd, name, &info, AT_SYMLINK_NOFOLLOW) == 0 else {
+                if errno == ENOENT { continue }
+                throw ScriptWidgetStorageFileError.unavailable
+            }
+            guard info.st_mode & S_IFMT == kind, kind != S_IFREG || info.st_nlink == 1 else { throw ScriptWidgetStorageFileError.invalidData }
+            guard renameat(fd, name, saved, name) == 0 else { throw ScriptWidgetStorageFileError.unavailable }
+        }
+        guard fsync(saved) == 0, fsync(fd) == 0 else { throw ScriptWidgetStorageFileError.unavailable }
+    }
+
     func writeMetadata(key: String, data: Data) throws {
         let keyBytes = Data(key.utf8)
         guard (1...256).contains(keyBytes.count), data.count <= ScriptWidgetStorageNamespaces.maximumRegistryBytes else { throw ScriptWidgetStorageFileError.limitExceeded }

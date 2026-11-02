@@ -87,6 +87,8 @@ struct SettingsView: View {
                 Section("Health") { SettingsHealthView() }
                 Section("Location") { SettingsLocationView() }
 
+                ScriptWidgetDiagnosticSettingsSection()
+
                 Section("Application") {
                     NavigationLink(destination: AppIconsView()) {
                         Label("App Icon", systemImage: "app.badge")

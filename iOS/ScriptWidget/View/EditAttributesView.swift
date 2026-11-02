@@ -12,6 +12,8 @@ struct EditAttributesView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var isShowingDeleteAlert = false
     @State private var isShowingRenameFailedAlert = false
+    @State private var isShowingDeleteFailedAlert = false
+    @State private var deleteReceipt: ScriptWidgetStoragePublicationReceipt?
     @State private var inputName: String = ""
     
     let scriptModel: ScriptModel
@@ -62,6 +64,7 @@ struct EditAttributesView: View {
 
                 Section {
                     Button("Delete Widget", systemImage: "trash", role: .destructive) {
+                        deleteReceipt = sharedScriptManager.deletionReceipt(packageName: scriptModel.name)
                         isShowingDeleteAlert = true
                     }
                 } footer: {
@@ -91,6 +94,11 @@ struct EditAttributesView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Choose a unique name that can also be used as a folder name.")
+        }
+        .alert("Couldn’t Delete Widget", isPresented: $isShowingDeleteFailedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(ScriptManager.deleteFailureMessage)
         }
     }
 
@@ -130,7 +138,11 @@ struct EditAttributesView: View {
     }
 
     private func deleteWidget() {
-        guard sharedScriptManager.deleteScript(packageName: scriptModel.name) else { return }
+        guard let deleteReceipt,
+              sharedScriptManager.deleteScript(packageName: scriptModel.name, expectedReceipt: deleteReceipt) else {
+            isShowingDeleteFailedAlert = true
+            return
+        }
         NotificationCenter.default.post(
             name: ScriptWidgetHomeViewDataObject.scriptDeleteNotification,
             object: nil

@@ -152,41 +152,83 @@ final class ScriptWidgetQueryCancellation {
 /// Public JavaScriptCore APIs only. Compiled scripts call the immutable guard
 /// at loop iterations, function entry and exception handlers. Cancellation is
 /// sticky, so a script cannot catch a timeout and resume another guarded loop.
-/// Dynamic code is disabled: it would bypass the compiler's instrumentation.
+/// Dynamic source is compiled through the same guard while native direct eval
+/// keeps its caller scope. Constructors continue to create global-scope functions.
 enum ScriptWidgetExecutionGuard {
     static let identifier = "__scriptWidgetCheckExecution"
 
     static func install(on context: JSContext, session: ScriptWidgetExecutionSession) {
         let active: @convention(block) () -> Bool = { session.isActive }
         context["__scriptWidgetExecutionActive"] = unsafeBitCast(active, to: JSValue.self)
+        let compileDynamic: @convention(block) (String) -> NSDictionary = { source in
+            guard session.isActive else { return ["error": "Script execution cancelled or timed out"] }
+            if let error = ScriptWidgetRuntimeContract.validateSource(source) { return ["error": error.displayMessage] }
+            let key = ScriptWidgetTranspileCache.key(for: source, babelFingerprint: ScriptWidgetCompiler.fingerprint)
+            if let cached = ScriptWidgetTranspileCache.get(key) { return ["code": cached] }
+            guard let babel = ScriptManager.readBundleFile(bundle: "support", fileName: "core.js") else {
+                return ["error": "Compiler resources are unavailable"]
+            }
+            switch ScriptWidgetCompiler.compile(source, babelContent: babel) {
+            case .success(let output):
+                ScriptWidgetTranspileCache.set(key, output)
+                return ["code": output]
+            case .failure(let error): return ["error": error.displayMessage]
+            }
+        }
+        context["__scriptWidgetCompileDynamic"] = unsafeBitCast(compileDynamic, to: JSValue.self)
         context.evaluateScript("""
-            (function(active) {
+            (function(active, compile, nativeEval) {
                 const timeout = Object.freeze(new Error('Script execution cancelled or timed out'));
                 const check = function() { if (!active()) throw timeout; };
-                Object.defineProperty(globalThis, '__scriptWidgetCheckExecution', {
-                    value: check, writable: false, configurable: false
-                });
-                delete globalThis.__scriptWidgetExecutionActive;
-                const unsupported = function() {
-                    throw new Error('Dynamic code (eval and Function constructors) is unsupported; use $import for package source');
+                const prepare = function(source, evaluator = nativeEval) {
+                    check();
+                    if (evaluator !== nativeEval) return source;
+                    if (typeof source !== 'string') return source;
+                    const result = compile(source);
+                    check();
+                    if (result.error) throw new SyntaxError(result.error);
+                    return result.code;
                 };
-                // Preserve Function.prototype.bind/apply/call for ordinary
-                // functions and compatibility libraries; only code generation
-                // through the constructor is disabled.
-                unsupported.prototype = Function.prototype;
-                const constructors = [Function, (function*(){}).constructor,
-                    (async function(){}).constructor, (async function*(){}).constructor];
-                for (const constructor of constructors) {
-                    Object.defineProperty(constructor.prototype, 'constructor', {
-                        value: unsupported, writable: false, configurable: false
+                const install = function(name, value) {
+                    Object.defineProperty(globalThis, name, {value, writable: false, configurable: false});
+                };
+                install('__scriptWidgetCheckExecution', check);
+                install('__scriptWidgetPrepareEval', prepare);
+                const indirect = function(source) { return nativeEval(prepare(source)); };
+                install('__scriptWidgetIndirectEval', indirect);
+                install('__scriptWidgetResolveEval', function(evaluator) { return evaluator === nativeEval ? indirect : evaluator; });
+                delete globalThis.__scriptWidgetExecutionActive;
+                delete globalThis.__scriptWidgetCompileDynamic;
+                // Keep the intrinsic eval intact: replacing it would turn direct
+                // eval into an indirect call and lose access to caller variables.
+                const constructors = [
+                    [Function, ''], [(async function(){}).constructor, 'async '],
+                    [(function*(){}).constructor, 'generator'], [(async function*(){}).constructor, 'async generator']
+                ];
+                for (const [original, kind] of constructors) {
+                    const build = function(args, newTarget) {
+                        check();
+                        const strings = args.map(value => String(value));
+                        const body = strings.length ? strings.pop() : '';
+                        const prefix = kind === 'generator' ? 'function*' : kind === 'async generator' ? 'async function*' : kind + 'function';
+                        // Let the native constructor validate parameter/body syntax
+                        // separately before compiling, including subclass semantics.
+                        Reflect.apply(original, undefined, [...strings, body]);
+                        const fn = nativeEval(prepare('(' + prefix + ' anonymous(' + strings.join(',') + '\\n){\\n' + body + '\\n})'));
+                        if (newTarget && newTarget !== proxy) {
+                            const prototype = newTarget.prototype;
+                            if (prototype !== null && (typeof prototype === 'object' || typeof prototype === 'function')) Object.setPrototypeOf(fn, prototype);
+                        }
+                        return fn;
+                    };
+                    const proxy = new Proxy(original, {
+                        apply(target, receiver, args) { return build(args); },
+                        construct(target, args, newTarget) { return build(args, newTarget); }
                     });
+                    Object.defineProperty(original.prototype, 'constructor', {value: proxy, writable: true, configurable: true});
+                    if (kind === '') globalThis.Function = proxy;
                 }
-                for (const name of ['eval', 'Function']) {
-                    Object.defineProperty(globalThis, name, {
-                        value: unsupported, writable: false, configurable: false
-                    });
-                }
-            })(__scriptWidgetExecutionActive);
+            })(__scriptWidgetExecutionActive, __scriptWidgetCompileDynamic, eval);
             """)
     }
 }

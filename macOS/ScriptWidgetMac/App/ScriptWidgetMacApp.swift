@@ -278,6 +278,7 @@ private struct ScriptWidgetMacSettingsView: View {
                 .tabItem { Label("Widget Actions",systemImage:"play.square") }
 
             Form {
+                ScriptWidgetDiagnosticSettingsSection()
                 Section("Widget Library") {
                     Button("Choose Widget Library") { showingLibraries = true }
                 }

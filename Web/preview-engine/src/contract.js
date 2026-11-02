@@ -6,7 +6,7 @@ export const runtimeContract = Object.freeze({
   // Native 1.3 uses cooperative checks and disallows dynamic code. The web
   // host keeps its disposable Worker; both expose Calendar, with distinct caches.
   nativeAPIVersion: "1.6",
-  nativeCompilerFingerprint: "scriptwidget-babel-v3",
+  nativeCompilerFingerprint: "scriptwidget-babel-v5",
   apiVersion: "1.2",
   compilerFingerprint: "scriptwidget-babel-v2",
   maximumSourceBytes: 512 * 1024,

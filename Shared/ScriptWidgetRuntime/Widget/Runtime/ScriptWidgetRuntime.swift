@@ -356,6 +356,9 @@ enum ScriptWidgetCompiler {
         context.evaluateScript("""
             function ScriptWidgetTransform(input) {
                 const guardName = '__scriptWidgetCheckExecution';
+                const dynamicName = '__scriptWidgetPrepareEval';
+                const indirectName = '__scriptWidgetIndirectEval';
+                const resolveName = '__scriptWidgetResolveEval';
                 const plugin = function({ types: t }) {
                     const check = () => t.expressionStatement(t.callExpression(t.identifier(guardName), []));
                     const guardBody = path => {
@@ -364,19 +367,27 @@ enum ScriptWidgetCompiler {
                     };
                     return { visitor: {
                         // Reserve the guard name in ALL scopes, including catch
-                        // parameters, imports and destructuring. No dynamic with scope.
+                        // parameters, imports and destructuring.
                         Program(path) {
                             path.traverse({
                                 Identifier(identifier) {
                                     if (!__scriptWidgetCompileActive()) throw new Error('Compilation time limit exceeded');
-                                    if (identifier.node.name === guardName) {
-                                        throw new Error('Reserved runtime identifier: ' + guardName);
+                                    if ([guardName, dynamicName, indirectName, resolveName].includes(identifier.node.name)) {
+                                        throw new Error('Reserved runtime identifier: ' + identifier.node.name);
                                     }
-                                },
-                                WithStatement(statement) {
-                                    throw new Error('with statements are unsupported');
                                 }
                             });
+                        },
+                        CallExpression: { exit(path) {
+                            if (t.isIdentifier(path.node.callee, { name: 'eval' }) && !path.scope.getBinding('eval') && path.node.arguments.length && !t.isSpreadElement(path.node.arguments[0])) {
+                                path.node.arguments[0] = t.callExpression(t.identifier(dynamicName), [path.node.arguments[0], t.identifier('eval')]);
+                            }
+                        } },
+                        ReferencedIdentifier(path) {
+                            if (path.node.name !== 'eval' || path.scope.getBinding('eval')) return;
+                            if (path.parentPath.isCallExpression() && path.parentPath.node.callee === path.node) return;
+                            path.replaceWith(t.callExpression(t.identifier(resolveName), [t.identifier('eval')]));
+                            path.skip();
                         },
                         'Loop|Function': { exit: guardBody },
                         CatchClause: { exit(path) { path.get('body').unshiftContainer('body', check()); } },
@@ -385,7 +396,7 @@ enum ScriptWidgetCompiler {
                         } }
                     } };
                 };
-                return Babel.transform(input, { presets: ['scriptwidget'], plugins: [plugin] }).code;
+                return Babel.transform(input, { sourceType: 'script', presets: ['scriptwidget'], plugins: [plugin] }).code;
             }
             """)
         let transformed = context.objectForKeyedSubscript("ScriptWidgetTransform")?

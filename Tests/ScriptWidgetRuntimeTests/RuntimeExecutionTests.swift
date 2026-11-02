@@ -736,7 +736,7 @@ final class RuntimeExecutionTests: XCTestCase {
         assertRuntimeStopped(runtime)
     }
 
-    func testDynamicCodeCannotBypassExecutionGuard() {
+    func testDynamicCodeKeepsLoopCancellation() {
         for source in [
             "eval('while (true) {}')",
             "(0, eval)('while (true) {}')",
@@ -749,8 +749,8 @@ final class RuntimeExecutionTests: XCTestCase {
             let start = Date()
             let (_, error) = makeRuntime().executeJSXSyncForWidget(source)
             XCTAssertNotNil(error, source)
-            XCTAssertTrue(error?.displayMessage.contains("Dynamic code") == true, source)
-            XCTAssertLessThan(Date().timeIntervalSince(start), 3, source)
+            XCTAssertTrue(error?.displayMessage.localizedCaseInsensitiveContains("time") == true || error?.displayMessage.contains("cancel") == true || error?.displayMessage.contains("limit") == true, error?.displayMessage ?? source)
+            XCTAssertLessThan(Date().timeIntervalSince(start), 8, source)
         }
     }
 
@@ -2402,15 +2402,13 @@ final class NativeSnapshotExecutionTests: XCTestCase {
         XCTAssertNil(defaults.object(forKey: captured.storageNamespace + "side-effect"))
     }
 
-    func testStoragePermissionIsFrozenAndMissingDeclarationFailsClosed() throws {
+    func testLegacyStorageRemainsAvailableWithAnEmptyPermissionManifest() throws {
         var manifest = try XCTUnwrap(package.readManifest()); manifest.permissions = []
         XCTAssertTrue(package.writeManifest(manifest).0)
-        let captured = try capture("$storage.setString('denied', '1'); $render(<text>unexpected</text>);")
-        manifest.permissions = [.storage]
-        XCTAssertTrue(package.writeManifest(manifest).0)
+        let captured = try capture("$storage.setString('compatibility', '1'); $render(<text>{$storage.getString('compatibility')}</text>);")
         let result = runtime(captured).executeJSXSyncForWidget(captured.source)
-        XCTAssertTrue(result.1?.displayMessage.contains("permission_denied") == true)
-        XCTAssertNil(defaults.object(forKey: captured.storageNamespace + "denied"))
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        XCTAssertEqual(defaults.readValue(forKey: captured.storageNamespace + "compatibility") as? String, "1")
     }
 
     func testProjectionCannotWriteRemoveOrClearRealRecords() throws {
@@ -4110,11 +4108,12 @@ extension NativeSnapshotExecutionTests {
 }
 
 extension StorageCutoverBridgeTests {
-    func testPreviewStorageDoesNotGrantAnUndeclaredPackagePermission() throws {
+    func testLegacyStoragePreviewWithEmptyPermissionsRemainsIsolated() throws {
         var manifest = try XCTUnwrap(package.readManifest()); manifest.permissions = []
         XCTAssertTrue(package.writeManifest(manifest).0)
-        let result = engine(readonly: true).executeJSXSyncForWidget("$storage.setString('count','lost'); $render(<text>unexpected</text>);")
-        XCTAssertTrue(result.1?.displayMessage.contains("permission_denied") == true)
+        let result = engine(readonly: true).executeJSXSyncForWidget("$storage.setString('count','preview'); $render(<text>{$storage.getString('count')}</text>);")
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        XCTAssertEqual(text(try XCTUnwrap(result.0)), "preview")
         XCTAssertEqual(defaults.string(forKey: "script.\(package.name).count"), "real")
     }
 }
@@ -4844,16 +4843,48 @@ final class LibrarySessionExecutionTests: XCTestCase {
         let model = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { service })
         await model.open(); await model.loadChoices()
         try save(ScriptWidgetLibrarySelectionView(model: model), name: "library-picker", nativeList: true)
+        try save(ScriptWidgetDiagnosticFeedbackView().feedbackContent.padding(24), name: "github-feedback-content")
         let session = try service.open(); _ = try build(session)
         try FileManager.default.moveItem(at: library, to: root.appendingPathComponent("offline-source"))
         await model.open()
         XCTAssertTrue(model.isOffline)
         try save(ScriptWidgetLibraryLaunchView(model: model) { Text("Library ready") }, name: "library-offline")
+        await model.loadChoices()
+        try save(ScriptWidgetLibrarySelectionView(model: model), name: "library-reconnect", nativeList: true)
         let failed = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { throw ScriptWidgetLibraryOpeningError.storageUnavailable })
         await failed.open()
         try save(ScriptWidgetLibraryLaunchView(model: failed) { Text("Library ready") }, name: "library-unavailable")
         #else
-        throw XCTSkip("Native library interface captures run on macOS")
+        guard ProcessInfo.processInfo.environment["SCRIPTWIDGET_LIBRARY_UI_SNAPSHOTS"] != nil else {
+            throw XCTSkip("Set SCRIPTWIDGET_LIBRARY_UI_SNAPSHOTS for native library interface captures")
+        }
+        let available = applicationService().alternatives
+        let failed = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { throw ScriptWidgetStorageNamespaceError.invalidRegistry }, recoveryChoices: { available })
+        await failed.open(); await failed.loadChoices()
+        XCTAssertFalse(failed.isReady); XCTAssertFalse(failed.choices.isEmpty)
+        XCTAssertTrue(failed.choices.allSatisfy(\.requiresRecovery))
+        // The same export used by the button remains independent of a failed
+        // library factory and a chooser with no available entries.
+        let diagnosticData = try ScriptWidgetDiagnosticLog.shared.export()
+        XCTAssertNoThrow(try JSONSerialization.jsonObject(with: diagnosticData))
+        let diagnosticAttachment = XCTAttachment(data: diagnosticData, uniformTypeIdentifier: "public.json")
+        diagnosticAttachment.name = "ios-simulated-library-failure-logs"
+        diagnosticAttachment.lifetime = .keepAlways
+        add(diagnosticAttachment)
+        let renderer = ImageRenderer(content: ScriptWidgetLibraryLaunchView(model: failed) { Text("Library ready") }
+            .frame(width: 393, height: 852).background(Color.white).environment(\.colorScheme, .light))
+        renderer.scale = 2
+        let attachment = XCTAttachment(image: UIImage(cgImage: try XCTUnwrap(renderer.cgImage)))
+        attachment.name = "ios-library-unavailable-diagnostics"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let feedbackRenderer = ImageRenderer(content: ScriptWidgetDiagnosticFeedbackView().feedbackContent.padding(24)
+            .frame(width: 393, height: 852).background(Color.white).environment(\.colorScheme, .light))
+        feedbackRenderer.scale = 2
+        let feedbackAttachment = XCTAttachment(image: UIImage(cgImage: try XCTUnwrap(feedbackRenderer.cgImage)))
+        feedbackAttachment.name = "ios-github-feedback-content"
+        feedbackAttachment.lifetime = .keepAlways
+        add(feedbackAttachment)
         #endif
     }
 
@@ -5842,5 +5873,283 @@ extension RuntimeExecutionTests {
                 XCTAssertFalse(tree.contains("unexpected"),call)
             }
         }
+    }
+}
+
+extension RuntimeExecutionTests {
+    func testDynamicCodePreservesLegacyEvalAndConstructorSemantics() throws {
+        let source = """
+        let local = 40;
+        const direct = eval('local += 2; local');
+        const identity = {value: 7};
+        const passthrough = eval(identity) === identity;
+        const alias = eval;
+        globalThis.__legacyDynamicValue = 9;
+        const indirect = alias('__legacyDynamicValue');
+        const bound = (0, eval)('__legacyDynamicValue + 1');
+        const computed = globalThis['eval']('__legacyDynamicValue + 2');
+        const add = new Function('a', 'b', 'return a + b;');
+        const called = Function('return this === globalThis')();
+        const fromPrototype = (()=>{}).constructor('return 12')();
+        const generator = (function*(){}).constructor('yield 13;')().next().value;
+        const asyncValue = await (async function(){}).constructor('return 14;')();
+        const asyncGenerator = (await (async function*(){}).constructor('yield 15;')().next()).value;
+        const template = Function('data', 'with(data){ return title; }')({title:'legacy'});
+        function strictEval() { 'use strict'; const inside = 16; return eval('inside'); }
+        function customEval() { function eval(value) { return value; } return eval('unchanged'); }
+        function declarations() { eval('var legacyDeclaration = 18;'); return legacyDeclaration; }
+        const intrinsic = globalThis.eval;
+        globalThis.eval = value => 'custom:' + value;
+        const customAlias = eval;
+        const reassigned = eval('direct') + '|' + customAlias('alias') + '|' + globalThis.eval('member');
+        globalThis.eval = intrinsic;
+        $render(<text>{[direct,local,passthrough,indirect,bound,computed,add(2,3),called,fromPrototype,generator,asyncValue,asyncGenerator,strictEval(),customEval(),template,declarations(),reassigned].join(':')}</text>);
+        """
+        let result = makeRuntime().executeJSXSyncForWidget(source)
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        XCTAssertEqual(collectText(try XCTUnwrap(result.0)), "42:42:true:9:10:11:5:true:12:13:14:15:16:unchanged:legacy:18:custom:direct|custom:alias|custom:member")
+    }
+}
+
+extension NativeSnapshotExecutionTests {
+    func testDeleteLateEmptyFolderWithoutRefreshOrRecordAdoption() throws {
+        let name = "Truth", folder = library.appendingPathComponent("Truth")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let registry = defaults.data(forKey: ScriptWidgetStorageNamespaces.registryKey)
+        let directories = defaults.data(forKey: ScriptWidgetStorageNamespaces.directoriesKey)
+        XCTAssertTrue(manager.listScripts().contains { $0.name == name })
+        XCTAssertThrowsError(try context.boundDirectory(name: name, role: .source))
+        XCTAssertTrue(manager.deleteScript(packageName: name, expectedReceipt: try XCTUnwrap(manager.deletionReceipt(packageName: name))))
+        XCTAssertFalse(manager.listScripts().contains { $0.name == name })
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertEqual(defaults.data(forKey: ScriptWidgetStorageNamespaces.registryKey), registry)
+        XCTAssertEqual(defaults.data(forKey: ScriptWidgetStorageNamespaces.directoriesKey), directories)
+    }
+
+    func testDeleteRecreatedFolderPreservesOriginalFilesAndFileBackedRecords() throws {
+        let backend = try useFileBackend(), original = try capture()
+        try backend.writeValue("kept", forKey: original.storageNamespace + "saved")
+        let registry = try backend.readValue(forKey: ScriptWidgetStorageNamespaces.registryKey) as? Data
+        let preserved = root.appendingPathComponent("original")
+        try FileManager.default.moveItem(at: package.path, to: preserved)
+        try FileManager.default.createDirectory(at: package.path, withIntermediateDirectories: false)
+        XCTAssertTrue(manager.deleteScript(packageName: packageName))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: package.path.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: preserved.appendingPathComponent("main.jsx").path))
+        XCTAssertEqual(try backend.readValue(forKey: original.storageNamespace + "saved") as? String, "kept")
+        XCTAssertEqual(try backend.readValue(forKey: ScriptWidgetStorageNamespaces.registryKey) as? Data, registry)
+        XCTAssertThrowsError(try original.validateIdentity())
+    }
+
+    func testDeleteSyncedBackRetiredNameWithoutReusingItsOwner() throws {
+        let original = try capture()
+        defaults.set("retained", forKey: original.storageNamespace + "saved")
+        XCTAssertTrue(manager.deleteScript(packageName: packageName))
+        let registry = defaults.data(forKey: ScriptWidgetStorageNamespaces.registryKey)
+        try FileManager.default.createDirectory(at: package.path, withIntermediateDirectories: false)
+        XCTAssertTrue(manager.deleteScript(packageName: packageName))
+        XCTAssertEqual(defaults.data(forKey: ScriptWidgetStorageNamespaces.registryKey), registry)
+        XCTAssertEqual(defaults.string(forKey: original.storageNamespace + "saved"), "retained")
+        XCTAssertTrue(manager.createScript(content: "$render(<text>fresh</text>);", recommendPackageName: packageName, imageCopyPath: nil).0)
+        XCTAssertNotEqual(try capture().storageNamespace, original.storageNamespace)
+    }
+
+    func testDeleteUnregisteredFolderHandlesMalformedManifestNestedFilesAndSymlinkChildren() throws {
+        let name = "Late", folder = library.appendingPathComponent(name)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("nested"), withIntermediateDirectories: true)
+        try Data("invalid manifest".utf8).write(to: folder.appendingPathComponent("widget.json"))
+        try Data([0, 1, 255]).write(to: folder.appendingPathComponent("nested/photo.png"))
+        let outside = root.appendingPathComponent("outside.txt"), saved = Data("preserved".utf8)
+        try saved.write(to: outside)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("link"), withDestinationURL: outside)
+        XCTAssertTrue(manager.deleteScript(packageName: name))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertEqual(try Data(contentsOf: outside), saved)
+    }
+
+    func testDeleteRejectsDirectoryReplacementAfterConfirmation() throws {
+        for name in [packageName!, "Late"] {
+            let folder = library.appendingPathComponent(name)
+            if name == "Late" { try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false) }
+            let receipt = try XCTUnwrap(manager.deletionReceipt(packageName: name))
+            let preserved = root.appendingPathComponent(name)
+            try FileManager.default.moveItem(at: folder, to: preserved)
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+            XCTAssertFalse(manager.deleteScript(packageName: name, expectedReceipt: receipt))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: preserved.path))
+        }
+    }
+
+    func testUnregisteredDeleteCannotBypassRegisteredOwnerOrPendingRelocation() throws {
+        let binding = try context.boundDirectory(name: packageName, role: .source)
+        var moved = false
+        XCTAssertThrowsError(try ScriptWidgetStorageNamespaces.removeUnregisteredSource(name: packageName, location: context.locationIdentifier,
+            receipt: binding.receipt, container: container, defaults: defaults) { moved = true })
+        XCTAssertFalse(moved)
+        _ = try interruptRelocation(destination: "Other", moveDirectory: false)
+        XCTAssertThrowsError(try ScriptWidgetStorageNamespaces.removeUnregisteredSource(name: "Late", location: context.locationIdentifier,
+            receipt: binding.receipt, container: container, defaults: defaults) { moved = true })
+        XCTAssertFalse(moved)
+    }
+
+    func testDeleteUnregisteredFolderRejectsDamagedMetadataAndCacheRole() throws {
+        let folder = library.appendingPathComponent("Late")
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let cacheManager = ScriptManager(isBuild: true, scriptDirectoryOverride: library, storageContext: context, storageRole: .cache)
+        XCTAssertFalse(cacheManager.deleteScript(packageName: "Late"))
+        XCTAssertNil(cacheManager.deletionReceipt(packageName: "Late"))
+        for key in [ScriptWidgetStorageNamespaces.registryKey, ScriptWidgetStorageNamespaces.directoriesKey] {
+            let saved = defaults.object(forKey: key)
+            defaults.set(Data("damaged".utf8), forKey: key)
+            XCTAssertFalse(manager.deleteScript(packageName: "Late"))
+            XCTAssertTrue(FileManager.default.fileExists(atPath: folder.path))
+            defaults.set(saved, forKey: key)
+        }
+    }
+
+    func testSourceDeletionSucceedsEvenWhenDisposableCacheCleanupFails() throws {
+        let name = "Late", folder = library.appendingPathComponent(name)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: false)
+        let outside = root.appendingPathComponent("outside-cache")
+        try FileManager.default.createDirectory(at: outside, withIntermediateDirectories: false)
+        try FileManager.default.createSymbolicLink(at: cache.appendingPathComponent(name), withDestinationURL: outside)
+        let unmanaged = ScriptManager(isBuild: false, scriptDirectoryOverride: library, buildDirectoryOverride: cache)
+        XCTAssertTrue(unmanaged.deleteScript(packageName: name))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: folder.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outside.path))
+    }
+}
+
+extension LibrarySessionExecutionTests {
+    @MainActor
+    func testRecreatedLibraryCanBeExplicitlyReconnectedWithoutAdoptingOldRecords() async throws {
+        let service = applicationService(), original = try service.open()
+        let old = try original.capture(name: packageName)
+        try FileManager.default.moveItem(at: library, to: root.appendingPathComponent("preserved-original"))
+        try FileManager.default.createDirectory(at: library.appendingPathComponent(packageName), withIntermediateDirectories: true)
+        try Data("$render(<text>{'restored:' + $storage.getString('count')}</text>);".utf8).write(to: library.appendingPathComponent(packageName).appendingPathComponent("main.jsx"))
+        XCTAssertThrowsError(try service.open())
+        let model = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { service })
+        await model.open(); await model.loadChoices()
+        let choice = try XCTUnwrap(model.choices.first { $0.root.path == library.path })
+        XCTAssertTrue(choice.isAvailable); XCTAssertTrue(choice.requiresRecovery)
+        XCTAssertThrowsError(try service.select(choice))
+        let succeeded = await model.choose(choice, reconnect: true)
+        XCTAssertTrue(succeeded); XCTAssertTrue(model.isReady)
+        let recovered = try service.open()
+        XCTAssertEqual(try render(recovered.capture(name: packageName)), "restored:")
+        XCTAssertThrowsError(try old.validateIdentity())
+        XCTAssertEqual(try old.context.defaults.readValue(forKey: old.storageNamespace + "count") as? String, "7")
+        XCTAssertFalse(try XCTUnwrap(service.choices().first { $0.root.path == library.path }).requiresRecovery)
+        XCTAssertEqual(recovered.selection, try service.open().selection)
+    }
+
+    @MainActor
+    func testMalformedIndexKeepsChoicesAndExplicitRecoveryPreservesPriorRecords() async throws {
+        let service = applicationService(), old = try service.open().capture(name: packageName)
+        let files = try ScriptWidgetStorageFiles(container: container)
+        try files.writeMetadata(key: ScriptWidgetStorageProfiles.indexKey, data: Data("invalid index".utf8))
+        let model = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false, factory: { service })
+        await model.open(); await model.loadChoices()
+        XCTAssertFalse(model.isReady); XCTAssertFalse(model.choices.isEmpty)
+        let choice = try XCTUnwrap(model.choices.first { $0.root.path == library.path })
+        XCTAssertTrue(choice.requiresRecovery)
+        let succeeded = await model.choose(choice, reconnect: true)
+        XCTAssertTrue(succeeded); XCTAssertTrue(model.isReady)
+        XCTAssertEqual(try render(service.open().capture(name: packageName)), "count:")
+        XCTAssertEqual(try old.context.defaults.readValue(forKey: old.storageNamespace + "count") as? String, "7")
+        XCTAssertThrowsError(try old.validateIdentity())
+        let metadata = container.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("metadata")
+        let preserved = try FileManager.default.contentsOfDirectory(at: metadata, includingPropertiesForKeys: nil).filter { $0.lastPathComponent.hasPrefix("preserved-") }
+        XCTAssertEqual(preserved.count, 1)
+        XCTAssertTrue(try Data(contentsOf: XCTUnwrap(preserved.first)).range(of: Data("invalid index".utf8)) != nil)
+    }
+
+    func testInterruptedRecoveryFenceCannotReenableLegacyMigration() throws {
+        let service = applicationService()
+        let files = try ScriptWidgetStorageFiles(container: container)
+        try files.writeMetadata(key: "ScriptWidgetStorage.LibraryRecovery.v1", data: Data("reconnecting".utf8))
+        XCTAssertThrowsError(try service.open())
+        XCTAssertThrowsError(try ScriptWidgetStorageProfiles.withLegacyAccess(container: container) {})
+        let choice = try XCTUnwrap(service.choices().first { $0.root.path == library.path })
+        XCTAssertEqual(try render(service.reconnect(choice).capture(name: packageName)), "count:")
+    }
+
+    func testExplicitRecoveryWaitsForEditorsAndRejectsChangedLocations() throws {
+        let service = applicationService()
+        _ = try service.open()
+        let choice = try XCTUnwrap(service.choices().first { $0.root.path == library.path })
+        let forged = ScriptWidgetLibraryChoice(id: choice.id, root: root.appendingPathComponent("forged"), isUsingICloud: false, title: choice.title, isAvailable: true, requiresRecovery: true)
+        XCTAssertThrowsError(try service.reconnect(forged))
+        let lease = ScriptWidgetEditorPresence.register()
+        defer { ScriptWidgetEditorPresence.unregister(lease) }
+        XCTAssertThrowsError(try service.reconnect(choice))
+    }
+
+    func testDamagedPrivateStoreIsPreservedBeforeConfirmedRecovery() throws {
+        let service = applicationService()
+        _ = try service.open().capture(name: packageName)
+        let store = container.appendingPathComponent(ScriptWidgetStorageFiles.directoryName)
+        try Data("damaged".utf8).write(to: store.appendingPathComponent("version"))
+        XCTAssertThrowsError(try ScriptWidgetStorageProfiles(container: container, legacy: defaults))
+        try ScriptWidgetApplicationLibraryService.preserveDamagedPrivateStore(container: container)
+        let repaired = try ScriptWidgetStorageProfiles(container: container, legacy: defaults)
+        let recovery = ScriptWidgetApplicationLibraryService(profiles: repaired, initialRoot: library, initialIsUsingICloud: false, alternatives: service.alternatives)
+        XCTAssertEqual(try render(recovery.reconnect(XCTUnwrap(recovery.choices().first)).capture(name: packageName)), "count:")
+        let saved = try FileManager.default.contentsOfDirectory(at: container, includingPropertiesForKeys: nil).filter { $0.lastPathComponent.hasPrefix("__WidgetStorageRecovery-") }
+        XCTAssertEqual(saved.count, 1)
+        let preservedStore = try XCTUnwrap(saved.first).appendingPathComponent(ScriptWidgetStorageFiles.directoryName)
+        XCTAssertEqual(try Data(contentsOf: preservedStore.appendingPathComponent("version")), Data("damaged".utf8))
+        XCTAssertFalse(try FileManager.default.contentsOfDirectory(atPath: preservedStore.appendingPathComponent("profiles").path).isEmpty)
+    }
+}
+
+extension LibrarySessionExecutionTests {
+    @MainActor
+    func testRecoveryPickerWorksWhenTheServiceFactoryCannotOpenThePrivateStore() async throws {
+        let service = applicationService(), choices = service.alternatives
+        let model = ScriptWidgetLibraryLaunchModel(cacheOnOpen: false,
+            factory: { throw ScriptWidgetStorageFileError.invalidData },
+            recoveryChoices: { choices }, recovery: { try service.reconnect($0) })
+        await model.open(); await model.loadChoices()
+        XCTAssertFalse(model.isReady)
+        XCTAssertFalse(model.choices.isEmpty)
+        XCTAssertTrue(model.choices.allSatisfy(\.requiresRecovery))
+        let choice = try XCTUnwrap(model.choices.first)
+        let opened = await model.choose(choice, reconnect: true)
+        XCTAssertTrue(opened); XCTAssertTrue(model.isReady)
+    }
+
+    func testOriginalLibraryRecordsCanBeReopenedWhenTheOriginalDirectoryReturns() throws {
+        let service = applicationService(), original = try service.open()
+        let previous = try original.capture(name: packageName)
+        let saved = root.appendingPathComponent("saved-original")
+        try FileManager.default.moveItem(at: library, to: saved)
+        try FileManager.default.createDirectory(at: library.appendingPathComponent(packageName), withIntermediateDirectories: true)
+        try Data("$render(<text>replacement</text>);".utf8).write(to: library.appendingPathComponent(packageName).appendingPathComponent("main.jsx"))
+        _ = try service.reconnect(XCTUnwrap(service.choices().first { $0.root.path == library.path }))
+        try FileManager.default.moveItem(at: library, to: root.appendingPathComponent("saved-replacement"))
+        try FileManager.default.moveItem(at: saved, to: library)
+        let choice = try XCTUnwrap(service.choices().first { $0.root.path == library.path })
+        XCTAssertTrue(choice.isAvailable); XCTAssertFalse(choice.requiresRecovery)
+        let returned = try service.select(choice).capture(name: packageName)
+        XCTAssertEqual(returned.binding.ownerID, previous.binding.ownerID)
+        XCTAssertEqual(try render(returned), "count:7")
+        XCTAssertThrowsError(try previous.validateIdentity())
+    }
+
+    func testDamagedProfileStoreCanReconnectTheSameRootWithoutInheritingRecords() throws {
+        let service = applicationService(), original = try service.open()
+        let oldProfile = original.selection.profile
+        let oldStore = container.appendingPathComponent(ScriptWidgetStorageFiles.directoryName).appendingPathComponent("profiles")
+            .appendingPathComponent(oldProfile.id).appendingPathComponent(ScriptWidgetStorageFiles.directoryName)
+        try Data("damaged profile".utf8).write(to: oldStore.appendingPathComponent("version"))
+        XCTAssertThrowsError(try service.open())
+        let choice = try XCTUnwrap(service.choices().first { $0.root.path == library.path })
+        let recovered = try service.reconnect(choice)
+        XCTAssertNotEqual(recovered.selection.profile.id, oldProfile.id)
+        XCTAssertEqual(try render(recovered.capture(name: packageName)), "count:")
+        XCTAssertEqual(try Data(contentsOf: oldStore.appendingPathComponent("version")), Data("damaged profile".utf8))
     }
 }

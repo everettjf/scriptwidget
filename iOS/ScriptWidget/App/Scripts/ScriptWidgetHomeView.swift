@@ -72,6 +72,8 @@ struct ScriptWidgetHomeView: View {
     @State private var selectedSystemItem: ScriptModel?
     @State private var selectedDeleteItem: ScriptModel?
     @State private var isShowingDeleteAlert = false
+    @State private var selectedDeleteReceipt: ScriptWidgetStoragePublicationReceipt?
+    @State private var isShowingDeleteFailedAlert = false
     
     var body: some View {
         NavigationSplitView {
@@ -88,14 +90,23 @@ struct ScriptWidgetHomeView: View {
                 })
                 .alert("Delete Widget?", isPresented: $isShowingDeleteAlert, presenting: selectedDeleteItem) { item in
                     Button("Delete", role: .destructive) {
-                        if sharedScriptManager.deleteScript(packageName: item.name) {
+                        if let receipt = selectedDeleteReceipt,
+                           sharedScriptManager.deleteScript(packageName: item.name, expectedReceipt: receipt) {
                             NotificationCenter.default.post(name: ScriptWidgetHomeViewDataObject.scriptDeleteNotification, object: nil)
-                            selectedDeleteItem = nil
+                        } else {
+                            isShowingDeleteFailedAlert = true
                         }
+                        selectedDeleteItem = nil
+                        selectedDeleteReceipt = nil
                     }
                     Button("Cancel", role: .cancel) { }
                 } message: { item in
                     Text("“\(item.name)” and its project files will be removed. This can’t be undone.")
+                }
+                .alert("Couldn’t Delete Widget", isPresented: $isShowingDeleteFailedAlert) {
+                    Button("OK", role: .cancel) { }
+                } message: {
+                    Text(ScriptManager.deleteFailureMessage)
                 }
                 .sheet(item: $selectedSystemItem) { item in ScriptWidgetSystemAccessView(package: item.package) }
             .sheet(item: $selectedCloudItem) { item in ScriptWidgetCloudJSONView(package: item.package) }
@@ -272,6 +283,7 @@ struct ScriptWidgetHomeView: View {
 
                             Button(role: .destructive) {
                                 self.selectedDeleteItem = item
+                                self.selectedDeleteReceipt = sharedScriptManager.deletionReceipt(packageName: item.name)
                                 self.isShowingDeleteAlert.toggle()
                             } label: {
                                 Label("Delete", systemImage: "trash.fill")

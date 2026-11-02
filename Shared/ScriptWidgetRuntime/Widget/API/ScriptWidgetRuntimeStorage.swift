@@ -58,8 +58,11 @@ import JavaScriptCore
         guard let state = JSContext.current()?.scriptWidgetRunningState else { return false }
         guard state.executionSnapshot != nil || state.previewStorage != nil else { return true }
         guard state.executionSession.isActive else { return false }
-        if state.package.hasManifest && state.package.readManifest()?.permissions.contains(.storage) != true {
-            JSContext.current()?.exception = JSValue(newErrorFromMessage: "[permission_denied] Declare storage in widget.json", in: JSContext.current())
+        // Local, bounded, owner-scoped records predate Package 2.0. Copying an
+        // old script into a new package must not revoke this existing API.
+        // Personal-data and cross-package permissions remain separate.
+        if state.package.hasManifest && state.package.readManifest() == nil {
+            JSContext.current()?.exception = JSValue(newErrorFromMessage: "[invalid_manifest] widget.json could not be read", in: JSContext.current())
             return false
         }
         do { try state.validateExecutionSnapshot(); return true }

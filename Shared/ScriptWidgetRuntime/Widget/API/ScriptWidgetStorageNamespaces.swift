@@ -494,6 +494,26 @@ enum ScriptWidgetStorageNamespaces {
         }
     }
 
+    /// Native, confirmed deletion of a directory that has no active binding.
+    /// This grants no owner/record access and leaves retained identities intact.
+    /// The move callback must check the source receipt again before renaming.
+    static func removeUnregisteredSource(name: String, location: String, receipt: ScriptWidgetStoragePublicationReceipt,
+                                         container: URL, defaults: any ScriptWidgetStorageBackend,
+                                         move: () throws -> Void) throws {
+        _ = try canonicalName(name)
+        guard validLocation(location), receipt.inode > 0 else { throw ScriptWidgetStorageNamespaceError.invalidName }
+        try coordinated(container: container, defaults: defaults) {
+            try requireNoInstallation(defaults)
+            guard let index = try load(defaults), index.phase == "ready" else { throw ScriptWidgetStorageNamespaceError.inventoryRequired }
+            let activeOwners = Set(index.owners.filter(\.active).map(\.id))
+            let bindings = try directories(defaults).entries
+            guard !bindings.contains(where: {
+                $0.role == .source && $0.location == location && $0.receipt == receipt && activeOwners.contains($0.ownerID)
+            }) else { throw ScriptWidgetStorageNamespaceError.conflict }
+            try move()
+        }
+    }
+
     /// Copies/validation happen before this call. A cache publication may bind
     /// only to the exact authenticated source snapshot captured before copying.
     /// An unrecorded cache replacement remains unreadable and can be rebuilt.

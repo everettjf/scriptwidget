@@ -178,6 +178,8 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
     static let shared = ScriptWidgetLibraryLaunchModel()
     private let factory: @Sendable () throws -> ScriptWidgetApplicationLibraryService
     private let cacheOnOpen: Bool
+    private let recoveryChoices: @Sendable () -> [ScriptWidgetLibraryChoice]
+    private let recovery: @Sendable (ScriptWidgetLibraryChoice) throws -> ScriptWidgetLibrarySession
     private var attempted = false
     private var isDiscoveringRestoredPackages = false
     @Published private(set) var isBusy = false
@@ -188,8 +190,11 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
     @Published private(set) var choices: [ScriptWidgetLibraryChoice] = []
     @Published private(set) var message: String?
 
-    init(cacheOnOpen: Bool = true, factory: @escaping @Sendable () throws -> ScriptWidgetApplicationLibraryService = { try .live() }) {
+    init(cacheOnOpen: Bool = true, factory: @escaping @Sendable () throws -> ScriptWidgetApplicationLibraryService = { try .live() },
+         recoveryChoices: @escaping @Sendable () -> [ScriptWidgetLibraryChoice] = { ScriptWidgetApplicationLibraryService.nativeChoices() },
+         recovery: @escaping @Sendable (ScriptWidgetLibraryChoice) throws -> ScriptWidgetLibrarySession = { try ScriptWidgetApplicationLibraryService.reconnectLive($0) }) {
         self.factory = factory; self.cacheOnOpen = cacheOnOpen
+        self.recoveryChoices = recoveryChoices; self.recovery = recovery
     }
 
     func openIfNeeded() async {
@@ -200,12 +205,16 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
     func open() async {
         guard !isBusy else { return }
         attempted = true; isBusy = true; message = nil
+        ScriptWidgetDiagnosticLog.shared.record(.libraryOpen, outcome: .started)
         let factory = self.factory
         defer { isBusy = false }
         do {
             let session = try await Task.detached(priority: .userInitiated) { try factory().open() }.value
             publish(session)
-        } catch { report(error) }
+        } catch {
+            ScriptWidgetDiagnosticLog.shared.record(.libraryOpen, outcome: .failure, error: error)
+            report(error)
+        }
     }
 
     /// Poll only while a native application scene is active. Failed or partial
@@ -224,6 +233,7 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
                 publish(session)
             }
         } catch {
+            ScriptWidgetDiagnosticLog.shared.record(.restoredPackages, outcome: .failure, error: error)
             // Background discovery must not present transient download/lease
             // errors as a failed library switch. The next foreground scan retries.
         }
@@ -231,29 +241,51 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
 
     func loadChoices() async {
         let factory = self.factory
-        do { choices = try await Task.detached { try factory().choices() }.value }
-        catch { report(error) }
+        let recoveryChoices = self.recoveryChoices
+        choices = await Task.detached {
+            do { return try factory().choices() }
+            catch {
+                ScriptWidgetDiagnosticLog.shared.record(.libraryChoices, outcome: .failure, error: error)
+                return recoveryChoices().map { var choice = $0; choice.requiresRecovery = true; return choice }
+            }
+        }.value
+        ScriptWidgetDiagnosticLog.shared.record(.libraryChoices, outcome: .success, facts: .init(available: !choices.isEmpty))
     }
 
     func refresh() async {
         guard !isBusy else { return }
         isBusy = true; message = nil
+        ScriptWidgetDiagnosticLog.shared.record(.libraryRefresh, outcome: .started)
         defer { isBusy = false }
         let factory = self.factory
         do {
-            let session = try await Task.detached(priority: .userInitiated) { try factory().refresh() }.value
+            let session = try await Task.detached(priority: .userInitiated) { try ScriptWidgetDiagnosticLog.capture(.libraryRefresh) { try factory().refresh() } }.value
             publish(session)
+            ScriptWidgetDiagnosticLog.shared.record(.libraryRefresh, outcome: .success, facts: .init(iCloud: session.selection.profile.isUsingICloud))
         } catch { report(error) }
     }
 
-    func choose(_ choice: ScriptWidgetLibraryChoice) async -> Bool {
+    func choose(_ choice: ScriptWidgetLibraryChoice, reconnect: Bool = false) async -> Bool {
         guard !isBusy else { return false }
         isBusy = true; message = nil
+        ScriptWidgetDiagnosticLog.shared.record(.librarySelect, outcome: .started, facts: .init(iCloud: choice.isUsingICloud))
         defer { isBusy = false }
         let factory = self.factory
+        let recovery = self.recovery
         do {
-            let session = try await Task.detached(priority: .userInitiated) { try factory().select(choice) }.value
+            let session = try await Task.detached(priority: .userInitiated) {
+                try ScriptWidgetDiagnosticLog.capture(.librarySelect, facts: .init(iCloud: choice.isUsingICloud)) {
+                    if reconnect {
+                        let service: ScriptWidgetApplicationLibraryService?
+                        do { service = try factory() } catch { service = nil }
+                        if let service { return try service.reconnect(choice) }
+                        return try recovery(choice)
+                    }
+                    return try factory().select(choice)
+                }
+            }.value
             publish(session)
+            ScriptWidgetDiagnosticLog.shared.record(.librarySelect, outcome: .success, facts: .init(iCloud: choice.isUsingICloud))
             return true
         } catch { report(error); return false }
     }
@@ -266,6 +298,8 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
         isOffline = session.sourceManager == nil
         isReady = !isOffline
         message = nil
+        ScriptWidgetDiagnosticLog.shared.record(.libraryOpen, outcome: isOffline ? .offline : .success,
+            facts: .init(iCloud: session.selection.profile.isUsingICloud))
         if cacheOnOpen, let manager = session.sourceManager {
             Task.detached(priority: .utility) {
                 manager.precacheAllScripts()
@@ -283,6 +317,7 @@ final class ScriptWidgetLibraryLaunchModel: ObservableObject {
 struct ScriptWidgetLibrarySelectionView: View {
     @Environment(\.dismiss) private var dismiss
     @ObservedObject var model: ScriptWidgetLibraryLaunchModel
+    @State private var reconnecting: ScriptWidgetLibraryChoice?
 
     var body: some View {
         NavigationStack {
@@ -292,14 +327,19 @@ struct ScriptWidgetLibrarySelectionView: View {
                     Text("Close all widget editors and stop Web Studio before changing libraries.").font(.caption).foregroundStyle(.secondary)
                 }
                 Section("Widget Libraries") {
+                    if model.choices.isEmpty {
+                        Text("No storage is available. Check iCloud Drive or local storage, then try again.")
+                    }
                     ForEach(model.choices) { choice in
                         Button {
-                            Task { if await model.choose(choice) { dismiss() } }
+                            if choice.requiresRecovery || !model.isReady { reconnecting = choice }
+                            else { Task { if await model.choose(choice) { dismiss() } } }
                         } label: {
                             HStack(spacing: 12) {
                                 Image(systemName: choice.isUsingICloud ? "icloud" : "internaldrive")
                                 VStack(alignment: .leading, spacing: 4) {
                                     Text(choice.title)
+                                    if choice.requiresRecovery { Text("Reconnect Library").font(.caption).foregroundStyle(.secondary) }
                                     Text(choice.root.path).font(.caption).foregroundStyle(.secondary).lineLimit(2).multilineTextAlignment(.leading)
                                     if !choice.isAvailable { Text("Unavailable").font(.caption).foregroundStyle(.secondary) }
                                 }
@@ -309,21 +349,28 @@ struct ScriptWidgetLibrarySelectionView: View {
                                 }
                             }.frame(maxWidth: .infinity, alignment: .leading)
                         }
-                        .disabled(!choice.isAvailable || model.isBusy || choice.root.path == model.selectedRootPath)
+                        .disabled(!choice.isAvailable || model.isBusy || model.isReady && !choice.requiresRecovery && choice.root.path == model.selectedRootPath)
                     }
                 }
                 Section {
                     Button("Refresh Selected Library") { Task { await model.refresh() } }
-                        .disabled(model.isBusy || model.selectedRootPath == nil)
+                        .disabled(model.isBusy)
                     Text("After adding widgets in Files or iCloud Drive, refresh to make them available. Close editors and stop Web Studio first.")
                         .font(.caption).foregroundStyle(.secondary)
                 }
+                ScriptWidgetDiagnosticSettingsSection()
                 if let message = model.message { Section { Text(message).foregroundStyle(.red) } }
                 if model.isBusy { ProgressView("Opening library…") }
             }
             .navigationTitle("Widget Library")
             .toolbar { ToolbarItem(placement: .cancellationAction) { Button("Done") { dismiss() } } }
             .task { await model.loadChoices() }
+            .alert("Reconnect This Library?", isPresented: Binding(get: { reconnecting != nil }, set: { if !$0 { reconnecting = nil } }), presenting: reconnecting) { choice in
+                Button("Reconnect Library") { Task { if await model.choose(choice, reconnect: true) { dismiss() } } }
+                Button("Cancel", role: .cancel) {}
+            } message: { _ in
+                Text("Your files and previous records are kept. If recovery is needed, these files will open with separate records. Previous records will not be assigned automatically.")
+            }
         }
     }
 }
@@ -358,6 +405,8 @@ struct ScriptWidgetLibraryLaunchView<Content: View>: View {
                         .multilineTextAlignment(.center).foregroundStyle(.secondary)
                     Button("Try Again") { Task { await model.open() } }.buttonStyle(.borderedProminent)
                     Button("Choose Library") { showingLibraries = true }.buttonStyle(.bordered)
+                    ScriptWidgetDiagnosticExportButton().buttonStyle(.bordered)
+                    ScriptWidgetDiagnosticFeedbackButton().buttonStyle(.bordered)
                 }.padding(32).frame(maxWidth: 560)
             }
         }

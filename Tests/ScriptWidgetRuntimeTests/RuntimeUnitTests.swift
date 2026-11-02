@@ -6807,3 +6807,145 @@ final class TemplateCardLayoutTests: XCTestCase {
     }
 }
 #endif
+
+final class DiagnosticLogTests: XCTestCase {
+    func testGitHubDraftUsesBugFormFieldsAndOnlyVersionMetadata() throws {
+        let environment = ScriptWidgetDiagnosticLog.Environment(platform: .iOS, simulator: true,
+            appVersion: [27, 2, 1], appBuild: 27020, osVersion: [27, 0, 1])
+        let url = try XCTUnwrap(ScriptWidgetDiagnosticIssueDraft.url(environment: environment))
+        let components = try XCTUnwrap(URLComponents(url: url, resolvingAgainstBaseURL: false))
+        XCTAssertEqual(components.scheme, "https")
+        XCTAssertEqual(components.host, "github.com")
+        XCTAssertEqual(components.path, "/everettjf/scriptwidget/issues/new")
+        let fields = Dictionary(uniqueKeysWithValues: (components.queryItems ?? []).map { ($0.name, $0.value ?? "") })
+        XCTAssertEqual(Set(fields.keys), Set(["template", "versions", "diagnostics"]))
+        XCTAssertEqual(fields["template"], "bug_report.yml")
+        XCTAssertEqual(fields["versions"], "ScriptWidget 27.2.1 (27020); iOS 27.0.1 (Simulator)")
+        XCTAssertTrue(fields["diagnostics"]?.contains("public") == true)
+        XCTAssertLessThan(url.absoluteString.utf8.count, 2_000)
+        let unknown = ScriptWidgetDiagnosticLog.Environment(platform: .macOS, simulator: false,
+            appVersion: [], appBuild: nil, osVersion: [26, 1, 0])
+        XCTAssertEqual(ScriptWidgetDiagnosticIssueDraft.versions(environment: unknown),
+            "ScriptWidget unknown (unknown); macOS 26.1.0")
+    }
+
+    private var root: URL!
+    override func setUpWithError() throws {
+        root = FileManager.default.temporaryDirectory.appendingPathComponent("DiagnosticLogs-" + UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+    }
+    override func tearDownWithError() throws { try FileManager.default.removeItem(at: root) }
+    private func report(_ log: ScriptWidgetDiagnosticLog) throws -> ScriptWidgetDiagnosticLog.Report {
+        let decoder = JSONDecoder(); decoder.dateDecodingStrategy = .iso8601
+        return try decoder.decode(ScriptWidgetDiagnosticLog.Report.self, from: log.export())
+    }
+
+    func testPersistsLibraryFailureAcrossLoggerReconstructionWithoutExportingErrorPayloads() throws {
+        let secret = "SECRET-user-token-and-private-script-contents"
+        let error = NSError(domain: NSCocoaErrorDomain, code: 257, userInfo: [
+            NSLocalizedDescriptionKey: secret, NSFilePathErrorKey: "/Users/private/" + secret,
+            NSUnderlyingErrorKey: NSError(domain: secret, code: 1)])
+        let writer = ScriptWidgetDiagnosticLog(directory: root)
+        writer.record(.privateStoreOpen, outcome: .failure, error: error)
+        writer.record(.sourceIdentity, outcome: .failure, failure: .identityMismatch,
+            facts: .init(iCloud: true, expectedDevice: 42, actualDevice: 43, expectedInode: 99, actualInode: 99))
+        let reader = ScriptWidgetDiagnosticLog(directory: root)
+        let bytes = try reader.export()
+        let text = try XCTUnwrap(String(data: bytes, encoding: .utf8))
+        XCTAssertFalse(text.contains(secret)); XCTAssertFalse(text.contains("/Users/private"))
+        let events = try report(reader).events
+        let failure = try XCTUnwrap(events.first { $0.payload.stage == .privateStoreOpen })
+        XCTAssertEqual(failure.payload.failure, .cocoa); XCTAssertEqual(failure.payload.systemCode, 257)
+        let identity = try XCTUnwrap(events.first { $0.payload.stage == .sourceIdentity })
+        XCTAssertEqual(identity.payload.facts.expectedDevice, 42); XCTAssertEqual(identity.payload.facts.actualDevice, 43)
+        XCTAssertEqual(identity.payload.facts.expectedInode, identity.payload.facts.actualInode)
+    }
+
+    func testNativeErrorsUseFixedCodesAndUnknownErrorsNeverExportTheirDomain() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: root)
+        log.record(.profileIndexRead, outcome: .failure, error: ScriptWidgetStorageNamespaceError.invalidRegistry)
+        log.record(.privateStoreOpen, outcome: .failure, error: ScriptWidgetStorageFileError.invalidData)
+        log.record(.libraryOpen, outcome: .failure, error: NSError(domain: "SECRET-domain", code: 42))
+        let bytes = try log.export(), events = try report(log).events
+        XCTAssertFalse(String(decoding: bytes, as: UTF8.self).contains("SECRET"))
+        XCTAssertTrue(events.contains { $0.payload.failure == .invalidRegistry })
+        XCTAssertTrue(events.contains { $0.payload.failure == .fileInvalidData })
+        XCTAssertTrue(events.contains { $0.payload.failure == .unknown && $0.payload.systemCode == nil })
+    }
+
+    func testRotationIsBoundedAndKeepsRecentFailureAfterRelaunch() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: root, maximumBytes: 1_024, repeatInterval: 0)
+        for index in 0..<100 {
+            log.record(.sourceIdentity, outcome: .failure, failure: .identityMismatch, facts: .init(actualInode: UInt64(index)))
+        }
+        for name in ["current.jsonl", "previous.jsonl"] {
+            let attributes = try FileManager.default.attributesOfItem(atPath: root.appendingPathComponent(name).path)
+            XCTAssertLessThanOrEqual((attributes[.size] as? NSNumber)?.intValue ?? Int.max, 1_024)
+        }
+        let reopened = ScriptWidgetDiagnosticLog(directory: root, maximumBytes: 1_024)
+        let exported = try report(reopened)
+        XCTAssertTrue(exported.events.contains { $0.payload.facts.actualInode == 99 })
+        XCTAssertFalse(exported.events.contains { $0.payload.facts.actualInode == 0 })
+        XCTAssertEqual(exported.retentionBytes, 2_048)
+    }
+
+    func testRepeatedForegroundFailuresAreThrottledButNewFailuresAreKept() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: root)
+        let start = Date(timeIntervalSince1970: 1_800_000_000)
+        for index in 0..<20 {
+            log.record(.privateStoreOpen, outcome: .failure, failure: .fileInvalidData, at: start.addingTimeInterval(Double(index)))
+        }
+        log.record(.privateStoreOpen, outcome: .failure, failure: .fileInvalidData, at: start.addingTimeInterval(61))
+        log.record(.privateStoreOpen, outcome: .failure, failure: .fileUnavailable, at: start.addingTimeInterval(62))
+        let events = try report(log).events.filter { $0.payload.stage == .privateStoreOpen }
+        XCTAssertEqual(events.count, 3)
+    }
+
+    func testUnavailableLogStorageStillExportsBoundedMemoryEvents() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: nil, repeatInterval: 0)
+        for _ in 0..<200 { log.record(.libraryOpen, outcome: .failure, failure: .storageUnavailable) }
+        let exported = try report(log)
+        XCTAssertLessThanOrEqual(exported.events.count, 129)
+        XCTAssertTrue(exported.events.contains { $0.payload.failure == .storageUnavailable })
+        XCTAssertTrue(exported.events.contains { $0.payload.stage == .logRead })
+    }
+
+    func testLinkedOrOversizedLogsNeverExportOrMutateTheirTargets() throws {
+        let outside = root.appendingPathComponent("private-file")
+        let secret = Data("SECRET-file-contents".utf8)
+        try secret.write(to: outside)
+        let logs = root.appendingPathComponent("logs")
+        try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+        let current = logs.appendingPathComponent("current.jsonl")
+        try FileManager.default.createSymbolicLink(at: current, withDestinationURL: outside)
+        let log = ScriptWidgetDiagnosticLog(directory: logs)
+        log.record(.libraryOpen, outcome: .failure, failure: .storageUnavailable)
+        XCTAssertFalse(String(decoding: try log.export(), as: UTF8.self).contains("SECRET-file"))
+        XCTAssertEqual(try Data(contentsOf: outside), secret)
+        try FileManager.default.removeItem(at: current)
+        try Data(repeating: 65, count: ScriptWidgetDiagnosticLog.maximumFileBytes + 1).write(to: current)
+        XCTAssertTrue(try report(log).events.contains { $0.payload.stage == .logRead })
+    }
+
+    func testMalformedAndForeignLogLinesAreNotCopiedIntoReport() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: root)
+        log.record(.libraryOpen, outcome: .success)
+        let handle = try FileHandle(forWritingTo: root.appendingPathComponent("current.jsonl"))
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data("\n{\"secret\":\"SECRET-injected-line\"}\npartial SECRET-line".utf8))
+        try handle.close()
+        let exported = try log.export()
+        XCTAssertFalse(String(decoding: exported, as: UTF8.self).contains("SECRET"))
+        XCTAssertTrue(try report(log).events.contains { $0.payload.stage == .libraryOpen && $0.payload.outcome == .success })
+    }
+
+    func testConcurrentRecordingProducesCompleteEvents() throws {
+        let log = ScriptWidgetDiagnosticLog(directory: root, repeatInterval: 0)
+        DispatchQueue.concurrentPerform(iterations: 100) { index in
+            log.record(.sourceIdentity, outcome: .failure, failure: .identityMismatch, facts: .init(actualInode: UInt64(index)))
+        }
+        let events = try report(log).events.filter { $0.payload.stage == .sourceIdentity }
+        XCTAssertEqual(events.count, 100)
+        XCTAssertEqual(Set(events.compactMap { $0.payload.facts.actualInode }).count, 100)
+    }
+}

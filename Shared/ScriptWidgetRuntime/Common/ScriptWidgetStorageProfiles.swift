@@ -47,6 +47,7 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     }
     static let indexKey = "ScriptWidgetStorage.LibraryProfiles.v1"
     private static let journalKey = "ScriptWidgetStorage.LibraryInventory.v1"
+    fileprivate static let recoveryKey = "ScriptWidgetStorage.LibraryRecovery.v1"
     static let maximumProfiles = 16
     private static let stateLock = "ScriptWidgetStorage.LibraryProfiles.v1.state"
     let container: URL
@@ -56,7 +57,7 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     init(container: URL, legacy: UserDefaults) throws {
         self.container = container
         self.legacy = legacy
-        files = try ScriptWidgetStorageFiles(container: container)
+        files = try ScriptWidgetDiagnosticLog.capture(.privateStoreOpen) { try ScriptWidgetStorageFiles(container: container) }
     }
 
     private static func uuid(_ value: String) -> Bool { UUID(uuidString: value)?.uuidString.lowercased() == value }
@@ -77,7 +78,14 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     }
 
     private func load() throws -> ScriptWidgetStorageProfileIndex? {
-        guard let bytes = try files.readMetadata(key: Self.indexKey) else { return nil }
+        try ScriptWidgetDiagnosticLog.capture(.profileIndexRead) { try readProfileIndex() }
+    }
+
+    private func readProfileIndex() throws -> ScriptWidgetStorageProfileIndex? {
+        guard let bytes = try files.readMetadata(key: Self.indexKey) else {
+            guard try files.readMetadata(key: Self.recoveryKey) == nil else { throw ScriptWidgetStorageNamespaceError.inventoryRequired }
+            return nil
+        }
         let state = try Self.decode(ScriptWidgetStorageProfileIndex.self, from: bytes)
         guard state.formatVersion == 1, ["preparing", "ready"].contains(state.phase), Self.uuid(state.activeID), Self.uuid(state.activationID),
               (1...Self.maximumProfiles).contains(state.profiles.count),
@@ -177,8 +185,11 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     }
 
     private func backend(_ profile: ScriptWidgetStorageLibraryProfile) throws -> ScriptWidgetFileStorageBackend {
-        let scoped = try files.profileFiles(id: profile.id, expectedStoreReceipt: profile.storageReceipt)
-        return ScriptWidgetFileStorageBackend(files: scoped, legacy: legacy, includesLegacy: profile.includesLegacy)
+        let scoped = try ScriptWidgetDiagnosticLog.capture(.profileStoreOpen) {
+            try files.profileFiles(id: profile.id, expectedStoreReceipt: profile.storageReceipt)
+        }
+        let recovered = try scoped.readMetadata(key: Self.recoveryKey) != nil
+        return ScriptWidgetFileStorageBackend(files: scoped, legacy: legacy, includesLegacy: profile.includesLegacy && !recovered)
     }
 
     private static func source(_ root: URL) throws -> (String, ScriptWidgetStoragePublicationReceipt) {
@@ -207,7 +218,13 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
             let source = root.pathComponents, target = cache.pathComponents
             guard !source.starts(with: target), !target.starts(with: source) else { throw ScriptWidgetStorageNamespaceError.invalidName }
         } else {
-            guard try Self.source(root).1 == profile.receipt else { throw ScriptWidgetStorageNamespaceError.unavailable }
+            let actual = try ScriptWidgetDiagnosticLog.capture(.sourceReceipt) { try Self.source(root).1 }
+            guard actual == profile.receipt else {
+                ScriptWidgetDiagnosticLog.shared.record(.sourceIdentity, outcome: .failure, failure: .identityMismatch,
+                    facts: .init(iCloud: profile.isUsingICloud, expectedDevice: profile.receipt.device, actualDevice: actual.device,
+                        expectedInode: profile.receipt.inode, actualInode: actual.inode))
+                throw ScriptWidgetStorageNamespaceError.unavailable
+            }
         }
         let context = try ScriptWidgetPackageStorageContext(libraryRoot: cacheRoot ?? root, container: container, defaults: backend(profile), validateActivation: {
             try self.requireActivation(profileID: profile.id, activationID: activation, ready: true)
@@ -239,41 +256,65 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
     /// locks, which keeps the context-validation lock order acyclic.
     @discardableResult
     func activate(root: URL, isUsingICloud: Bool, allowSwitch: Bool = false,
+                  recovering: Bool = false,
                   automaticCandidates: [String: ScriptWidgetStoragePublicationReceipt]? = nil,
                   checkpoint: (String) throws -> Void = { _ in }) throws -> ScriptWidgetPackageStorageContext {
         guard let result = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: "ScriptWidgetStorage.LibraryProfiles.v1.worker", operation: {
-            Result { try self.performActivation(root: root, isUsingICloud: isUsingICloud, allowSwitch: allowSwitch, automaticCandidates: automaticCandidates, checkpoint: checkpoint) }
+            Result {
+                try ScriptWidgetDiagnosticLog.capture(.activation, facts: .init(iCloud: isUsingICloud)) {
+                    try self.performActivation(root: root, isUsingICloud: isUsingICloud, allowSwitch: allowSwitch, recovering: recovering, automaticCandidates: automaticCandidates, checkpoint: checkpoint)
+                }
+            }
         }) else { throw ScriptWidgetStorageNamespaceError.unavailable }
         return try result.get()
     }
 
     private func performActivation(root: URL, isUsingICloud: Bool, allowSwitch: Bool,
+                                   recovering: Bool = false,
                                    automaticCandidates: [String: ScriptWidgetStoragePublicationReceipt]? = nil,
                                    checkpoint: (String) throws -> Void) throws -> ScriptWidgetPackageStorageContext {
         let descriptor = try Self.source(root)
         let (profile, activation): (ScriptWidgetStorageLibraryProfile, String) = try coordinated {
-            var state = try load()
-            let match = state?.profiles.first { $0.path == descriptor.0 && $0.receipt == descriptor.1 }
+            var state: ScriptWidgetStorageProfileIndex?
+            do { state = try load() }
+            catch {
+                guard recovering else { throw error }
+                // The recovery fence is durable before archiving the index.
+                // A crash here cannot re-enable legacy writers or auto-migrate.
+                try files.writeMetadata(key: Self.recoveryKey, data: Data("reconnecting".utf8))
+                try files.preserveMetadata(key: Self.indexKey)
+                state = nil
+            }
+            let previous = state?.profiles.first { $0.path == descriptor.0 && $0.receipt == descriptor.1 }
+            let match = recovering ? nil : previous
             if let state, state.activeID != match?.id && !allowSwitch { throw ScriptWidgetStorageNamespaceError.conflict }
             let profile: ScriptWidgetStorageLibraryProfile
             if let match {
                 guard match.isUsingICloud == isUsingICloud else { throw ScriptWidgetStorageNamespaceError.conflict }
                 profile = match
             } else {
-                guard (state?.profiles.count ?? 0) < Self.maximumProfiles else { throw ScriptWidgetStorageNamespaceError.limitExceeded }
+                guard previous != nil || (state?.profiles.count ?? 0) < Self.maximumProfiles else { throw ScriptWidgetStorageNamespaceError.limitExceeded }
                 let id = UUID().uuidString.lowercased(), scoped = try files.profileFiles(id: id)
+                if recovering { try scoped.writeMetadata(key: Self.recoveryKey, data: Data("independent records".utf8)) }
                 profile = .init(id: id, path: descriptor.0, receipt: descriptor.1, storageReceipt: scoped.storageReceipt,
-                    isUsingICloud: isUsingICloud, includesLegacy: state == nil)
+                    isUsingICloud: isUsingICloud, includesLegacy: previous?.includesLegacy ?? (state == nil))
             }
             let activation = state?.phase == "preparing" && state?.activeID == profile.id ? state!.activationID : UUID().uuidString.lowercased()
             if state == nil { state = .init(formatVersion: 1, phase: "preparing", activeID: profile.id, activationID: activation, profiles: [profile]) }
             else {
-                if match == nil { state!.profiles.append(profile) }
+                if let previous, recovering, let index = state!.profiles.firstIndex(where: { $0.id == previous.id }) {
+                    // Keep the old profile/store recoverable even when the
+                    // source receipt itself is unchanged but its private store
+                    // is damaged. Do not silently inherit that owner's records.
+                    try files.writeMetadata(key: "ScriptWidgetStorage.PreservedProfiles." + UUID().uuidString.lowercased(), data: JSONEncoder().encode(state!))
+                    state!.profiles[index] = profile
+                } else if match == nil { state!.profiles.append(profile) }
                 state!.phase = "preparing"; state!.activeID = profile.id; state!.activationID = activation
             }
             try save(state!)
             return (profile, activation)
         }
+        ScriptWidgetDiagnosticLog.shared.record(.preparing, outcome: .success, facts: .init(iCloud: isUsingICloud))
         try checkpoint("preparing")
         let store = try backend(profile)
         let context = try ScriptWidgetPackageStorageContext(libraryRoot: URL(fileURLWithPath: profile.path), container: container, defaults: store, expectedLibraryReceipt: profile.receipt)
@@ -290,6 +331,7 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
                 inventoryIsComplete: inventory.isComplete, plans: [])
             try store.files.writeMetadata(key: Self.journalKey, data: JSONEncoder().encode(journal))
         }
+        ScriptWidgetDiagnosticLog.shared.record(.inventory, outcome: .success, facts: .init(iCloud: isUsingICloud))
         try checkpoint("inventory")
         _ = try ScriptWidgetStorageNamespaces.bootstrap(existingNames: journal.original.map(\.name), inventoryIsComplete: journal.inventoryIsComplete,
             container: container, defaults: store)
@@ -317,6 +359,7 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
         }
         try validate(journal)
         try store.files.writeMetadata(key: Self.journalKey, data: JSONEncoder().encode(journal))
+        ScriptWidgetDiagnosticLog.shared.record(.planned, outcome: .success, facts: .init(iCloud: isUsingICloud))
         try checkpoint("planned")
         for plan in journal.plans {
             try ScriptWidgetStorageNamespaces.adoptInventoriedSource(plan, location: context.locationIdentifier, container: container, defaults: store) {
@@ -334,6 +377,7 @@ final class ScriptWidgetStorageProfiles: @unchecked Sendable {
             }
             state.phase = "ready"; try save(state)
         }
+        ScriptWidgetDiagnosticLog.shared.record(.ready, outcome: .success, facts: .init(iCloud: isUsingICloud))
         try checkpoint("ready")
         return try currentContext()
     }
@@ -484,10 +528,10 @@ struct ScriptWidgetLibrarySession: Sendable {
          prepareICloudAccess: () -> Void = ScriptWidgetICloudContainerAccess.prepare) throws {
         let selected = try profiles.readySelection()
         if selected.profile.isUsingICloud { prepareICloudAccess() }
-        let cache = try profiles.widgetCacheRoot()
-        let cached = try profiles.currentContext(cacheRoot: cache)
+        let cache = try ScriptWidgetDiagnosticLog.capture(.cacheOpen) { try profiles.widgetCacheRoot() }
+        let cached = try ScriptWidgetDiagnosticLog.capture(.cacheOpen) { try profiles.currentContext(cacheRoot: cache) }
         let source: ScriptWidgetPackageStorageContext?
-        do { source = try profiles.currentContext() }
+        do { source = try ScriptWidgetDiagnosticLog.capture(.sourceOpen) { try profiles.currentContext() } }
         catch {
             let directory = URL(fileURLWithPath: selected.profile.path)
             guard !ScriptWidgetMetadataFile.exists(directory), !ScriptWidgetMetadataFile.isLink(directory) else { throw error }
@@ -709,6 +753,7 @@ struct ScriptWidgetLibraryChoice: Identifiable, Equatable, Sendable {
     let isUsingICloud: Bool
     let title: String
     let isAvailable: Bool
+    var requiresRecovery = false
 }
 
 /// Application-only entry point. Extensions use ready sessions and cannot call
@@ -722,18 +767,60 @@ struct ScriptWidgetApplicationLibraryService: Sendable {
 
     static func live() throws -> Self {
         guard let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget") else {
+            ScriptWidgetDiagnosticLog.shared.record(.appGroupAccess, outcome: .failure, failure: .storageUnavailable, facts: .init(available: false))
             throw ScriptWidgetLibraryOpeningError.storageUnavailable
         }
+        ScriptWidgetDiagnosticLog.shared.record(.appGroupAccess, outcome: .success, facts: .init(available: true))
         let profiles = try ScriptWidgetStorageProfiles(container: container, legacy: ScriptWidgetStorageProfiles.liveLegacyPreferences)
+        let alternatives = nativeChoices()
+        return Self(profiles: profiles, initialRoot: alternatives.first?.root,
+                    initialIsUsingICloud: alternatives.first?.isUsingICloud ?? false, alternatives: alternatives)
+    }
+
+    /// Discovery is independent of the private registry so an unreadable store
+    /// cannot hide the native locations needed to recover it.
+    static func nativeChoices() -> [ScriptWidgetLibraryChoice] {
         var alternatives: [ScriptWidgetLibraryChoice] = []
-        if let root = ScriptManager.getICloudRootDirectoryURL() {
+        let cloudRoot = ScriptManager.getICloudRootDirectoryURL()
+        ScriptWidgetDiagnosticLog.shared.record(.iCloudAccess, outcome: cloudRoot == nil ? .offline : .success,
+            facts: .init(iCloud: true, available: cloudRoot != nil))
+        if let root = cloudRoot {
             alternatives.append(.init(id: "icloud", root: root.appendingPathComponent("Scripts"), isUsingICloud: true, title: "iCloud Drive", isAvailable: true))
         }
         if let root = ScriptManager.getSandboxRootDirectoryURL() {
             alternatives.append(.init(id: "local", root: root.appendingPathComponent("Scripts"), isUsingICloud: false, title: "On This Device", isAvailable: true))
         }
-        return Self(profiles: profiles, initialRoot: alternatives.first?.root,
-                    initialIsUsingICloud: alternatives.first?.isUsingICloud ?? false, alternatives: alternatives)
+        return alternatives
+    }
+
+    static func reconnectLive(_ choice: ScriptWidgetLibraryChoice) throws -> ScriptWidgetLibrarySession {
+        try ScriptWidgetEditorPresence.withoutEditors {
+            guard nativeChoices().contains(where: { $0.id == choice.id && $0.root == choice.root && $0.isUsingICloud == choice.isUsingICloud }),
+                  let container = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: "group.everettjf.scriptwidget") else {
+                throw ScriptWidgetLibraryOpeningError.changedChoice
+            }
+            do { _ = try ScriptWidgetStorageProfiles(container: container, legacy: ScriptWidgetStorageProfiles.liveLegacyPreferences) }
+            catch {
+                try preserveDamagedPrivateStore(container: container)
+            }
+            return try live().reconnect(choice)
+        }
+    }
+
+    static func preserveDamagedPrivateStore(container: URL) throws {
+        guard let result = ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: "ScriptWidgetStorage.LibraryProfiles.v1.worker", operation: {
+            ScriptWidgetStorageLock.withExclusiveAccess(container: container, namespace: "ScriptWidgetStorage.LibraryProfiles.v1.state", operation: {
+                Result {
+                    // Recheck after acquiring both fences; another confirmed
+                    // recovery may already have repaired the private store.
+                    if (try? ScriptWidgetStorageFiles(container: container)) != nil { return }
+                    try ScriptWidgetStorageFiles.preserveDamagedStore(container: container)
+                    let fresh = try ScriptWidgetStorageFiles(container: container)
+                    try fresh.writeMetadata(key: ScriptWidgetStorageProfiles.recoveryKey, data: Data("reconnecting".utf8))
+                }
+            })
+        }), let result else { throw ScriptWidgetStorageNamespaceError.unavailable }
+        try result.get()
     }
 
     func open() throws -> ScriptWidgetLibrarySession {
@@ -781,9 +868,21 @@ struct ScriptWidgetApplicationLibraryService: Sendable {
 
     func choices() throws -> [ScriptWidgetLibraryChoice] {
         var result: [ScriptWidgetLibraryChoice] = [], paths = Set<String>()
-        for profile in try profiles.profiles() {
+        let stored: [ScriptWidgetStorageLibraryProfile]
+        do { stored = try profiles.profiles() }
+        catch { return alternatives.map { var choice = $0; choice.requiresRecovery = true; return choice } }
+        let activeID = try? profiles.selectedProfile()?.id
+        let ordered = stored.filter { $0.id == activeID } + stored.reversed().filter { $0.id != activeID }
+        for profile in ordered {
             let root = URL(fileURLWithPath: profile.path)
             let actual = try? ScriptWidgetPackageFiles.directoryReceipt(root: root.deletingLastPathComponent(), relative: root.lastPathComponent)
+            if actual != profile.receipt, stored.contains(where: { $0.path == profile.path && $0.receipt == actual }) { continue }
+            if actual != profile.receipt, let native = alternatives.first(where: { $0.root.path == root.path }) {
+                var choice = native; choice.requiresRecovery = true
+                if paths.insert(root.path).inserted { result.append(choice) }
+                continue
+            }
+            guard !paths.contains(root.path) else { continue }
             result.append(.init(id: profile.id, root: root, isUsingICloud: profile.isUsingICloud,
                 title: profile.isUsingICloud ? "iCloud Drive" : "On This Device", isAvailable: actual == profile.receipt))
             paths.insert(root.path)
@@ -796,6 +895,7 @@ struct ScriptWidgetApplicationLibraryService: Sendable {
     /// preserves owners whose bound directories have not changed.
     func refresh() throws -> ScriptWidgetLibrarySession {
         try ScriptWidgetEditorPresence.withoutEditors {
+            guard (try? profiles.readySelection()) != nil else { return try open() }
             let selected = try profiles.readySelection()
             return try ScriptWidgetLibrarySession.activate(profiles: profiles,
                 root: URL(fileURLWithPath: selected.profile.path), isUsingICloud: selected.profile.isUsingICloud)
@@ -804,16 +904,34 @@ struct ScriptWidgetApplicationLibraryService: Sendable {
 
     func select(_ choice: ScriptWidgetLibraryChoice) throws -> ScriptWidgetLibrarySession {
         try ScriptWidgetEditorPresence.withoutEditors {
-            guard let current = try choices().first(where: { $0.id == choice.id }), current == choice, current.isAvailable else {
+            guard let current = try choices().first(where: { $0.id == choice.id }), current == choice, current.isAvailable, !current.requiresRecovery else {
                 throw ScriptWidgetLibraryOpeningError.changedChoice
             }
-            if try profiles.selectedProfile()?.path == choice.root.path,
+            if try profiles.selectedProfile()?.id == choice.id,
                (try? profiles.readySelection()) != nil { return try ScriptWidgetLibrarySession(profiles: profiles) }
             // Only a native, explicitly chosen first-time location may be made.
             if alternatives.contains(choice), !ScriptWidgetMetadataFile.exists(choice.root) {
                 guard ScriptManager.ensureLocalDirectory(choice.root) else { throw ScriptWidgetLibraryOpeningError.storageUnavailable }
             }
             return try ScriptWidgetLibrarySession.activate(profiles: profiles, root: choice.root, isUsingICloud: choice.isUsingICloud, allowSwitch: true)
+        }
+    }
+
+    /// Explicit application action only. A changed source receives independent
+    /// owners and records; preserved stores are never assigned by matching names.
+    func reconnect(_ choice: ScriptWidgetLibraryChoice) throws -> ScriptWidgetLibrarySession {
+        guard let current = try choices().first(where: { $0.id == choice.id && $0.root == choice.root && $0.isUsingICloud == choice.isUsingICloud }), current.isAvailable else {
+            throw ScriptWidgetLibraryOpeningError.changedChoice
+        }
+        if !current.requiresRecovery, let session = try? select(current) { return session }
+        return try ScriptWidgetEditorPresence.withoutEditors {
+            if !ScriptWidgetMetadataFile.exists(current.root) {
+                guard alternatives.contains(where: { $0.root == current.root }), ScriptManager.ensureLocalDirectory(current.root) else {
+                    throw ScriptWidgetLibraryOpeningError.storageUnavailable
+                }
+            }
+            _ = try profiles.activate(root: current.root, isUsingICloud: current.isUsingICloud, allowSwitch: true, recovering: true)
+            return try ScriptWidgetLibrarySession(profiles: profiles)
         }
     }
 }
@@ -913,6 +1031,41 @@ enum ScriptWidgetLiveActivityBindingError: LocalizedError, Equatable {
         case .differentLibrary:return "This Live Activity belongs to another widget library. End it or switch back to that library."
         case .installationRetired:return "This widget installation was removed. End this Live Activity and start a new one from the installed widget."
         case .installationUnavailable:return "This widget installation is unavailable. Restore its files or end and restart the Live Activity."
+        }
+    }
+}
+
+// Only fixed native failure identifiers cross the diagnostic boundary. Error
+// descriptions and NSError.userInfo may contain paths, source or credentials.
+extension ScriptWidgetStorageFileError: ScriptWidgetDiagnosticFailureProviding {
+    var diagnosticFailure: ScriptWidgetDiagnosticLog.Failure {
+        switch self {
+        case .unavailable: .fileUnavailable
+        case .invalidData: .fileInvalidData
+        case .limitExceeded: .fileLimitExceeded
+        }
+    }
+}
+extension ScriptWidgetStorageNamespaceError: ScriptWidgetDiagnosticFailureProviding {
+    var diagnosticFailure: ScriptWidgetDiagnosticLog.Failure {
+        switch self {
+        case .unavailable: .namespaceUnavailable
+        case .invalidRegistry: .invalidRegistry
+        case .invalidName: .invalidName
+        case .inventoryRequired: .inventoryRequired
+        case .unregistered: .unregistered
+        case .reviewRequired: .reviewRequired
+        case .conflict: .conflict
+        case .limitExceeded: .limitExceeded
+        }
+    }
+}
+extension ScriptWidgetLibraryOpeningError: ScriptWidgetDiagnosticFailureProviding {
+    var diagnosticFailure: ScriptWidgetDiagnosticLog.Failure {
+        switch self {
+        case .editorsOpen: .editorsOpen
+        case .storageUnavailable: .storageUnavailable
+        case .changedChoice: .changedChoice
         }
     }
 }

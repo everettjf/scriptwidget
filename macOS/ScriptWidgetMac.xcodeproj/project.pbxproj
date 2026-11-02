@@ -215,9 +215,11 @@
 		D1995CFE29536BC700D1BD94 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF729536BC700D1BD94 /* ScriptManager.swift */; };
 		3B4D0329D9954989AE1517F0 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F069B9C7ABA4F53AEB8B68E /* ScriptWidgetStorageUpgrade.swift */; };
 		CAE9C8DB8B87493D8C5823FB /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B9967B5EA5749A78A6C8AFC /* ScriptWidgetStorageProfiles.swift */; };
+		8812A685E9DF4893A08183B7 /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5B9B37508247B18AEC7897 /* ScriptWidgetDiagnosticLog.swift */; };
 		D1995CFF29536BC700D1BD94 /* ScriptManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1995CF729536BC700D1BD94 /* ScriptManager.swift */; };
 		61D9558F2E1A45179F504246 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F069B9C7ABA4F53AEB8B68E /* ScriptWidgetStorageUpgrade.swift */; };
 		174EC54BE3F04A7B9A471C75 /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2B9967B5EA5749A78A6C8AFC /* ScriptWidgetStorageProfiles.swift */; };
+		9F856EC9177B47EABEB2EE5A /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A5B9B37508247B18AEC7897 /* ScriptWidgetDiagnosticLog.swift */; };
 		D1995D0629536BF000D1BD94 /* Script.bundle in Resources */ = {isa = PBXBuildFile; fileRef = D1995D0529536BF000D1BD94 /* Script.bundle */; };
 		D1A0000000E0000000001001 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
 		D1A0000000E0000000001002 /* ScriptMetadata.swift in Sources */ = {isa = PBXBuildFile; fileRef = D1A0000000E0000000001000 /* ScriptMetadata.swift */; };
@@ -290,6 +292,7 @@
 		466E709555B74AAD834094B4 /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5C35C0CEF344629F7D4B6B /* ScriptWidgetCloudJSONView.swift */; };
 		2BD5540F422248D1872E98DD /* ScriptWidgetSystemAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2FB7CA52FDC44FCCB4833C76 /* ScriptWidgetSystemAccessView.swift */; };
 		2F12113B8920446580D6B39E /* ScriptWidgetStorageUpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF563C68CB1F4834876CF479 /* ScriptWidgetStorageUpgradeView.swift */; };
+		2506F3576A8E414CBF74D9C0 /* ScriptWidgetDiagnosticExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3383A2C35A540CDA387179A /* ScriptWidgetDiagnosticExportView.swift */; };
 		36FDE008D662491489635EA7 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D98FE968018D484D8FBCDC17 /* ScriptWidgetRecordStore.swift */; };
 		3D87692664A44C799D7182CA /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8A9469B308A04CF7BC84E549 /* ScriptWidgetCloudJSON.swift */; };
 		B75FFB025CF34E8FB05FCA34 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D4AE7B65A246F08085C382 /* ScriptWidgetStorageNamespaces.swift */; };
@@ -457,6 +460,7 @@
 		D1995CF729536BC700D1BD94 /* ScriptManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		4F069B9C7ABA4F53AEB8B68E /* ScriptWidgetStorageUpgrade.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgrade.swift; sourceTree = "<group>"; };
 		2B9967B5EA5749A78A6C8AFC /* ScriptWidgetStorageProfiles.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageProfiles.swift; sourceTree = "<group>"; };
+		5A5B9B37508247B18AEC7897 /* ScriptWidgetDiagnosticLog.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticLog.swift; sourceTree = "<group>"; };
 		D1995D0529536BF000D1BD94 /* Script.bundle */ = {isa = PBXFileReference; lastKnownFileType = "wrapper.plug-in"; path = Script.bundle; sourceTree = "<group>"; };
 		D1A0000000E0000000001000 /* ScriptMetadata.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
 		F05227BD2AD1D6DE0014BE09 /* ScriptWidgetElementTagToggle.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagToggle.swift; sourceTree = "<group>"; };
@@ -519,6 +523,7 @@
 		FF5C35C0CEF344629F7D4B6B /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
 		2FB7CA52FDC44FCCB4833C76 /* ScriptWidgetSystemAccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSystemAccessView.swift; sourceTree = "<group>"; };
 		FF563C68CB1F4834876CF479 /* ScriptWidgetStorageUpgradeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgradeView.swift; sourceTree = "<group>"; };
+		D3383A2C35A540CDA387179A /* ScriptWidgetDiagnosticExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticExportView.swift; sourceTree = "<group>"; };
 		B9D4AE7B65A246F08085C382 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -906,11 +911,13 @@
 				FF5C35C0CEF344629F7D4B6B /* ScriptWidgetCloudJSONView.swift */,
 				2FB7CA52FDC44FCCB4833C76 /* ScriptWidgetSystemAccessView.swift */,
 				FF563C68CB1F4834876CF479 /* ScriptWidgetStorageUpgradeView.swift */,
+				D3383A2C35A540CDA387179A /* ScriptWidgetDiagnosticExportView.swift */,
 				D1995CF629536BC700D1BD94 /* ScriptModel.swift */,
 				D1A0000000E0000000001000 /* ScriptMetadata.swift */,
 				D1995CF729536BC700D1BD94 /* ScriptManager.swift */,
 				4F069B9C7ABA4F53AEB8B68E /* ScriptWidgetStorageUpgrade.swift */,
 				2B9967B5EA5749A78A6C8AFC /* ScriptWidgetStorageProfiles.swift */,
+				5A5B9B37508247B18AEC7897 /* ScriptWidgetDiagnosticLog.swift */,
 			);
 			name = Common;
 			path = ../Shared/ScriptWidgetRuntime/Common;
@@ -1358,6 +1365,7 @@
 				D1995CFE29536BC700D1BD94 /* ScriptManager.swift in Sources */,
 				3B4D0329D9954989AE1517F0 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				CAE9C8DB8B87493D8C5823FB /* ScriptWidgetStorageProfiles.swift in Sources */,
+				8812A685E9DF4893A08183B7 /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				D1995CD029536BB800D1BD94 /* ScriptWidgetElementTagStack.swift in Sources */,
 				D1995CA829536BB800D1BD94 /* ScriptWidgetElementView.swift in Sources */,
 				D1995CE829536BB800D1BD94 /* ScriptWidgetRuntimePromise.swift in Sources */,
@@ -1473,6 +1481,7 @@
 				466E709555B74AAD834094B4 /* ScriptWidgetCloudJSONView.swift in Sources */,
 				2BD5540F422248D1872E98DD /* ScriptWidgetSystemAccessView.swift in Sources */,
 				2F12113B8920446580D6B39E /* ScriptWidgetStorageUpgradeView.swift in Sources */,
+				2506F3576A8E414CBF74D9C0 /* ScriptWidgetDiagnosticExportView.swift in Sources */,
 				65BB9B8C3E605B9CDA324E9C /* ScriptWidgetElementTagExtras.swift in Sources */,
 				F29118C02791DC5300B860B0 /* WidgetRowView.swift in Sources */,
 				F29118D42792B32900B860B0 /* EditorWebSevice.swift in Sources */,
@@ -1566,6 +1575,7 @@
 				D1995CFF29536BC700D1BD94 /* ScriptManager.swift in Sources */,
 				61D9558F2E1A45179F504246 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				174EC54BE3F04A7B9A471C75 /* ScriptWidgetStorageProfiles.swift in Sources */,
+				9F856EC9177B47EABEB2EE5A /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				D1995C9B29536BB800D1BD94 /* ScriptWidgetElementGradient.swift in Sources */,
 				D1995CB529536BB800D1BD94 /* ScriptWidgetAttributeFrameModifier.swift in Sources */,
 				D1995CCF29536BB800D1BD94 /* ScriptWidgetElementTagLink.swift in Sources */,
@@ -1766,7 +1776,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1786,7 +1796,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
 				REGISTER_APP_GROUPS = YES;
@@ -1804,7 +1814,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1823,7 +1833,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget;
 				PRODUCT_NAME = ScriptWidget;
 				REGISTER_APP_GROUPS = YES;
@@ -1840,7 +1850,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1856,7 +1866,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1874,7 +1884,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27019;
+				CURRENT_PROJECT_VERSION = 27026;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1890,7 +1900,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 26.0;
-				MARKETING_VERSION = 27.2;
+				MARKETING_VERSION = 27.2.5;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.macwidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
