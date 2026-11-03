@@ -8,6 +8,7 @@ cd "$ROOT"
 node Scripts/validate-release.mjs
 node Scripts/sync-gallery-templates.mjs
 node --test Scripts/tests/gallery-sync.test.mjs
+node --test Scripts/tests/hydration-cloud.test.mjs
 node Scripts/validate-doc-links.mjs
 (cd Editor/editorfe && npm test && npm run release)
 (cd Web/preview-engine && npm test)

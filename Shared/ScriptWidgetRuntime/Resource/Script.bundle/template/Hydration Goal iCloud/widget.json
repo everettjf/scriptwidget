@@ -1,0 +1,33 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.hydration-goal-icloud",
+  "name": "Hydration Goal iCloud",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.5",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait",
+    "accessoryCircular",
+    "accessoryRectangular",
+    "accessoryInline"
+  ],
+  "permissions": ["icloud"],
+  "networkDomains": [],
+  "description": "An opt-in iCloud hydration example with timestamped taps and additive offline merging. Limited by the iCloud JSON revision budget.",
+  "category": "health",
+  "tags": ["water", "hydration", "icloud"],
+  "icon": "drop.fill",
+  "actions": [
+    {"id": "addGlass", "title": "Record a glass", "systemImage": "drop.fill", "function": "addGlass"},
+    {"id": "syncRecords", "title": "Sync hydration records", "systemImage": "arrow.triangle.2.circlepath", "function": "syncRecords"}
+  ],
+  "controls": [
+    {"id": "addGlass", "type": "button", "title": "Record a glass", "systemImage": "drop.fill", "actionID": "addGlass"},
+    {"id": "syncRecords", "type": "button", "title": "Sync hydration records", "systemImage": "arrow.triangle.2.circlepath", "actionID": "syncRecords"}
+  ]
+}

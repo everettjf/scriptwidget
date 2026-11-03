@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T15:10:52.188Z",
+  "generatedAt": "2026-11-03T06:35:37.110Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1131,6 +1131,50 @@
       "symbol": "square.3.layers.3d",
       "tags": [
         "starter"
+      ],
+      "version": "1.0.0"
+    },
+    {
+      "author": "ScriptWidget",
+      "featured": false,
+      "files": [
+        {
+          "bytes": 6158,
+          "path": "lib/cloud-hydration.js",
+          "sha256": "1c1b5205b27a076db9fc2acba6e4788dae995a77b113f29213fff9fdf59bec7b",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/lib/cloud-hydration.js"
+        },
+        {
+          "bytes": 3934,
+          "path": "main.jsx",
+          "sha256": "34f26e89a8b82fc4ebe91dc1382d233fd80d377f938269b51b7483efda588f14",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/main.jsx"
+        },
+        {
+          "bytes": 298,
+          "path": "meta.json",
+          "sha256": "022f05ff49aafbd233b0c3822589d17d3d36d4fc998e6fd8203497b6a0bd00e0",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/meta.json"
+        },
+        {
+          "bytes": 1290,
+          "path": "widget.json",
+          "sha256": "864de6ddbcdca5e3a528a882d8a4b1f48af69b1da64a68264f766514b6c00caa",
+          "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/widget.json"
+        }
+      ],
+      "id": "app.scriptwidget.template.hydration-goal-icloud",
+      "kind": "widget",
+      "license": "MIT",
+      "minimumRuntimeVersion": "1.0",
+      "name": "Hydration Goal iCloud",
+      "sourceURL": "https://github.com/everettjf/scriptwidget/tree/main/Gallery/widgets/hydration-goal-icloud",
+      "summary": "Requires Runtime API 1.5. An opt-in iCloud hydration example with timestamped taps and additive offline merging. Limited by the iCloud JSON revision budget.",
+      "symbol": "drop.fill",
+      "tags": [
+        "water",
+        "hydration",
+        "icloud"
       ],
       "version": "1.0.0"
     }

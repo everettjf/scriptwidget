@@ -1,0 +1,8 @@
+{
+  "description": "An opt-in iCloud hydration example with timestamped taps and additive offline merging. Limited by the iCloud JSON revision budget.",
+  "category": "health",
+  "tags": ["water", "hydration", "icloud"],
+  "difficulty": "intermediate",
+  "icon": "drop.fill",
+  "featured": false
+}

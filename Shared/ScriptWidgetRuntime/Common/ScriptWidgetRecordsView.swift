@@ -299,9 +299,9 @@ final class ScriptWidgetRecordsModel: ObservableObject {
         } catch { report(error) }
     }
 
-    func exportBackup() throws -> Data {
+    func exportBackup(now: Date = Date()) throws -> Data {
         guard let store else { throw ScriptWidgetRecordError.unavailable }
-        return try store.backup(store.read())
+        return try store.backup(store.read(), now: now)
     }
     func previewRestore(_ data: Data) {
         guard let store else { return }
@@ -328,6 +328,7 @@ struct ScriptWidgetRecordsView: View {
     @State private var showingExporter = false
     @State private var confirmingRestore = false
     @State private var document = ScriptWidgetRecordDocument()
+    @State private var exportFilename = ""
     @State private var visibleRows = 100
 
     init(package: ScriptWidgetPackage, store: ScriptWidgetRecordStore? = nil) {
@@ -371,7 +372,12 @@ struct ScriptWidgetRecordsView: View {
                     }
                     Section("Backup & Restore") {
                         Button("Export Record Backup…") {
-                            do { document = ScriptWidgetRecordDocument(data: try model.exportBackup()); showingExporter = true }
+                            do {
+                                let now = Date()
+                                document = ScriptWidgetRecordDocument(data: try model.exportBackup(now: now))
+                                exportFilename = model.package.name + "-records-" + ISO8601DateFormatter().string(from: now).replacingOccurrences(of: ":", with: "") + ".json"
+                                showingExporter = true
+                            }
                             catch { model.report(error) }
                         }.accessibilityIdentifier("record-export")
                         Button("Choose Backup to Restore…") { showingImporter = true }
@@ -415,7 +421,7 @@ struct ScriptWidgetRecordsView: View {
             } catch { model.report(error) }
         }
         .fileExporter(isPresented: $showingExporter, document: document, contentType: .json,
-                      defaultFilename: model.package.name + "-records.json") { result in
+                      defaultFilename: exportFilename) { result in
             if case .failure(let error) = result { model.report(error) }
         }
         .confirmationDialog("Replace this widget's local records?", isPresented: $confirmingRestore, titleVisibility: .visible) {

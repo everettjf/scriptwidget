@@ -40,6 +40,8 @@ Writes, resolution and explicit sync require a user-initiated declared action. N
 
 The complete [iCloud JSON Note package](examples/icloud-json-note) includes a manifest and declared Sync / Save actions. Import it, then connect it through the native menu.
 
+The separate **Hydration Goal iCloud** built-in/Gallery template demonstrates timestamped, add-only hydration events and deterministic merging of two offline additions. Connect the same store ID on both devices. It does not migrate the local **Hydration Goal** history or support Reset/Undo, and the 256-revision store limit makes it a bounded example rather than an unlimited log. See its [template README](../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/Hydration%20Goal%20iCloud/README.md) before using it.
+
 ```jsx
 const snapshot = await $icloud.readJSON("note.json");
 $render(<text>{snapshot.state === "conflict"

@@ -852,6 +852,7 @@ final class RuntimeExecutionTests: XCTestCase {
             "Animation Spirograph",
             "Weekly Planner",
             "Hydration Goal",
+            "Hydration Goal iCloud",
             "Personal Dashboard",
             "Quick Launcher",
             "Daily Agenda",

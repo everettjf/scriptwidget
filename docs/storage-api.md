@@ -75,6 +75,8 @@ The sheet edits the daily goal/glass size, intention, checklist labels, or habit
 
 **History** shows the retained calendar-day records, with more rows available on demand. **Export Record Backup** saves a separate JSON file containing only the selected template's recognized record/configuration keys. Script package exports do not contain these records. **Choose Backup to Restore** first shows the source widget, time, daily record count and configuration. Confirm **Replace Local Records** to replace the selected package's recognized values, including removing recognized values absent from the backup. It never adopts a namespace or file path from the backup. If records change after the preview, the operation fails and asks you to reload rather than losing the intervening edit.
 
+The backup's `createdAt` field is the export time in UTC. Its suggested filename includes that same time, for example `Hydration Goal-records-2026-11-03T000515Z.json`; the daily record dates remain calendar dates.
+
 Backups for another record kind, unsupported versions/keys, invalid record dates/values, invalid settings or files over 1 MiB are rejected before mutation. Restore and configuration changes use the same cross-process coordinator as widget actions. Invalid string records can still be exported for safekeeping. Wrongly typed values are exported as diagnostic `unsupportedValues`; those diagnostic files cannot be restored directly. A valid earlier backup can replace such corrupt values after preview and confirmation. Unrelated storage keys are never included or modified.
 
 Record templates opt into this native sheet with a small package resource:

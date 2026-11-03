@@ -13,6 +13,7 @@ const curated = [
   ["Health Steps Ring", "health-card"],
   ["Health Overview", "health-overview"],
   ["Hydration Goal", "hydration-goal"],
+  ["Hydration Goal iCloud", "hydration-goal-icloud"],
   ["Local Weather (Location)", "local-weather"],
   ["Layout Starter", "layout-starter"],
   ["Material Study", "material-study"],
@@ -80,7 +81,7 @@ for (const [name, slug] of curated) {
     files.push({ bytes: data.length, path, sha256: createHash("sha256").update(data).digest("hex"), url: rawRoot + `widgets/${slug}/${path}` });
   }
   const item = {
-    author: "ScriptWidget", featured: true, files, id: manifest.id, kind: "widget", license: "MIT",
+    author: "ScriptWidget", featured: metadata.featured !== false, files, id: manifest.id, kind: "widget", license: "MIT",
     // Gallery 1.0's field denotes the runtime contract, just like widget.json's runtimeVersion.
     // The independently verified package retains its actual minimum API requirement (1.3).
     minimumRuntimeVersion: manifest.runtimeVersion, name: manifest.name,

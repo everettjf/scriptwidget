@@ -454,7 +454,7 @@ final class BrowserPreviewParityTests: XCTestCase {
     static func usesLiveData(_ source: String) -> Bool {
         // Scheduled templates use dedicated fixed-date/slot parity fixtures.
         source.contains("$getenv(\"timeline-date\")") || source.contains("fetch(") || source.contains("$http.") || source.contains("$location.") ||
-            source.contains("$health.") || source.contains("$calendar.") || source.contains("$reminders.") || source.contains("$photos.") || source.contains("$services.") || source.contains("$music.") || source.contains("$dataSource.")
+            source.contains("$health.") || source.contains("$calendar.") || source.contains("$reminders.") || source.contains("$photos.") || source.contains("$services.") || source.contains("$music.") || source.contains("$dataSource.") || source.contains("$icloud.") || source.contains("cloudHydration.")
     }
 
     private func errorKind(_ error: ScriptWidgetError) -> String {
