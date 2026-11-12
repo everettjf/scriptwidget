@@ -47,7 +47,7 @@ targets:
         CODE_SIGN_IDENTITY: "Developer ID Application"
         DEVELOPMENT_TEAM: YPV49M8592
         SWIFT_ACTIVE_COMPILATION_CONDITIONS: "$(inherited) SCRIPTWIDGET_CLI"
-        MARKETING_VERSION: "0.2.0"
+        MARKETING_VERSION: "0.2.1"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_ScriptWidgetBuildCommit: "$(CLI_BUILD_COMMIT)"
         CLI_BUILD_COMMIT: development
@@ -82,7 +82,7 @@ targets:
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: "Developer ID Application"
         DEVELOPMENT_TEAM: YPV49M8592
-        MARKETING_VERSION: "0.2.0"
+        MARKETING_VERSION: "0.2.1"
         CURRENT_PROJECT_VERSION: "1"
         INFOPLIST_KEY_ScriptWidgetBuildCommit: "$(CLI_BUILD_COMMIT)"
         CLI_BUILD_COMMIT: development

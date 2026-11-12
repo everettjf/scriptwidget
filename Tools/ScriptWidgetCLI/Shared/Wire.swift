@@ -2,7 +2,7 @@ import Foundation
 import CryptoKit
 import Darwin
 
-let cliVersion = "0.2.0"
+let cliVersion = "0.2.1"
 let maximumSnapshotBytes = 64 * 1024 * 1024
 
 struct CLIError: Error, LocalizedError {

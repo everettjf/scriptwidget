@@ -10,7 +10,7 @@ import subprocess
 import zipfile
 
 ROOT=Path(__file__).resolve().parents[2]
-VERSION='0.2.0'
+VERSION='0.2.1'
 IDENTITY='Developer ID Application: Feng Zhu (YPV49M8592)'
 
 def run(*arguments,**kwargs):

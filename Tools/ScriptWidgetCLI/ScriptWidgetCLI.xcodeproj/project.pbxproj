@@ -13,8 +13,10 @@
 		0903356FBE7774CD396AA14A /* ScriptWidgetAttributeBackgroundModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3C890A219038CCB3C4F174A9 /* ScriptWidgetAttributeBackgroundModifier.swift */; };
 		0A4BBC5496BB30A39F33E727 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F495E60E0B308F111BA4B27 /* ScriptWidgetStorageNamespaces.swift */; };
 		0EF6393E80660074B0A193A5 /* DeepLinkDefine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A65538905C3FBA69CAB6E68D /* DeepLinkDefine.swift */; };
+		0F568FFCD5986486EB3F6919 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9637D0C49F35D0CC9AEE474E /* ScriptWidgetRuntimeCloudJSON.swift */; };
 		1788B87731745D15E67FA1D3 /* ScriptWidgetAttributeShadowModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = A0BE8865811BC2E348AFB47A /* ScriptWidgetAttributeShadowModifier.swift */; };
 		19962F53F538177F8E5FFD2D /* ScriptWidgetElementTagImage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7D68F09E7A7AD153FF18712B /* ScriptWidgetElementTagImage.swift */; };
+		1A9DE42FD81DE66F38A86C9A /* ScriptWidgetDiagnosticLog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 35CA6A4EBA3FFD4F9EC8B770 /* ScriptWidgetDiagnosticLog.swift */; };
 		1B1CFCB77E6950F0B8C147BC /* ScriptWidgetRuntimePhotos.swift in Sources */ = {isa = PBXBuildFile; fileRef = 21980FBE2A432802BE0267A2 /* ScriptWidgetRuntimePhotos.swift */; };
 		1F54BF19EA524098F2A0F87E /* ScriptWidgetElementTagText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 80FADB18B60C1C073AB59AF6 /* ScriptWidgetElementTagText.swift */; };
 		212F844DD3F30C24DD039F5D /* ScriptWidgetAttributeAnimationModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0D3C3E01B8280C4798F4C786 /* ScriptWidgetAttributeAnimationModifier.swift */; };
@@ -31,7 +33,9 @@
 		334022611F4CF4F647607362 /* ScriptWidgetElementTagGif.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76931E0E29B3A5EF356C16D3 /* ScriptWidgetElementTagGif.swift */; };
 		3358954D6CB95929BF657B10 /* Controller.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0374F0542E39F621C935508C /* Controller.swift */; };
 		36B8776D634ADD4463925092 /* WorkerMain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9FCA745E5877B5491EF6AD86 /* WorkerMain.swift */; };
+		36DC70F665C521F4A7096BB8 /* ScriptWidgetRuntimeContacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9B17837CA27B05DD4510519A /* ScriptWidgetRuntimeContacts.swift */; };
 		373AF0A9A6043471A63E457E /* ScriptWidgetRuntimeServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = A28D355F15718C548C9DEA90 /* ScriptWidgetRuntimeServices.swift */; };
+		3CC923D1D15DBF20A0AD3C15 /* ScriptWidgetRuntimeHealthHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = F80518EDF7833D956CBB3928 /* ScriptWidgetRuntimeHealthHistory.swift */; };
 		40795D7230A5B6FCDD843E92 /* ScriptWidgetAppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52B1B2736C7B55C7BE7C2F52 /* ScriptWidgetAppState.swift */; };
 		4081DA0086868A4D2EE4CBD0 /* validation-host.js in Resources */ = {isa = PBXBuildFile; fileRef = C4F6A7699FE3900398715F8E /* validation-host.js */; };
 		40B70F3176C724B5A104A6A2 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2DC8B1032F03C1660509F278 /* ScriptWidgetRuntimeDiagnostics.swift */; };
@@ -40,6 +44,7 @@
 		46ABFB35E5A1C77155FD4283 /* ScriptWidgetStorageLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4AB88C833B5E4D9F460F79F /* ScriptWidgetStorageLock.swift */; };
 		47B663732F2F039AE305B515 /* ScriptWidgetAttributeCornerRadiusModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2655815902F154A4071026B1 /* ScriptWidgetAttributeCornerRadiusModifier.swift */; };
 		4BCDA2D8CB1A5C81E5C43676 /* ScriptWidgetAttributeOpacityModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4CA93F1178DE665337803AAB /* ScriptWidgetAttributeOpacityModifier.swift */; };
+		4EED991E332A2001337A78D6 /* ScriptWidgetRuntimeNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = DD55C5C17AD2089C18B39510 /* ScriptWidgetRuntimeNotifications.swift */; };
 		531664662FD113BB5F07D41A /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE1E85BD8C0A4656E846E8E3 /* ScriptWidgetAttributeDebugModeModifier.swift */; };
 		5365B8DA9AA45353759A24BE /* ScriptWidgetValidationWorker.app in Embed Dependencies */ = {isa = PBXBuildFile; fileRef = 309C4AEFAE969B0AC74301F6 /* ScriptWidgetValidationWorker.app */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		54D53B1C7DD2CB47DF2A7652 /* ScriptWidgetElementTagGauge.swift in Sources */ = {isa = PBXBuildFile; fileRef = D17D52C9199597321569EC48 /* ScriptWidgetElementTagGauge.swift */; };
@@ -48,6 +53,7 @@
 		5A8D62262379144666FDB69C /* ScriptWidgetElementTagSpacer.swift in Sources */ = {isa = PBXBuildFile; fileRef = F15B0495B2D9EE837987D671 /* ScriptWidgetElementTagSpacer.swift */; };
 		5B1EC3DF3E7DD621EF1DA039 /* ScriptWidgetPackage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0B579A896F623D25DDC8395C /* ScriptWidgetPackage.swift */; };
 		5FBF168F07C9F6E782B3A9E2 /* ScriptWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 90F3EDE769BDEAC609A8054A /* ScriptWidgetAppIntent.swift */; };
+		61839A9710E8F81BCB519F3E /* ScriptWidgetRuntimeDocuments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 78521C503DCE29C7A9277666 /* ScriptWidgetRuntimeDocuments.swift */; };
 		656D6B6F630351C5EFA1A3CA /* ScriptWidgetRuntimeSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17716CF884D750ACBE87488C /* ScriptWidgetRuntimeSystem.swift */; };
 		68FF847986A988C8BC2537FF /* ScriptWidgetAttributeForegroundModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9C241D51DED532186D0EB33 /* ScriptWidgetAttributeForegroundModifier.swift */; };
 		6CC9BDE16304083E9B151CF8 /* ScriptWidgetElementTagButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 45F7A148AC069EB21FE63054 /* ScriptWidgetElementTagButton.swift */; };
@@ -56,23 +62,10 @@
 		727350AEDCC719A184D5995C /* ScriptWidgetRuntimeFetch.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */; };
 		72AA114107506BE3AE708C13 /* ScriptModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3AC799313C3197689F1A906C /* ScriptModel.swift */; };
 		72DC6D622A75391C9582ECB9 /* ScriptWidgetRecordsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */; };
-		F0EF7680531C44E78A77ECAB /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */; };
-		FD759D35754342E38900037F /* ScriptWidgetSystemAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 419456A0002B4CC5A04B4C37 /* ScriptWidgetSystemAccessView.swift */; };
 		768C0215C3BB8EF7DA908EC6 /* ScriptWidgetElementTagDate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52F28D26C0C5131742555232 /* ScriptWidgetElementTagDate.swift */; };
 		77CDFEBAA10BF9D8D2B34F84 /* ScriptWidgetAttributeRotation3DEffectModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 16C9FD4B4DC6C668AF39EE39 /* ScriptWidgetAttributeRotation3DEffectModifier.swift */; };
 		7BADA9DF2237397473BA33C3 /* ScriptWidgetStorageProfiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66C6D05A624D8D0DB750AF9E /* ScriptWidgetStorageProfiles.swift */; };
 		7C15B0E6C184D7473773C48A /* ScriptWidgetRuntimeFile.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */; };
-		4765703F555240FD8B843727 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */; };
-		827F0361D8CC43E1A5F25B5B /* ScriptWidgetRuntimeHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = EEFB05DBBBF84D6AB35E3895 /* ScriptWidgetRuntimeHome.swift */; };
-		4FF0658BE63747C6869F2161 /* ScriptWidgetRuntimeContacts.swift in Sources */ = {isa = PBXBuildFile; fileRef = 681A4CD2C32B4FB08DBA434D /* ScriptWidgetRuntimeContacts.swift */; };
-		3B26B14F6D9C46B1B2ACBAD3 /* ScriptWidgetRuntimeDocuments.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91729BD7818C44D9BCD830BD /* ScriptWidgetRuntimeDocuments.swift */; };
-		82F56DFE964A4EC9B1E93CD0 /* ScriptWidgetRuntimeAlarms.swift in Sources */ = {isa = PBXBuildFile; fileRef = AC02EF3176C34D37BDB789ED /* ScriptWidgetRuntimeAlarms.swift */; };
-		6DFDEE2D172F48BBBE4389C7 /* ScriptWidgetRuntimeWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28230F40942A49A3903F1D76 /* ScriptWidgetRuntimeWeather.swift */; };
-		095B6A7BD12C4EC585837C8A /* ScriptWidgetRuntimeMaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 52547DBC00FA4A9E860D4E0B /* ScriptWidgetRuntimeMaps.swift */; };
-		E0B314E8753645EEBE740D85 /* ScriptWidgetRuntimeHealthHistory.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72614CF766604706A6D8922D /* ScriptWidgetRuntimeHealthHistory.swift */; };
-		05780F4B9BD84EFAB79EAA0C /* ScriptWidgetRuntimeCalendarWrites.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4FCDFCDB1622429A8FA74862 /* ScriptWidgetRuntimeCalendarWrites.swift */; };
-		483051ECDB314908ABF77DA6 /* ScriptWidgetRuntimeNotifications.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EF46E70B36645D6B2570CDE /* ScriptWidgetRuntimeNotifications.swift */; };
-		78242FAAD90949A1A69A56C3 /* ScriptWidgetRuntimeSystemServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84E44A71C5E74B0A90C28F2D /* ScriptWidgetRuntimeSystemServices.swift */; };
 		7C1E07AEE5B4391EDE276A26 /* ScriptWidgetRuntimeConsole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7718541A936C5B6158CEC828 /* ScriptWidgetRuntimeConsole.swift */; };
 		7C26F00AB29E25F691A20494 /* ScriptWidgetAttributeGeneral.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28D158D6BC46CC44E9E461AE /* ScriptWidgetAttributeGeneral.swift */; };
 		7DAEC073E680BD60C3FBABAB /* api-catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 5011ED35898ED75BA7F1A1F2 /* api-catalog.json */; };
@@ -88,21 +81,30 @@
 		96FF84D543C3926DD61FBDCF /* ScriptWidgetRunningState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 730A6F2878D6E51E38EEEBB8 /* ScriptWidgetRunningState.swift */; };
 		A1CB312EB4C9D511FD7E5F98 /* ScriptWidgetElementTagToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 09047D8FE88E0C74C765EB8A /* ScriptWidgetElementTagToggle.swift */; };
 		A842CC6727C5A723832B6CB0 /* ScriptWidgetServiceAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 44B90FCD350B13084D22B5A7 /* ScriptWidgetServiceAuthorization.swift */; };
+		A94E61CB3FB7965C5035CD76 /* ScriptWidgetRuntimeSystemServices.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F3ABD8FAFD727C9E300A3C0 /* ScriptWidgetRuntimeSystemServices.swift */; };
+		AD21B95B9B0CEA5A7642D5DC /* ScriptWidgetRuntimeAlarms.swift in Sources */ = {isa = PBXBuildFile; fileRef = 709568D1D3D1AC3578C66BA7 /* ScriptWidgetRuntimeAlarms.swift */; };
 		AD7B071C80B3D24057CFA262 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6AE470D5D82878D82A17DE4F /* WidgetKit.framework */; };
 		AF591D987922F20D112D9595 /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF6FFFCA1CDA229560B32062 /* ScriptWidgetRuntimeStorage.swift */; };
 		AF7AD22F3F68DBF68AD9C1B0 /* ScriptWidgetRuntimeMusic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 91E69BD0DC00230A3E1BF379 /* ScriptWidgetRuntimeMusic.swift */; };
 		B38D70D2EEFFD4D71F265E9B /* ScriptWidgetServiceAccessPolicy.swift in Sources */ = {isa = PBXBuildFile; fileRef = F39931EAA5F15C3BE2BC43A5 /* ScriptWidgetServiceAccessPolicy.swift */; };
 		B5104174930CAE380124C1CB /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = 19A9D310020CD21AB29EDCBF /* ClockHandRotationEffect.swift */; };
 		B676015345060657DBC2CF2D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FF82BBB107635CC71AD286A /* ReloadWidgetAppIntent.swift */; };
+		B6FFE07545AE50E927588044 /* ScriptWidgetCloudJSONView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 835072ADE914AEF287E48B82 /* ScriptWidgetCloudJSONView.swift */; };
 		B94F843A0032914002F41258 /* ScriptWidgetRuntimeHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72999E36BA973789D4B9833E /* ScriptWidgetRuntimeHealth.swift */; };
+		B9788B00BA69AD3A852E2E8D /* ScriptWidgetSystemAccessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E46C1CF55A4097631F29AA6F /* ScriptWidgetSystemAccessView.swift */; };
 		BA3091820D3F8EFFACF32D8E /* ScriptWidgetRuntimeElement.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA330F4894DD1B613943F9D7 /* ScriptWidgetRuntimeElement.swift */; };
 		BCB96EAB201E85B2DBB0B6BF /* ScriptWidgetAttributeImageModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76A3A99954A0A97F6447529E /* ScriptWidgetAttributeImageModifier.swift */; };
+		C40C818264BABFB6125FB954 /* ScriptWidgetRuntimeMaps.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8908F5A151B0FB716469022B /* ScriptWidgetRuntimeMaps.swift */; };
 		C596ADCCACAC75B64D739AB4 /* ScriptWidgetElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD79B7F411195163523244F7 /* ScriptWidgetElementView.swift */; };
 		C92D1E74F993C404B3371915 /* report-v1.schema.json in Resources */ = {isa = PBXBuildFile; fileRef = E5B290AA6EE438BFB99B25CD /* report-v1.schema.json */; };
 		CC165386A13A131918EC624A /* ScriptWidgetAttributeText.swift in Sources */ = {isa = PBXBuildFile; fileRef = 977EDB926CDACB3B9BEC0476 /* ScriptWidgetAttributeText.swift */; };
+		CF91CB39E4C2422902B44DE5 /* ScriptWidgetRuntimeCalendarWrites.swift in Sources */ = {isa = PBXBuildFile; fileRef = B0DC89AE04EF172B9A1FB775 /* ScriptWidgetRuntimeCalendarWrites.swift */; };
 		D1AD5FB7C5410449663B6036 /* Wire.swift in Sources */ = {isa = PBXBuildFile; fileRef = 921AF389E1C6A36189FB51DD /* Wire.swift */; };
+		D25B4BA6ABD477DF416C59F3 /* ScriptWidgetRuntimeWeather.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC2B7281DC3AF8C848E76DE5 /* ScriptWidgetRuntimeWeather.swift */; };
 		D38B885A3930D59132C095E9 /* MineGaugeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8065410D52E3B52F66F1B99A /* MineGaugeView.swift */; };
 		D3BC3334319B091A71AB8EEF /* ButtonActionAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1F360ABE599E880EB4925ED /* ButtonActionAppIntent.swift */; };
+		D60B82ED0F7B12B16C9424D2 /* ScriptWidgetDiagnosticExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E3CC1222DDA4B0B5F34E49B /* ScriptWidgetDiagnosticExportView.swift */; };
+		D6C3AAF532DE9CFC8C617E59 /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = C94EE36B6C7FDCC861B0AC50 /* ScriptWidgetCloudJSON.swift */; };
 		DAB9A4A3A4B1A1EC85212B0A /* ScriptWidgetServiceAccountsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BE61B3DD77B7A9F2D4895EF0 /* ScriptWidgetServiceAccountsView.swift */; };
 		DC8A048D2F182C36A9504317 /* ScriptWidgetElementTagGrid.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4919810754A49BD547DA3FD0 /* ScriptWidgetElementTagGrid.swift */; };
 		E5832A463D0F4A01304F374B /* report-v1.schema.json in Resources */ = {isa = PBXBuildFile; fileRef = E5B290AA6EE438BFB99B25CD /* report-v1.schema.json */; };
@@ -112,10 +114,10 @@
 		E86639844A0ED980D0AA7600 /* ScriptWidgetStorageUpgrade.swift in Sources */ = {isa = PBXBuildFile; fileRef = 88FBB82C566EF24581DBB278 /* ScriptWidgetStorageUpgrade.swift */; };
 		E96B614A2C37F103A0CC2AAE /* ScriptWidgetElementTagShape.swift in Sources */ = {isa = PBXBuildFile; fileRef = 74A04EBD57398F62990D6763 /* ScriptWidgetElementTagShape.swift */; };
 		EC31EFA6C2EA537578DF80A3 /* ZipArchive in Frameworks */ = {isa = PBXBuildFile; productRef = F25FC096321E41A79CC8B4BC /* ZipArchive */; };
+		EE4F2D4B5CC6E1EF42E61561 /* ScriptWidgetRuntimeHome.swift in Sources */ = {isa = PBXBuildFile; fileRef = FD9EBFEB083409F69BFAC254 /* ScriptWidgetRuntimeHome.swift */; };
 		F39A3930C8EAB66F701C8391 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = BB6BEBC3683C90625859290B /* AppConfigFrequency.swift */; };
 		F4050D05A6E6E480EF3E0913 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = D089792767B8B7DA80ECD818 /* ScriptWidgetAttributeTextAlignmentModifier.swift */; };
 		F4AE8E8FA3E8632765628B63 /* ScriptWidgetRecordStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */; };
-		311E16A1025A41A991EB15DF /* ScriptWidgetCloudJSON.swift in Sources */ = {isa = PBXBuildFile; fileRef = 81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */; };
 		F504231C3A820C5D33559618 /* ScriptWidgetRuntimeDevice.swift in Sources */ = {isa = PBXBuildFile; fileRef = 991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */; };
 		F817B9F3BAA27FC30C2CB638 /* ScriptWidgetElementTagZStack.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD8F1EC9AEA3879763F939F4 /* ScriptWidgetElementTagZStack.swift */; };
 		FC3294E8EC609D1FFB342A5D /* ScriptWidgetElementPoint.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6FFF61E2368ADA15729BAA89 /* ScriptWidgetElementPoint.swift */; };
@@ -166,9 +168,12 @@
 		2DC8B1032F03C1660509F278 /* ScriptWidgetRuntimeDiagnostics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDiagnostics.swift; sourceTree = "<group>"; };
 		309C4AEFAE969B0AC74301F6 /* ScriptWidgetValidationWorker.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScriptWidgetValidationWorker.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		33801B5BB17FD81608F96D22 /* ScriptWidgetAttributeRotationEffectModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeRotationEffectModifier.swift; sourceTree = "<group>"; };
+		35CA6A4EBA3FFD4F9EC8B770 /* ScriptWidgetDiagnosticLog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticLog.swift; sourceTree = "<group>"; };
 		3AC799313C3197689F1A906C /* ScriptModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptModel.swift; sourceTree = "<group>"; };
 		3C890A219038CCB3C4F174A9 /* ScriptWidgetAttributeBackgroundModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeBackgroundModifier.swift; sourceTree = "<group>"; };
+		3E3CC1222DDA4B0B5F34E49B /* ScriptWidgetDiagnosticExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticExportView.swift; sourceTree = "<group>"; };
 		3EC4F34F25552F52D652B1E2 /* ScriptMetadata.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptMetadata.swift; sourceTree = "<group>"; };
+		3F3ABD8FAFD727C9E300A3C0 /* ScriptWidgetRuntimeSystemServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystemServices.swift; sourceTree = "<group>"; };
 		3F495E60E0B308F111BA4B27 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		44B90FCD350B13084D22B5A7 /* ScriptWidgetServiceAuthorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAuthorization.swift; sourceTree = "<group>"; };
 		45F7A148AC069EB21FE63054 /* ScriptWidgetElementTagButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagButton.swift; sourceTree = "<group>"; };
@@ -181,8 +186,6 @@
 		52B1B2736C7B55C7BE7C2F52 /* ScriptWidgetAppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppState.swift; sourceTree = "<group>"; };
 		52F28D26C0C5131742555232 /* ScriptWidgetElementTagDate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagDate.swift; sourceTree = "<group>"; };
 		56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordsView.swift; sourceTree = "<group>"; };
-		C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
-		419456A0002B4CC5A04B4C37 /* ScriptWidgetSystemAccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSystemAccessView.swift; sourceTree = "<group>"; };
 		58A58E5429F7356FA9F5C203 /* ScriptManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptManager.swift; sourceTree = "<group>"; };
 		5BF63F313011E594BD60F288 /* ScriptWidgetCLI.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ScriptWidgetCLI.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFetch.swift; sourceTree = "<group>"; };
@@ -192,37 +195,32 @@
 		6AE470D5D82878D82A17DE4F /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		6D9BD0DAF783C1AE148A9253 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
 		6FFF61E2368ADA15729BAA89 /* ScriptWidgetElementPoint.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementPoint.swift; sourceTree = "<group>"; };
+		709568D1D3D1AC3578C66BA7 /* ScriptWidgetRuntimeAlarms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeAlarms.swift; sourceTree = "<group>"; };
 		72999E36BA973789D4B9833E /* ScriptWidgetRuntimeHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealth.swift; sourceTree = "<group>"; };
 		730A6F2878D6E51E38EEEBB8 /* ScriptWidgetRunningState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRunningState.swift; sourceTree = "<group>"; };
 		74A04EBD57398F62990D6763 /* ScriptWidgetElementTagShape.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagShape.swift; sourceTree = "<group>"; };
 		76931E0E29B3A5EF356C16D3 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		76A3A99954A0A97F6447529E /* ScriptWidgetAttributeImageModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeImageModifier.swift; sourceTree = "<group>"; };
 		7718541A936C5B6158CEC828 /* ScriptWidgetRuntimeConsole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeConsole.swift; sourceTree = "<group>"; };
+		78521C503DCE29C7A9277666 /* ScriptWidgetRuntimeDocuments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDocuments.swift; sourceTree = "<group>"; };
 		7D68F09E7A7AD153FF18712B /* ScriptWidgetElementTagImage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagImage.swift; sourceTree = "<group>"; };
 		8065410D52E3B52F66F1B99A /* MineGaugeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MineGaugeView.swift; sourceTree = "<group>"; };
 		80FADB18B60C1C073AB59AF6 /* ScriptWidgetElementTagText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagText.swift; sourceTree = "<group>"; };
+		835072ADE914AEF287E48B82 /* ScriptWidgetCloudJSONView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSONView.swift; sourceTree = "<group>"; };
 		83DB9EF426AC2AEE64FCFAAA /* ScriptWidgetElementColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementColor.swift; sourceTree = "<group>"; };
 		88FBB82C566EF24581DBB278 /* ScriptWidgetStorageUpgrade.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageUpgrade.swift; sourceTree = "<group>"; };
+		8908F5A151B0FB716469022B /* ScriptWidgetRuntimeMaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeMaps.swift; sourceTree = "<group>"; };
 		90F3EDE769BDEAC609A8054A /* ScriptWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAppIntent.swift; sourceTree = "<group>"; };
 		91E69BD0DC00230A3E1BF379 /* ScriptWidgetRuntimeMusic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeMusic.swift; sourceTree = "<group>"; };
 		921AF389E1C6A36189FB51DD /* Wire.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Wire.swift; sourceTree = "<group>"; };
 		9580929935A5E205FA18C4A2 /* ScriptWidgetServiceTransport.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceTransport.swift; sourceTree = "<group>"; };
+		9637D0C49F35D0CC9AEE474E /* ScriptWidgetRuntimeCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCloudJSON.swift; sourceTree = "<group>"; };
 		977EDB926CDACB3B9BEC0476 /* ScriptWidgetAttributeText.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeText.swift; sourceTree = "<group>"; };
 		9841CF759E48AFA9C6CBCE16 /* ScriptWidgetElementTagStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagStack.swift; sourceTree = "<group>"; };
 		991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDevice.swift; sourceTree = "<group>"; };
+		9B17837CA27B05DD4510519A /* ScriptWidgetRuntimeContacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeContacts.swift; sourceTree = "<group>"; };
 		9D60B046B70D59D4F539B7E7 /* ScriptWidgetRuntimeReminders.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeReminders.swift; sourceTree = "<group>"; };
 		9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeFile.swift; sourceTree = "<group>"; };
-		52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCloudJSON.swift; sourceTree = "<group>"; };
-		EEFB05DBBBF84D6AB35E3895 /* ScriptWidgetRuntimeHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHome.swift; sourceTree = "<group>"; };
-		681A4CD2C32B4FB08DBA434D /* ScriptWidgetRuntimeContacts.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeContacts.swift; sourceTree = "<group>"; };
-		91729BD7818C44D9BCD830BD /* ScriptWidgetRuntimeDocuments.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeDocuments.swift; sourceTree = "<group>"; };
-		AC02EF3176C34D37BDB789ED /* ScriptWidgetRuntimeAlarms.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeAlarms.swift; sourceTree = "<group>"; };
-		28230F40942A49A3903F1D76 /* ScriptWidgetRuntimeWeather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeWeather.swift; sourceTree = "<group>"; };
-		52547DBC00FA4A9E860D4E0B /* ScriptWidgetRuntimeMaps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeMaps.swift; sourceTree = "<group>"; };
-		72614CF766604706A6D8922D /* ScriptWidgetRuntimeHealthHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealthHistory.swift; sourceTree = "<group>"; };
-		4FCDFCDB1622429A8FA74862 /* ScriptWidgetRuntimeCalendarWrites.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCalendarWrites.swift; sourceTree = "<group>"; };
-		4EF46E70B36645D6B2570CDE /* ScriptWidgetRuntimeNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeNotifications.swift; sourceTree = "<group>"; };
-		84E44A71C5E74B0A90C28F2D /* ScriptWidgetRuntimeSystemServices.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeSystemServices.swift; sourceTree = "<group>"; };
 		9FCA745E5877B5491EF6AD86 /* WorkerMain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkerMain.swift; sourceTree = "<group>"; };
 		A0BE8865811BC2E348AFB47A /* ScriptWidgetAttributeShadowModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeShadowModifier.swift; sourceTree = "<group>"; };
 		A1F360ABE599E880EB4925ED /* ButtonActionAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonActionAppIntent.swift; sourceTree = "<group>"; };
@@ -230,6 +228,7 @@
 		A65538905C3FBA69CAB6E68D /* DeepLinkDefine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLinkDefine.swift; sourceTree = "<group>"; };
 		AD79B7F411195163523244F7 /* ScriptWidgetElementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementView.swift; sourceTree = "<group>"; };
 		AD8F1EC9AEA3879763F939F4 /* ScriptWidgetElementTagZStack.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagZStack.swift; sourceTree = "<group>"; };
+		B0DC89AE04EF172B9A1FB775 /* ScriptWidgetRuntimeCalendarWrites.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeCalendarWrites.swift; sourceTree = "<group>"; };
 		B9C241D51DED532186D0EB33 /* ScriptWidgetAttributeForegroundModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeForegroundModifier.swift; sourceTree = "<group>"; };
 		BA330F4894DD1B613943F9D7 /* ScriptWidgetRuntimeElement.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeElement.swift; sourceTree = "<group>"; };
 		BB6BEBC3683C90625859290B /* AppConfigFrequency.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfigFrequency.swift; sourceTree = "<group>"; };
@@ -239,25 +238,30 @@
 		C309A630A6E55DF7DAA49F19 /* ScriptWidgetElementGradient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementGradient.swift; sourceTree = "<group>"; };
 		C4F6A7699FE3900398715F8E /* validation-host.js */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.javascript; path = "validation-host.js"; sourceTree = "<group>"; };
 		C685DB661113CD10B7D37B03 /* ScriptWidgetElementTagLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagLink.swift; sourceTree = "<group>"; };
+		C94EE36B6C7FDCC861B0AC50 /* ScriptWidgetCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSON.swift; sourceTree = "<group>"; };
 		CB0D20C1036520C191D4B168 /* ScriptWidgetRuntime.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntime.swift; sourceTree = "<group>"; };
+		CC2B7281DC3AF8C848E76DE5 /* ScriptWidgetRuntimeWeather.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeWeather.swift; sourceTree = "<group>"; };
 		D089792767B8B7DA80ECD818 /* ScriptWidgetAttributeTextAlignmentModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeTextAlignmentModifier.swift; sourceTree = "<group>"; };
 		D17D52C9199597321569EC48 /* ScriptWidgetElementTagGauge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGauge.swift; sourceTree = "<group>"; };
 		D3924095B82B31EAA17C44FE /* scriptwidget-creator */ = {isa = PBXFileReference; lastKnownFileType = folder; name = "scriptwidget-creator"; path = "../../Skills/scriptwidget-creator"; sourceTree = SOURCE_ROOT; };
 		D8C1E43BBE609A7DEBD62348 /* ScriptWidgetServiceConnections.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceConnections.swift; sourceTree = "<group>"; };
 		D8DE8333F63ADF56D5B6DB57 /* ClockHandKit-LICENSE.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = "ClockHandKit-LICENSE.txt"; sourceTree = "<group>"; };
 		DC3E966BD127060336A2C4BC /* support.bundle */ = {isa = PBXFileReference; lastKnownFileType = wrapper.cfbundle; path = support.bundle; sourceTree = "<group>"; };
+		DD55C5C17AD2089C18B39510 /* ScriptWidgetRuntimeNotifications.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeNotifications.swift; sourceTree = "<group>"; };
 		DD66F0D5D5A8268A8FBD3344 /* ScriptWidgetRuntimeLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeLocation.swift; sourceTree = "<group>"; };
 		E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRecordStore.swift; sourceTree = "<group>"; };
-		81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetCloudJSON.swift; sourceTree = "<group>"; };
 		E2A1805571ADB208EF91A111 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 		E37571D6847A4E73CEB54C43 /* components.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = components.json; sourceTree = "<group>"; };
+		E46C1CF55A4097631F29AA6F /* ScriptWidgetSystemAccessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetSystemAccessView.swift; sourceTree = "<group>"; };
 		E4AB88C833B5E4D9F460F79F /* ScriptWidgetStorageLock.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageLock.swift; sourceTree = "<group>"; };
 		E5B290AA6EE438BFB99B25CD /* report-v1.schema.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = "report-v1.schema.json"; sourceTree = "<group>"; };
 		E895FE0504B31329F2168337 /* ScriptWidgetAttributeFrameModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeFrameModifier.swift; sourceTree = "<group>"; };
 		F15B0495B2D9EE837987D671 /* ScriptWidgetElementTagSpacer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagSpacer.swift; sourceTree = "<group>"; };
 		F39931EAA5F15C3BE2BC43A5 /* ScriptWidgetServiceAccessPolicy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAccessPolicy.swift; sourceTree = "<group>"; };
 		F793E12D61464243172216F3 /* ScriptWidgetAttributeFontModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetAttributeFontModifier.swift; sourceTree = "<group>"; };
+		F80518EDF7833D956CBB3928 /* ScriptWidgetRuntimeHealthHistory.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHealthHistory.swift; sourceTree = "<group>"; };
 		F9C98491E912C7BF1FAEBAB3 /* ScriptWidgetElementTagExtras.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagExtras.swift; sourceTree = "<group>"; };
+		FD9EBFEB083409F69BFAC254 /* ScriptWidgetRuntimeHome.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetRuntimeHome.swift; sourceTree = "<group>"; };
 		FEBB8C940E9FFE862270285D /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -331,15 +335,17 @@
 				58A58E5429F7356FA9F5C203 /* ScriptManager.swift */,
 				3EC4F34F25552F52D652B1E2 /* ScriptMetadata.swift */,
 				3AC799313C3197689F1A906C /* ScriptModel.swift */,
+				C94EE36B6C7FDCC861B0AC50 /* ScriptWidgetCloudJSON.swift */,
+				835072ADE914AEF287E48B82 /* ScriptWidgetCloudJSONView.swift */,
+				3E3CC1222DDA4B0B5F34E49B /* ScriptWidgetDiagnosticExportView.swift */,
+				35CA6A4EBA3FFD4F9EC8B770 /* ScriptWidgetDiagnosticLog.swift */,
 				0B579A896F623D25DDC8395C /* ScriptWidgetPackage.swift */,
 				E12B8321A654B24CD074AFFF /* ScriptWidgetRecordStore.swift */,
-				81F85786A10341E097E9DE73 /* ScriptWidgetCloudJSON.swift */,
 				56B05AB13CF7EEB977AF0102 /* ScriptWidgetRecordsView.swift */,
-				C95F627B7AAA4A96AF8FD652 /* ScriptWidgetCloudJSONView.swift */,
-				419456A0002B4CC5A04B4C37 /* ScriptWidgetSystemAccessView.swift */,
 				66C6D05A624D8D0DB750AF9E /* ScriptWidgetStorageProfiles.swift */,
 				88FBB82C566EF24581DBB278 /* ScriptWidgetStorageUpgrade.swift */,
 				4898BF5AB25F5560504579BE /* ScriptWidgetStorageUpgradeView.swift */,
+				E46C1CF55A4097631F29AA6F /* ScriptWidgetSystemAccessView.swift */,
 			);
 			path = Common;
 			sourceTree = "<group>";
@@ -585,31 +591,31 @@
 		EFC519428F331C73535B06C2 /* API */ = {
 			isa = PBXGroup;
 			children = (
+				709568D1D3D1AC3578C66BA7 /* ScriptWidgetRuntimeAlarms.swift */,
 				696C4D57FFA3586F4F7E2601 /* ScriptWidgetRuntimeCalendar.swift */,
+				B0DC89AE04EF172B9A1FB775 /* ScriptWidgetRuntimeCalendarWrites.swift */,
+				9637D0C49F35D0CC9AEE474E /* ScriptWidgetRuntimeCloudJSON.swift */,
 				7718541A936C5B6158CEC828 /* ScriptWidgetRuntimeConsole.swift */,
+				9B17837CA27B05DD4510519A /* ScriptWidgetRuntimeContacts.swift */,
 				991BCC4040B01E653DCEC24E /* ScriptWidgetRuntimeDevice.swift */,
+				78521C503DCE29C7A9277666 /* ScriptWidgetRuntimeDocuments.swift */,
 				66B36B4A85B7D7A8BCA1082B /* ScriptWidgetRuntimeFetch.swift */,
 				9E4CA81CF5D27A626C845BA4 /* ScriptWidgetRuntimeFile.swift */,
-				52C16994AEAC4DC7B56EBBB3 /* ScriptWidgetRuntimeCloudJSON.swift */,
-				EEFB05DBBBF84D6AB35E3895 /* ScriptWidgetRuntimeHome.swift */,
-				681A4CD2C32B4FB08DBA434D /* ScriptWidgetRuntimeContacts.swift */,
-				91729BD7818C44D9BCD830BD /* ScriptWidgetRuntimeDocuments.swift */,
-				AC02EF3176C34D37BDB789ED /* ScriptWidgetRuntimeAlarms.swift */,
-				28230F40942A49A3903F1D76 /* ScriptWidgetRuntimeWeather.swift */,
-				52547DBC00FA4A9E860D4E0B /* ScriptWidgetRuntimeMaps.swift */,
-				72614CF766604706A6D8922D /* ScriptWidgetRuntimeHealthHistory.swift */,
-				4FCDFCDB1622429A8FA74862 /* ScriptWidgetRuntimeCalendarWrites.swift */,
-				4EF46E70B36645D6B2570CDE /* ScriptWidgetRuntimeNotifications.swift */,
-				84E44A71C5E74B0A90C28F2D /* ScriptWidgetRuntimeSystemServices.swift */,
 				72999E36BA973789D4B9833E /* ScriptWidgetRuntimeHealth.swift */,
+				F80518EDF7833D956CBB3928 /* ScriptWidgetRuntimeHealthHistory.swift */,
+				FD9EBFEB083409F69BFAC254 /* ScriptWidgetRuntimeHome.swift */,
 				DD66F0D5D5A8268A8FBD3344 /* ScriptWidgetRuntimeLocation.swift */,
+				8908F5A151B0FB716469022B /* ScriptWidgetRuntimeMaps.swift */,
 				91E69BD0DC00230A3E1BF379 /* ScriptWidgetRuntimeMusic.swift */,
+				DD55C5C17AD2089C18B39510 /* ScriptWidgetRuntimeNotifications.swift */,
 				21980FBE2A432802BE0267A2 /* ScriptWidgetRuntimePhotos.swift */,
 				4BE9563E216BF2B72050EB0A /* ScriptWidgetRuntimePromise.swift */,
 				9D60B046B70D59D4F539B7E7 /* ScriptWidgetRuntimeReminders.swift */,
 				A28D355F15718C548C9DEA90 /* ScriptWidgetRuntimeServices.swift */,
 				BF6FFFCA1CDA229560B32062 /* ScriptWidgetRuntimeStorage.swift */,
 				17716CF884D750ACBE87488C /* ScriptWidgetRuntimeSystem.swift */,
+				3F3ABD8FAFD727C9E300A3C0 /* ScriptWidgetRuntimeSystemServices.swift */,
+				CC2B7281DC3AF8C848E76DE5 /* ScriptWidgetRuntimeWeather.swift */,
 				F39931EAA5F15C3BE2BC43A5 /* ScriptWidgetServiceAccessPolicy.swift */,
 				BE61B3DD77B7A9F2D4895EF0 /* ScriptWidgetServiceAccountsView.swift */,
 				44B90FCD350B13084D22B5A7 /* ScriptWidgetServiceAuthorization.swift */,
@@ -779,7 +785,11 @@
 				1788B87731745D15E67FA1D3 /* ScriptWidgetAttributeShadowModifier.swift in Sources */,
 				CC165386A13A131918EC624A /* ScriptWidgetAttributeText.swift in Sources */,
 				F4050D05A6E6E480EF3E0913 /* ScriptWidgetAttributeTextAlignmentModifier.swift in Sources */,
+				D6C3AAF532DE9CFC8C617E59 /* ScriptWidgetCloudJSON.swift in Sources */,
+				B6FFE07545AE50E927588044 /* ScriptWidgetCloudJSONView.swift in Sources */,
 				2C24A6C1213D83078E3F15A0 /* ScriptWidgetDataSources.swift in Sources */,
+				D60B82ED0F7B12B16C9424D2 /* ScriptWidgetDiagnosticExportView.swift in Sources */,
+				1A9DE42FD81DE66F38A86C9A /* ScriptWidgetDiagnosticLog.swift in Sources */,
 				2BE880B01A3A90438E42DE05 /* ScriptWidgetElementColor.swift in Sources */,
 				2E580781A2348116CD7E8454 /* ScriptWidgetElementGradient.swift in Sources */,
 				FC3294E8EC609D1FFB342A5D /* ScriptWidgetElementPoint.swift in Sources */,
@@ -801,40 +811,37 @@
 				C596ADCCACAC75B64D739AB4 /* ScriptWidgetElementView.swift in Sources */,
 				5B1EC3DF3E7DD621EF1DA039 /* ScriptWidgetPackage.swift in Sources */,
 				F4AE8E8FA3E8632765628B63 /* ScriptWidgetRecordStore.swift in Sources */,
-				311E16A1025A41A991EB15DF /* ScriptWidgetCloudJSON.swift in Sources */,
 				72DC6D622A75391C9582ECB9 /* ScriptWidgetRecordsView.swift in Sources */,
-				F0EF7680531C44E78A77ECAB /* ScriptWidgetCloudJSONView.swift in Sources */,
-				FD759D35754342E38900037F /* ScriptWidgetSystemAccessView.swift in Sources */,
 				96FF84D543C3926DD61FBDCF /* ScriptWidgetRunningState.swift in Sources */,
 				56B7B77DE398881D7CF732EC /* ScriptWidgetRuntime.swift in Sources */,
+				AD21B95B9B0CEA5A7642D5DC /* ScriptWidgetRuntimeAlarms.swift in Sources */,
 				2619A4F58CFC814CEC1AD878 /* ScriptWidgetRuntimeCalendar.swift in Sources */,
+				CF91CB39E4C2422902B44DE5 /* ScriptWidgetRuntimeCalendarWrites.swift in Sources */,
+				0F568FFCD5986486EB3F6919 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */,
 				7C1E07AEE5B4391EDE276A26 /* ScriptWidgetRuntimeConsole.swift in Sources */,
+				36DC70F665C521F4A7096BB8 /* ScriptWidgetRuntimeContacts.swift in Sources */,
 				70102D0EB736DA6CAAC79970 /* ScriptWidgetRuntimeDelivery.swift in Sources */,
 				F504231C3A820C5D33559618 /* ScriptWidgetRuntimeDevice.swift in Sources */,
 				40B70F3176C724B5A104A6A2 /* ScriptWidgetRuntimeDiagnostics.swift in Sources */,
+				61839A9710E8F81BCB519F3E /* ScriptWidgetRuntimeDocuments.swift in Sources */,
 				BA3091820D3F8EFFACF32D8E /* ScriptWidgetRuntimeElement.swift in Sources */,
 				727350AEDCC719A184D5995C /* ScriptWidgetRuntimeFetch.swift in Sources */,
 				7C15B0E6C184D7473773C48A /* ScriptWidgetRuntimeFile.swift in Sources */,
-				4765703F555240FD8B843727 /* ScriptWidgetRuntimeCloudJSON.swift in Sources */,
-				827F0361D8CC43E1A5F25B5B /* ScriptWidgetRuntimeHome.swift in Sources */,
-				4FF0658BE63747C6869F2161 /* ScriptWidgetRuntimeContacts.swift in Sources */,
-				3B26B14F6D9C46B1B2ACBAD3 /* ScriptWidgetRuntimeDocuments.swift in Sources */,
-				82F56DFE964A4EC9B1E93CD0 /* ScriptWidgetRuntimeAlarms.swift in Sources */,
-				6DFDEE2D172F48BBBE4389C7 /* ScriptWidgetRuntimeWeather.swift in Sources */,
-				095B6A7BD12C4EC585837C8A /* ScriptWidgetRuntimeMaps.swift in Sources */,
-				E0B314E8753645EEBE740D85 /* ScriptWidgetRuntimeHealthHistory.swift in Sources */,
-				05780F4B9BD84EFAB79EAA0C /* ScriptWidgetRuntimeCalendarWrites.swift in Sources */,
-				483051ECDB314908ABF77DA6 /* ScriptWidgetRuntimeNotifications.swift in Sources */,
-				78242FAAD90949A1A69A56C3 /* ScriptWidgetRuntimeSystemServices.swift in Sources */,
 				B94F843A0032914002F41258 /* ScriptWidgetRuntimeHealth.swift in Sources */,
+				3CC923D1D15DBF20A0AD3C15 /* ScriptWidgetRuntimeHealthHistory.swift in Sources */,
+				EE4F2D4B5CC6E1EF42E61561 /* ScriptWidgetRuntimeHome.swift in Sources */,
 				85E640C7E6A10F44B81BAE0C /* ScriptWidgetRuntimeLocation.swift in Sources */,
+				C40C818264BABFB6125FB954 /* ScriptWidgetRuntimeMaps.swift in Sources */,
 				AF7AD22F3F68DBF68AD9C1B0 /* ScriptWidgetRuntimeMusic.swift in Sources */,
+				4EED991E332A2001337A78D6 /* ScriptWidgetRuntimeNotifications.swift in Sources */,
 				1B1CFCB77E6950F0B8C147BC /* ScriptWidgetRuntimePhotos.swift in Sources */,
 				FF794BA0CDB2D0D985202701 /* ScriptWidgetRuntimePromise.swift in Sources */,
 				22DB1F9A64B3845136EBA893 /* ScriptWidgetRuntimeReminders.swift in Sources */,
 				373AF0A9A6043471A63E457E /* ScriptWidgetRuntimeServices.swift in Sources */,
 				AF591D987922F20D112D9595 /* ScriptWidgetRuntimeStorage.swift in Sources */,
 				656D6B6F630351C5EFA1A3CA /* ScriptWidgetRuntimeSystem.swift in Sources */,
+				A94E61CB3FB7965C5035CD76 /* ScriptWidgetRuntimeSystemServices.swift in Sources */,
+				D25B4BA6ABD477DF416C59F3 /* ScriptWidgetRuntimeWeather.swift in Sources */,
 				B38D70D2EEFFD4D71F265E9B /* ScriptWidgetServiceAccessPolicy.swift in Sources */,
 				DAB9A4A3A4B1A1EC85212B0A /* ScriptWidgetServiceAccountsView.swift in Sources */,
 				A842CC6727C5A723832B6CB0 /* ScriptWidgetServiceAuthorization.swift in Sources */,
@@ -847,6 +854,7 @@
 				7BADA9DF2237397473BA33C3 /* ScriptWidgetStorageProfiles.swift in Sources */,
 				E86639844A0ED980D0AA7600 /* ScriptWidgetStorageUpgrade.swift in Sources */,
 				E6ED807504C201A35055B235 /* ScriptWidgetStorageUpgradeView.swift in Sources */,
+				B9788B00BA69AD3A852E2E8D /* ScriptWidgetSystemAccessView.swift in Sources */,
 				29D47E610F29BE9C33D8920C /* SwingAnimationModifier.swift in Sources */,
 				FE8183F3814074222122242A /* Wire.swift in Sources */,
 				36B8776D634ADD4463925092 /* WorkerMain.swift in Sources */,
@@ -949,7 +957,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.cli;
 				PRODUCT_NAME = ScriptWidgetCLI;
 				SDKROOT = macosx;
@@ -1040,7 +1048,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.cli;
 				PRODUCT_NAME = ScriptWidgetCLI;
 				SDKROOT = macosx;
@@ -1069,7 +1077,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.cli.worker;
 				PRODUCT_NAME = ScriptWidgetValidationWorker;
 				SDKROOT = macosx;
@@ -1099,7 +1107,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.everettjf.scriptwidget.cli.worker;
 				PRODUCT_NAME = ScriptWidgetValidationWorker;
 				SDKROOT = macosx;

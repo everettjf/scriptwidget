@@ -5,7 +5,7 @@ import CoreGraphics
 import Security
 
 private let usage = """
-ScriptWidget native validation CLI 0.2.0 (macOS 26+)
+ScriptWidget native validation CLI 0.2.1 (macOS 26+)
 Usage:
   scriptwidget --version [--format json]
   scriptwidget doctor [--format json]
