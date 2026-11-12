@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Sunrise & Sunset
 // widget-param: "lat,lon" (optional)

@@ -1,5 +1,5 @@
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // import other js/jsx files
 //

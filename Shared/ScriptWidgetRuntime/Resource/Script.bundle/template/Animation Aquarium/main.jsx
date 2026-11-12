@@ -1,4 +1,4 @@
-// ScriptWidget · https://xnu.app/scriptwidget
+// ScriptWidget · https://atomsprout.com/scriptwidget
 // Aquarium: one creature per bounded cell, with family-specific compositions.
 // WidgetKit may freeze motion. The scene remains complete at its resting pose.
 const family = $getenv("widget-size");

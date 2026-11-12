@@ -10,7 +10,7 @@ import SwiftUI
 struct ButtonOfficalSite: View {
     var body: some View {
         Button(action: {
-            NSWorkspace.shared.open(URL(string: "https://xnu.app/scriptwidget")!)
+            NSWorkspace.shared.open(URL(string: "https://atomsprout.com/scriptwidget")!)
         }) {
             Label("ScriptWidget Help", systemImage: "questionmark.circle")
                 .labelStyle(.iconOnly)

@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 // 
 // Usage for component date
 // try to fix the expanding issue , we can add a frame attribute : frame="50,max,leading"

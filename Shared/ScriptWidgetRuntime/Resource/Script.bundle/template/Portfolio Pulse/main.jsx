@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Portfolio Pulse: total value, a 30-day sparkline, and holdings.
 // Sample numbers keep it offline; replace them with your own data.

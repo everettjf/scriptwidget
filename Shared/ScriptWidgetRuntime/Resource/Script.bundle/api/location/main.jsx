@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Usage for api location
 // Note: Location requires main app permission.

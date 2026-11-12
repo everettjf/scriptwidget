@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://xnu.app/scriptwidget/schemas/record-backup-1.json",
+  "$id": "https://atomsprout.com/scriptwidget/schemas/record-backup-1.json",
   "title": "ScriptWidget Record Backup 1",
   "type": "object",
   "additionalProperties": false,

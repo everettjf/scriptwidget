@@ -39,7 +39,7 @@ class NativeCLITests(unittest.TestCase):
         self.assertEqual(report['checks']['execute'],'notRun')
         self.assertEqual(report['checks']['render'],'notRun')
         self.assertEqual(report['backend'],'web-handoff')
-        prefix='https://xnu.app/scriptwidget/studio/#sw-preview=v1.'
+        prefix='https://atomsprout.com/scriptwidget/studio/#sw-preview=v1.'
         self.assertTrue(report['previewURL'].startswith(prefix))
         payload=report['previewURL'][len(prefix):]
         import io

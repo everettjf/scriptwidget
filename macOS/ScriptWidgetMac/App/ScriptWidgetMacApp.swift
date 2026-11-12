@@ -111,16 +111,16 @@ struct ScriptWidgetMacApp: App {
                     NSWorkspace.shared.open(URL(string: "https://discord.gg/eGzEaP6TzR")!)
                 }
                 Button("Mail") {
-                    NSWorkspace.shared.open(URL(string: "mailto:xnuapp@gmail.com?subject=ScriptWidgetMac_Feedback")!)
+                    NSWorkspace.shared.open(URL(string: "mailto:atomsprout@gmail.com?subject=ScriptWidgetMac_Feedback")!)
                 }
                 Button("Developer") {
                     NSWorkspace.shared.open(URL(string: "https://github.com/everettjf")!)
                 }
                 Button("Help") {
-                    NSWorkspace.shared.open(URL(string: "https://xnu.app/scriptwidget")!)
+                    NSWorkspace.shared.open(URL(string: "https://atomsprout.com/scriptwidget")!)
                 }
                 Button("More Apps") {
-                    NSWorkspace.shared.open(URL(string: "https://xnu.app")!)
+                    NSWorkspace.shared.open(URL(string: "https://atomsprout.com")!)
                 }
             }
         }
@@ -302,7 +302,7 @@ private struct ScriptWidgetMacSettingsView: View {
 
             Form {
                 Section("More Apps") {
-                    Link(destination: URL(string: "https://xnu.app/grapecompare/")!) {
+                    Link(destination: URL(string: "https://atomsprout.com/grapecompare/")!) {
                         Label("GrapeCompare", systemImage: "arrow.left.arrow.right")
                     }
                     Link(destination: URL(string: "https://apps.apple.com/us/app/startmyapp-fast-app-launch/id6753610893")!) {

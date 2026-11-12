@@ -1,6 +1,6 @@
 # ScriptWidget 🎨
 
-Website: <https://xnu.app/scriptwidget/>
+Website: <https://atomsprout.com/scriptwidget/>
 
 <div align="center">
 
@@ -39,7 +39,7 @@ scriptwidget render ./MyWidget --output ./artifacts --format json # native macOS
 
 Preview links carry the validated package in a URL fragment and load a separate project; no upload server or model hosting is required. Links support up to 45 KB of compressed package data. Keep links private when code/resources are private. Larger packages can use native previews or explicit `.swt` import. Import `.swt` on iPhone through the existing App; adding a Home Screen widget is a separate user action.
 
-[Install the Skill and get started](docs/agent-quickstart.md) · [Creator website](https://xnu.app/scriptwidget/creator/) · [CLI details](docs/mac-cli.md)
+[Install the Skill and get started](docs/agent-quickstart.md) · [Creator website](https://atomsprout.com/scriptwidget/creator/) · [CLI details](docs/mac-cli.md)
 
 
 ---

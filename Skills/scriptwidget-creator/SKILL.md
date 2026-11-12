@@ -30,4 +30,4 @@ The CLI runs locally without the App, Node or Chrome, and uses offline mocks for
 
 Read [CLI behavior and mocks](references/cli.md). Distinguish package/compile/execute/render/export; `notRun` is not passed. Keep warnings and known unsupported APIs visible. Native CLI currently accepts `api`, `fetch` and string-valued `storage` fixtures. Data Source Plugin execution and browser-specific fixture sections are explicitly unsupported; report this instead of inventing a success.
 
-When the model cannot view images, report that limitation and give the user the preview paths. When using the Web Studio instead, label it a browser approximation with mock data. It is available at https://xnu.app/scriptwidget/studio/ and does not require uploading code to an execution server.
+When the model cannot view images, report that limitation and give the user the preview paths. When using the Web Studio instead, label it a browser approximation with mock data. It is available at https://atomsprout.com/scriptwidget/studio/ and does not require uploading code to an execution server.

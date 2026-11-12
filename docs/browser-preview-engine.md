@@ -616,7 +616,7 @@ on average (2.26% with Lucide icons alone).
 | Non-Apple fonts | corpus median 2.58% with the bundled Inter fallback (222/300 within 5%, 299/300 within 20%); 2.67% with generic fallback fonts |
 | Pages layout | `site/` + Studio at `/studio/` assembled like the workflow passes the smoke test; both workflows parse |
 | Chromium, Firefox, WebKit on Ubuntu and Windows (GitHub Actions, Web Browsers workflow) | Studio renders (28–90 ms), 71 templates, `.swt` import; 100/100 byte-identical trees; every isolation probe blocked; engine test suite passes on both OSes |
-| Live site | https://xnu.app/scriptwidget/studio/ deployed by Pages and rendering over HTTPS in headless Chrome |
+| Live site | https://atomsprout.com/scriptwidget/studio/ deployed by Pages and rendering over HTTPS in headless Chrome |
 | Web Share in iOS 27 Safari (simulator) | `navigator.canShare` accepts the exported `Widget.swt` (`application/zip`) in a secure context, so **Install on iPhone** opens the share sheet; the share extension builds with the file-representation import path |
 | **Not verified** | A physical iPhone, and choosing ScriptWidget in the share sheet through to a completed import (needs taps on the device or simulator) |
 

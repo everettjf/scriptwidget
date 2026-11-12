@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Location Snapshot
 // Requires Location permission in the main app.

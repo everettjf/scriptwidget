@@ -1,7 +1,7 @@
 
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Custom Component
 // Thanks for Reina for telling me this good idea

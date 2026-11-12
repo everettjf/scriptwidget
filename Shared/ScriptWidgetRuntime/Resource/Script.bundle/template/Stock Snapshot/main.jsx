@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Stock Snapshot (stooq.com)
 // widget-param: symbol, e.g. "aapl.us"

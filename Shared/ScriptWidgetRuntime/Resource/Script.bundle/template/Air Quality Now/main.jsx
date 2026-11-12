@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Air Quality Now - Open-Meteo (no API key)
 // widget-param: "lat,lon" (optional)

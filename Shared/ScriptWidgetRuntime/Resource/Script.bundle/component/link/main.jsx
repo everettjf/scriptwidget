@@ -1,12 +1,12 @@
 // 
 // ScriptWidget 
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 // 
 // Usage for component link
 // 
 
 $render(
-  <vstack frame="max" linkurl="https://xnu.app/scriptwidget">
+  <vstack frame="max" linkurl="https://atomsprout.com/scriptwidget">
     <link url="https://www.baidu.com" background="blue">
       <text font="title">Hello Baidu</text>
     </link>

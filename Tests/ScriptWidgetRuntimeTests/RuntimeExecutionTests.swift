@@ -1482,7 +1482,7 @@ final class RuntimeExecutionTests: XCTestCase {
     private func launcherParameters() throws -> [String:String] {
         var items=ScriptWidgetLauncherItem.defaults
         items.append(.init(id:"shortcut",title:"Morning",icon:"play.fill",type:"shortcut",target:"Morning + Plan & Go",input:"Hello & next=✓"))
-        items.append(.init(id:"docs",title:"Docs",icon:"star.fill",type:"web",target:"https://xnu.app/scriptwidget/",input:""))
+        items.append(.init(id:"docs",title:"Docs",icon:"star.fill",type:"web",target:"https://atomsprout.com/scriptwidget/",input:""))
         items.append(.init(id:"mail",title:"Mail",icon:"envelope.fill",type:"app",target:"mailto:hello@example.com",input:""))
         func encode(_ items:[ScriptWidgetLauncherItem]) throws -> String {
             String(decoding:try JSONSerialization.data(withJSONObject:["title":"Quick Launch","accent":"blue","items":items.map(\.dictionary)],options:[.sortedKeys,.withoutEscapingSlashes]),as:UTF8.self)

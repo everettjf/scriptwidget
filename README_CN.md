@@ -23,7 +23,7 @@ scriptwidget preview ./MyWidget
 
 生成后自动打开并加载，不需要手动导入。组件通过 URL 片段传递，不需要上传服务器；加载成新项目并清除地址栏中的包数据。链接容量为压缩包 45 KB，大包可使用原生预览或 `.swt` 导入。链接包含代码与资源，私有组件不要分享链接。
 
-[完整安装与使用说明](docs/agent-quickstart.md) · [Creator 专页](https://xnu.app/scriptwidget/creator/) · [CLI 文档](docs/mac-cli.md)
+[完整安装与使用说明](docs/agent-quickstart.md) · [Creator 专页](https://atomsprout.com/scriptwidget/creator/) · [CLI 文档](docs/mac-cli.md)
 
 ![ScriptWidget 模板画廊](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 

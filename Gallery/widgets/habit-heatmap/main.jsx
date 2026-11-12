@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Tap Check in on a Home Screen widget (iOS 17+ / macOS 14+).
 // Rendering never marks a day complete. Records are local to this package;

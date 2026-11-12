@@ -131,7 +131,7 @@ struct Controller {
             guard let encoded=response["archive"] as? String, let archive=Data(base64Encoded:encoded) else {throw CLIError(code:"tool.worker_protocol",message:"Worker did not return a valid preview package.",exitCode:3)}
             let payload=archive.base64EncodedString().replacingOccurrences(of:"+",with:"-").replacingOccurrences(of:"/",with:"_").replacingOccurrences(of:"=",with:"")
             guard payload.count <= 60000 else {throw CLIError(code:"preview.link_limit",message:"Preview links support up to 45,000 compressed package bytes. Reduce large resources or export a .swt for manual import.",exitCode:1)}
-            let url=URL(string:"https://xnu.app/scriptwidget/studio/#sw-preview=v1."+payload)!
+            let url=URL(string:"https://atomsprout.com/scriptwidget/studio/#sw-preview=v1."+payload)!
             if options.noOpen { report["previewURL"]=url.absoluteString }
             report["browserLaunchRequested"]=false
             report["limitations"]=["Browser preview uses mock data and is not native validation.","The link contains your package; do not share it if the code or resources are private."]

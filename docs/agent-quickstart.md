@@ -33,7 +33,7 @@ With CLI 0.2.0 or later, ask your Agent to run:
 scriptwidget preview ./MyWidget --format json
 ```
 
-The CLI validates the package and compiles its JS/JSX without executing it, then opens your default browser directly in [Web Studio](https://xnu.app/scriptwidget/studio/) with the generated widget loaded. Helpers, manifest and binary resources travel together. The browser adds a new project, preserves existing projects, and clears the package fragment before import. It does not duplicate the import on reload. Invalid links show an error and preserve your work.
+The CLI validates the package and compiles its JS/JSX without executing it, then opens your default browser directly in [Web Studio](https://atomsprout.com/scriptwidget/studio/) with the generated widget loaded. Helpers, manifest and binary resources travel together. The browser adds a new project, preserves existing projects, and clears the package fragment before import. It does not duplicate the import on reload. Invalid links show an error and preserve your work.
 
 No upload server or model service is needed: the ZIP travels in a URL fragment, which is not part of the HTTP request. The link itself contains the complete package; keep private code, resources and credentials out of shared links, logs or chat. The CLI supports up to 45,000 compressed archive bytes (60,000 base64url characters) to keep browser-launch URLs bounded. Larger packages fail explicitly; reduce assets, use [native render](mac-cli.md), or export a `.swt` for explicit import. Resources are never silently removed.
 

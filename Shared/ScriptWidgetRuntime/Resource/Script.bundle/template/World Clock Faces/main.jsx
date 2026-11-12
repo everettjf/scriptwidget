@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // World Clock Faces: analog clocks for several cities. Edit `cities`
 // with IANA time zone names.

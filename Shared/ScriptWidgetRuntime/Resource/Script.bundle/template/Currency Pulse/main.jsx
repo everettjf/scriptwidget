@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Currency Pulse (open.er-api.com)
 // widget-param: base currency (optional)

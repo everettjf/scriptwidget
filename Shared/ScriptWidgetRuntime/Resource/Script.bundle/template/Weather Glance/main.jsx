@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Weather Glance: current conditions, the next hours, and five days.
 // Sample data keeps it offline; replace `weather` with a fetch from your

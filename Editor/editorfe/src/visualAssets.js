@@ -40,7 +40,7 @@ export const visualAssetLicense = `/*
 ScriptWidget original geometric assets 1: Bloom mark, Leaf mark, Pebble friend.
 Source: https://github.com/everettjf/scriptwidget (Editor/editorfe/src/visualAssets.js)
 SPDX-License-Identifier: MIT
-Copyright (c) 2021-2022 everettjf
+Copyright (c) 2021-2022 AtomSprout
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

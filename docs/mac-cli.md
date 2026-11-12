@@ -44,7 +44,7 @@ A native PNG proves that the selected mock scenario produced a macOS SwiftUI sna
 
 ## Browser validation
 
-Open [Web Studio](https://xnu.app/scriptwidget/studio/) and choose **Validate**. Paste JSX to create a new copy or import a `.swt`, inspect the browser preview, then download the current report for your agent. Reports reject stale preview results after code, mocks or settings change. Browser checks run locally, identify backend `web`, and mark native verification `notRun`; they remain an approximation of system fonts, symbols, charts and rendering.
+Open [Web Studio](https://atomsprout.com/scriptwidget/studio/) and choose **Validate**. Paste JSX to create a new copy or import a `.swt`, inspect the browser preview, then download the current report for your agent. Reports reject stale preview results after code, mocks or settings change. Browser checks run locally, identify backend `web`, and mark native verification `notRun`; they remain an approximation of system fonts, symbols, charts and rendering.
 
 ![Web validation entry](images/agent-validation-web.png)
 

@@ -93,7 +93,7 @@ struct SettingsView: View {
                     NavigationLink(destination: AppIconsView()) {
                         Label("App Icon", systemImage: "app.badge")
                     }
-                    SettingsLinkRowView(name: "Website", label: "", urlString: "https://xnu.app/scriptwidget")
+                    SettingsLinkRowView(name: "Website", label: "", urlString: "https://atomsprout.com/scriptwidget")
                     SettingsLinkRowView(name: "Discord", label: "", urlString: "https://discord.gg/eGzEaP6TzR")
                     SettingsLinkRowView(name: "Developer", label: "everettjf", urlString: "https://twitter.com/everettjf")
                     SettingsTextRowView(name: "Version", content: AppHelper.getAppVersion())

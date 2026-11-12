@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Meeting Countdown
 // widget-param: "2026-02-01 09:30" or ISO string

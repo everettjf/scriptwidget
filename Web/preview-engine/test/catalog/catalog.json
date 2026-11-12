@@ -597,7 +597,7 @@
   "title": "Link",
   "size": "small",
   "dark": false,
-  "source": "$render(<vstack><link url=\"https://xnu.app/scriptwidget\"><text font=\"headline\">Open website</text></link><text font=\"caption\" color=\"gray\" linkurl=\"https://example.com\">linkurl text</text></vstack>)"
+  "source": "$render(<vstack><link url=\"https://atomsprout.com/scriptwidget\"><text font=\"headline\">Open website</text></link><text font=\"caption\" color=\"gray\" linkurl=\"https://example.com\">linkurl text</text></vstack>)"
  },
  {
   "id": "076-toggle",

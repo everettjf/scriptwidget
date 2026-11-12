@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Crypto Price Ticker (CoinGecko)
 // widget-param: coin id, e.g. "bitcoin", "ethereum"

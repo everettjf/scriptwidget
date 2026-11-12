@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 // 
 // Year Days Left Template
 // 

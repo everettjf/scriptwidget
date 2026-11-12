@@ -1,6 +1,6 @@
 // 
 // ScriptWidget 
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 // 
 // Usage for component Live Activity and Dynamic Island
 // 

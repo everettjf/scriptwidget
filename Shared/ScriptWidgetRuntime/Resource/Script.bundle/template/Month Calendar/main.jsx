@@ -1,6 +1,6 @@
 //
 // ScriptWidget
-// https://xnu.app/scriptwidget
+// https://atomsprout.com/scriptwidget
 //
 // Month Calendar: the date, a month grid, and the next events.
 // Edit `events` to show your own schedule.

@@ -12,7 +12,7 @@ var openedURLs: [URL] = []
 delegate.openWidgetURL = { openedURLs.append($0);return true }
 
 let externalURLs = [
-    URL(string: "https://xnu.app/scriptwidget")!,
+    URL(string: "https://atomsprout.com/scriptwidget")!,
     URL(string: "scriptable:///run/Name")!,
     URL(fileURLWithPath: "/tmp/widget-card.html"),
     URL(string: "mailto:example@example.com")!
