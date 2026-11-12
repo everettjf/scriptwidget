@@ -10,6 +10,7 @@ on:
       - 'Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/**'
       - 'Gallery/widgets/**'
       - '.github/workflows/pages.yml'
+      - 'Scripts/redirect-legacy-site.py'
   workflow_dispatch:
 permissions:
   contents: read
