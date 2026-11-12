@@ -195,3 +195,11 @@
 "Version" = "版本";
 "PLAY" = "运行";
 "Already Purchased" = "已鼓励";
+
+"Email Feedback" = "邮件反馈";
+
+"Mail Unavailable" = "无法打开邮件";
+
+"Copy Email Details" = "复制邮件详情";
+
+"Please describe your feedback here." = "请在此描述你的反馈。";

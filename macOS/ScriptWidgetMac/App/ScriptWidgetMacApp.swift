@@ -110,9 +110,7 @@ struct ScriptWidgetMacApp: App {
                 Button("Discord") {
                     NSWorkspace.shared.open(URL(string: "https://discord.gg/eGzEaP6TzR")!)
                 }
-                Button("Mail") {
-                    NSWorkspace.shared.open(URL(string: "mailto:atomsprout@gmail.com?subject=ScriptWidgetMac_Feedback")!)
-                }
+                AtomSproutFeedbackEmailButton(appName: "ScriptWidget")
                 Button("Developer") {
                     NSWorkspace.shared.open(URL(string: "https://github.com/everettjf")!)
                 }

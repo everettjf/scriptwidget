@@ -299,6 +299,8 @@
 		07B9317E06EA447491ED65B1 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */; };
 		D2A014501E254E0B81DE3563 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9D4AE7B65A246F08085C382 /* ScriptWidgetStorageNamespaces.swift */; };
 		9257A378DFB04A718B883187 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */; };
+		984EB063C68BCF2CD8D4C953 /* FeedbackEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */; };
+		F023E4E9A30D14FA0652EA6B /* FeedbackEmailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -526,6 +528,8 @@
 		D3383A2C35A540CDA387179A /* ScriptWidgetDiagnosticExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticExportView.swift; sourceTree = "<group>"; };
 		B9D4AE7B65A246F08085C382 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
+		18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmail.swift"; sourceTree = SOURCE_ROOT; };
+		39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmailButton.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -999,6 +1003,7 @@
 		F29117D1279101DE00B860B0 = {
 			isa = PBXGroup;
 			children = (
+				C340A53715CE71DA7CBDBACE /* Feedback */,
 				F29118142791D31200B860B0 /* Shared */,
 				F29117D6279101DE00B860B0 /* ScriptWidgetMac */,
 				F29117FF2791034A00B860B0 /* ScriptWidgetMacWidget */,
@@ -1155,6 +1160,15 @@
 				F2461641279F1B1600C3D90F /* DeleteConfirmView.swift */,
 			);
 			path = Create;
+			sourceTree = "<group>";
+		};
+		C340A53715CE71DA7CBDBACE /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */,
+				39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */,
+			);
+			name = Feedback;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1335,6 +1349,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				984EB063C68BCF2CD8D4C953 /* FeedbackEmail.swift in Sources */,
+				F023E4E9A30D14FA0652EA6B /* FeedbackEmailButton.swift in Sources */,
 				A27000112F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */,
 				A27000122F270001008B90A2 /* AppConfigFrequency.swift in Sources */,
 				A210000700000000000000B0 /* DataSourceLabView.swift in Sources */,
@@ -1776,7 +1792,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1814,7 +1830,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMac/macOS.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1850,7 +1866,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;
@@ -1884,7 +1900,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetMacWidget/ScriptWidgetMacWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEAD_CODE_STRIPPING = YES;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_FILE_ACCESS_DOWNLOADS_FOLDER = readonly;

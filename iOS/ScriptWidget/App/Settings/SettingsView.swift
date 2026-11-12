@@ -90,6 +90,7 @@ struct SettingsView: View {
                 ScriptWidgetDiagnosticSettingsSection()
 
                 Section("Application") {
+                    AtomSproutFeedbackEmailButton(appName: "ScriptWidget")
                     NavigationLink(destination: AppIconsView()) {
                         Label("App Icon", systemImage: "app.badge")
                     }

@@ -460,6 +460,8 @@
 		BEDB968CCE604C65823DC042 /* ScriptWidgetStorageLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99619D8E19192386E982EC46 /* ScriptWidgetStorageLock.swift */; };
 		F5BE25CC96C2425DA6C72B08 /* ScriptWidgetStorageNamespaces.swift in Sources */ = {isa = PBXBuildFile; fileRef = A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */; };
 		22BF70AC62DF40ECA1BBF311 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */; };
+		8550C3EB28C979FF44096ABB /* FeedbackEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A099D7CF8857E8E2EF87DB0D /* FeedbackEmail.swift */; };
+		F14347EA2F051BF99F5CA4E5 /* FeedbackEmailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BEED0B493EBDAF95729EC2 /* FeedbackEmailButton.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -856,6 +858,8 @@
 		E6E75B7877B3401E99E78AC0 /* ScriptWidgetDiagnosticExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDiagnosticExportView.swift; sourceTree = "<group>"; };
 		A804AC8F6C5F4242BBA72345 /* ScriptWidgetStorageNamespaces.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageNamespaces.swift; sourceTree = "<group>"; };
 		903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
+		A099D7CF8857E8E2EF87DB0D /* FeedbackEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmail.swift"; sourceTree = SOURCE_ROOT; };
+		84BEED0B493EBDAF95729EC2 /* FeedbackEmailButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmailButton.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1125,6 +1129,7 @@
 		D18AAC23252A12D10065386A = {
 			isa = PBXGroup;
 			children = (
+				427005377AC05B7CD3635595 /* Feedback */,
 				F291172B279100F000B860B0 /* Shared */,
 				D18AAC2E252A12D10065386A /* ScriptWidget */,
 				D18AAC73252A14AE0065386A /* ScriptWidgetWidget */,
@@ -1742,6 +1747,15 @@
 			path = Bridge;
 			sourceTree = "<group>";
 		};
+		427005377AC05B7CD3635595 /* Feedback */ = {
+			isa = PBXGroup;
+			children = (
+				A099D7CF8857E8E2EF87DB0D /* FeedbackEmail.swift */,
+				84BEED0B493EBDAF95729EC2 /* FeedbackEmailButton.swift */,
+			);
+			name = Feedback;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -2046,6 +2060,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8550C3EB28C979FF44096ABB /* FeedbackEmail.swift in Sources */,
+				F14347EA2F051BF99F5CA4E5 /* FeedbackEmailButton.swift in Sources */,
 				A27000012F270001008B90A2 /* ScriptWidgetAppIntent.swift in Sources */,
 				A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */,
 				A120000100000000000000B0 /* WebStudioServer.swift in Sources */,
@@ -2572,7 +2588,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2605,7 +2621,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidget/ScriptWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_ASSET_PATHS = "\"ScriptWidget/Preview Content\"";
 				DEVELOPMENT_TEAM = YPV49M8592;
 				ENABLE_PREVIEWS = YES;
@@ -2633,7 +2649,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2659,7 +2675,7 @@
 				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetWidget/ScriptWidgetWidget.entitlements;
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetWidget/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
@@ -2684,7 +2700,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -2708,7 +2724,7 @@
 				CODE_SIGN_ENTITLEMENTS = ScriptWidgetShare/ScriptWidgetShare.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 27027;
+				CURRENT_PROJECT_VERSION = 27028;
 				DEVELOPMENT_TEAM = YPV49M8592;
 				INFOPLIST_FILE = ScriptWidgetShare/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
