@@ -102,7 +102,7 @@ Google Play 政策允许解释执行 JS [已核实，Device and Network Abuse �
 - Target API：新应用与更新须面向 API 36（2026-08-31 起）[已核实]。
 - 开发者验证：2026-09-30 起在巴西、印尼、新加坡、泰国生效，2027 年起全球 [已核实]。
 - 个人开发者账号的封闭测试门槛（测试人数与天数）[待验证]，开账号时确认。
-- 中国分发：无 Google Play，各商店通常要求软著和 APP 备案；无 GMS，所以核心路径不能硬依赖 Play Services。仅作考量。
+- 中国分发：无 Google Play，各商店通常要求软著和 APP 备案；无 GMS。已决定暂不考虑国内渠道（D9）。
 - 竞品：KWGT 用公式语言，不是 JS [已核实]；Tasker Widget v2 用 JSON + Glance [二手]；**没有找到已确认的"用 JS/JSX 写 Android 桌面 widget"的应用**。需要注意 Google 自己在推用自然语言生成 widget（"Create My Widget"）[二手]，这与 AI 生成卖点直接重叠；ScriptWidget 的差异是可编程、可分享、跨 iOS/Android。
 
 ---
@@ -139,7 +139,7 @@ app：Jetpack Compose UI（库、编辑器 WebView、Gallery、AI、设置）
 3. **布局用 Kotlin 移植，而不是在 JS 里跑 `layout.js`。** 布局要频繁调文本度量，跨 JNI 往返代价高，且渲染阶段不应再持有 JS 上下文。`layout.js` 仅 638 行，移植成本低；它的常数（如单行文本高度 `ceil(size × 1.1934 × 2) / 2`）是按 SF 字体校准的，Android 需要按所选字体重新校准（见决策 D3）。
 4. **安全不变量逐条移植到 Kotlin**，并移植对应回归测试：规范化包路径（拒绝穿越、绝对路径、符号链接、反斜杠、大小写冲突）、ZIP 预检与条目/体积上限、事务安装、`networkDomains` 匹配、私网/本地主机拒绝、请求/响应预算、`$storage` 命名空间与 256 KiB 上限、malformed manifest fail closed。Android 17 新增的 `ACCESS_LOCAL_NETWORK` 权限**不申请**。AI 凭据放 Android Keystore（Jetpack Security Crypto 已弃用 [已核实]，用 Keystore + Tink/DataStore）。
 5. **存储模型比 iOS 简单。** Android widget 与 App 同进程族，没有 app group / widget extension 的跨进程共享容器问题；`compareAndSet` 仍要保留进程内 + 文件锁语义，因为 Worker 与前台可能并发。
-6. **minSdk 建议 31（Android 12）。** 点击遮罩定位、响应式尺寸、系统圆角、原生 Switch 都是 API 31 引入。更低版本会让遮罩实现复杂很多（决策 D2）。
+6. **minSdk 暂定 35（Android 15），基线只依赖 API 31。** 点击遮罩定位、响应式尺寸、系统圆角、原生 Switch 都是 API 31 引入，基线代码不使用 32–35 才有的接口，保留降回 31 的余地（决策 D2）。
 
 仓库布局建议：
 
@@ -191,7 +191,7 @@ Android/
 | `$xml.parse` | 移植有界解析器（禁 DTD/外部实体） | P0 |
 | `$dataSource.request` + Data Source Plugin 1.0 | 纯声明式 HTTPS，直接移植 | P1 |
 | `$device`、`$system` | `Build`、`BatteryManager`、`Configuration` 等；`$system.platform` 返回 `android` | P0 |
-| `$location` | 前台授权 + 缓存；优先 `LocationManager`，有 GMS 时可用 Fused。**首版不申请后台定位**（Play 审核成本高 [二手]） | P1 |
+| `$location` | 前台授权 + 缓存；用 Fused Location（只上 Google Play，可依赖 Play 服务）。**首版不申请后台定位**（Play 审核成本高 [二手]） | P1 |
 | `$calendar`（读/写） | Calendar Provider + 用户选择日历范围 | P1 |
 | `$health` | Health Connect；需 Play Health apps 声明表 [已核实]；国内无 | P2 |
 | `$photos` | Photo Picker，把所选缩略图复制到私有目录 | P1 |
@@ -209,7 +209,13 @@ Android/
 | `$dynamic_island` | 接受调用但不产生输出 | N/A |
 | AI 生成、Skills 1.0、Gallery 1.0 | HTTP + 提示构建 + 事务安装，逻辑移植 | P1 |
 
-不可用 API 的统一规则：包**仍可安装**，对应 `isAvailable()` 返回 false、调用以既有错误类别拒绝。现有契约已要求脚本对可选设备能力做特性检测，所以这不是破坏性变更。Gallery 条目需要增加平台可用性标注（见 5.4）。
+不可用能力的统一规则（已定）：**在 Android 上明确提示不支持，不做替代实现。**
+
+- 包**仍可安装**。安装和打开包详情时，列出该包声明或用到的、Android 不支持的权限、API 和 surface。
+- 运行时：对应 `isAvailable()` 返回 false，调用以既有错误类别拒绝，错误文本说明"Android 不支持"。现有契约已要求脚本对可选设备能力做特性检测，所以这不是破坏性变更。
+- 脚本未处理该错误时，widget 显示可见的"此功能在 Android 上不支持"卡片，而不是空白。
+- 不支持的标签属性（`backgroundMaterial`、`animation` 等）按 5.1 的回退渲染，并在编辑器诊断里给出提示，不打断渲染。
+- Gallery 条目需要增加平台可用性标注（见 5.4）。
 
 ### 5.3 Surface 与 widget 家族
 
@@ -249,11 +255,18 @@ Android/
 | S1 | QuickJS-NG 能否跑 `kernel.js` 并通过 parity 语料？ | 100 棵树中与 JSC 参考逐字节一致的比例 ≥ 95%，差异全部归因于 `Intl`/时区/错误文本并有处理方案；`while(true){}` 在 5 秒被中断；冷启动到出树的耗时和峰值内存有实测值 |
 | S2 | JSX 转译放在哪、多快？ | 在中端机上，QuickJS 内跑 Babel 或 sucrase 转译一个典型包的耗时可接受（目标 < 2 秒）；否则改为 App 前台 WebView 转译 |
 | S3 | 位图 + 遮罩方案在真机上是否成立？ | 在 Pixel、三星、小米、OPPO/vivo 各一台上：一个含 text/shape/渐变/图片/两个点击区的 widget 尺寸正确、文字清晰、点击命中、深浅色切换后 1 次刷新内更正；位图占用在预算的 50% 以内 |
-| S4 | 后台刷新在国产 ROM 上的真实表现？ | 记录默认设置与"自启动 + 无限制"两种设置下，15 分钟周期刷新和点击广播 24 小时内的成功率，作为产品文案和引导设计的依据 |
+| S4 | 后台刷新在厂商定制系统（三星 One UI、小米/OPPO 国际版）上的真实表现？ | 记录默认设置与"自启动 + 无限制"两种设置下，15 分钟周期刷新和点击广播 24 小时内的成功率，作为产品文案和引导设计的依据 |
+
+**设备现状（2026-11-12）：手上只有一台 Pixel 6。** 因此阶段 0 调整为：
+
+- S1、S2 和 S3 的 Pixel 部分在 Pixel 6 上实测；其他系统版本用官方模拟器补（模拟器只能验证 AOSP 行为）。
+- S3 的三星/小米/OPPO/vivo 部分和整个 S4 **无法在阶段 0 完成**，结论保持 [待验证]，不阻塞进入阶段 1。
+- 补齐途径：内测阶段招募持国产机型的测试用户并收集带机型的诊断日志；或租用云真机；或购入一台小米/OPPO 二手机。OEM 相关的引导页和文案在拿到数据前不定稿。
+- Pixel 6 当前运行的系统版本需要先确认，它决定真机能覆盖 15/16/17 中的哪一个。
 
 并行的非阻塞探测：Remote Compose 发射一个最小文档到 Android 16/17 设备，确认 OEM launcher 是否渲染。
 
-S1 或 S3 不通过时的退路：S1 → 换 Javet；S3 → 把 minSdk 提到 31 仍不行则只能把点击区降级为整卡单一点击。
+S1 或 S3 不通过时的退路：S1 → 换 Javet；S3 → 点击遮罩在目标机型上不可靠时，把点击区降级为整卡单一点击。
 
 ### 阶段 1：运行时核心（4–6 周）
 
@@ -293,9 +306,21 @@ S1 或 S3 不通过时的退路：S1 → 换 Javet；S3 → 把 minSdk 提到 31
 - 可访问性：位图 widget 对 TalkBack 不友好，至少为整卡和每个点击区设置 `contentDescription`。
 - 商店素材、隐私政策、数据安全表单、封闭测试 → 公开测试 → 正式发布。
 
-### 1.0 之后
+### 版本路线图（1.0 → 1.2）
 
-P2 项（Health Connect、Tile、Live Update、Shortcuts、`$music`、`$maps`、`$weather`、大尺寸家族）、Remote Compose 后端转正（等它进 beta 且入口 API 公开）、Wear OS。
+iOS 版功能面很宽，一次做完会把首版拖得很久，所以按三个版本交付。划分原则：1.0 保证"同一个包能跑、能看、能点"；1.1 补系统集成；1.2 补动效和跨端。
+
+| 版本 | 主题 | 内容 | 粗估 |
+| --- | --- | --- | --- |
+| **1.0** | 核心对齐 | 阶段 1–5 的全部内容：QuickJS 运行时与 Package 2.0；全部 29 个标签（位图后端，动画/GIF 为静态）；`$storage $file fetch $http $xml $dataSource $device $system $location $calendar $photos $notifications $services`；small/medium/large 三种尺寸；button/toggle 交互；`dailyTimes` 时间表；编辑器、Gallery、AI 生成、Skills、Data Source Plugin；`.swt` 与 iOS 互通。其余能力显示"Android 不支持" | 第 6–8 个月 |
+| **1.1** | 系统集成 | `$health`（Health Connect，含 Play 健康类声明）；`$weather`（先定数据源）；`$alarms $documents $contacts $music`；Control Widget → 快捷设置磁贴；`actions` → App Shortcuts；Live Activity → Live Update（进度类模板）；`pushUpdates` → FCM；平板/折叠屏大尺寸；锁屏 widget 页适配 | 1.0 后 2–3 个月 |
+| **1.2** | 动效与跨端 | Remote Compose 后端转正（前提：它进入 beta 且手机入口 API 公开）：时钟/摆动动画、GIF 播放、不唤醒应用的 toggle、自走的相对时间文本、准点切换的时间表；替代 `$icloud` 的跨端 JSON 同步（单独设计）；`$maps`；`rotation3d`；Wear OS 可行性评估 | 1.1 后约 3 个月 |
+
+说明：
+
+- 1.2 的 Remote Compose 部分取决于 Google 的发布进度，不受我们控制。若届时仍是 alpha，这部分顺延，1.2 只交付同步和 `$maps`。
+- `$reminders`、`$home`、`backgroundMaterial`、accessory 家族、Dynamic Island 在三个版本内都不做，始终提示不支持。
+- 每个版本发布前，把新增 API 从"不支持"清单移除，并更新平台可用性文档和 Gallery 标注。
 
 ### 粗略时间线
 
@@ -314,13 +339,12 @@ P2 项（Health Connect、Tile、Live Update、Shortcuts、`$music`、`$maps`、
 ## 7. 落地规划
 
 **分发**
-- 第一步只上 Google Play：内部测试 → 封闭测试 → 公开测试 → 正式。
-- 同时在 GitHub Releases 提供签名 APK（项目是开源的，方便国内用户和无 GMS 设备）。注意 2027 年起全球开发者验证会影响侧载分发 [已核实]，需提前完成验证。
-- 国内应用商店作为第二步，前置条件是软著和备案，以及确认核心路径无 GMS 依赖。
+- **只上 Google Play**（D9）：内部测试 → 封闭测试 → 公开测试 → 正式。
+- 国内应用商店和其他渠道暂不考虑。将来若要做，前置条件是软著、备案，以及把依赖 Google Play 服务的部分（Fused 定位、FCM）换成可替代实现。
 
 **版本与品牌**
 - Android 版本号独立于 iOS，但**运行时 API 版本共用**（当前 1.6）。Android 首版声明它实现的 API 版本和不可用 API 清单。
-- `applicationId`、定价与内购模式需要决定（D7）。iOS 版的付费/解锁策略是否对齐，影响 Play Billing 接入工作量。
+- 全部免费、无内购，与 iOS 一致；Android 代码后续开源（D7）。不需要接入 Play Billing。`applicationId` 为 `com.everettjf.scriptwidget`（D11）。
 
 **跨端一致性的长期机制**
 - parity 语料在 CI 里三端跑：JavaScriptCore（参考）、V8（Web）、QuickJS（Android）。任何运行时契约改动必须三端同时更新，否则 CI 失败。
@@ -341,8 +365,8 @@ P2 项（Health Connect、Tile、Live Update、Shortcuts、`$music`、`$maps`、
 | JSC 与 QuickJS 的其他差异（`Error.stack` 格式、`Date.parse` 宽松度、尾调用、微任务排空时机）[部分待验证] | 少数脚本行为不同 | 内核已隔离大部分；新增针对性用例；错误按类别比对而非文本 |
 | 低端机上 5 秒预算更紧（解释器） | 重计算脚本超时 | 实测后决定是否按设备档位给出告警；字节码缓存减少启动耗时 |
 | Android 17 位图硬限制 | 升级 target 后崩溃 | 从第一天起做预算管理和零位图降级布局 |
-| 国产 ROM 杀后台 | widget 不更新、点击无响应 | S4 实测；引导页；可见的更新时间；手动刷新入口 |
-| 字体与图标不同（无 SF、无 SF Symbols） | 视觉与 iOS 不完全一致 | 目标定为"布局语义一致"而非像素一致；Web Studio 提供 Android 预览 |
+| 厂商定制系统杀后台（Play 渠道仍覆盖三星、小米/OPPO 国际版） | widget 不更新、点击无响应 | S4 实测；引导页；可见的更新时间；手动刷新入口 |
+| 字体与图标不同（无 SF、无 SF Symbols） | 视觉与 iOS 不完全一致 | 目标定为"布局语义一致"而非像素一致；默认用随应用分发的字体（D3）；Web Studio 提供 Android 预览 |
 | Remote Compose 长期停在 alpha 或 API 大改 | 动画、host 本地交互、准点 timeline 无法提升 | 位图后端独立可交付；Remote Compose 只在开关后试验 |
 | CM6 在 Android IME 下的输入问题 | 编辑体验差，尤其中文 | 真机回归；必要时提供"外部编辑 + 导入"和 Web Studio 作为主编辑路径 |
 | Google 平台级"AI 生成 widget" | AI 卖点被稀释 | 强调可编程、跨端、可分享的包生态 |
@@ -350,18 +374,35 @@ P2 项（Health Connect、Tile、Live Update、Shortcuts、`$music`、`$maps`、
 
 ---
 
-## 9. 需要你拍板的决策
+## 9. 决策记录
 
-| # | 决策 | 建议 |
+### 已定（2026-11-12，项目负责人确认）
+
+| # | 决策 | 结论 |
 | --- | --- | --- |
-| D1 | JS 引擎 | QuickJS-NG；S1 不过则 Javet |
-| D2 | minSdk | 31（Android 12）。需确认是否接受放弃更低版本 |
-| D3 | 字体 | 默认用系统字体并重新校准文本度量；备选是随包分发一款开源字体（如 Inter，OFL）以获得跨设备一致的度量，代价是与系统风格不一致和包体增加 |
-| D4 | 非方形尺寸策略 | 默认按 launcher 实际尺寸布局（内容可能比 iOS 更高）；备选是在格内居中一个 iOS 比例的内容区（保真但留白） |
-| D5 | `$weather` 数据源 | 推迟到 1.0 之后，或接受付费数据源 |
-| D6 | 跨端同步（替代 `$icloud`） | 首版不做；之后单独设计 |
-| D7 | 商业模式与内购 | 待定，影响阶段 5 工作量 |
-| D8 | 是否在 1.0 前投入 Remote Compose 后端 | 只做探测，不投入正式开发 |
+| D1 | JS 引擎 | **QuickJS-NG**（更轻量）。S1 不通过时再评估 Javet |
+| D3 | 字体 | **随应用分发一款开源字体作为默认**，用户可在设置里改用系统字体或其他内置字体。候选 Inter（OFL）。Inter 不含中日韩字形，中文由内置的思源黑体承担（D10）；文本度量按默认字体校准，切换字体后允许有布局差异 |
+| D4 | 尺寸与边缘 | **跟随 Android 系统**：按 launcher 给的实际尺寸布局，圆角用系统 widget 圆角（`system_app_widget_background_radius`），内边距遵循系统约定。不做"格内居中 iOS 比例内容区" |
+| D7 | 商业模式 | **全部免费，无内购**（与 iOS 一致），Android 代码后续同样开源。不接入 Play Billing |
+| — | Android 无对应的能力 | **明确提示不支持**，不做替代实现（规则见 5.2） |
+
+| D2 | minSdk | **35**（Android 15/16/17，最新版本倒推两个）。基线代码不使用 API 32–35 才有的接口（基线只需要 API 31），公测前若覆盖面不够可降回 31，只需补测试。存量设备占比尚无核实数据 |
+| D5 | `$weather` 数据源 | 放到 1.1；1.0 提示不支持。具体数据源在 1.1 开工前定 |
+| D6 | 跨端同步（替代 `$icloud`） | 放到 1.2，单独设计 |
+| D8 | Remote Compose 后端 | 1.0 前只做探测；1.2 视其发布状态转正 |
+| D9 | 分发渠道 | **只上 Google Play**；国内应用商店和其他渠道暂不考虑。因此可以依赖 Google Play 服务（Fused 定位、FCM），国产 ROM 适配不作为 1.0 的发布门槛 |
+| D10 | 中文字体 | **直接内置思源黑体（Noto Sans SC，OFL）**，优先用可变字体，一份覆盖全部字重。各机型中文排版一致，安装包增加十几兆量级（[待验证]，需实测）。日文、韩文和繁体专有字形仍回退系统字体。随应用分发时附带 OFL 许可文本 |
+| D11 | `applicationId` | **`com.everettjf.scriptwidget`**，与 iOS/macOS 的 Bundle ID 相同。上架 Google Play 后不可更改 |
+
+**中文字体调研。** 有开源且可商用的中文字体，问题只在体积（以下体积为印象值，[待验证]，需实测）：
+
+| 字体 | 许可 | 说明 |
+| --- | --- | --- |
+| 思源黑体 / Noto Sans SC | OFL | 最稳妥。Pixel 等原生系统的中文字体本来就是它；简体子集单字重约十兆量级，有可变字体版本可一份覆盖全部字重 |
+| 霞鹜文楷 | OFL | 楷体风格，适合做可选字体，不适合当默认 |
+| 阿里巴巴普惠体、HarmonyOS Sans、MiSans | 各自的免费授权，非 OFL | 需逐条读授权条款后才能随应用分发，暂不建议 |
+
+结论：采用"直接内置"（D10）。曾考虑过不内置（中文回退系统字体，各厂商排版不一致）和设置里可选下载（安装包不变大，但多一个下载与校验流程），均未采用。
 
 ---
 
