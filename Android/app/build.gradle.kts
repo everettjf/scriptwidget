@@ -20,7 +20,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            // Local builds are signed with the debug key; store uploads use a release key supplied outside the repository.
             signingConfig = signingConfigs.getByName("debug")
         }
     }
