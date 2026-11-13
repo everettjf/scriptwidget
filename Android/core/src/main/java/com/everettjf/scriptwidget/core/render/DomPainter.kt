@@ -181,10 +181,10 @@ class DomPainter(
         layer.recycle()
     }
 
-    /** Standard clock hands map to a system clock view; other clock intervals stay at rest in the bitmap. */
+    /** Standard clock hands map to a system clock view; a custom interval is played as rotated frames. */
     private fun isSupportedMotion(motion: JSONObject): Boolean = when (motion.optString("kind")) {
         "swing" -> true
-        "clock" -> motion.optString("type") in setOf("clockSecond", "clockMinute", "clockMiniute", "clockHour")
+        "clock" -> motion.optString("type") in setOf("clockSecond", "clockMinute", "clockMiniute", "clockHour", "clock")
         else -> false
     }
 

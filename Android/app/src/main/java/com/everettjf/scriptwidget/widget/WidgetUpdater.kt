@@ -34,6 +34,8 @@ object WidgetUpdater {
     private const val MAXIMUM_LIVE_TEXTS = 6
     private const val MAXIMUM_GIFS = 2
     private const val SWING_FRAMES = 16
+    private const val SPIN_FRAMES = 36
+    private const val SPIN_BUDGET_BYTES = 2L * 1024 * 1024
     /** All GIF frames of one widget size together; part of the Android 17 widget bitmap budget. */
     private const val GIF_BUDGET_BYTES = 3L * 1024 * 1024
     /** A running timer and the current time update themselves; other date styles are redrawn on refresh. */
@@ -224,6 +226,7 @@ object WidgetUpdater {
      */
     private fun motion(context: Context, slot: com.everettjf.scriptwidget.core.render.MotionSlot, size: SizeF): RemoteViews? {
         val side = slot.sizePoints
+        if (slot.description.optString("kind") == "clock" && slot.description.optString("type") == "clock") return spin(context, slot)
         if (slot.description.optString("kind") == "clock") {
             val views = RemoteViews(context.packageName, R.layout.widget_clock_hand)
             val id = R.id.widget_clock_hand
@@ -263,6 +266,41 @@ object WidgetUpdater {
             frame.setViewLayoutMargin(R.id.widget_swing_image, RemoteViews.MARGIN_LEFT, if (horizontal) reach + offset else 0f, TypedValue.COMPLEX_UNIT_DIP)
             frame.setViewLayoutMargin(R.id.widget_swing_image, RemoteViews.MARGIN_TOP, if (horizontal) 0f else reach + offset, TypedValue.COMPLEX_UNIT_DIP)
             flipper.addView(R.id.widget_swing, frame)
+        }
+        return flipper
+    }
+
+    /**
+     * A clock effect with a custom interval: the view turns half a circle
+     * every `interval` seconds (backwards when negative). No system view
+     * turns at an arbitrary rate, so the launcher flips through rotated
+     * frames. Unlike the standard hands, the phase is not tied to the time.
+     */
+    private fun spin(context: Context, slot: com.everettjf.scriptwidget.core.render.MotionSlot): RemoteViews {
+        val side = slot.sizePoints
+        val interval = slot.description.optDouble("interval", 10.0)
+        val period = (2.0 * kotlin.math.abs(interval)).coerceIn(0.5, 3600.0)
+        // Fast turns get fewer frames so each frame stays on screen long enough to be drawn.
+        val frames = (period * 1000.0 / 60.0).toInt().coerceIn(8, SPIN_FRAMES)
+        // All frames together stay inside a fixed share of the widget bitmap budget.
+        var pixels = slot.bitmap.width
+        while (pixels.toLong() * pixels * 4L * frames > SPIN_BUDGET_BYTES && pixels > 16) pixels = pixels * 3 / 4
+        val flipper = RemoteViews(context.packageName, R.layout.widget_gif)
+        flipper.setViewLayoutMargin(R.id.widget_gif, RemoteViews.MARGIN_LEFT, slot.anchor.x - side / 2f, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutMargin(R.id.widget_gif, RemoteViews.MARGIN_TOP, slot.anchor.y - side / 2f, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutWidth(R.id.widget_gif, side, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutHeight(R.id.widget_gif, side, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setInt(R.id.widget_gif, "setFlipInterval", (period * 1000.0 / frames).toInt().coerceAtLeast(40))
+        val paint = android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG)
+        for (index in 0 until frames) {
+            val frame = Bitmap.createBitmap(pixels, pixels, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(frame)
+            val degrees = 360f * index / frames * (if (interval < 0) -1f else 1f)
+            canvas.rotate(degrees, pixels / 2f, pixels / 2f)
+            canvas.drawBitmap(slot.bitmap, null, android.graphics.RectF(0f, 0f, pixels.toFloat(), pixels.toFloat()), paint)
+            val image = RemoteViews(context.packageName, R.layout.widget_gif_frame)
+            image.setImageViewBitmap(R.id.widget_gif_frame, frame)
+            flipper.addView(R.id.widget_gif, image)
         }
         return flipper
     }

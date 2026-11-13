@@ -62,7 +62,7 @@ The package format, manifest, permissions and runtime API version are the same. 
 | Timeline | The script runs again at each transition as the current entry; there are no pre-rendered future entries |
 | `<date>` | `timer` and a `time` of now tick by themselves (system font, `00:36` rather than `0:36`). `relative`, `offset` and `date` are redrawn on refresh |
 | `<gif>` | Plays as up to 24 sampled frames at a uniform interval; the first frame when the system removes animations |
-| `animation` | Standard clock effects (`clockSecond`, `clockMinute`, `clockHour`) are hands of a system clock view and show the real time. `swing` plays as 16 frames. A custom clock interval stays at its pose from the last refresh |
+| `animation` | Standard clock effects (`clockSecond`, `clockMinute`, `clockHour`) are hands of a system clock view and show the real time. `swing` plays as 16 frames. A custom clock interval plays as rotated frames at the right speed, with a phase that is not tied to the time |
 | `backgroundMaterial` | The opaque `background` fallback |
 | Rendering modes | Always `fullColor` |
 | Network | The manifest allowlist as on iOS, and names that resolve to private addresses are refused |
@@ -96,7 +96,7 @@ The package format, manifest, permissions and runtime API version are the same. 
 
 ### Synced documents and iPhone
 
-`$icloud` on Android keeps the iOS contract: immutable revisions, both heads preserved on concurrent writes, explicit resolve, and no claim that an upload finished. It cannot exchange data with an iPhone. iOS reads only its iCloud container, which no Android documents provider exposes, and the two platforms encode fractional numbers and some key orders differently, so iOS would reject Android-written revisions. Exchange between two Android devices is covered by unit tests on a plain directory; it has not been tested through a real cloud provider.
+`$icloud` on Android keeps the iOS contract: immutable revisions, both heads preserved on concurrent writes, explicit resolve, and no claim that an upload finished. It cannot exchange data with an iPhone. iOS reads only its iCloud container, which no Android documents provider exposes, and the two platforms encode fractional numbers and some key orders differently, so iOS would reject Android-written revisions. Exchange between two Android devices is covered by unit tests on a plain directory; it also passed on the Pixel through a folder picked with the system picker, but not through a remote cloud provider.
 
 ### Not available
 

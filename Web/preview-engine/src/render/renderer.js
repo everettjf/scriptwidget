@@ -1207,7 +1207,7 @@ export async function renderWidget(treeJSON, {
       // For hosts that animate with their own views (Android): what moves and how.
       element.dataset.swAnimation = JSON.stringify(animation.type === "swing"
         ? { kind: "swing", axis: animation.direction === "horizontal" ? "x" : "y", distance: swingDistance(animation.distance), duration: swingDuration(animation.duration) }
-        : { kind: "clock", type: animation.type, timezone: animation.timezone, anchor: animation.anchor });
+        : { kind: "clock", type: animation.type, timezone: animation.timezone, anchor: animation.anchor, ...(animation.type === "clock" ? { interval: clockPeriod(animation.interval) } : {}) });
       const frozen = reduceMotion || platform() === "macos" || animations === "firstFrame" || fixedNow !== null || Number.isFinite(animationElapsed);
       if (animation.type === "swing") {
         const axis = animation.direction === "horizontal" ? "X" : "Y";

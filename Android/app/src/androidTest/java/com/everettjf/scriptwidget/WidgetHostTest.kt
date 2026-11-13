@@ -173,6 +173,19 @@ class WidgetHostTest {
         assertTrue("centres $centres", centres.all { kotlin.math.abs(it.first - centres[0].first) <= 2 && kotlin.math.abs(it.second - centres[0].second) <= 2 })
     }
 
+    @Test fun customIntervalClockAnimationsTurnAsRotatedFrames() {
+        val source = """${'$'}render(<zstack frame="max"><vstack animation="clockCustom,3"><rect color="#f87171" frame="4,40" /><spacer minLength={40} /></vstack></zstack>)"""
+        val live = children(inflate(place(install(source))), R.id.widget_dynamic)
+        val flipper = live.filterIsInstance<android.widget.ViewFlipper>().single()
+        assertTrue("frames: ${flipper.childCount}", flipper.childCount in 8..36)
+        var bytes = 0L
+        val first = ((flipper.getChildAt(0) as ImageView).drawable as BitmapDrawable).bitmap
+        val quarter = ((flipper.getChildAt(flipper.childCount / 4) as ImageView).drawable as BitmapDrawable).bitmap
+        for (index in 0 until flipper.childCount) bytes += ((flipper.getChildAt(index) as ImageView).drawable as BitmapDrawable).bitmap.allocationByteCount
+        assertTrue("frames use $bytes bytes", bytes <= 2L * 1024 * 1024)
+        assertTrue("the hand has turned between frames", !first.sameAs(quarter))
+    }
+
     @Test fun swingAnimationsBecomeFramesOfOneBitmap() {
         val source = """${'$'}render(<vstack frame="max"><text animation="swing">hello</text></vstack>)"""
         val live = children(inflate(place(install(source))), R.id.widget_dynamic)
