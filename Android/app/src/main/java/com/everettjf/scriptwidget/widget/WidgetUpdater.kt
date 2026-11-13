@@ -35,19 +35,18 @@ object WidgetUpdater {
     /** A running timer and the current time update themselves; other date styles are redrawn on refresh. */
     private val LIVE_DATE_STYLES = setOf("timer", "time")
 
-    fun update(context: Context, appWidgetId: Int, action: WidgetAction? = null) {
+    /** Draws the widget and returns the views that were sent to the launcher, or null when the widget is gone. */
+    fun update(context: Context, appWidgetId: Int, action: WidgetAction? = null): RemoteViews? {
         AppServices.attach(context.applicationContext)
         val manager = AppWidgetManager.getInstance(context)
-        if (manager.getAppWidgetInfo(appWidgetId) == null) return
+        if (manager.getAppWidgetInfo(appWidgetId) == null) return null
         val binding = AppServices.widgets.get(appWidgetId)
         if (binding == null) {
-            manager.updateAppWidget(appWidgetId, message(context, appWidgetId, context.getString(R.string.widget_choose)))
-            return
+            return message(context, appWidgetId, context.getString(R.string.widget_choose)).also { manager.updateAppWidget(appWidgetId, it) }
         }
         val installed = AppServices.library.findByInstallation(binding.installation)
         if (installed == null) {
-            manager.updateAppWidget(appWidgetId, message(context, appWidgetId, context.getString(R.string.widget_missing)))
-            return
+            return message(context, appWidgetId, context.getString(R.string.widget_missing)).also { manager.updateAppWidget(appWidgetId, it) }
         }
         val started = System.nanoTime()
         val runtime = AppServices.runtime
@@ -70,11 +69,13 @@ object WidgetUpdater {
             bitmapBytes += output.bitmap.allocationByteCount
             views[size] = build(context, appWidgetId, installed, output, size)
         }
-        manager.updateAppWidget(appWidgetId, if (views.size == 1) views.values.first() else RemoteViews(views))
+        val combined = if (views.size == 1) views.values.first() else RemoteViews(views)
+        manager.updateAppWidget(appWidgetId, combined)
         AppServices.widgets.markUpdated(appWidgetId, System.currentTimeMillis())
         result.nextTimelineTransition?.let { WidgetScheduler.scheduleAt(context, appWidgetId, it) }
         Log.i(TAG, "widget $appWidgetId ${installed.name} $family sizes=${sizes.joinToString { "${it.width.toInt()}x${it.height.toInt()}" }} " +
             "error=${result.execution.error?.kind} exec=${result.execution.elapsedMilliseconds}ms bitmaps=${bitmapBytes / 1024}KiB total=${(System.nanoTime() - started) / 1_000_000}ms")
+        return combined
     }
 
     /** Runs the tapped action before the widget is redrawn. */
