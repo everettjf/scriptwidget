@@ -26,6 +26,12 @@ class MainActivity : ComponentActivity() {
     /** A request from outside the app: open a package, or install an archive. */
     private val pending = mutableStateOf<Intent?>(null)
 
+    override fun onResume() {
+        super.onResume()
+        // Synced documents: pick up revisions other devices left in the sync folder (throttled, off the main thread).
+        SystemModules.recoverSyncedDocuments(applicationContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)

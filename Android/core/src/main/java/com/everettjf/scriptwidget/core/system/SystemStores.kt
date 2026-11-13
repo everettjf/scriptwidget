@@ -59,13 +59,18 @@ class SystemStores private constructor(context: Context, notificationReceiver: C
     val mapsPlatform = AndroidMapsPlatform(appContext)
     val maps = MapsModule(mapsPlatform)
 
+    /** Synced documents (`$icloud`): the folder choice, the revision store with its private cache, and the module. */
+    val cloudFolder = CloudFolderSettings(appContext, PrivateFile(File(root, "cloudjson/folder.json"), 4 * 1024), File(appContext.filesDir, "SyncedDocuments"))
+    val cloudStore = CloudJsonStore(File(root, "cloudjson")) { cloudFolder.current() }
+    val cloud = CloudJsonModule(cloudStore)
+
     /** The modules to pass to `WidgetRuntime(context, extraModules)`. */
-    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services, health, weather, alarms, documents, contacts, music, maps)
+    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services, health, weather, alarms, documents, contacts, music, maps, cloud)
 
     /**
      * Removes everything the Android 1.1 APIs keep for a deleted installation: its alarms and
      * their receipts, imported documents (and the read permissions for their sources, unless
-     * another installation imported the same source), selected contacts and the forecast cache.
+     * another installation imported the same source), selected contacts, the forecast cache and its synced-documents connection (the documents themselves are kept).
      */
     fun retire(installation: String, remainingInstallations: List<String>) {
         alarms.retire(installation)
@@ -74,6 +79,7 @@ class SystemStores private constructor(context: Context, notificationReceiver: C
         documentImporter.release(sources, stillUsed)
         contacts.retire(installation)
         weather.retire(installation)
+        cloud.retire(installation)
     }
 
     companion object {

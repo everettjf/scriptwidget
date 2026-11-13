@@ -12,12 +12,22 @@ import com.everettjf.scriptwidget.core.system.SystemStores
 /**
  * The system data APIs of Android 1.0 (`$location`, `$calendar`, `$photos`,
  * `$notifications`, `$services`) and 1.1 (`$weather`, `$alarms`, `$documents`,
- * `$contacts`, `$music`, `$health`). Register them with
+ * `$contacts`, `$music`, `$health`) and 1.2 (`$maps`, `$icloud` over a sync folder). Register them with
  * `WidgetRuntime(context, SystemModules.create(context))`.
  */
 object SystemModules {
     /** Stores shared by the native modules and the System Access screen. */
-    fun stores(context: Context): SystemStores = SystemStores.get(context, SystemNotificationReceiver::class.java)
+    fun stores(context: Context): SystemStores = SystemStores.get(context, SystemNotificationReceiver::class.java).also { stores ->
+        // Revisions that arrived from the sync folder change what widgets show.
+        val appContext = context.applicationContext
+        stores.cloud.onRevisionsReceived = { com.everettjf.scriptwidget.widget.WidgetScheduler.refreshAll(appContext) }
+    }
+
+    /** App foreground: exchange synced documents of connected widgets, at most once every 15 seconds. Never blocks the caller. */
+    fun recoverSyncedDocuments(context: Context) {
+        val stores = stores(context)
+        SystemExecutor.pool.execute { runCatching { stores.cloud.recover(AppServices.library.list().filter { "icloud" in it.permissions }.map { it.installation }) } }
+    }
 
     /** The native modules, backed by the process-wide [stores]. */
     fun create(context: Context): List<NativeModule> = stores(context).modules
