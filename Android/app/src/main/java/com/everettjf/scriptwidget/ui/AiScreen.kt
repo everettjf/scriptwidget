@@ -342,8 +342,8 @@ fun AiScreen(navigation: NavController, name: String?) {
             profile?.let { active ->
                 val host = runCatching { URI(active.normalizedBaseUrl).host }.getOrNull().orEmpty()
                 Text(
-                    "${active.kind.displayName} · ${active.model.ifBlank { "no model" }}. Your description" + (if (installed == null) "" else " and this widget's ${AiGenerateViewModel.entryOf(installed)}") +
-                        " are sent to ${host.ifEmpty { "the configured server" }}. Each attempt is a separate request, so cost grows with iterations.",
+                    "${active.kind.displayName} · ${active.model.ifBlank { "no model" }}. Your description" + (if (installed == null) " is" else " and this widget's ${AiGenerateViewModel.entryOf(installed)} are") +
+                        " sent to ${host.ifEmpty { "the configured server" }}. Each attempt is a separate request, so cost grows with iterations.",
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth(),
                 )
             }

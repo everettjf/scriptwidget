@@ -19,6 +19,13 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 
 ## Unreleased
 
+### Android (in development, `android` branch)
+
+- Add an Android app that runs the same Package 2.0 widgets as iPhone, iPad and Mac: QuickJS-NG runtime with the shared execution kernel, the shared renderer painted to a bitmap, and small, medium and large home-screen widgets with tap actions, self-updating timers and light/dark variants.
+- Add the library, the Studio editor, bundled templates, `.swt` import and export, Gallery, Skills, Data Source Plugins and AI generation with API-key providers to the Android app.
+- Capabilities without an Android implementation report `[unsupported_platform]` and are listed on the package page. See [ScriptWidget for Android](docs/android/README.md).
+- Verified on one device (Pixel 6, Android 17). Other vendors' launchers and background limits are untested; AI generation has not been run against a live provider.
+
 ### Compatibility fixes
 
 - Allow confirmed deletion of late-synced or recreated unregistered widget folders without adopting their old records. Preserve confirmation-time directory identity, show deletion failures, and record diagnostic outcomes.
