@@ -132,12 +132,12 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
      */
     fun render(
         request: RunRequest, result: RunResult, width: Float, height: Float, density: Float, maximumBitmapBytes: Long = Long.MAX_VALUE,
-        liveDateStyles: Set<String> = emptySet(), darkMode: Boolean = request.darkMode, liveGifs: Boolean = false,
+        liveDateStyles: Set<String> = emptySet(), darkMode: Boolean = request.darkMode, liveGifs: Boolean = false, liveMotion: Boolean = false,
     ): RenderOutput {
         val tree = result.execution.tree ?: errorTree(result.execution.error)
         val remote = if (result.execution.tree != null && result.request != null) fetchRemoteImages(tree, result.request) else emptyMap()
         return try {
-            renderer.render(RenderRequest(tree, width, height, density, request.family, darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes, liveDateStyles = liveDateStyles, liveGifs = liveGifs))
+            renderer.render(RenderRequest(tree, width, height, density, request.family, darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes, liveDateStyles = liveDateStyles, liveGifs = liveGifs, liveMotion = liveMotion))
         } catch (error: Throwable) {
             renderer.render(RenderRequest(errorTree(ExecutionError("internalError", error.message ?: "Rendering failed")), width, height, density, request.family, darkMode, maximumBitmapBytes = maximumBitmapBytes))
         }

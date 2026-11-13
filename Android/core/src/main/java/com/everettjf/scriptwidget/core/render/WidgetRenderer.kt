@@ -39,6 +39,8 @@ class RenderRequest(
     val liveDateStyles: Set<String> = emptySet(),
     /** Leave `<gif>` out of the bitmap; the host plays it (see [RenderOutput.gifSlots]). */
     val liveGifs: Boolean = false,
+    /** Leave clock and swing animations out of the bitmap; the host moves them (see [RenderOutput.motionSlots]). */
+    val liveMotion: Boolean = false,
 )
 
 class RenderOutput(
@@ -48,6 +50,7 @@ class RenderOutput(
     val hitRegions: List<HitRegion>,
     val dateSlots: List<DateSlot>,
     val gifSlots: List<GifSlot>,
+    val motionSlots: List<MotionSlot>,
     val diagnostics: JSONArray,
     val layoutMilliseconds: Long,
     val paintMilliseconds: Long,
@@ -174,9 +177,10 @@ class WidgetRenderer(context: Context, private val scripts: SharedScripts, val f
         if (bytesAtRequestedScale > request.maximumBitmapBytes) scale *= sqrt(request.maximumBitmapBytes.toDouble() / bytesAtRequestedScale).toFloat()
         val bitmap = Bitmap.createBitmap(max(1, ceil(request.width * scale).toInt()), max(1, ceil(request.height * scale).toInt()), Bitmap.Config.ARGB_8888)
         val painter = DomPainter(text, source, request.liveDateStyles, request.liveGifs)
+        painter.liveMotion = request.liveMotion
         painter.paint(Canvas(bitmap), DomNode(rendered.getJSONObject("root")), scale)
         images = null
-        return RenderOutput(bitmap, scale, painter.hitRegions.toList(), painter.dateSlots.toList(), painter.gifSlots.toList(), rendered.optJSONArray("diagnostics") ?: JSONArray(),
+        return RenderOutput(bitmap, scale, painter.hitRegions.toList(), painter.dateSlots.toList(), painter.gifSlots.toList(), painter.motionSlots.toList(), rendered.optJSONArray("diagnostics") ?: JSONArray(),
             layoutMilliseconds, (System.nanoTime() - paintStart) / 1_000_000)
     }
 

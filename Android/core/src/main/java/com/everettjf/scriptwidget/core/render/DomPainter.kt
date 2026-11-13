@@ -46,6 +46,13 @@ class DateSlot(val bounds: RectF, val description: JSONObject, val style: TextSt
 /** A package GIF the host plays with its own views; it is left out of the bitmap. */
 class GifSlot(val bounds: RectF, val source: String)
 
+/**
+ * A view with a clock or swing animation, drawn at rest into its own bitmap
+ * so the host can move it. [anchor] is the rotation centre (clock) or the
+ * resting centre (swing) in widget points; the bitmap is centred on it.
+ */
+class MotionSlot(val description: JSONObject, val anchor: android.graphics.PointF, val bitmap: Bitmap, val sizePoints: Float)
+
 /** Supplies decoded images for `src` values: `res:<path>`, data URLs and fetched remote URLs. */
 fun interface ImageSource {
     fun bitmap(source: String, maximumPixels: Int): Bitmap?
@@ -65,6 +72,11 @@ class DomPainter(
     private val liveGifs: Boolean = false,
 ) {
     val gifSlots = ArrayList<GifSlot>()
+    /** Filled when [liveMotion] is on. */
+    val motionSlots = ArrayList<MotionSlot>()
+    /** Draw animated views into [motionSlots] instead of the widget bitmap. */
+    var liveMotion: Boolean = false
+    private var pixelScale = 1f
     val hitRegions = ArrayList<HitRegion>()
     val dateSlots = ArrayList<DateSlot>()
     private var activeDate: JSONObject? = null
@@ -82,6 +94,8 @@ class DomPainter(
         hitRegions.clear()
         dateSlots.clear()
         gifSlots.clear()
+        motionSlots.clear()
+        pixelScale = scale
         canvas.save()
         canvas.scale(scale, scale)
         val width = Css.pixels(root.style["width"]) ?: 0f
@@ -103,6 +117,10 @@ class DomPainter(
             return
         }
 
+        if (liveMotion && motionSlots.size < MAXIMUM_MOTION_SLOTS) {
+            val motion = node.dataset["swAnimation"]?.let { runCatching { JSONObject(it) }.getOrNull() }
+            if (motion != null && isSupportedMotion(motion) && recordMotion(node, motion, parentWidth, parentHeight, inherited, toWidget)) return
+        }
         val absolute = style["position"] == "absolute"
         val x = if (absolute) Css.length(style["left"], parentWidth) ?: 0f else 0f
         val y = (if (absolute) Css.length(style["top"], parentHeight) ?: 0f else 0f) + (Css.pixels(style["marginTop"]) ?: 0f)
@@ -161,6 +179,47 @@ class DomPainter(
         if (layered) canvas.restore()
         alpha.recycle()
         layer.recycle()
+    }
+
+    /** Standard clock hands map to a system clock view; other clock intervals stay at rest in the bitmap. */
+    private fun isSupportedMotion(motion: JSONObject): Boolean = when (motion.optString("kind")) {
+        "swing" -> true
+        "clock" -> motion.optString("type") in setOf("clockSecond", "clockMinute", "clockMiniute", "clockHour")
+        else -> false
+    }
+
+    /** Draws [node] at rest (no animation transform) into a square bitmap centred on its anchor. */
+    private fun recordMotion(node: DomNode, motion: JSONObject, parentWidth: Float, parentHeight: Float, inherited: TextContext, toWidget: Matrix): Boolean {
+        val style = node.style
+        val x = Css.length(style["left"], parentWidth) ?: 0f
+        val y = Css.length(style["top"], parentHeight) ?: 0f
+        val width = Css.length(style["width"], parentWidth) ?: parentWidth
+        val height = Css.length(style["height"], parentHeight) ?: parentHeight
+        if (width <= 0f || height <= 0f) return false
+        val origin = style["transformOrigin"]?.split(' ')
+        val clock = motion.optString("kind") == "clock"
+        val anchorX = if (clock) Css.length(origin?.getOrNull(0), width) ?: (width / 2f) else width / 2f
+        val anchorY = if (clock) Css.length(origin?.getOrNull(1), height) ?: (height / 2f) else height / 2f
+        // A rotating view needs room for every angle; a swinging one only for itself.
+        val corners = listOf(0f to 0f, width to 0f, 0f to height, width to height)
+        val reach = if (clock) corners.maxOf { (cx, cy) -> kotlin.math.hypot(cx - anchorX, cy - anchorY) } else max(width, height) / 2f
+        val side = reach * 2f + 4f
+        val pixels = ceil(side * pixelScale).toInt()
+        if (pixels <= 0 || pixels > 1024) return false
+        val bitmap = Bitmap.createBitmap(pixels, pixels, Bitmap.Config.ARGB_8888)
+        val layer = Canvas(bitmap)
+        layer.scale(pixelScale, pixelScale)
+        layer.translate(side / 2f - anchorX, side / 2f - anchorY)
+        // Tap targets inside a moving view are not tracked; the view is drawn only.
+        val saved = ArrayList(hitRegions)
+        val opacity = style["opacity"]?.toFloatOrNull()?.coerceIn(0f, 1f) ?: 1f
+        if (opacity < 1f) layer.saveLayerAlpha(null, (opacity * 255f + 0.5f).toInt())
+        content(layer, node, RectF(0f, 0f, width, height), inherited, Matrix())
+        hitRegions.clear(); hitRegions.addAll(saved)
+        val point = floatArrayOf(x + anchorX, y + anchorY)
+        toWidget.mapPoints(point)
+        motionSlots += MotionSlot(motion, android.graphics.PointF(point[0], point[1]), bitmap, side)
+        return true
     }
 
     private fun content(canvas: Canvas, node: DomNode, bounds: RectF, inherited: TextContext, toWidget: Matrix) {
@@ -382,6 +441,8 @@ class DomPainter(
         matrix.postTranslate(originX, originY)
         return matrix
     }
+
+    private companion object { const val MAXIMUM_MOTION_SLOTS = 8 }
 
     @Suppress("unused") private val unusedFilter = PorterDuffColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN)
 }

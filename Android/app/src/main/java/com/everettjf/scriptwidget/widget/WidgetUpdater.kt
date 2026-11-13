@@ -33,6 +33,7 @@ object WidgetUpdater {
     private const val MAXIMUM_SIZES = 2
     private const val MAXIMUM_LIVE_TEXTS = 6
     private const val MAXIMUM_GIFS = 2
+    private const val SWING_FRAMES = 16
     /** All GIF frames of one widget size together; part of the Android 17 widget bitmap budget. */
     private const val GIF_BUDGET_BYTES = 3L * 1024 * 1024
     /** A running timer and the current time update themselves; other date styles are redrawn on refresh. */
@@ -73,8 +74,8 @@ object WidgetUpdater {
         val views = LinkedHashMap<SizeF, RemoteViews>()
         var bitmapBytes = 0L
         for (size in sizes) {
-            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES, liveGifs = animate)
-            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark, liveGifs = animate)
+            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES, liveGifs = animate, liveMotion = animate)
+            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark, liveGifs = animate, liveMotion = animate)
             // Identical drawings need one bitmap; otherwise the launcher picks by its own theme.
             val themed = if (other.bitmap.sameAs(output.bitmap)) null else other
             bitmapBytes += output.bitmap.allocationByteCount + (themed?.bitmap?.allocationByteCount ?: 0)
@@ -162,6 +163,7 @@ object WidgetUpdater {
             }
             views.addView(R.id.widget_dynamic, flipper)
         }
+        for (slot in output.motionSlots) motion(context, slot, size)?.let { views.addView(R.id.widget_dynamic, it) }
         views.removeAllViews(R.id.widget_overlay)
         for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {
             val intent = pendingIntent(context, appWidgetId, index, region.interaction) ?: continue
@@ -213,6 +215,56 @@ object WidgetUpdater {
             views.setChronometer(id, android.os.SystemClock.elapsedRealtime() + (target - now), null, true)
         }
         return views
+    }
+
+    /**
+     * Moves an animated view. Clock effects become the one visible hand of a
+     * system clock, so they show the real time. A swing becomes frames of the
+     * same bitmap at different offsets that the launcher flips through.
+     */
+    private fun motion(context: Context, slot: com.everettjf.scriptwidget.core.render.MotionSlot, size: SizeF): RemoteViews? {
+        val side = slot.sizePoints
+        if (slot.description.optString("kind") == "clock") {
+            val views = RemoteViews(context.packageName, R.layout.widget_clock_hand)
+            val id = R.id.widget_clock_hand
+            views.setViewLayoutMargin(id, RemoteViews.MARGIN_LEFT, slot.anchor.x - side / 2f, TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, slot.anchor.y - side / 2f, TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutWidth(id, side, TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutHeight(id, side, TypedValue.COMPLEX_UNIT_DIP)
+            // The hand is drawn at its bitmap's pixel size, so tag the bitmap with the density it was drawn for.
+            slot.bitmap.density = (context.resources.displayMetrics.densityDpi * (slot.bitmap.width / (side * context.resources.displayMetrics.density))).toInt()
+            val icon = android.graphics.drawable.Icon.createWithBitmap(slot.bitmap)
+            val method = when (slot.description.optString("type")) { "clockSecond" -> "setSecondHand"; "clockHour" -> "setHourHand"; else -> "setMinuteHand" }
+            views.setIcon(id, method, icon)
+            val zone = slot.description.optString("timezone")
+            if (zone.isNotEmpty() && zone != "current" && java.util.TimeZone.getAvailableIDs().contains(zone)) views.setString(id, "setTimeZone", zone)
+            return views
+        }
+        val distance = slot.description.optDouble("distance", 10.0).toFloat()
+        val duration = slot.description.optDouble("duration", 1.0).toFloat()
+        val horizontal = slot.description.optString("axis") == "x"
+        val reach = kotlin.math.abs(distance)
+        val flipper = RemoteViews(context.packageName, R.layout.widget_swing)
+        val boxWidth = side + if (horizontal) reach * 2f else 0f
+        val boxHeight = side + if (horizontal) 0f else reach * 2f
+        flipper.setViewLayoutMargin(R.id.widget_swing, RemoteViews.MARGIN_LEFT, slot.anchor.x - boxWidth / 2f, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutMargin(R.id.widget_swing, RemoteViews.MARGIN_TOP, slot.anchor.y - boxHeight / 2f, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutWidth(R.id.widget_swing, boxWidth, TypedValue.COMPLEX_UNIT_DIP)
+        flipper.setViewLayoutHeight(R.id.widget_swing, boxHeight, TypedValue.COMPLEX_UNIT_DIP)
+        // One full swing (there and back) takes twice the duration, as on iPhone.
+        flipper.setInt(R.id.widget_swing, "setFlipInterval", (2000f * duration / SWING_FRAMES).toInt().coerceAtLeast(40))
+        for (index in 0 until SWING_FRAMES) {
+            val offset = (kotlin.math.sin(index.toDouble() / SWING_FRAMES * 2.0 * Math.PI) * distance).toFloat()
+            val frame = RemoteViews(context.packageName, R.layout.widget_swing_frame)
+            // Every frame shares one bitmap; only its position changes.
+            frame.setImageViewBitmap(R.id.widget_swing_image, slot.bitmap)
+            frame.setViewLayoutWidth(R.id.widget_swing_image, side, TypedValue.COMPLEX_UNIT_DIP)
+            frame.setViewLayoutHeight(R.id.widget_swing_image, side, TypedValue.COMPLEX_UNIT_DIP)
+            frame.setViewLayoutMargin(R.id.widget_swing_image, RemoteViews.MARGIN_LEFT, if (horizontal) reach + offset else 0f, TypedValue.COMPLEX_UNIT_DIP)
+            frame.setViewLayoutMargin(R.id.widget_swing_image, RemoteViews.MARGIN_TOP, if (horizontal) 0f else reach + offset, TypedValue.COMPLEX_UNIT_DIP)
+            flipper.addView(R.id.widget_swing, frame)
+        }
+        return flipper
     }
 
     private fun Bitmap.asShared(): Bitmap = this

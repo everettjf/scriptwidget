@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A system clock with one visible hand: the hand is a view the package animates with a clock effect. -->
+<AnalogClock xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_clock_hand"
+    android:layout_width="1dp"
+    android:layout_height="1dp"
+    android:dial="@drawable/widget_transparent"
+    android:hand_hour="@drawable/widget_transparent"
+    android:hand_minute="@drawable/widget_transparent"
+    android:hand_second="@drawable/widget_transparent"
+    android:importantForAccessibility="no" />

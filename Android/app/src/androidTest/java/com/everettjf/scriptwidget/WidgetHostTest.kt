@@ -159,6 +159,29 @@ class WidgetHostTest {
         assertTrue("frames use $bytes bytes", bytes <= 3L * 1024 * 1024)
     }
 
+    @Test fun clockAnimationsBecomeHandsOfASystemClock() {
+        val source = """${'$'}render(<zstack frame="max" background="#111827">
+            <vstack animation="clockHour"><rect color="white" frame="6,30" /><spacer minLength={30} /></vstack>
+            <vstack animation="clockMinute"><rect color="#60a5fa" frame="4,44" /><spacer minLength={44} /></vstack>
+            <vstack animation="clockSecond"><rect color="#f87171" frame="2,50" /><spacer minLength={50} /></vstack>
+        </zstack>)"""
+        val live = children(inflate(place(install(source))), R.id.widget_dynamic)
+        val clocks = live.filterIsInstance<android.widget.AnalogClock>()
+        assertEquals("one system clock per animated hand", 3, clocks.size)
+        // Every hand turns about the same point: the views share one centre.
+        val centres = clocks.map { val p = it.layoutParams as FrameLayout.LayoutParams; (p.leftMargin + p.width / 2) to (p.topMargin + p.height / 2) }
+        assertTrue("centres $centres", centres.all { kotlin.math.abs(it.first - centres[0].first) <= 2 && kotlin.math.abs(it.second - centres[0].second) <= 2 })
+    }
+
+    @Test fun swingAnimationsBecomeFramesOfOneBitmap() {
+        val source = """${'$'}render(<vstack frame="max"><text animation="swing">hello</text></vstack>)"""
+        val live = children(inflate(place(install(source))), R.id.widget_dynamic)
+        val flipper = live.filterIsInstance<android.widget.ViewFlipper>().single()
+        assertEquals(16, flipper.childCount)
+        val margins = (0 until flipper.childCount).map { ((flipper.getChildAt(it) as ViewGroup).getChildAt(0).layoutParams as FrameLayout.LayoutParams).leftMargin }
+        assertTrue("the view moves: $margins", margins.toSet().size > 4)
+    }
+
     @Test fun scriptErrorsBecomeAVisibleCardNotABlankWidget() {
         val id = place(install("""const broken = ; ${'$'}render(<text>never</text>)"""))
         val view = inflate(id)
