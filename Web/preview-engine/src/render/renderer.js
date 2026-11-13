@@ -808,7 +808,9 @@ export async function renderWidget(treeJSON, {
   // The style and target instant of a <date>, so a host with self-updating
   // text views can keep timers and clocks current between renders.
   function dateDescription(reader) {
-    return { style: reader.string("style") ?? "timer", date: reader.string("date") ?? reader.double("date") };
+    const { style, real, date } = resolveDate(reader);
+    // `live` is true when the text shows the current time rather than a fixed instant.
+    return { style, target: date.getTime(), live: Math.abs(date.getTime() - real.getTime()) < 1000 };
   }
 
   function progressNode(reader) {
@@ -840,8 +842,11 @@ export async function renderWidget(treeJSON, {
   // web preview uses the real clock too; `now` (like ScriptWidgetRenderClock
   // in tests) fixes it for the absolute styles. Formats follow
   // Text(date, style:) in English.
-  function formatDate(reader) {
-    const style = { time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time";
+  const dateStyle = (reader) => ({ time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time");
+
+  /// The instant a <date> shows, and the clock it is measured against.
+  function resolveDate(reader) {
+    const style = dateStyle(reader);
     const real = new Date();
     const now = fixedNow !== null && (style === "time" || style === "date") ? new Date(fixedNow) : real;
     let date = now;
@@ -857,6 +862,11 @@ export async function renderWidget(treeJSON, {
         date = new Date(now.getTime() + step * (Number.isFinite(middle) && /^[+-]?\d+$/.test(name.slice(1, -1)) ? middle : 0));
       }
     } else if (reader.double("date") !== null) date = new Date(reader.double("date"));
+    return { style, real, date };
+  }
+
+  function formatDate(reader) {
+    const { style, real, date } = resolveDate(reader);
     const seconds = Math.round((date.getTime() - real.getTime()) / 1000);
     const parts = (value) => {
       const total = Math.abs(value);

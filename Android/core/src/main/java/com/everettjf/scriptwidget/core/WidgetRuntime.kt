@@ -117,11 +117,11 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
      * is never blank. Remote images are fetched first, under the same network
      * policy as `fetch`.
      */
-    fun render(request: RunRequest, result: RunResult, width: Float, height: Float, density: Float, maximumBitmapBytes: Long = Long.MAX_VALUE): RenderOutput {
+    fun render(request: RunRequest, result: RunResult, width: Float, height: Float, density: Float, maximumBitmapBytes: Long = Long.MAX_VALUE, liveDateStyles: Set<String> = emptySet()): RenderOutput {
         val tree = result.execution.tree ?: errorTree(result.execution.error)
         val remote = if (result.execution.tree != null && result.request != null) fetchRemoteImages(tree, result.request) else emptyMap()
         return try {
-            renderer.render(RenderRequest(tree, width, height, density, request.family, request.darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes))
+            renderer.render(RenderRequest(tree, width, height, density, request.family, request.darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes, liveDateStyles = liveDateStyles))
         } catch (error: Throwable) {
             renderer.render(RenderRequest(errorTree(ExecutionError("internalError", error.message ?: "Rendering failed")), width, height, density, request.family, request.darkMode, maximumBitmapBytes = maximumBitmapBytes))
         }
@@ -138,8 +138,9 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
         fun text(value: String, props: String) = "{\"\$element\":\"text\",\"props\":$props,\"children\":[${JSONObject.quote(value)}]}"
         val children = listOf(
             text("$title error", "{\"color\":\"#b91c1c\",\"font\":\"caption\",\"fontWeight\":\"bold\"}"),
-            text((error?.message ?: "Unknown error").take(400), "{\"font\":\"caption\"}"),
-            text(recovery, "{\"color\":\"secondary\",\"font\":\"caption2\"}"),
+            // Fixed colors: the card keeps its light background in dark mode.
+            text((error?.message ?: "Unknown error").take(400), "{\"color\":\"#1f2937\",\"font\":\"caption\"}"),
+            text(recovery, "{\"color\":\"#6b7280\",\"font\":\"caption2\"}"),
         ).joinToString(",")
         return "{\"\$element\":\"vstack\",\"props\":{\"alignment\":\"leading\",\"background\":\"#fef2f2\",\"frame\":\"max,topLeading\",\"padding\":\"12\",\"spacing\":4},\"children\":[$children]}"
     }

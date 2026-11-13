@@ -41,7 +41,9 @@ import { DocumentSaveCoordinator, initialStudioState, recoverableDraft, reduceSt
 import { WebStudioAPI } from "./webStudioAPI.js";
 import "./style.css";
 
-const isWebStudio = /^https?:$/.test(window.location.protocol);
+// The Android app serves this bundle to its WebView from a private https
+// origin and exposes ScriptWidgetAndroid; that is a native host, not Web Studio.
+const isWebStudio = /^https?:$/.test(window.location.protocol) && !window.ScriptWidgetAndroid;
 const editorParent = document.querySelector(isWebStudio ? "#editor" : "#native-editor");
 
 const readOnly = new Compartment();

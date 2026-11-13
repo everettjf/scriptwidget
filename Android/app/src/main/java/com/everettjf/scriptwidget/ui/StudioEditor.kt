@@ -32,6 +32,8 @@ class StudioEditor(context: Context, private val onSave: (String) -> Boolean, pr
         private set
 
     init {
+        // A WebView that wraps its content gives the page no height to fill.
+        webView.layoutParams = android.view.ViewGroup.LayoutParams(android.view.ViewGroup.LayoutParams.MATCH_PARENT, android.view.ViewGroup.LayoutParams.MATCH_PARENT)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true
         webView.settings.allowFileAccess = false
@@ -42,6 +44,13 @@ class StudioEditor(context: Context, private val onSave: (String) -> Boolean, pr
             override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? {
                 if (request.url.host != HOST) return WebResourceResponse("text/plain", "utf-8", 403, "Forbidden", emptyMap(), ByteArrayInputStream(ByteArray(0)))
                 return serve(view.context, request.url)
+            }
+        }
+        webView.webChromeClient = object : android.webkit.WebChromeClient() {
+            override fun onConsoleMessage(message: android.webkit.ConsoleMessage): Boolean {
+                // Editor diagnostics only; document text is never logged by the bundle.
+                if (message.messageLevel() == android.webkit.ConsoleMessage.MessageLevel.ERROR) android.util.Log.w("ScriptWidgetStudio", "${message.message()} (${message.sourceId().substringAfterLast('/')}:${message.lineNumber()})")
+                return true
             }
         }
         webView.loadUrl("https://$HOST/index.html")

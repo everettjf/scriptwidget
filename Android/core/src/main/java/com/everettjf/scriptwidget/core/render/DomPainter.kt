@@ -53,9 +53,15 @@ fun interface ImageSource {
  * HTML/CSS and SVG subset that Web/preview-engine/src/render/renderer.js
  * writes: absolutely positioned boxes, text, images and inline SVG.
  */
-class DomPainter(private val text: TextEngine, private val images: ImageSource) {
+class DomPainter(
+    private val text: TextEngine,
+    private val images: ImageSource,
+    /** `<date>` styles the host draws itself with self-updating views; their text is left out of the bitmap. */
+    private val liveDateStyles: Set<String> = emptySet(),
+) {
     val hitRegions = ArrayList<HitRegion>()
     val dateSlots = ArrayList<DateSlot>()
+    private var activeDate: JSONObject? = null
     private val svg = SvgPainter(text)
 
     private class TextContext(
@@ -181,27 +187,29 @@ class DomPainter(private val text: TextEngine, private val images: ImageSource) 
         if (clips) { canvas.save(); canvas.clipPath(outline) }
 
         val context = textContext(style, inherited)
-        if (node.tag == "img") image(canvas, node, bounds)
-        else if (node.text != null && node.children.isEmpty()) {
-            drawText(canvas, node.text, style, bounds, context)
-        }
+        val previousDate = activeDate
         node.dataset["swDate"]?.let { description ->
+            val parsed = runCatching { JSONObject(description) }.getOrNull()
+            val style = parsed?.optString("style")
+            // A clock view shows the current time, so only a <date> of "now" may use it.
+            if (parsed != null && style in liveDateStyles && (style != "time" || parsed.optBoolean("live"))) activeDate = parsed
+        }
+        val date = activeDate
+        if (date != null && style.containsKey("fontSize")) {
+            // The text element of a live <date>: the host places a clock or timer here.
             val mapped = RectF(bounds)
             toWidget.mapRect(mapped)
-            val leaf = firstTextElement(node)
-            val leafContext = leaf?.let { textContext(it.style, textContext(node.style, inherited)) } ?: context
-            val inner = leaf?.children?.firstOrNull { it.text != null }
-            val color = inner?.style?.get("color")?.let { Css.color(it) } ?: leafContext.color
-            runCatching { JSONObject(description) }.getOrNull()?.let { dateSlots += DateSlot(mapped, it, leafContext.style(), color, leafContext.align) }
+            val color = node.children.firstOrNull { it.text != null }?.style?.get("color")?.let { Css.color(it) } ?: context.color
+            dateSlots += DateSlot(mapped, date, context.style(), color, context.align)
+            activeDate = previousDate
+            if (clips) canvas.restore()
+            return
         }
+        if (node.tag == "img") image(canvas, node, bounds)
+        else if (node.text != null && node.children.isEmpty()) drawText(canvas, node.text, style, bounds, context)
         for (child in node.children) element(canvas, child, width, height, context, toWidget)
+        activeDate = previousDate
         if (clips) canvas.restore()
-    }
-
-    private fun firstTextElement(node: DomNode): DomNode? {
-        if (node.style.containsKey("fontSize")) return node
-        for (child in node.children) firstTextElement(child)?.let { return it }
-        return null
     }
 
     private fun textContext(style: Map<String, String>, inherited: TextContext): TextContext {

@@ -31,6 +31,9 @@ object WidgetUpdater {
     private const val TAG = "ScriptWidget"
     private const val MAXIMUM_HIT_REGIONS = 24
     private const val MAXIMUM_SIZES = 2
+    private const val MAXIMUM_LIVE_TEXTS = 6
+    /** A running timer and the current time update themselves; other date styles are redrawn on refresh. */
+    private val LIVE_DATE_STYLES = setOf("timer", "time")
 
     fun update(context: Context, appWidgetId: Int, action: WidgetAction? = null) {
         AppServices.attach(context.applicationContext)
@@ -63,7 +66,7 @@ object WidgetUpdater {
         val views = LinkedHashMap<SizeF, RemoteViews>()
         var bitmapBytes = 0L
         for (size in sizes) {
-            val output = runtime.render(request, result, size.width, size.height, density, budget)
+            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES)
             bitmapBytes += output.bitmap.allocationByteCount
             views[size] = build(context, appWidgetId, installed, output, size)
         }
@@ -119,6 +122,8 @@ object WidgetUpdater {
         views.setContentDescription(R.id.widget_image, installed.displayName)
         // With no tap target of its own, the widget opens its package in the app.
         views.setOnClickPendingIntent(R.id.widget_image, openApp(context, appWidgetId, installed))
+        views.removeAllViews(R.id.widget_dynamic)
+        for (slot in output.dateSlots.take(MAXIMUM_LIVE_TEXTS)) liveText(context, slot, size)?.let { views.addView(R.id.widget_dynamic, it) }
         views.removeAllViews(R.id.widget_overlay)
         for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {
             val intent = pendingIntent(context, appWidgetId, index, region.interaction) ?: continue
@@ -131,6 +136,43 @@ object WidgetUpdater {
             hit.setViewLayoutHeight(R.id.widget_hit, (region.bounds.bottom.coerceAtMost(size.height) - top).coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
             hit.setOnClickPendingIntent(R.id.widget_hit, intent)
             views.addView(R.id.widget_overlay, hit)
+        }
+        return views
+    }
+
+    /**
+     * A timer or clock the launcher keeps current without waking the app.
+     * The view is wider than the measured text because the system font has
+     * other metrics than the bundled one; it grows away from its alignment edge.
+     */
+    private fun liveText(context: Context, slot: com.everettjf.scriptwidget.core.render.DateSlot, size: SizeF): RemoteViews? {
+        val style = slot.style ?: return null
+        val timer = slot.description.optString("style") == "timer"
+        val layout = when (slot.align) {
+            "center" -> if (timer) (if (style.weight >= 600) R.layout.widget_timer_center_bold else R.layout.widget_timer_center_regular)
+                else (if (style.weight >= 600) R.layout.widget_clock_center_bold else R.layout.widget_clock_center_regular)
+            "right" -> if (timer) (if (style.weight >= 600) R.layout.widget_timer_end_bold else R.layout.widget_timer_end_regular)
+                else (if (style.weight >= 600) R.layout.widget_clock_end_bold else R.layout.widget_clock_end_regular)
+            else -> if (timer) (if (style.weight >= 600) R.layout.widget_timer_start_bold else R.layout.widget_timer_start_regular)
+                else (if (style.weight >= 600) R.layout.widget_clock_start_bold else R.layout.widget_clock_start_regular)
+        }
+        val views = RemoteViews(context.packageName, layout)
+        val extra = slot.bounds.width() * 0.35f + 12f
+        val left = when (slot.align) { "center" -> slot.bounds.left - extra / 2f; "right" -> slot.bounds.left - extra; else -> slot.bounds.left }.coerceAtLeast(0f)
+        val width = (slot.bounds.width() + extra).coerceAtMost(size.width - left).coerceAtLeast(1f)
+        val id = R.id.widget_live_text
+        views.setViewLayoutMargin(id, RemoteViews.MARGIN_LEFT, left, TypedValue.COMPLEX_UNIT_DIP)
+        views.setViewLayoutMargin(id, RemoteViews.MARGIN_TOP, slot.bounds.top.coerceAtLeast(0f), TypedValue.COMPLEX_UNIT_DIP)
+        views.setViewLayoutWidth(id, width, TypedValue.COMPLEX_UNIT_DIP)
+        views.setViewLayoutHeight(id, slot.bounds.height().coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+        views.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_DIP, style.size)
+        views.setTextColor(id, slot.color)
+        if (timer) {
+            val target = slot.description.optLong("target")
+            val now = System.currentTimeMillis()
+            // Counts down to the target, then up from it, like Text(date, style: .timer).
+            views.setChronometerCountDown(id, target > now)
+            views.setChronometer(id, android.os.SystemClock.elapsedRealtime() + (target - now), null, true)
         }
         return views
     }

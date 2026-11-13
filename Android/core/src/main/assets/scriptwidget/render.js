@@ -2708,7 +2708,8 @@ ${join(moved)}`;
       return text2("linkurl") !== null ? { type: "link", url: text2("linkurl") } : null;
     }
     function dateDescription(reader) {
-      return { style: reader.string("style") ?? "timer", date: reader.string("date") ?? reader.double("date") };
+      const { style, real, date } = resolveDate(reader);
+      return { style, target: date.getTime(), live: Math.abs(date.getTime() - real.getTime()) < 1e3 };
     }
     function progressNode(reader) {
       const value = Math.max(reader.double("value") ?? 0, 0);
@@ -2734,8 +2735,9 @@ ${join(moved)}`;
       const children = label ? [text(label, styleFont("caption2"), null), barFrame] : [barFrame];
       return new StackNode("v", children, { alignment: "start", spacing: () => label ? 4 : 0 });
     }
-    function formatDate(reader) {
-      const style = { time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" }[reader.string("style") ?? "timer"] ?? "time";
+    const dateStyle = (reader) => ({ time: "time", date: "date", relative: "relative", offset: "offset", timer: "timer" })[reader.string("style") ?? "timer"] ?? "time";
+    function resolveDate(reader) {
+      const style = dateStyle(reader);
       const real = /* @__PURE__ */ new Date();
       const now2 = fixedNow !== null && (style === "time" || style === "date") ? new Date(fixedNow) : real;
       let date = now2;
@@ -2751,6 +2753,10 @@ ${join(moved)}`;
           date = new Date(now2.getTime() + step * (Number.isFinite(middle) && /^[+-]?\d+$/.test(name.slice(1, -1)) ? middle : 0));
         }
       } else if (reader.double("date") !== null) date = new Date(reader.double("date"));
+      return { style, real, date };
+    }
+    function formatDate(reader) {
+      const { style, real, date } = resolveDate(reader);
       const seconds = Math.round((date.getTime() - real.getTime()) / 1e3);
       const parts = (value) => {
         const total2 = Math.abs(value);

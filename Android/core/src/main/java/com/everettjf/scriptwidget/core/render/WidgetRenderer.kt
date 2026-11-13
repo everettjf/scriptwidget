@@ -35,6 +35,8 @@ class RenderRequest(
     val nowMilliseconds: Long? = null,
     /** Bitmap budget in bytes for this render; the output is scaled down to fit. */
     val maximumBitmapBytes: Long = Long.MAX_VALUE,
+    /** `<date>` styles left out of the bitmap because the host shows them with self-updating views. */
+    val liveDateStyles: Set<String> = emptySet(),
 )
 
 class RenderOutput(
@@ -168,7 +170,7 @@ class WidgetRenderer(context: Context, private val scripts: SharedScripts, val f
         val bytesAtRequestedScale = ceil(request.width * scale).toLong() * ceil(request.height * scale).toLong() * 4L
         if (bytesAtRequestedScale > request.maximumBitmapBytes) scale *= sqrt(request.maximumBitmapBytes.toDouble() / bytesAtRequestedScale).toFloat()
         val bitmap = Bitmap.createBitmap(max(1, ceil(request.width * scale).toInt()), max(1, ceil(request.height * scale).toInt()), Bitmap.Config.ARGB_8888)
-        val painter = DomPainter(text, source)
+        val painter = DomPainter(text, source, request.liveDateStyles)
         painter.paint(Canvas(bitmap), DomNode(rendered.getJSONObject("root")), scale)
         images = null
         return RenderOutput(bitmap, scale, painter.hitRegions.toList(), painter.dateSlots.toList(), rendered.optJSONArray("diagnostics") ?: JSONArray(),
