@@ -126,7 +126,11 @@ object LiveUpdates {
     fun notificationsAllowed(context: Context): Boolean = context.getSystemService(NotificationManager::class.java)?.areNotificationsEnabled() == true
 
     /** True when this Android version has Live Updates (Android 16 and later). */
-    val promotionSupported: Boolean get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA
+    /** Promoted Live Updates exist from Android 16 QPR (API 36.1); Android 16.0 has the same API level without them. */
+    val promotionSupported: Boolean by lazy {
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.BAKLAVA &&
+            runCatching { Notification.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType) }.isSuccess
+    }
 
     /** True when the user lets this app's notifications be promoted to Live Updates. Always false before Android 16. */
     fun promotionAllowed(context: Context): Boolean =
@@ -204,9 +208,10 @@ object LiveUpdates {
             if (progress != null && total != null) {
                 builder.setStyle(Notification.ProgressStyle().addProgressSegment(Notification.ProgressStyle.Segment(total)).setProgress(progress))
                 // The status-bar chip shows the countdown when there is one, otherwise the progress.
-                if (deadline == null) "$progress/$total".takeIf { it.length <= 7 }?.let { builder.setShortCriticalText(it) }
+                // Promotion arrived in Android 16 QPR (API 36.1); Android 16.0 has the progress style without it.
+                if (deadline == null) "$progress/$total".takeIf { it.length <= 7 }?.let { text -> ifPresent { builder.setShortCriticalText(text) } }
             }
-            builder.setRequestPromotedOngoing(true)
+            ifPresent { builder.setRequestPromotedOngoing(true) }
         } else if (progress != null && total != null) {
             builder.setProgress(total, progress, false)
         }
@@ -297,4 +302,9 @@ class LiveUpdateReceiver : BroadcastReceiver() {
         const val EXTRA_INSTALLATION = "installation"
         const val EXTRA_DEADLINE = "deadline"
     }
+}
+
+/** Runs [block] and ignores a platform method that this Android version does not have. */
+private inline fun ifPresent(block: () -> Unit) {
+    try { block() } catch (_: NoSuchMethodError) { /* older platform release */ }
 }

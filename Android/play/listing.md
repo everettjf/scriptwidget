@@ -12,7 +12,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.2.0 (version code 3) |
+| Version | 1.2.0 (version code 4) |
 | Minimum Android | 15 (API 35) |
 | Target API | 36 |
 | Contains ads | No |
@@ -56,7 +56,7 @@ Everything needed to create the Play Console entry and an internal test release.
 
 **Release notes for the internal test:**
 
-> First Android build for internal testing. Small, medium, large and extra-large widgets, the editor, templates, Gallery, AI generation with your own key, Quick Settings tiles, app shortcuts and Live Updates. Tested on a Pixel 6 with Android 17 only: please report the device and launcher with any problem.
+> First Android build for internal testing. Small, medium, large and extra-large widgets, the editor, templates, Gallery, AI generation with your own key, Quick Settings tiles, app shortcuts and Live Updates. Tested on a Pixel 6 with Android 17 and on Android 15 and 16 emulators: please report the device and launcher with any problem.
 
 ## Graphics in this folder
 

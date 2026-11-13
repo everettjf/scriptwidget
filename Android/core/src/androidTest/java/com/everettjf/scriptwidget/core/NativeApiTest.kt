@@ -105,7 +105,13 @@ class NativeApiTest {
         assertEquals("[timeline_read_only]", text(run(script, environments = mapOf("widget-size" to "small", "timeline-is-projection" to "true"))))
     }
 
+    /** Live-service tests need DNS on the device; an emulator without it skips them. */
+    private fun assumeOnline(host: String) {
+        org.junit.Assume.assumeTrue("the device cannot resolve $host", runCatching { InetAddress.getAllByName(host).isNotEmpty() }.getOrDefault(false))
+    }
+
     @Test fun fetchReturnsBodiesAndMetadataFromThePublicInternet() {
+        assumeOnline("example.com")
         val script = """
             ${'$'}http.getResponse("https://example.com/").then(
               r => ${'$'}render(<text>{[r.status, r.body.includes("Example Domain"), typeof r.headers["content-type"]].join("|")}</text>),
@@ -127,6 +133,7 @@ class NativeApiTest {
     }
 
     @Test fun dataSourcePluginsCallTheirDeclaredHostsOnly() {
+        assumeOnline("api.open-meteo.com")
         val plugins = com.everettjf.scriptwidget.core.plugin.PluginStore(File(context.cacheDir, "plugins-test"))
         val module = com.everettjf.scriptwidget.core.plugin.DataSourceModule(plugins)
         val script = """

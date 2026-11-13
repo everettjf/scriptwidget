@@ -1,6 +1,6 @@
 # ScriptWidget for Android
 
-Status: version 1.2.0 on the `android` branch, ready for internal testing. Verified on one device, a Pixel 6 running Android 17. Other vendors' launchers and background limits have not been tested. See [Android test notes](testing.md).
+Status: version 1.2.0 on the `android` branch, ready for internal testing. Verified on a Pixel 6 running Android 17 and on Android 15 and Android 16 emulators. Other vendors' launchers and background limits have not been tested. See [Android test notes](testing.md).
 
 The Android app runs the same Package 2.0 widgets as iPhone, iPad and Mac. The plan and its decisions are in [Android port research and plan](android-port-research-and-plan.md).
 
@@ -62,7 +62,7 @@ The package format, manifest, permissions and runtime API version are the same. 
 | Timeline | The script runs again at each transition as the current entry; there are no pre-rendered future entries |
 | `<date>` | `timer` and a `time` of now tick by themselves (system font, `00:36` rather than `0:36`). `relative`, `offset` and `date` are redrawn on refresh |
 | `<gif>` | Plays as up to 24 sampled frames at a uniform interval; the first frame when the system removes animations |
-| `animation` | Clock and swing effects show their pose at the last refresh; they do not move |
+| `animation` | Standard clock effects (`clockSecond`, `clockMinute`, `clockHour`) are hands of a system clock view and show the real time. `swing` plays as 16 frames. A custom clock interval stays at its pose from the last refresh |
 | `backgroundMaterial` | The opaque `background` fallback |
 | Rendering modes | Always `fullColor` |
 | Network | The manifest allowlist as on iOS, and names that resolve to private addresses are refused |

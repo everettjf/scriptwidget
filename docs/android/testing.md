@@ -1,14 +1,24 @@
-# Android test notes (1.2.0)
+# Android test notes (1.2.0, build 4)
 
-What was run before handing this build to testers, and what was not. Everything was run on one device: a Pixel 6 on Android 17.
+What was run before handing this build to testers, and what was not.
 
 ## Automated
 
 | Suite | Count | Where | Command |
 | --- | --- | --- | --- |
 | Unit tests | 468 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
-| Core device tests | 27 | Pixel 6 | `Android/scripts/device-test.sh core` |
-| App device tests | 49 | Pixel 6 | `Android/scripts/device-test.sh app` |
+| Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
+| App device tests | 51 | see below | `Android/scripts/device-test.sh app` |
+
+| Device | Android | Core | App |
+| --- | --- | --- | --- |
+| Pixel 6 (physical) | 17 (API 37) | 27 passed | 51 passed |
+| Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 51 passed |
+| Emulator, Google APIs image | 15 (API 35) | 27 passed | 50 passed on the first run; the one failure was a test assertion, fixed, and its suite re-run and passed. The other suites were not re-run on this emulator after later changes |
+
+Set `ANDROID_SERIAL` to choose the device when several are connected.
+
+The Android 16 emulator run found a crash that the Pixel could not show: starting a Live Update on Android 16.0 called a method that only exists from Android 16 QPR. It is fixed and the suite passes there.
 
 All passed on the final build. The device suites cover:
 
@@ -25,7 +35,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 
 - Pinning a widget from the app, and the Pixel Launcher drawing it with system corners.
 - Tapping a widget button: the action runs without opening the app and the widget redraws.
-- A timer counting and a GIF animating on the home screen.
+- A timer counting, a GIF animating and the Animation Clock template showing the current time with a moving second hand on the home screen.
 - Light and dark switching while the app process is killed.
 - The Studio editor: loads, highlights, autosaves, and a saved edit redraws the placed widget.
 - Gallery: the index loads from GitHub and a widget installs.
@@ -41,7 +51,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 - **Documents, contacts and music with real selections.** Only the empty and not-authorized states ran.
 - **Quick Settings tiles in the system panel.** Actions and state are tested; the tile's appearance was not looked at.
 - **Synced documents through a real cloud provider**, and any exchange with an iPhone (not possible today).
-- **Other devices.** No Samsung, Xiaomi, OPPO or vivo device, no tablet or foldable, no Android 15 or 16 device.
+- **Other physical devices.** No Samsung, Xiaomi, OPPO or vivo device, no tablet or foldable. Android 15 and 16 were covered by emulators only, which do not show vendor launchers or real background limits.
 - **Background refresh over time.** Whether widgets keep refreshing for hours or days under Doze was not measured.
 - **The GitHub Actions workflow** has not run on GitHub yet.
 - **Accessibility** (TalkBack) beyond a content description on the widget image.
@@ -49,7 +59,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 ## Known limitations to tell testers
 
 - After a force stop, the launcher shows a placeholder for the app's widgets until the app is opened again. This is Android behavior.
-- Clock and swing animations do not move; they show the pose at the last refresh.
+- A clock animation with a custom interval does not move; standard clock hands and swing do.
 - Timers use the system font and read `00:36` where iOS reads `0:36`.
 - Alarms and notifications are inexact and can be about ten minutes late.
 - `$maps.snapshot`, `$reminders`, `$home`, accessory families, the Dynamic Island and push-triggered refresh are not available.

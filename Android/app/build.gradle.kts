@@ -14,7 +14,7 @@ android {
         applicationId = "com.everettjf.scriptwidget"
         minSdk = 35
         targetSdk = 36
-        versionCode = 3
+        versionCode = 4
         versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }

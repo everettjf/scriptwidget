@@ -97,7 +97,9 @@ class LibraryTest {
             val result = AppServices.runtime.run(request)
             val kind = result.execution.error?.kind
             // A template may report that Android lacks a capability or that it needs setup; it may not crash the runtime.
-            if (kind == "internalError" || kind == "resourceLimit") failures += "${item.assetPath}: [$kind] ${result.execution.error?.message?.take(160)}"
+            // A template waiting on a live service may reach the time limit when the network is slow or absent.
+            val waitsOnNetwork = installed.permissions.contains("network")
+            if (kind == "internalError" || (kind == "resourceLimit" && !waitsOnNetwork)) failures += "${item.assetPath}: [$kind] ${result.execution.error?.message?.take(160)}"
             val output = AppServices.runtime.render(request, result, 330f, 160f, 2f)
             if (output.bitmap.width < 10) failures += "${item.assetPath}: no bitmap"
             output.bitmap.recycle()
