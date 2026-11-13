@@ -31,6 +31,8 @@
         <!-- The Health Connect provider app on devices where it is not part of the system. -->
         <package android:name="com.google.android.apps.healthdata" />
     </queries>
+    <!-- $alarms reuses the inexact alarms and notifications above. $documents uses the Storage Access
+         Framework and $contacts the system contact picker: neither needs a storage or contacts permission. -->
 
     <application
         android:name=".ScriptWidgetApplication"
@@ -142,6 +144,16 @@
             </intent-filter>
         </receiver>
         <receiver android:name=".ui.WidgetPinnedReceiver" android:exported="false" />
+        <!-- $music: Android only lets an enabled notification listener read the active media session.
+             The user enables it in system settings; the service itself reads no notifications. -->
+        <service android:name="com.everettjf.scriptwidget.core.system.MediaSessionAccessService"
+            android:exported="true"
+            android:label="@string/music_access_service"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
         <activity android:name=".widget.LinkActivity" android:exported="false" android:excludeFromRecents="true"
             android:taskAffinity="" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 

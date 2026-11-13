@@ -30,4 +30,5 @@
     <string name="live_updates_channel">Live Updates</string>
     <string name="live_updates_channel_description">Ongoing progress started from the Live Activities screen.</string>
     <string name="live_updates_end">End</string>
+    <string name="music_access_service">ScriptWidget media playback</string>
 </resources>

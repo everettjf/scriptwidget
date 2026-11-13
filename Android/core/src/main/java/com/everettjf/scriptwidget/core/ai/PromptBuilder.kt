@@ -76,8 +76,8 @@ object AndroidPromptNotes {
      * Keep in sync with the stub table in `core/src/main/js/android-apis.js`.
      */
     val UNSUPPORTED_GLOBALS = listOf(
-        "\$health", "\$reminders", "\$music", "\$photos", "\$calendar", "\$location", "\$services", "\$icloud",
-        "\$notifications", "\$alarms", "\$documents", "\$contacts", "\$maps", "\$weather", "\$home", "\$dataSource",
+        "\$health", "\$reminders", "\$photos", "\$calendar", "\$location", "\$services", "\$icloud",
+        "\$notifications", "\$maps", "\$home", "\$dataSource",
     )
 
     /** One line per unsupported capability: the stub globals plus everything [PlatformSupport] lists. */

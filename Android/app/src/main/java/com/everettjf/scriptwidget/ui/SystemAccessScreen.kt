@@ -1,6 +1,8 @@
 package com.everettjf.scriptwidget.ui
 
 import android.Manifest
+import android.app.Activity
+import android.content.ComponentName
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.net.Uri
@@ -44,6 +46,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -65,8 +68,13 @@ import com.everettjf.scriptwidget.core.system.CalendarModule
 import com.everettjf.scriptwidget.core.system.CalendarSelection
 import com.everettjf.scriptwidget.core.system.CalendarSource
 import com.everettjf.scriptwidget.core.system.HealthModule
+import com.everettjf.scriptwidget.core.system.ContactRules
+import com.everettjf.scriptwidget.core.system.DocumentImporter
+import com.everettjf.scriptwidget.core.system.DocumentRules
 import com.everettjf.scriptwidget.core.system.LocationGrant
 import com.everettjf.scriptwidget.core.system.LocationModule
+import com.everettjf.scriptwidget.core.system.MediaSessionAccessService
+import com.everettjf.scriptwidget.core.system.MusicModule
 import com.everettjf.scriptwidget.core.system.NotificationsModule
 import com.everettjf.scriptwidget.core.system.PhotoEntry
 import com.everettjf.scriptwidget.core.system.PhotoLimits
@@ -123,6 +131,33 @@ fun SystemAccessScreen(navigation: NavController) {
         if (uris.isNotEmpty()) scope.launch {
             val added = withContext(Dispatchers.IO) { stores.photoImporter.import(uris) }
             message = if (added == uris.size) "Added $added photo${if (added == 1) "" else "s"}." else "Added $added of ${uris.size}. At most ${PhotoLimits.MAXIMUM_SELECTED} photos can be selected; some images could not be read."
+            revision += 1
+        }
+    }
+    // The installation a document or contact picker was opened for; it survives the trip to the picker.
+    var pickTarget by rememberSaveable { mutableStateOf("") }
+    val documentPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
+        val target = pickTarget
+        if (uris.isNotEmpty() && target.isNotEmpty()) scope.launch {
+            val outcomes = withContext(Dispatchers.IO) { stores.documentImporter.import(target, uris) }
+            message = documentMessage(outcomes)
+            revision += 1
+        }
+    }
+    val contactPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickContact()) { uri ->
+        val target = pickTarget
+        if (uri != null && target.isNotEmpty()) scope.launch {
+            val stored = withContext(Dispatchers.IO) { stores.contactImporter.importPicked(target, uri) }
+            message = if (stored) "Contact added." else "The contact could not be added. A widget can hold at most ${ContactRules.MAXIMUM_SELECTED} contacts."
+            revision += 1
+        }
+    }
+    val contactSessionPicker = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        val target = pickTarget
+        val session = result.data?.data
+        if (result.resultCode == Activity.RESULT_OK && session != null && target.isNotEmpty()) scope.launch {
+            val stored = withContext(Dispatchers.IO) { stores.contactImporter.importSession(target, session) }
+            message = if (stored > 0) "Added $stored contact${if (stored == 1) "" else "s"}." else "No contact could be added."
             revision += 1
         }
     }
@@ -247,6 +282,25 @@ fun SystemAccessScreen(navigation: NavController) {
                     runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { message = "Health Connect could not be opened." }
                 }) { Text("Open Health Connect") }
             }
+            // MARK: Alarms and timers
+            AccessSection("Alarms and timers")
+            val alarmCount = remember(revision) { runCatching { stores.alarmStore.all().size }.getOrDefault(0) }
+            ListItem(headlineContent = { Text(when (notificationStatus) { "authorized" -> "Alarms can notify you"; "denied" -> "Alarms need notifications, which are denied"; else -> "Alarms need notifications, which are not requested yet" }) },
+                supportingContent = { Text("$alarmCount alarm${if (alarmCount == 1) "" else "s"} or timer${if (alarmCount == 1) "" else "s"} kept for widgets. Android has no system alarm screen for apps like this one: an alarm arrives as a notification within about ten minutes of its time, without snooze. Allow each widget below.") })
+
+            // MARK: Music
+            AccessSection("Media playback")
+            val musicStatus = remember(revision) { stores.music.systemStatus() }
+            ListItem(headlineContent = { Text(when (musicStatus) { "authorized" -> "Media playback access allowed"; "unavailable" -> "Media playback is unavailable on this device"; "denied" -> "Media playback access is off"; else -> "Media playback access not set up" }) },
+                supportingContent = { Text("Widgets that declare Music access can show what is playing in any media app: state, title, artist, album and position. Android only allows this for apps with notification access, so you turn it on in system settings. ScriptWidget does not read, store or act on your notifications, and it never starts or changes playback.") })
+            OutlinedButton(modifier = Modifier.padding(horizontal = 16.dp), enabled = musicStatus != "unavailable", onClick = {
+                stores.prompts.markAsked(MusicModule.PROMPT)
+                SystemLog.call("access.music.settings", "opened")
+                val detail = Intent(Settings.ACTION_NOTIFICATION_LISTENER_DETAIL_SETTINGS)
+                    .putExtra(Settings.EXTRA_NOTIFICATION_LISTENER_COMPONENT_NAME, ComponentName(context, MediaSessionAccessService::class.java).flattenToString())
+                runCatching { context.startActivity(detail.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                    .onFailure { runCatching { context.startActivity(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) } }
+            }) { Text(if (musicStatus == "authorized") "Review notification access" else "Open notification access settings") }
 
             // MARK: GitHub
             AccessSection("GitHub")
@@ -283,8 +337,8 @@ fun SystemAccessScreen(navigation: NavController) {
 
             // MARK: Per-widget access
             AccessSection("Widgets")
-            val packages = remember(revision) { AppServices.library.list().filter { item -> item.permissions.any { it in setOf("notifications", "calendarWrite", "services") } } }
-            if (packages.isEmpty()) ListItem(headlineContent = { Text("No installed widget asks for notifications, calendar changes or GitHub") })
+            val packages = remember(revision) { AppServices.library.list().filter { item -> item.permissions.any { it in setOf("notifications", "calendarWrite", "services", "alarms", "documents", "contacts") } } }
+            if (packages.isEmpty()) ListItem(headlineContent = { Text("No installed widget asks for notifications, alarms, calendar changes, files, contacts or GitHub") })
             for (item in packages) {
                 val granted = stores.grants.capabilities(item.installation)
                 ListItem(headlineContent = { Text(item.displayName) }, supportingContent = { Text("Access you give here stays on this device and is not copied when the widget is exported or duplicated.") })
@@ -292,6 +346,54 @@ fun SystemAccessScreen(navigation: NavController) {
                 if ("calendarWrite" in item.permissions) GrantRow("Add and update its own calendar events", "calendarWrite" in granted) { stores.grants.set(item.installation, "calendarWrite", it); SystemLog.call("access.grant.calendarWrite", "granted=$it"); revision += 1 }
                 if ("services" in item.permissions) GrantRow(if (account == null) "Read GitHub profile (connect GitHub first)" else "Read GitHub profile", account?.grants?.contains(item.installation) == true, enabled = account != null) {
                     runCatching { stores.serviceConnections.setGrant(item.installation, it) }; SystemLog.call("access.grant.services", "granted=$it"); revision += 1
+                }
+                if ("alarms" in item.permissions) GrantRow("Start alarms and timers", "alarms" in granted) { stores.grants.set(item.installation, "alarms", it); SystemLog.call("access.grant.alarms", "granted=$it"); revision += 1 }
+
+                // Files: JSON and CSV copies this widget may read.
+                if ("documents" in item.permissions) {
+                    val documents = remember(revision, item.installation) { runCatching { stores.documentStore.list(item.installation) }.getOrNull() }
+                    ListItem(modifier = Modifier.padding(start = 16.dp),
+                        headlineContent = { Text(if (documents == null) "Imported files could not be read" else "${documents.size} of ${DocumentRules.MAXIMUM_FILES} files imported", style = MaterialTheme.typography.bodyMedium) },
+                        supportingContent = { Text("JSON and CSV files up to 256 KiB. ScriptWidget keeps a private copy for this widget only; the original is never changed, and the widget never learns where it is stored.") })
+                    for (document in documents.orEmpty()) ListItem(modifier = Modifier.padding(start = 16.dp),
+                        headlineContent = { Text(document.name, style = MaterialTheme.typography.bodyMedium) },
+                        supportingContent = { Text("${document.type.uppercase()} · ${document.bytes} bytes") },
+                        trailingContent = { Row {
+                            if (document.source != null) TextButton(onClick = { scope.launch {
+                                val outcome = withContext(Dispatchers.IO) { stores.documentImporter.refresh(item.installation, document.id) }
+                                message = if (outcome == DocumentImporter.Outcome.IMPORTED) "File updated from its source." else documentMessage(listOf(outcome))
+                                revision += 1
+                            } }) { Text("Update") }
+                            TextButton(onClick = { stores.documentImporter.remove(item.installation, document.id); revision += 1 }) { Text("Remove") }
+                        } })
+                    Row(Modifier.padding(start = 32.dp, end = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(enabled = documents != null && documents.size < DocumentRules.MAXIMUM_FILES, onClick = {
+                            pickTarget = item.installation
+                            documentPicker.launch(arrayOf("application/json", "text/*", "application/vnd.ms-excel", "application/octet-stream"))
+                        }) { Text("Choose files") }
+                        if (documents == null) OutlinedButton(onClick = { stores.documentImporter.release(stores.documentStore.clear(item.installation)); SystemLog.call("access.documents.reset", "ok"); revision += 1 }) { Text("Reset") }
+                    }
+                }
+
+                // Contacts: the people this widget may show.
+                if ("contacts" in item.permissions) {
+                    val contacts = remember(revision, item.installation) { runCatching { stores.contactStore.list(item.installation) }.getOrNull() }
+                    ListItem(modifier = Modifier.padding(start = 16.dp),
+                        headlineContent = { Text(if (contacts == null) "Selected contacts could not be read" else "${contacts.size} of ${ContactRules.MAXIMUM_SELECTED} contacts selected", style = MaterialTheme.typography.bodyMedium) },
+                        supportingContent = { Text("ScriptWidget has no access to your contacts. It keeps only the name, organization and up to three phone numbers and e-mail addresses of the people you pick here, for this widget only. Pick a contact again to update it.") })
+                    for (contact in contacts.orEmpty()) ListItem(modifier = Modifier.padding(start = 16.dp),
+                        headlineContent = { Text(contact.name.ifEmpty { "Unnamed contact" }, style = MaterialTheme.typography.bodyMedium) },
+                        supportingContent = { Text("${contact.phones.size} phone number${if (contact.phones.size == 1) "" else "s"} · ${contact.emails.size} e-mail address${if (contact.emails.size == 1) "" else "es"}") },
+                        trailingContent = { TextButton(onClick = { stores.contactStore.remove(item.installation, contact.id); SystemLog.call("access.contacts.remove", "ok"); revision += 1 }) { Text("Remove") } })
+                    Row(Modifier.padding(start = 32.dp, end = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        OutlinedButton(enabled = contacts != null && contacts.size < ContactRules.MAXIMUM_SELECTED, onClick = {
+                            pickTarget = item.installation
+                            val remaining = ContactRules.MAXIMUM_SELECTED - (contacts?.size ?: 0)
+                            val launched = stores.contactImporter.sessionPickerAvailable() && runCatching { contactSessionPicker.launch(stores.contactImporter.sessionPickerIntent(remaining)) }.isSuccess
+                            if (!launched) runCatching { contactPicker.launch(null) }.onFailure { message = "No contacts app is available on this device." }
+                        }) { Text("Choose contacts") }
+                        if (contacts == null) OutlinedButton(onClick = { stores.contactStore.clear(item.installation); SystemLog.call("access.contacts.reset", "ok"); revision += 1 }) { Text("Reset") }
+                    }
                 }
             }
         }
@@ -326,6 +428,19 @@ private fun formatAge(seconds: Double): String = when {
     seconds < 90 -> "${seconds.toInt()} seconds"
     seconds < 5400 -> "${(seconds / 60).toInt()} minutes"
     else -> "${(seconds / 3600).toInt()} hours"
+}
+
+/** One sentence about a document import. File names are not repeated. */
+private fun documentMessage(outcomes: List<DocumentImporter.Outcome>): String {
+    val imported = outcomes.count { it == DocumentImporter.Outcome.IMPORTED }
+    val reasons = outcomes.filter { it != DocumentImporter.Outcome.IMPORTED }.distinct().joinToString(" ") { when (it) {
+        DocumentImporter.Outcome.UNSUPPORTED_TYPE -> "Only .json and .csv files can be imported."
+        DocumentImporter.Outcome.TOO_LARGE -> "A file can be at most 256 KiB."
+        DocumentImporter.Outcome.INVALID_CONTENT -> "A file was not valid UTF-8 JSON (object or array) or CSV (at most 500 rows and 32 unique column names)."
+        DocumentImporter.Outcome.FULL -> "A widget can hold at most ${DocumentRules.MAXIMUM_FILES} files."
+        else -> "A file could not be read."
+    } }
+    return "Imported $imported of ${outcomes.size} file${if (outcomes.size == 1) "" else "s"}. $reasons".trim()
 }
 
 /** A sentence for a `service_*` rejection. The token is never part of any message. */

@@ -16,13 +16,8 @@ object PlatformSupport {
     val unsupportedPermissions: Map<String, String> = linkedMapOf(
         "reminders" to "Reminders (\$reminders) has no system equivalent on Android.",
         "remindersWrite" to "Reminders (\$reminders) has no system equivalent on Android.",
-        "music" to "Now-playing data (\$music) is planned for a later Android release.",
         "icloud" to "iCloud JSON sync (\$icloud) is not available on Android.",
         "maps" to "Maps (\$maps) is planned for a later Android release.",
-        "weather" to "Weather (\$weather) is planned for a later Android release.",
-        "alarms" to "Alarms (\$alarms) is planned for a later Android release.",
-        "documents" to "Documents (\$documents) is planned for a later Android release.",
-        "contacts" to "Contacts (\$contacts) is planned for a later Android release.",
         "home" to "Home control (\$home) has no Android equivalent.",
     )
 

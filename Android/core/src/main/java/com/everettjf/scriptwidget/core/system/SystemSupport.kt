@@ -269,7 +269,7 @@ fun ownerFileName(installation: String, suffix: String): String = Canonical.sha2
  */
 class SystemAccessGrants(private val file: PrivateFile) {
     /** Capabilities that need an explicit per-widget grant on Android. */
-    companion object { val CAPABILITIES = setOf("notifications", "calendarWrite") }
+    companion object { val CAPABILITIES = setOf("notifications", "calendarWrite", "alarms") }
 
     /** @throws SystemReject `unavailable` when the grant file is present but invalid. */
     fun granted(installation: String, capability: String): Boolean = synchronized(file.lock) { capability in load()[installation].orEmpty() }
