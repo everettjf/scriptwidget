@@ -140,8 +140,9 @@ class SystemApi11Test {
         assertFalse(undeclared.has("list"))
 
         // An imported copy is readable by its installation only.
-        val owner = install("""${'$'}documents.list().then(list => Promise.all([${'$'}documents.readJSON(list[0].id), ${'$'}documents.readCSV(list[1].id)]).then(v => ${'$'}render(<text>{JSON.stringify({list, v})}</text>)))""" +
-            """.catch(e => ${'$'}render(<text>{JSON.stringify({error: String(e)})}</text>))""", manifest(listOf("documents")))
+        val owner = install("""${'$'}documents.list().then(list => Promise.all([${'$'}documents.readJSON(list[0].id), ${'$'}documents.readCSV(list[1].id)]).then(v => ${'$'}render(<text>{JSON.stringify({list, v})}</text>), e => ${'$'}render(<text>{JSON.stringify({error: String(e)})}</text>)),""" +
+            // Runtime promises only have then(resolve, reject), as on iPhone.
+            """ e => ${'$'}render(<text>{JSON.stringify({error: String(e)})}</text>))""", manifest(listOf("documents")))
         val store = SystemModules.stores(context).documentStore
         store.add(owner.installation, "goals.json", "json", """{"goal":3}""".toByteArray(), null)
         store.add(owner.installation, "table.csv", "csv", "name,\"city, country\"\nAda,\"London, UK\"\n".toByteArray(), null)
