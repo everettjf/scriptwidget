@@ -90,6 +90,12 @@ class WidgetHostTest {
         assertEquals("small", com.everettjf.scriptwidget.widget.ScriptWidgetProvider.family(context, id))
     }
 
+    @Test fun extraLargeProviderReportsTheExtraLargeFamily() {
+        val id = place(install("""${'$'}render(<text>{${'$'}getenv("widget-size")}</text>)"""), com.everettjf.scriptwidget.widget.ExtraLargeWidgetProvider::class.java)
+        inflate(id)
+        assertEquals("extraLarge", com.everettjf.scriptwidget.widget.ScriptWidgetProvider.family(context, id))
+    }
+
     @Test fun tappingAButtonRunsItsFunctionAndRedraws() {
         val source = """
             const count = Number(${'$'}storage.getString("count") || "0");

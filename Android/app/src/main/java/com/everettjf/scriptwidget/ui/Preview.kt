@@ -29,7 +29,7 @@ import kotlinx.coroutines.withContext
 import java.io.File
 
 /** Widget sizes in dp used for in-app previews; a placed widget uses the launcher's size. */
-val previewSizes = mapOf("small" to (160f to 160f), "medium" to (330f to 160f), "large" to (330f to 330f))
+val previewSizes = mapOf("small" to (160f to 160f), "medium" to (330f to 160f), "large" to (330f to 330f), "extraLarge" to (680f to 330f))
 
 class PreviewState(val bitmap: Bitmap?, val result: ExecutionResult?)
 

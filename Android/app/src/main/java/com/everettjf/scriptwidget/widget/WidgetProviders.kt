@@ -23,7 +23,7 @@ abstract class ScriptWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
-        val providers = listOf(SmallWidgetProvider::class.java to "small", MediumWidgetProvider::class.java to "medium", LargeWidgetProvider::class.java to "large")
+        val providers = listOf(SmallWidgetProvider::class.java to "small", MediumWidgetProvider::class.java to "medium", LargeWidgetProvider::class.java to "large", ExtraLargeWidgetProvider::class.java to "extraLarge")
 
         /** `$getenv("widget-size")` value for a placed widget. */
         fun family(context: Context, appWidgetId: Int): String {
@@ -41,3 +41,4 @@ abstract class ScriptWidgetProvider : AppWidgetProvider() {
 class SmallWidgetProvider : ScriptWidgetProvider()
 class MediumWidgetProvider : ScriptWidgetProvider()
 class LargeWidgetProvider : ScriptWidgetProvider()
+class ExtraLargeWidgetProvider : ScriptWidgetProvider()

@@ -5,6 +5,7 @@
     <string name="widget_small">ScriptWidget Small</string>
     <string name="widget_medium">ScriptWidget Medium</string>
     <string name="widget_large">ScriptWidget Large</string>
+    <string name="widget_extra_large">ScriptWidget Extra Large</string>
     <string name="widget_description">A widget you write in JavaScript and JSX.</string>
     <string name="widget_loading">Loading…</string>
     <string name="widget_choose">Tap to choose a widget</string>

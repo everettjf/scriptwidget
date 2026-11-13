@@ -121,7 +121,7 @@ object WidgetUpdater {
         if (minWidth > 0 && maxHeight > 0) result += SizeF(minWidth.toFloat(), maxHeight.toFloat())
         if (maxWidth > 0 && minHeight > 0 && (maxWidth != minWidth || minHeight != maxHeight)) result += SizeF(maxWidth.toFloat(), minHeight.toFloat())
         if (result.isNotEmpty()) return result
-        return listOf(when (family) { "small" -> SizeF(160f, 160f); "large" -> SizeF(330f, 330f); else -> SizeF(330f, 160f) })
+        return listOf(when (family) { "small" -> SizeF(160f, 160f); "large" -> SizeF(330f, 330f); "extraLarge" -> SizeF(680f, 330f); else -> SizeF(330f, 160f) })
     }
 
     private fun build(context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF, other: RenderOutput? = null, dark: Boolean = false): RemoteViews {

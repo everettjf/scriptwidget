@@ -117,6 +117,12 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_large" />
         </receiver>
 
+        <!-- For tablets and unfolded foldables; phones list it but their grid is narrower. -->
+        <receiver android:name=".widget.ExtraLargeWidgetProvider" android:exported="true" android:label="@string/widget_extra_large">
+            <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE" /></intent-filter>
+            <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_extra_large" />
+        </receiver>
+
         <receiver android:name=".widget.WidgetActionReceiver" android:exported="false" />
         <receiver android:name=".widget.WidgetAlarmReceiver" android:exported="false">
             <intent-filter>
