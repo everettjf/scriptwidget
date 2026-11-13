@@ -3,6 +3,16 @@
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- $location: foreground only. Background location is never requested. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <!-- $calendar: reads inside the user's selection; writes only for events a widget created. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR" />
+    <uses-permission android:name="android.permission.WRITE_CALENDAR" />
+    <!-- $notifications: local reminders with inexact alarms, re-armed after a reboot. No exact-alarm permission. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- $photos uses the system Photo Picker and needs no storage permission. -->
 
     <application
         android:name=".ScriptWidgetApplication"
@@ -71,9 +81,19 @@
         <receiver android:name=".widget.WidgetActionReceiver" android:exported="false" />
         <receiver android:name=".widget.WidgetAlarmReceiver" android:exported="false">
             <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <!-- Posts $notifications reminders and re-arms their alarms after boot, update or a clock change. -->
+        <receiver android:name=".SystemNotificationReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
         <receiver android:name=".ui.WidgetPinnedReceiver" android:exported="false" />
