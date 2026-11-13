@@ -1,6 +1,6 @@
 # ScriptWidget for Android
 
-Status: in development on the `android` branch. Verified on one device, a Pixel 6 running Android 17. Other vendors' launchers and background limits have not been tested.
+Status: version 1.2.0 on the `android` branch, ready for internal testing. Verified on one device, a Pixel 6 running Android 17. Other vendors' launchers and background limits have not been tested. See [Android test notes](testing.md).
 
 The Android app runs the same Package 2.0 widgets as iPhone, iPad and Mac. The plan and its decisions are in [Android port research and plan](android-port-research-and-plan.md).
 
@@ -83,6 +83,8 @@ The package format, manifest, permissions and runtime API version are the same. 
 | `$contacts` | System contact picker | No contacts permission; fields are stored when picked |
 | `$music` | Active media session of any app | Needs notification-listener access; `provider` is `androidMediaSession` |
 | `$dataSource` | Data Source Plugin 1.0 | Same as iOS |
+| `$maps` | `android.location.Geocoder` | `geocode` and `reverseGeocode` work. `search` finds named places and addresses, not business categories. `snapshot` is not supported |
+| `$icloud` | A sync folder the user picks (Storage Access Framework) or a folder on this device only | The same revision file layout as iOS. Syncs between Android devices that share the folder; sharing with an iPhone is not possible today (see below) |
 
 ### System surfaces
 
@@ -91,6 +93,10 @@ The package format, manifest, permissions and runtime API version are the same. 
 | Control Widgets | Eight Quick Settings tile slots that the user assigns to package `controls` |
 | Siri and Shortcuts actions | App shortcuts on the launcher icon for package `actions`; no voice or automation entry point |
 | Live Activities | A Live Update notification with title, detail, progress and countdown. The package's JSX layout and the Dynamic Island are not drawn |
+
+### Synced documents and iPhone
+
+`$icloud` on Android keeps the iOS contract: immutable revisions, both heads preserved on concurrent writes, explicit resolve, and no claim that an upload finished. It cannot exchange data with an iPhone. iOS reads only its iCloud container, which no Android documents provider exposes, and the two platforms encode fractional numbers and some key orders differently, so iOS would reject Android-written revisions. Exchange between two Android devices is covered by unit tests on a plain directory; it has not been tested through a real cloud provider.
 
 ### Not available
 
