@@ -56,9 +56,20 @@ object IntlBridge {
         return TimeZone.getCanonicalID(id) != null && TimeZone.getTimeZone(id).id != TimeZone.UNKNOWN_ZONE_ID
     }
 
+    /** Building an ICU formatter is far more expensive than using one; planners format thousands of dates. */
+    private val formatCache = object : LinkedHashMap<String, DateFormat>(16, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, DateFormat>?): Boolean = size > 32
+    }
+
     private fun dateFormat(request: JSONObject): DateFormat {
-        val locale = locale(request.getString("locale"))
         val options = request.optJSONObject("options") ?: JSONObject()
+        val key = request.getString("locale") + "|" + defaultTimeZone() + "|" + options.toString()
+        synchronized(formatCache) { formatCache[key]?.let { return it.clone() as DateFormat } }
+        return createDateFormat(request, options).also { created -> synchronized(formatCache) { formatCache[key] = created.clone() as DateFormat } }
+    }
+
+    private fun createDateFormat(request: JSONObject, options: JSONObject): DateFormat {
+        val locale = locale(request.getString("locale"))
         val zone = TimeZone.getTimeZone(options.optString("timeZone").ifEmpty { defaultTimeZone() })
         val dateStyle = style(options.optString("dateStyle"))
         val timeStyle = style(options.optString("timeStyle"))

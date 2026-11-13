@@ -72,6 +72,7 @@ object WidgetUpdater {
         }
         manager.updateAppWidget(appWidgetId, if (views.size == 1) views.values.first() else RemoteViews(views))
         AppServices.widgets.markUpdated(appWidgetId, System.currentTimeMillis())
+        result.nextTimelineTransition?.let { WidgetScheduler.scheduleAt(context, appWidgetId, it) }
         Log.i(TAG, "widget $appWidgetId ${installed.name} $family sizes=${sizes.joinToString { "${it.width.toInt()}x${it.height.toInt()}" }} " +
             "error=${result.execution.error?.kind} exec=${result.execution.elapsedMilliseconds}ms bitmaps=${bitmapBytes / 1024}KiB total=${(System.nanoTime() - started) / 1_000_000}ms")
     }

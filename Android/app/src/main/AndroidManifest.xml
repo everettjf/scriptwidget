@@ -69,6 +69,13 @@
         </receiver>
 
         <receiver android:name=".widget.WidgetActionReceiver" android:exported="false" />
+        <receiver android:name=".widget.WidgetAlarmReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
         <receiver android:name=".ui.WidgetPinnedReceiver" android:exported="false" />
         <activity android:name=".widget.LinkActivity" android:exported="false" android:excludeFromRecents="true"
             android:taskAffinity="" android:theme="@android:style/Theme.Translucent.NoTitleBar" />

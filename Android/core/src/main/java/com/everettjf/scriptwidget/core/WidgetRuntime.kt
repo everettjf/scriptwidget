@@ -42,7 +42,13 @@ class RunRequest(
     val buildDirectory: File? = null,
 )
 
-class RunResult(val execution: ExecutionResult, val prepared: PreparedPackage?, val request: ExecutionRequest?)
+class RunResult(
+    val execution: ExecutionResult,
+    val prepared: PreparedPackage?,
+    val request: ExecutionRequest?,
+    /** When the package's daily schedule next changes slot; the host should run the package again then. */
+    val nextTimelineTransition: Long? = null,
+)
 
 /**
  * The Android runtime: compiles a package, executes it, and renders its
@@ -55,6 +61,7 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
     val compiler = PackageCompiler(scripts)
     val executor = ScriptExecutor(scripts)
     val renderer = WidgetRenderer(appContext, scripts)
+    val timeline = com.everettjf.scriptwidget.core.runtime.TimelinePlanner(scripts)
     val storage = StorageModule(File(appContext.filesDir, "Storage"))
     val fetch = FetchModule()
     private val modules: List<NativeModule> = listOf(storage, fetch) + extraModules
@@ -103,13 +110,16 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
         environments["widget-size"] = request.family
         environments["widget-param"] = request.parameter
         environments["widget-rendering-mode"] = "fullColor"
+        // The cached artifact carries the slot of the moment it was compiled; use the slot of now.
+        val schedule = timeline.state(prepared.manifest)
+        if (schedule != null) environments.putAll(schedule.environments)
         environments.putAll(request.extraEnvironments)
         val execution = ExecutionRequest(
             prepared = prepared, files = request.files, environments = environments, darkMode = request.darkMode,
             device = DeviceInfo.device(appContext), system = DeviceInfo.system(appContext),
             modules = modules, packageID = request.packageID,
         )
-        return RunResult(executor.execute(execution), prepared, execution)
+        return RunResult(executor.execute(execution), prepared, execution, schedule?.nextTimelineTransitionOrNull())
     }
 
     /**
