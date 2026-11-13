@@ -52,15 +52,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.health.connect.client.HealthConnectClient
+import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavController
 import com.everettjf.scriptwidget.AppServices
 import com.everettjf.scriptwidget.SystemModules
+import com.everettjf.scriptwidget.core.system.AndroidHealthPlatform
 import com.everettjf.scriptwidget.core.system.CalendarModule
 import com.everettjf.scriptwidget.core.system.CalendarSelection
 import com.everettjf.scriptwidget.core.system.CalendarSource
+import com.everettjf.scriptwidget.core.system.HealthModule
 import com.everettjf.scriptwidget.core.system.LocationGrant
 import com.everettjf.scriptwidget.core.system.LocationModule
 import com.everettjf.scriptwidget.core.system.NotificationsModule
@@ -107,6 +111,12 @@ fun SystemAccessScreen(navigation: NavController) {
     val notificationRequest = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         stores.prompts.markAsked(NotificationsModule.PROMPT)
         SystemLog.call("access.notifications.request", "granted=$granted")
+        revision += 1
+    }
+    // The outcome is not inspected: finishing the review says nothing about which types were shared.
+    val healthRequest = rememberLauncherForActivityResult(PermissionController.createRequestPermissionResultContract()) { _ ->
+        stores.prompts.markAsked(HealthModule.PROMPT)
+        SystemLog.call("access.health.request", "reviewed")
         revision += 1
     }
     val photoPicker = rememberLauncherForActivityResult(ActivityResultContracts.PickMultipleVisualMedia(PhotoLimits.MAXIMUM_SELECTED)) { uris ->
@@ -209,6 +219,34 @@ fun SystemAccessScreen(navigation: NavController) {
             OutlinedButton(modifier = Modifier.padding(horizontal = 16.dp), onClick = {
                 if (notificationStatus == "denied") openAppSettings() else notificationRequest.launch(Manifest.permission.POST_NOTIFICATIONS)
             }) { Text(if (notificationStatus == "authorized") "Review notification permission" else "Allow notifications") }
+
+            // MARK: Health
+            AccessSection("Health")
+            val healthStatus = remember(revision) { stores.healthPlatform.sdkStatus() }
+            val healthReviewed = remember(revision) { stores.prompts.asked(HealthModule.PROMPT) }
+            // Permission state only; no health record is read to draw this section.
+            val healthGranted by produceState<Set<String>?>(null, revision) {
+                value = withContext(Dispatchers.IO) { if (healthStatus == HealthConnectClient.SDK_AVAILABLE) stores.healthPlatform.grantedPermissions() else emptySet() }
+            }
+            if (healthStatus != HealthConnectClient.SDK_AVAILABLE) {
+                ListItem(headlineContent = { Text(if (healthStatus == HealthConnectClient.SDK_UNAVAILABLE_PROVIDER_UPDATE_REQUIRED) "Health Connect needs an update" else "Health Connect is not available on this device") },
+                    supportingContent = { Text("Widgets that use health data show their unavailable state until Health Connect can be used.") })
+            } else {
+                val granted = healthGranted
+                val shared = granted?.count { it in AndroidHealthPlatform.READ_PERMISSIONS } ?: 0
+                val background = granted?.contains(AndroidHealthPlatform.BACKGROUND_PERMISSION) == true
+                ListItem(headlineContent = { Text(if (healthReviewed) "Health access reviewed" else "Health access not reviewed") },
+                    supportingContent = { Text((if (granted == null) "" else "$shared of ${AndroidHealthPlatform.READ_PERMISSIONS.size} data types shared. " +
+                        (if (shared > 0 && !background) "Reading in the background is off, so home screen widgets show no data unless the app is open. " else "")) +
+                        "ScriptWidget only reads steps, active energy, heart rate, sleep, exercise, distance, hydration and weight, and never writes. " +
+                        "Readings are not stored or logged. Widgets are not told which types you shared: a type you keep private looks like a type with no data.") })
+                OutlinedButton(modifier = Modifier.padding(horizontal = 16.dp), onClick = {
+                    runCatching { healthRequest.launch(stores.healthPlatform.requestPermissions()) }.onFailure { message = "Health Connect could not be opened." }
+                }) { Text(if (healthReviewed) "Review Health access" else "Allow Health access") }
+                TextButton(modifier = Modifier.padding(horizontal = 8.dp), onClick = {
+                    runCatching { context.startActivity(Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }.onFailure { message = "Health Connect could not be opened." }
+                }) { Text("Open Health Connect") }
+            }
 
             // MARK: GitHub
             AccessSection("GitHub")

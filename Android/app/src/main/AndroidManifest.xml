@@ -13,6 +13,22 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- $photos uses the system Photo Picker and needs no storage permission. -->
+    <!-- $health: read-only Health Connect access for the record types the API uses. No write permission is declared. -->
+    <uses-permission android:name="android.permission.health.READ_STEPS" />
+    <uses-permission android:name="android.permission.health.READ_ACTIVE_CALORIES_BURNED" />
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
+    <uses-permission android:name="android.permission.health.READ_SLEEP" />
+    <uses-permission android:name="android.permission.health.READ_EXERCISE" />
+    <uses-permission android:name="android.permission.health.READ_DISTANCE" />
+    <uses-permission android:name="android.permission.health.READ_HYDRATION" />
+    <uses-permission android:name="android.permission.health.READ_WEIGHT" />
+    <!-- Widgets refresh while the app is closed; without this Health Connect only answers a visible app. -->
+    <uses-permission android:name="android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND" />
+
+    <queries>
+        <!-- The Health Connect provider app on devices where it is not part of the system. -->
+        <package android:name="com.google.android.apps.healthdata" />
+    </queries>
 
     <application
         android:name=".ScriptWidgetApplication"
@@ -55,6 +71,27 @@
                 <data android:scheme="scriptwidget" />
             </intent-filter>
         </activity>
+
+        <!-- Health Connect shows this screen when the user asks why ScriptWidget wants health data. -->
+        <activity
+            android:name=".HealthRationaleActivity"
+            android:exported="true"
+            android:label="@string/health_rationale_title">
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE" />
+            </intent-filter>
+        </activity>
+        <!-- Android 14 and later open the same screen from the system permission usage page. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE"
+            android:targetActivity=".HealthRationaleActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE" />
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS" />
+            </intent-filter>
+        </activity-alias>
 
         <activity
             android:name=".widget.WidgetConfigActivity"

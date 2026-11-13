@@ -35,8 +35,11 @@ class SystemStores private constructor(context: Context, notificationReceiver: C
     val serviceConnections = ServiceConnections(KeystoreServiceVault(File(root, "services/github.bin")), FetchServiceTransport())
     val services = ServicesModule(serviceConnections)
 
-    /** The five modules to pass to `WidgetRuntime(context, extraModules)`. */
-    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services)
+    val healthPlatform = AndroidHealthPlatform(appContext)
+    val health = HealthModule(healthPlatform, prompts)
+
+    /** The six modules to pass to `WidgetRuntime(context, extraModules)`. */
+    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services, health)
 
     companion object {
         @Volatile private var instance: SystemStores? = null

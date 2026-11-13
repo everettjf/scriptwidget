@@ -14,7 +14,6 @@ object PlatformSupport {
 
     /** Manifest permissions with no Android implementation in this release, with the reason shown to the user. */
     val unsupportedPermissions: Map<String, String> = linkedMapOf(
-        "health" to "Health data (\$health) arrives with Health Connect support in a later Android release.",
         "reminders" to "Reminders (\$reminders) has no system equivalent on Android.",
         "remindersWrite" to "Reminders (\$reminders) has no system equivalent on Android.",
         "music" to "Now-playing data (\$music) is planned for a later Android release.",

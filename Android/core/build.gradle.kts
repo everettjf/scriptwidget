@@ -28,6 +28,8 @@ android {
 
 dependencies {
     implementation("androidx.core:core-ktx:1.19.1")
+    // $health reads through Health Connect. Unit tests use a fake HealthPlatform and never touch the client.
+    implementation("androidx.health.connect:connect-client:1.1.0")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     testImplementation("junit:junit:4.13.2")

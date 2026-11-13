@@ -54,6 +54,8 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
+    // The Health Connect permission contract used by the System Access screen.
+    implementation("androidx.health.connect:connect-client:1.1.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")

@@ -9,15 +9,15 @@ import com.everettjf.scriptwidget.core.system.SystemExecutor
 import com.everettjf.scriptwidget.core.system.SystemStores
 
 /**
- * The system data APIs of Android 1.0: `$location`, `$calendar`, `$photos`,
- * `$notifications` and `$services`. Register them with
+ * The system data APIs: `$location`, `$calendar`, `$photos`, `$notifications`
+ * and `$services` (Android 1.0) and `$health` (Android 1.1). Register them with
  * `WidgetRuntime(context, SystemModules.create(context))`.
  */
 object SystemModules {
     /** Stores shared by the native modules and the System Access screen. */
     fun stores(context: Context): SystemStores = SystemStores.get(context, SystemNotificationReceiver::class.java)
 
-    /** The five native modules, backed by the process-wide [stores]. */
+    /** The six native modules, backed by the process-wide [stores]. */
     fun create(context: Context): List<NativeModule> = stores(context).modules
 
     /**

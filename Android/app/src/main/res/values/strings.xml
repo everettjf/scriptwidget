@@ -10,4 +10,5 @@
     <string name="widget_choose">Tap to choose a widget</string>
     <string name="widget_missing">This widget was removed. Tap to choose another.</string>
     <string name="widget_content_description">ScriptWidget widget</string>
+    <string name="health_rationale_title">Health data in ScriptWidget</string>
 </resources>
