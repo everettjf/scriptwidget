@@ -100,7 +100,7 @@ class SurfacesTest {
         val installed = install()
         val result = ActionRunner.run(context, installed.installation, "refresh", "shortcut", null, null)
         assertTrue(result.message, result.ok)
-        assertEquals("refresh/refresh/shortcut///action", seen(installed).replace("undefined", "").replace("null", ""))
+        assertEquals("refresh/refresh/shortcut////action", seen(installed).replace("undefined", "").replace("null", ""))
     }
 
     @Test fun rejectsAnUndeclaredActionWithoutRunningAnything() {

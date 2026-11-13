@@ -79,6 +79,11 @@ fun SettingsScreen(navigation: NavController) {
                     context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 },
             )
+            Section("System surfaces")
+            ListItem(headlineContent = { Text("Controls and shortcuts") }, supportingContent = { Text("Quick Settings tiles for package controls and app shortcuts for package actions.") },
+                modifier = Modifier.clickable { navigation.navigate("controls") })
+            ListItem(headlineContent = { Text("Live Activities") }, supportingContent = { Text("Show a package's progress as an ongoing Live Update notification.") },
+                modifier = Modifier.clickable { navigation.navigate("live-activities") })
             Section("Data")
             ListItem(headlineContent = { Text("System Access") }, supportingContent = { Text("Location, calendars, photos, notifications and connected services that widgets may read.") },
                 modifier = Modifier.clickable { navigation.navigate("system-access") })

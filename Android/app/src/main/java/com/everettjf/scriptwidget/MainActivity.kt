@@ -47,6 +47,8 @@ class MainActivity : ComponentActivity() {
                     composable("gallery") { GalleryScreen(navigation) }
                     composable("settings") { SettingsScreen(navigation) }
                     composable("system-access") { com.everettjf.scriptwidget.ui.SystemAccessScreen(navigation) }
+                    composable("controls") { com.everettjf.scriptwidget.ui.ControlsScreen(navigation) }
+                    composable("live-activities") { com.everettjf.scriptwidget.ui.LiveActivitiesScreen(navigation) }
                     composable("skills") { com.everettjf.scriptwidget.ui.SkillsScreen(navigation) }
                     composable("plugins") { com.everettjf.scriptwidget.ui.PluginsScreen(navigation, AppServices.plugins) }
                     composable("ai") { AiScreen(navigation, null) }

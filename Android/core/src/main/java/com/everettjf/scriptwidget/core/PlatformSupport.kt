@@ -10,7 +10,7 @@ import org.json.JSONObject
  */
 object PlatformSupport {
     /** Android release line of this build: "1.0", "1.1" or "1.2". */
-    const val RELEASE = "1.0"
+    const val RELEASE = "1.1"
 
     /** Manifest permissions with no Android implementation in this release, with the reason shown to the user. */
     val unsupportedPermissions: Map<String, String> = linkedMapOf(

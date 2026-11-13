@@ -64,25 +64,29 @@ class Library(private val context: Context) {
         val directory = store.importArchive(input, suggestedName, validate = { files -> AppServices.validatePackage(files) }).directory
         // An archive never carries another installation's identity.
         File(directory, INSTALLATION_FILE).delete()
-        return describe(directory)
+        return describe(directory).also { surfacesChanged() }
     }
 
     fun exportArchive(name: String, output: OutputStream) = store.exportArchive(name, output)
 
     fun delete(name: String) = store.delete(name)
 
-    fun rename(name: String, newName: String): InstalledPackage = describe(store.rename(name, newName).directory)
+    fun rename(name: String, newName: String): InstalledPackage = describe(store.rename(name, newName).directory).also { surfacesChanged() }
 
     fun duplicate(name: String): InstalledPackage {
         val copy = store.duplicate(name).directory
         File(copy, INSTALLATION_FILE).delete()
-        return describe(copy)
+        return describe(copy).also { surfacesChanged() }
     }
 
     fun writeFile(name: String, path: String, bytes: ByteArray) {
         store.writeFile(name, path, bytes)
         File(File(root, name), "__Build").deleteRecursively()
+        if (path == "widget.json") surfacesChanged()
     }
+
+    /** Tiles and app shortcuts mirror the actions and controls of installed packages. */
+    private fun surfacesChanged() { runCatching { com.everettjf.scriptwidget.actions.SurfaceHooks.onLibraryChanged(context) } }
 
     // MARK: - Bundled templates
 
