@@ -24,7 +24,17 @@ class ExecutionRequest(
     val timeoutMilliseconds: Long = 5000,
     /** Package identity for storage namespaces and diagnostics. */
     val packageID: String = "",
-)
+) {
+    /** Budgets and cancellation shared by every native call of this execution. */
+    val session = ExecutionSession()
+}
+
+class ExecutionSession {
+    val networkRequests = java.util.concurrent.atomic.AtomicInteger(0)
+    val dataQueries = java.util.concurrent.atomic.AtomicInteger(0)
+    /** Set when the execution ended; in-flight native work should stop. */
+    @Volatile var finished: Boolean = false
+}
 
 class ExecutionError(val kind: String, val message: String)
 
@@ -142,6 +152,7 @@ class ScriptExecutor(private val scripts: SharedScripts) {
             }
         } finally {
             synchronized(completions) { cancelled = true }
+            request.session.finished = true
             engine.close()
         }
         return decode(finished!!, nativeLogs)

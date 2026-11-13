@@ -15,8 +15,9 @@ class SharedScripts(context: Context) {
 
     /** Host files evaluated before the kernel, in order. */
     val hostFiles: List<String> by lazy {
-        (assets.list("scriptwidget") ?: emptyArray())
-            .filter { it.startsWith("android-") && it.endsWith(".js") && it != "android-compiler.js" }
+        // android-host.js defines the registry the API files add themselves to.
+        listOf("android-host.js") + (assets.list("scriptwidget") ?: emptyArray())
+            .filter { it.startsWith("android-api") && it.endsWith(".js") }
             .sorted()
     }
 
