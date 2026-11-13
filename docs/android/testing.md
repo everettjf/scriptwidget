@@ -31,6 +31,7 @@ All passed on the final build. The device suites cover:
 - **Native APIs against real device services**: storage, HTTPS fetch, a Data Source Plugin request, Calendar Provider read and write with replay, notifications and alarms scheduling, Photo thumbnails, location policy, Health Connect queries, MET Norway forecast, geocoding, synced documents with two simulated devices.
 - **System surfaces**: declared actions, toggle persistence, app shortcuts, Live Update notification start, update and end.
 - **AI loop**: generate, validate on the device, feed the error back, accept the fix; with a scripted local model.
+- **AI against a live model** (`AiLiveModelTest`, 3 tests, Pixel 6 only, 13 November 2026): with a real Anthropic key and `claude-fable-5-2` over the app's HTTPS transport, the model wrote a medium countdown widget that ran and drew on the device, refined an existing widget as instructed, and a rejected key failed with a message that does not contain it. The test is skipped unless a key is passed (`-e aiKey`). The key was passed to the test in memory; typing a key into the AI settings screen and generating from the app's own screen with a live model was not exercised. Other providers (OpenAI-compatible, local) were not called live.
 
 Two live-service tests skip instead of failing when the remote service does not answer in time (Open-Meteo, MET Norway).
 
@@ -48,7 +49,6 @@ Two live-service tests skip instead of failing when the remote service does not 
 
 ## Not tested
 
-- **AI generation against a live model.** No API key was available. On the Pixel the loop runs end to end with a real HTTP exchange against a local server that answers in the Anthropic Messages format with scripted text: a broken first answer is rejected by the runtime and fed back, the corrected answer renders, and the loop stops at its limit. What a real model returns, and a real provider's errors and timing, are untested.
 - **Push-triggered refresh end to end.** No Firebase project exists for this app, so no token was issued and no push was delivered. The registration rules, the request the app sends and the handling of a received message are tested on the Pixel with a replaced transport.
 - **GitHub services with a real token.** Only the not-connected and policy-rejection paths ran.
 - **A notification or alarm actually arriving.** Scheduling, listing and cancelling ran; delivery was not waited for.
