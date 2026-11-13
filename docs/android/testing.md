@@ -10,13 +10,13 @@ What was run before handing this build to testers, and what was not.
 | Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
 | App device tests | 55 | see below | `Android/scripts/device-test.sh app` |
 
-The Pixel ran every suite with the final code. The emulators ran them before the last two tests (the AI loop) were added.
+Every suite was run with the final code on every device below.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed | 55 passed |
-| Emulator, Google APIs image | 15 (API 35) | 27 passed | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
-| Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
+| Emulator, Google APIs image | 15 (API 35) | 27 passed | 55 passed (the picked-folder sync test skips: no folder was chosen there) |
+| Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 55 passed (the picked-folder sync test skips: no folder was chosen there) |
 
 Set `ANDROID_SERIAL` to choose the device when several are connected.
 
