@@ -126,6 +126,25 @@ class NativeApiTest {
         assertTrue(unhandled.error?.message.orEmpty(), unhandled.error?.message.orEmpty().contains("[unsupported_platform] \$weather.forecast is not supported on Android"))
     }
 
+    @Test fun dataSourcePluginsCallTheirDeclaredHostsOnly() {
+        val plugins = com.everettjf.scriptwidget.core.plugin.PluginStore(File(context.cacheDir, "plugins-test"))
+        val module = com.everettjf.scriptwidget.core.plugin.DataSourceModule(plugins)
+        val script = """
+            ${'$'}dataSource.request("app.scriptwidget.datasource.open-meteo", "forecast", {latitude: 37.33, longitude: -122.03}).then(
+              v => ${'$'}render(<text>{typeof v.latitude + "|" + (v.current_weather !== undefined || v.current !== undefined || v.hourly !== undefined || v.generationtime_ms !== undefined)}</text>),
+              e => ${'$'}render(<text>{"error: " + String(e)}</text>))
+        """
+        fun runWith(manifest: String): String {
+            val files = MemoryPackageFiles(mapOf("main.jsx" to script, "widget.json" to manifest))
+            val prepared = compiler.prepare(files)
+            return text(executor.execute(ExecutionRequest(prepared, files, modules = listOf(storage, module), packageID = "pkg-plugin")))
+        }
+        val declared = """{"entry":"main.jsx","formatVersion":2,"id":"com.example.test","name":"Test","networkDomains":["api.open-meteo.com"],"permissions":["network"],"plugins":["app.scriptwidget.datasource.open-meteo"],"runtimeVersion":"1.0","supportedFamilies":["systemSmall"],"version":"1.0.0"}"""
+        assertEquals("number|true", runWith(declared))
+        assertEquals("error: Plugin app.scriptwidget.datasource.open-meteo is not declared in widget.json", runWith(declared.replace("\"plugins\":[\"app.scriptwidget.datasource.open-meteo\"]", "\"plugins\":[]")))
+        assertEquals("error: Data source host is not declared in widget.json networkDomains.", runWith(declared.replace("api.open-meteo.com", "example.com")))
+    }
+
     @Test fun unresolvedPromisesEndAtTheExecutionLimit() {
         val files = MemoryPackageFiles(mapOf("main.jsx" to "const p = { then() {} }; await p; \$render(<text>never</text>)"))
         val prepared = compiler.prepare(files)
