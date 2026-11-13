@@ -195,6 +195,40 @@ class WidgetHostTest {
         assertTrue("the view moves: $margins", margins.toSet().size > 4)
     }
 
+    @Test fun pushRegistersPlacedPackagesAndAPushRedrawsOnlyTheNamedPackage() {
+        val push = ""","pushUpdates":{"registrationURL":"https://push.example.com/register","channel":"scores"}"""
+        val declared = """{"entry":"main.jsx","formatVersion":2,"id":"com.example.scores","name":"Scores","networkDomains":["push.example.com"],"permissions":["network"],"plugins":[],"runtimeVersion":"1.0","supportedFamilies":["systemMedium"],"version":"1.0.0"$push}"""
+        val scores = install("""${'$'}render(<text>scores</text>)""", declared)
+        val other = install("""${'$'}render(<text>other</text>)""")
+        val unplaced = install("""${'$'}render(<text>unplaced</text>)""", declared.replace("com.example.scores", "com.example.unplaced"))
+        val scoresWidget = place(scores)
+        place(other)
+
+        val posted = ArrayList<Pair<String, org.json.JSONObject>>()
+        val original = com.everettjf.scriptwidget.push.Push.transport
+        com.everettjf.scriptwidget.push.Push.transport = com.everettjf.scriptwidget.push.PushTransport { target, body -> posted += target.url.toString() to org.json.JSONObject(String(body)); 200 }
+        try {
+            context.getSharedPreferences("push", android.content.Context.MODE_PRIVATE).edit().clear().commit()
+            // Only the placed package that declares pushUpdates is registered, at its declared URL.
+            assertEquals(1, com.everettjf.scriptwidget.push.Push.register(context, "device-token-1"))
+            assertEquals("https://push.example.com/register", posted.single().first)
+            assertEquals("device-token-1", posted.single().second.getString("token"))
+            assertEquals("com.example.scores", posted.single().second.getString("packageID"))
+            assertEquals("scores", posted.single().second.getString("channel"))
+            // The same token is not sent twice; a new token is.
+            assertEquals(0, com.everettjf.scriptwidget.push.Push.register(context, "device-token-1"))
+            assertEquals(1, com.everettjf.scriptwidget.push.Push.register(context, "device-token-2"))
+        } finally {
+            com.everettjf.scriptwidget.push.Push.transport = original
+        }
+        // A push names a package and channel; only that package's widgets are redrawn.
+        assertEquals(listOf(scoresWidget), com.everettjf.scriptwidget.push.Push.handle(context, mapOf("packageID" to "com.example.scores", "channel" to "scores")).toList())
+        assertEquals(0, com.everettjf.scriptwidget.push.Push.handle(context, mapOf("packageID" to "com.example.scores", "channel" to "wrong")).size)
+        assertEquals(0, com.everettjf.scriptwidget.push.Push.handle(context, mapOf("packageID" to "com.example.unplaced", "channel" to "scores")).size)
+        assertEquals(0, com.everettjf.scriptwidget.push.Push.handle(context, emptyMap()).size)
+        assertTrue(unplaced.installation.isNotEmpty())
+    }
+
     @Test fun scriptErrorsBecomeAVisibleCardNotABlankWidget() {
         val id = place(install("""const broken = ; ${'$'}render(<text>never</text>)"""))
         val view = inflate(id)

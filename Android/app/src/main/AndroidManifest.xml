@@ -128,6 +128,13 @@
             <meta-data android:name="android.appwidget.provider" android:resource="@xml/widget_extra_large" />
         </receiver>
 
+        <!-- Push-triggered refresh for packages that declare pushUpdates; inactive without a Firebase project. -->
+        <service android:name=".push.PushService" android:exported="false">
+            <intent-filter><action android:name="com.google.firebase.MESSAGING_EVENT" /></intent-filter>
+        </service>
+        <meta-data android:name="firebase_messaging_auto_init_enabled" android:value="false" />
+        <meta-data android:name="firebase_analytics_collection_enabled" android:value="false" />
+
         <receiver android:name=".widget.WidgetActionReceiver" android:exported="false" />
         <receiver android:name=".widget.WidgetAlarmReceiver" android:exported="false">
             <intent-filter>

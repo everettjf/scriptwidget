@@ -64,6 +64,7 @@ class WidgetConfigActivity : ComponentActivity() {
                     TopAppBar(title = { Text("Choose a widget") }, actions = {
                         TextButton(enabled = selected != null, onClick = {
                             AppServices.widgets.set(appWidgetId, WidgetBinding(selected!!, parameter))
+                            com.everettjf.scriptwidget.push.Push.refreshRegistrations(this@WidgetConfigActivity)
                             WidgetScheduler.refresh(this@WidgetConfigActivity, intArrayOf(appWidgetId))
                             setResult(RESULT_OK, Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId))
                             finish()

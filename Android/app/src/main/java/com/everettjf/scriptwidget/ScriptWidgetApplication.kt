@@ -49,6 +49,7 @@ class ScriptWidgetApplication : Application() {
         AppServices.attach(this)
         nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
         WidgetScheduler.schedulePeriodicRefresh(this)
+        com.everettjf.scriptwidget.push.Push.start(this)
     }
 
     override fun onConfigurationChanged(newConfig: Configuration) {

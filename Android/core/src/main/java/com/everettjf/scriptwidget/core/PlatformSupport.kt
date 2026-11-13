@@ -21,7 +21,7 @@ object PlatformSupport {
 
     /** Manifest features with no Android surface in this release. */
     private val unsupportedManifestKeys: Map<String, String> = linkedMapOf(
-        "pushUpdates" to "Push-triggered refresh is planned for a later Android release.",
+        "pushUpdates" to "Push-triggered refresh works only in builds configured with a Firebase project.",
     )
 
     private val unsupportedFamilies = setOf("accessoryCircular", "accessoryRectangular", "accessoryInline")

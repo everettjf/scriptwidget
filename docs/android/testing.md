@@ -1,4 +1,4 @@
-# Android test notes (1.2.0, build 5)
+# Android test notes (1.2.0, build 6)
 
 What was run before handing this build to testers, and what was not.
 
@@ -6,15 +6,15 @@ What was run before handing this build to testers, and what was not.
 
 | Suite | Count | Where | Command |
 | --- | --- | --- | --- |
-| Unit tests | 468 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
+| Unit tests | 474 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
 | Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
-| App device tests | 55 | see below | `Android/scripts/device-test.sh app` |
+| App device tests | 56 | see below | `Android/scripts/device-test.sh app` |
 
-Every suite was run with the final code on every device below.
+The Pixel ran every suite with the final code. The emulators ran them at build 5, before push refresh and its one device test were added.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
-| Pixel 6 (physical) | 17 (API 37) | 27 passed | 55 passed |
+| Pixel 6 (physical) | 17 (API 37) | 27 passed (the example.com fetch check was skipped on the last run: the site answered 403; it had returned 200 on earlier runs) | 56 passed |
 | Emulator, Google APIs image | 15 (API 35) | 27 passed | 55 passed (the picked-folder sync test skips: no folder was chosen there) |
 | Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 55 passed (the picked-folder sync test skips: no folder was chosen there) |
 
@@ -49,6 +49,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 ## Not tested
 
 - **AI generation against a live model.** No API key was available. On the Pixel the loop runs end to end with a real HTTP exchange against a local server that answers in the Anthropic Messages format with scripted text: a broken first answer is rejected by the runtime and fed back, the corrected answer renders, and the loop stops at its limit. What a real model returns, and a real provider's errors and timing, are untested.
+- **Push-triggered refresh end to end.** No Firebase project exists for this app, so no token was issued and no push was delivered. The registration rules, the request the app sends and the handling of a received message are tested on the Pixel with a replaced transport.
 - **GitHub services with a real token.** Only the not-connected and policy-rejection paths ran.
 - **A notification or alarm actually arriving.** Scheduling, listing and cancelling ran; delivery was not waited for.
 - **Documents, contacts and music with real selections.** Only the empty and not-authorized states ran.
@@ -65,4 +66,4 @@ Two live-service tests skip instead of failing when the remote service does not 
 - A clock animation with a custom interval turns at the right speed but its phase is not tied to the time; standard clock hands show the real time.
 - Timers use the system font and read `00:36` where iOS reads `0:36`.
 - Alarms and notifications are inexact and can be about ten minutes late.
-- `$maps.snapshot`, `$reminders`, `$home`, accessory families, the Dynamic Island and push-triggered refresh are not available.
+- `$maps.snapshot`, `$reminders`, `$home`, accessory families and the Dynamic Island are not available. Push-triggered refresh is off in this build because it has no Firebase project.

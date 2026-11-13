@@ -12,7 +12,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.2.0 (version code 5) |
+| Version | 1.2.0 (version code 6) |
 | Minimum Android | 15 (API 35) |
 | Target API | 36 |
 | Contains ads | No |

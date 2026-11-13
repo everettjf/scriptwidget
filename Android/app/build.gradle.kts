@@ -14,7 +14,7 @@ android {
         applicationId = "com.everettjf.scriptwidget"
         minSdk = 35
         targetSdk = 36
-        versionCode = 5
+        versionCode = 6
         versionName = "1.2.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
@@ -26,6 +26,17 @@ android {
     val keystoreProperties = Properties().apply {
         val file = rootProject.file("keystore.properties")
         if (file.isFile) file.inputStream().use { load(it) }
+    }
+    // Push-triggered refresh needs a Firebase project. firebase.properties (git-ignored) holds
+    // projectId, applicationId, apiKey and senderId; without it push is compiled in but stays off.
+    val firebaseProperties = Properties().apply {
+        val file = rootProject.file("firebase.properties")
+        if (file.isFile) file.inputStream().use { load(it) }
+    }
+    defaultConfig {
+        for ((field, key) in listOf("FIREBASE_PROJECT_ID" to "projectId", "FIREBASE_APP_ID" to "applicationId", "FIREBASE_API_KEY" to "apiKey", "FIREBASE_SENDER_ID" to "senderId")) {
+            buildConfigField("String", field, "\"" + firebaseProperties.getProperty(key, "").replace("\"", "") + "\"")
+        }
     }
     val hasUploadKey = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it).isFile } == true
     signingConfigs {
@@ -45,7 +56,7 @@ android {
             signingConfig = signingConfigs.getByName(if (hasUploadKey) "upload" else "debug")
         }
     }
-    buildFeatures { compose = true }
+    buildFeatures { compose = true; buildConfig = true }
     androidResources { noCompress += listOf("ttf") }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -72,6 +83,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
+    implementation("com.google.firebase:firebase-messaging:26.0.2")
     // The Health Connect permission contract used by the System Access screen.
     implementation("androidx.health.connect:connect-client:1.1.0")
     debugImplementation("androidx.compose.ui:ui-tooling")

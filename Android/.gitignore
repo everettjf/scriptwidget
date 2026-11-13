@@ -9,3 +9,5 @@ core/src/androidTest/assets/parity-corpus.json
 keystore.properties
 *.jks
 *.keystore
+firebase.properties
+google-services.json
