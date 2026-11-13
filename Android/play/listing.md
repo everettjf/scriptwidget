@@ -1,6 +1,15 @@
 # Google Play listing kit (ScriptWidget 1.2.0)
 
-Everything needed to create the Play Console entry and an internal test release. Nothing here has been submitted.
+Everything needed to create the Play Console entry and an internal test release.
+
+## Status (13 November 2026)
+
+- The app exists in Play Console under the AtomSprout developer account, as a draft: ScriptWidget, `com.everettjf.scriptwidget`, English (United States), App, Free.
+- Internal testing has the email list "ScriptWidget internal" selected, with `evilret@gmail.com` and `atomsprout@googlegroups.com`.
+- The default store listing is saved as a draft with the text below, the icon, the feature graphic and the six phone screenshots.
+- An internal testing release "1.2.0 (6)" is saved as a draft with the release notes below. **The app bundle is not uploaded yet and nothing is rolled out.**
+- The App content declarations (privacy policy, ads, content rating, target audience, data safety, and the rest) are not filled in. Internal testing does not need them; closed testing and production do.
+- The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update must be signed with this key.
 
 ## App
 
