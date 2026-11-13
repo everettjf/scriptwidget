@@ -56,18 +56,24 @@ object WidgetUpdater {
 
         val request = RunRequest(installed.files, installed.installation, family, binding.parameter, dark, buildDirectory = installed.buildDirectory)
         val result = runtime.run(request)
+        // The other theme: the same tree unless the script asked which theme is active.
+        val otherRequest = RunRequest(installed.files, installed.installation, family, binding.parameter, !dark, buildDirectory = installed.buildDirectory)
+        val otherResult = if (result.dependsOnAppearance) runtime.run(otherRequest) else result
         val sizes = sizes(context, manager.getAppWidgetOptions(appWidgetId), family)
         val density = context.resources.displayMetrics.density
         // Android 17 rejects updates whose bitmaps exceed 6 x screen pixels; stay well inside.
         val metrics = context.resources.displayMetrics
-        val budget = (metrics.widthPixels.toLong() * metrics.heightPixels * 6L * 45L / 100L) / sizes.size
+        val budget = (metrics.widthPixels.toLong() * metrics.heightPixels * 6L * 70L / 100L) / (sizes.size * 2)
 
         val views = LinkedHashMap<SizeF, RemoteViews>()
         var bitmapBytes = 0L
         for (size in sizes) {
             val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES)
-            bitmapBytes += output.bitmap.allocationByteCount
-            views[size] = build(context, appWidgetId, installed, output, size)
+            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark)
+            // Identical drawings need one bitmap; otherwise the launcher picks by its own theme.
+            val themed = if (other.bitmap.sameAs(output.bitmap)) null else other
+            bitmapBytes += output.bitmap.allocationByteCount + (themed?.bitmap?.allocationByteCount ?: 0)
+            views[size] = build(context, appWidgetId, installed, output, size, themed, dark)
         }
         val combined = if (views.size == 1) views.values.first() else RemoteViews(views)
         manager.updateAppWidget(appWidgetId, combined)
@@ -118,14 +124,22 @@ object WidgetUpdater {
         return listOf(when (family) { "small" -> SizeF(160f, 160f); "large" -> SizeF(330f, 330f); else -> SizeF(330f, 160f) })
     }
 
-    private fun build(context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF): RemoteViews {
+    private fun build(context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF, other: RenderOutput? = null, dark: Boolean = false): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_root)
-        views.setImageViewBitmap(R.id.widget_image, output.bitmap.asShared())
+        if (other == null) views.setImageViewBitmap(R.id.widget_image, output.bitmap.asShared())
+        else {
+            val light = if (dark) other.bitmap else output.bitmap
+            val night = if (dark) output.bitmap else other.bitmap
+            views.setIcon(R.id.widget_image, "setImageIcon", android.graphics.drawable.Icon.createWithBitmap(light), android.graphics.drawable.Icon.createWithBitmap(night))
+        }
         views.setContentDescription(R.id.widget_image, installed.displayName)
         // With no tap target of its own, the widget opens its package in the app.
         views.setOnClickPendingIntent(R.id.widget_image, openApp(context, appWidgetId, installed))
         views.removeAllViews(R.id.widget_dynamic)
-        for (slot in output.dateSlots.take(MAXIMUM_LIVE_TEXTS)) liveText(context, slot, size)?.let { views.addView(R.id.widget_dynamic, it) }
+        for ((index, slot) in output.dateSlots.take(MAXIMUM_LIVE_TEXTS).withIndex()) {
+            val otherColor = other?.dateSlots?.getOrNull(index)?.color ?: slot.color
+            liveText(context, slot, size, if (dark) otherColor else slot.color, if (dark) slot.color else otherColor)?.let { views.addView(R.id.widget_dynamic, it) }
+        }
         views.removeAllViews(R.id.widget_overlay)
         for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {
             val intent = pendingIntent(context, appWidgetId, index, region.interaction) ?: continue
@@ -147,7 +161,7 @@ object WidgetUpdater {
      * The view is wider than the measured text because the system font has
      * other metrics than the bundled one; it grows away from its alignment edge.
      */
-    private fun liveText(context: Context, slot: com.everettjf.scriptwidget.core.render.DateSlot, size: SizeF): RemoteViews? {
+    private fun liveText(context: Context, slot: com.everettjf.scriptwidget.core.render.DateSlot, size: SizeF, lightColor: Int, nightColor: Int): RemoteViews? {
         val style = slot.style ?: return null
         val timer = slot.description.optString("style") == "timer"
         val layout = when (slot.align) {
@@ -168,7 +182,7 @@ object WidgetUpdater {
         views.setViewLayoutWidth(id, width, TypedValue.COMPLEX_UNIT_DIP)
         views.setViewLayoutHeight(id, slot.bounds.height().coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
         views.setTextViewTextSize(id, TypedValue.COMPLEX_UNIT_DIP, style.size)
-        views.setTextColor(id, slot.color)
+        views.setColorInt(id, "setTextColor", lightColor, nightColor)
         if (timer) {
             val target = slot.description.optLong("target")
             val now = System.currentTimeMillis()

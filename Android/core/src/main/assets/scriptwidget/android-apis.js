@@ -113,3 +113,17 @@ __swRegisterAPIs(function (apis, helpers, bridge) {
     apis[name] = api;
   }
 });
+
+// MARK: - Appearance
+//
+// A widget bitmap cannot follow the system theme by itself, so the host
+// draws a light and a dark version. It only runs the script twice when the
+// script actually asks which theme is active.
+__swRegisterAPIs(function (apis, helpers, bridge) {
+  "use strict";
+  const isDarkMode = apis.$device.isdarkmode;
+  apis.$device.isdarkmode = function () {
+    bridge.callText("session.appearance");
+    return isDarkMode();
+  };
+});

@@ -159,6 +159,36 @@ class WidgetHostTest {
         assertEquals(context.getString(R.string.widget_missing), message.text.toString())
     }
 
+    @Test fun widgetsCarryALightAndADarkBitmapWhenTheyDiffer() {
+        // Default text and background colors follow the theme: two bitmaps, chosen by the launcher.
+        val themed = WidgetUpdater.update(context, place(install("""${'$'}render(<vstack frame="max"><text>theme</text></vstack>)""")))!!
+        // Explicit colors look the same in both themes: one bitmap.
+        val fixed = WidgetUpdater.update(context, place(install("""${'$'}render(<vstack frame="max" background="#2563eb"><text color="white">fixed</text></vstack>)""")))!!
+        fun pixel(views: android.widget.RemoteViews, night: Boolean): Int {
+            val configuration = android.content.res.Configuration(context.resources.configuration)
+            configuration.uiMode = (configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                (if (night) android.content.res.Configuration.UI_MODE_NIGHT_YES else android.content.res.Configuration.UI_MODE_NIGHT_NO)
+            val themedContext = context.createConfigurationContext(configuration)
+            lateinit var view: View
+            instrumentation.runOnMainSync { view = views.apply(themedContext, FrameLayout(themedContext)) }
+            val drawable = view.findViewById<ImageView>(R.id.widget_image).drawable as BitmapDrawable
+            return drawable.bitmap.getPixel(2, 2)
+        }
+        assertEquals(0xFFFFFFFF.toInt(), pixel(themed, night = false))
+        assertEquals(0xFF000000.toInt(), pixel(themed, night = true))
+        assertEquals(0xFF2563EB.toInt(), pixel(fixed, night = false))
+        assertEquals(0xFF2563EB.toInt(), pixel(fixed, night = true))
+    }
+
+    @Test fun onlyScriptsThatAskForTheThemeNeedARunPerTheme() {
+        fun dependsOnAppearance(source: String): Boolean {
+            val installed = install(source)
+            return AppServices.runtime.run(com.everettjf.scriptwidget.core.RunRequest(installed.files, installed.installation)).dependsOnAppearance
+        }
+        assertTrue(dependsOnAppearance("""${'$'}render(<vstack background={${'$'}device.isdarkmode() ? "#111111" : "#eeeeee"}><text>x</text></vstack>)"""))
+        assertTrue(!dependsOnAppearance("""${'$'}render(<vstack background="#eeeeee"><text>x</text></vstack>)"""))
+    }
+
     @Test fun bitmapsStayInsideTheAndroid17Budget() {
         val id = place(install("""${'$'}render(<vstack frame="max" background="#111827"><text color="white">budget</text></vstack>)"""))
         val view = inflate(id)

@@ -48,7 +48,10 @@ class RunResult(
     val request: ExecutionRequest?,
     /** When the package's daily schedule next changes slot; the host should run the package again then. */
     val nextTimelineTransition: Long? = null,
-)
+) {
+    /** True when the script's output may depend on the light/dark theme it ran under. */
+    val dependsOnAppearance: Boolean get() = request?.session?.readAppearance == true
+}
 
 /**
  * The Android runtime: compiles a package, executes it, and renders its
@@ -127,13 +130,16 @@ class WidgetRuntime(context: Context, extraModules: List<NativeModule> = emptyLi
      * is never blank. Remote images are fetched first, under the same network
      * policy as `fetch`.
      */
-    fun render(request: RunRequest, result: RunResult, width: Float, height: Float, density: Float, maximumBitmapBytes: Long = Long.MAX_VALUE, liveDateStyles: Set<String> = emptySet()): RenderOutput {
+    fun render(
+        request: RunRequest, result: RunResult, width: Float, height: Float, density: Float, maximumBitmapBytes: Long = Long.MAX_VALUE,
+        liveDateStyles: Set<String> = emptySet(), darkMode: Boolean = request.darkMode,
+    ): RenderOutput {
         val tree = result.execution.tree ?: errorTree(result.execution.error)
         val remote = if (result.execution.tree != null && result.request != null) fetchRemoteImages(tree, result.request) else emptyMap()
         return try {
-            renderer.render(RenderRequest(tree, width, height, density, request.family, request.darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes, liveDateStyles = liveDateStyles))
+            renderer.render(RenderRequest(tree, width, height, density, request.family, darkMode, request.files, remote, maximumBitmapBytes = maximumBitmapBytes, liveDateStyles = liveDateStyles))
         } catch (error: Throwable) {
-            renderer.render(RenderRequest(errorTree(ExecutionError("internalError", error.message ?: "Rendering failed")), width, height, density, request.family, request.darkMode, maximumBitmapBytes = maximumBitmapBytes))
+            renderer.render(RenderRequest(errorTree(ExecutionError("internalError", error.message ?: "Rendering failed")), width, height, density, request.family, darkMode, maximumBitmapBytes = maximumBitmapBytes))
         }
     }
 

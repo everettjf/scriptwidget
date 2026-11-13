@@ -32,6 +32,8 @@ class ExecutionRequest(
 class ExecutionSession {
     val networkRequests = java.util.concurrent.atomic.AtomicInteger(0)
     val dataQueries = java.util.concurrent.atomic.AtomicInteger(0)
+    /** True once the script asked whether dark mode is on: its output may differ between themes. */
+    @Volatile var readAppearance: Boolean = false
     /** Set when the execution ended; in-flight native work should stop. */
     @Volatile var finished: Boolean = false
 }
@@ -91,6 +93,7 @@ class ScriptExecutor(private val scripts: SharedScripts) {
                 operation == "package.exists" -> if (PackagePaths.normalize(payload)?.let { request.files.exists(it) } == true) "1" else "0"
                 operation == "support.script" -> scripts.supportScript(payload.orEmpty())
                 operation == "xml.parse" -> XmlBridge.parse(payload.orEmpty())
+                operation == "session.appearance" -> { request.session.readAppearance = true; null }
                 operation == "log.log" || operation == "log.error" -> {
                     if (nativeLogs.size < 500) nativeLogs += LogEntry(operation.removePrefix("log."), payload.orEmpty())
                     null
