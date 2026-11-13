@@ -49,7 +49,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 
 ## Not tested
 
-- **Push-triggered refresh end to end.** No Firebase project exists for this app, so no token was issued and no push was delivered. The registration rules, the request the app sends and the handling of a received message are tested on the Pixel with a replaced transport.
+- **Push from a real push server, and delivery while the app is closed.** A Firebase project now exists (`scriptwidget-8ac0e`). On 13 November 2026 `PushDeliveryTest` passed on the Pixel 6: Firebase issued a device token, the app registered it for a placed package, and a message sent from the Firebase console with `packageID` and `channel` reached the device about two minutes later and scheduled that package's widget. The message carried a notification and the app was on screen. A data-only message sent by a server through the FCM API, delivery while the app is in the background or stopped, and a real registration endpoint receiving the token were not tested.
 - **GitHub services with a real token.** Only the not-connected and policy-rejection paths ran.
 - **A notification or alarm actually arriving.** Scheduling, listing and cancelling ran; delivery was not waited for.
 - **Documents, contacts and music with real selections.** Only the empty and not-authorized states ran.
@@ -66,4 +66,4 @@ Two live-service tests skip instead of failing when the remote service does not 
 - A clock animation with a custom interval turns at the right speed but its phase is not tied to the time; standard clock hands show the real time.
 - Timers use the system font and read `00:36` where iOS reads `0:36`.
 - Alarms and notifications are inexact and can be about ten minutes late.
-- `$maps.snapshot`, `$reminders`, `$home`, accessory families and the Dynamic Island are not available. Push-triggered refresh is off in this build because it has no Firebase project.
+- `$maps.snapshot`, `$reminders`, `$home`, accessory families and the Dynamic Island are not available. Push-triggered refresh is on only in builds made with `Android/firebase.properties`; the bundle uploaded to Play internal testing as build 6 was made without it.

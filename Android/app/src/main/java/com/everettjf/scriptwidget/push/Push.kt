@@ -35,6 +35,9 @@ object Push {
     val configured: Boolean get() = BuildConfig.FIREBASE_PROJECT_ID.isNotEmpty() && BuildConfig.FIREBASE_APP_ID.isNotEmpty() &&
         BuildConfig.FIREBASE_API_KEY.isNotEmpty() && BuildConfig.FIREBASE_SENDER_ID.isNotEmpty()
 
+    /** Told which widgets a received push scheduled; set by tests that wait for a real delivery. */
+    @Volatile var onHandled: ((IntArray) -> Unit)? = null
+
     var transport: PushTransport = PushTransport { target, body ->
         AppServices.runtime.fetch.perform("POST", target.url, mapOf("Content-Type" to "application/json"), body, 5000) { PushRegistration.allowedRedirect(target, it) }.status
     }
@@ -96,6 +99,7 @@ object Push {
         val ids = ScriptWidgetProvider.allIds(context).filter { AppServices.widgets.get(it)?.installation in installations }.toIntArray()
         WidgetScheduler.refresh(context, ids)
         Log.i(TAG, "push.message -> widgets=${ids.size}")
+        onHandled?.invoke(ids)
         return ids
     }
 }

@@ -104,7 +104,7 @@ The package format, manifest, permissions and runtime API version are the same. 
 
 ### Push-triggered refresh
 
-`pushUpdates` is implemented with Firebase Cloud Messaging and is off until the build is given a Firebase project. Put `projectId`, `applicationId`, `apiKey` and `senderId` in `Android/firebase.properties` (git-ignored). The app then posts `{token, packageID, channel, platform: "android"}` to the package's `registrationURL` for packages that are placed as widgets, under the same rules as iOS: HTTPS, a public host inside the package's `networkDomains`, redirects only to declared hosts. A data message with `packageID` and `channel` redraws that package's widgets. The token is an FCM token, so a push server must send through FCM for Android devices. Delivery through FCM has not been tested.
+`pushUpdates` is implemented with Firebase Cloud Messaging and is off until the build is given a Firebase project. Put `projectId`, `applicationId`, `apiKey` and `senderId` in `Android/firebase.properties` (git-ignored). The app then posts `{token, packageID, channel, platform: "android"}` to the package's `registrationURL` for packages that are placed as widgets, under the same rules as iOS: HTTPS, a public host inside the package's `networkDomains`, redirects only to declared hosts. A data message with `packageID` and `channel` redraws that package's widgets. The token is an FCM token, so a push server must send through FCM for Android devices. Delivery was checked once on a Pixel 6 with a message from the Firebase console while the app was on screen; see the [test notes](testing.md) for what is still untested.
 
 ## Security notes
 
