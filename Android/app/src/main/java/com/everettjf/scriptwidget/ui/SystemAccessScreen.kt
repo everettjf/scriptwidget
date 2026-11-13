@@ -335,6 +335,9 @@ fun SystemAccessScreen(navigation: NavController) {
                 }
             }
 
+            // MARK: Synced documents ($icloud over a sync folder)
+            SyncedDocumentsSection(stores, revision, changed = { revision += 1 }, report = { message = it })
+
             // MARK: Per-widget access
             AccessSection("Widgets")
             val packages = remember(revision) { AppServices.library.list().filter { item -> item.permissions.any { it in setOf("notifications", "calendarWrite", "services", "alarms", "documents", "contacts") } } }
@@ -401,7 +404,7 @@ fun SystemAccessScreen(navigation: NavController) {
 }
 
 @Composable
-private fun AccessSection(title: String) {
+internal fun AccessSection(title: String) {
     HorizontalDivider(Modifier.padding(top = 8.dp))
     Text(title, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 16.dp, top = 16.dp, bottom = 4.dp))
 }
