@@ -36,6 +36,9 @@ class ParityTest {
         val scripts = SharedScripts(instrumentation.targetContext)
         val compiler = PackageCompiler(scripts)
         val executor = ScriptExecutor(scripts)
+        // Each package starts with empty storage, like the JavaScriptCore reference run.
+        val storageDirectory = java.io.File(instrumentation.targetContext.cacheDir, "parity-storage").apply { deleteRecursively() }
+        val storage = com.everettjf.scriptwidget.core.api.StorageModule(storageDirectory)
         val prelude = corpus.getString("prelude")
         val packages = corpus.getJSONArray("corpus")
         val failures = ArrayList<String>()
@@ -62,7 +65,7 @@ class ParityTest {
                 continue
             }
             compileMilliseconds += (System.nanoTime() - compileStart) / 1_000_000
-            val result = executor.execute(ExecutionRequest(prepared, files))
+            val result = executor.execute(ExecutionRequest(prepared, files, modules = listOf(storage), packageID = "parity-$index"))
             executeMilliseconds += result.elapsedMilliseconds
             slowest = maxOf(slowest, result.elapsedMilliseconds)
 

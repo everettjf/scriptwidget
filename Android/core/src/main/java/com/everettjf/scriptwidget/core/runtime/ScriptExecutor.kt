@@ -56,6 +56,8 @@ class ExecutionResult(
  */
 interface NativeModule {
     fun handles(operation: String): Boolean
+    /** Script globals this module implements, such as `$location`; others report "not supported on Android". */
+    val apis: Set<String> get() = emptySet()
     /** Synchronous operation. Returns JSON text or null. */
     fun call(request: ExecutionRequest, operation: String, payload: String?): String? =
         throw IllegalArgumentException("Unsupported operation $operation")
@@ -128,6 +130,7 @@ class ScriptExecutor(private val scripts: SharedScripts) {
                 .put("config", configuration(request).toString())
                 .put("code", request.prepared.code)
                 .put("timeoutMilliseconds", request.timeoutMilliseconds)
+                .put("supportedAPIs", JSONArray(request.modules.flatMap { it.apis }.distinct()))
             engine.call("__swBoot", token, job.toString())
 
             while (finished == null) {

@@ -799,8 +799,9 @@ export async function renderWidget(treeJSON, {
   function interactionFor(tag, reader) {
     const text = (name) => reader.string(name);
     if (tag === "link") return text("url") !== null ? { type: "link", url: text("url") } : null;
-    if (tag === "button") return { type: "button", action: text("action"), actionID: text("actionID"), hasHandler: reader.raw("onClick") !== undefined && reader.raw("onClick") !== null };
-    if (tag === "toggle") return { type: "toggle", on: reader.bool("on") ?? false, actionID: text("actionID"), stateKey: text("stateKey"), hasHandler: reader.raw("onClick") !== undefined && reader.raw("onClick") !== null };
+    // onClick names a function in the entry script (ButtonActionAppIntent).
+    if (tag === "button") return { type: "button", action: text("action"), actionID: text("actionID"), handler: text("onClick") };
+    if (tag === "toggle") return { type: "toggle", on: reader.bool("on") ?? false, actionID: text("actionID"), stateKey: text("stateKey"), handler: text("onClick") };
     return text("linkurl") !== null ? { type: "link", url: text("linkurl") } : null;
   }
 

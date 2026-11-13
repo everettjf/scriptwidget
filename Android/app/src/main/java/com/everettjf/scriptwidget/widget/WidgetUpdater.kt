@@ -1,0 +1,179 @@
+package com.everettjf.scriptwidget.widget
+
+import android.app.PendingIntent
+import android.appwidget.AppWidgetManager
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import android.os.Bundle
+import android.util.Log
+import android.util.SizeF
+import android.util.TypedValue
+import android.widget.RemoteViews
+import com.everettjf.scriptwidget.AppServices
+import com.everettjf.scriptwidget.InstalledPackage
+import com.everettjf.scriptwidget.MainActivity
+import com.everettjf.scriptwidget.R
+import com.everettjf.scriptwidget.core.RunRequest
+import com.everettjf.scriptwidget.core.render.RenderOutput
+import org.json.JSONObject
+
+/** What a tap asked for. Carried in the broadcast and replayed against the package. */
+class WidgetAction(val type: String, val actionID: String?, val function: String?, val stateKey: String?, val value: Boolean?)
+
+/**
+ * Draws one placed widget: runs its package, renders one bitmap per size the
+ * launcher reports, and attaches transparent tap targets over links, buttons
+ * and toggles.
+ */
+object WidgetUpdater {
+    private const val TAG = "ScriptWidget"
+    private const val MAXIMUM_HIT_REGIONS = 24
+    private const val MAXIMUM_SIZES = 2
+
+    fun update(context: Context, appWidgetId: Int, action: WidgetAction? = null) {
+        AppServices.attach(context.applicationContext)
+        val manager = AppWidgetManager.getInstance(context)
+        if (manager.getAppWidgetInfo(appWidgetId) == null) return
+        val binding = AppServices.widgets.get(appWidgetId)
+        if (binding == null) {
+            manager.updateAppWidget(appWidgetId, message(context, appWidgetId, context.getString(R.string.widget_choose)))
+            return
+        }
+        val installed = AppServices.library.findByInstallation(binding.installation)
+        if (installed == null) {
+            manager.updateAppWidget(appWidgetId, message(context, appWidgetId, context.getString(R.string.widget_missing)))
+            return
+        }
+        val started = System.nanoTime()
+        val runtime = AppServices.runtime
+        val family = ScriptWidgetProvider.family(context, appWidgetId)
+        val dark = runtime.isDarkMode()
+        if (action != null) perform(installed, family, binding.parameter, dark, action)
+
+        val request = RunRequest(installed.files, installed.installation, family, binding.parameter, dark, buildDirectory = installed.buildDirectory)
+        val result = runtime.run(request)
+        val sizes = sizes(context, manager.getAppWidgetOptions(appWidgetId), family)
+        val density = context.resources.displayMetrics.density
+        // Android 17 rejects updates whose bitmaps exceed 6 x screen pixels; stay well inside.
+        val metrics = context.resources.displayMetrics
+        val budget = (metrics.widthPixels.toLong() * metrics.heightPixels * 6L * 45L / 100L) / sizes.size
+
+        val views = LinkedHashMap<SizeF, RemoteViews>()
+        var bitmapBytes = 0L
+        for (size in sizes) {
+            val output = runtime.render(request, result, size.width, size.height, density, budget)
+            bitmapBytes += output.bitmap.allocationByteCount
+            views[size] = build(context, appWidgetId, installed, output, size)
+        }
+        manager.updateAppWidget(appWidgetId, if (views.size == 1) views.values.first() else RemoteViews(views))
+        AppServices.widgets.markUpdated(appWidgetId, System.currentTimeMillis())
+        Log.i(TAG, "widget $appWidgetId ${installed.name} $family sizes=${sizes.joinToString { "${it.width.toInt()}x${it.height.toInt()}" }} " +
+            "error=${result.execution.error?.kind} exec=${result.execution.elapsedMilliseconds}ms bitmaps=${bitmapBytes / 1024}KiB total=${(System.nanoTime() - started) / 1_000_000}ms")
+    }
+
+    /** Runs the tapped action before the widget is redrawn. */
+    private fun perform(installed: InstalledPackage, family: String, parameter: String, dark: Boolean, action: WidgetAction) {
+        val runtime = AppServices.runtime
+        val environments = HashMap<String, String>()
+        environments["action-source"] = "widget"
+        if (action.type == "toggle" && action.value != null) {
+            // The toggle's new state is saved first, then offered to the action as action-value.
+            if (!action.stateKey.isNullOrEmpty() && Regex("^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$").matches(action.stateKey) && installed.permissions.contains("storage")) {
+                runtime.storage.setString(installed.installation, action.stateKey, if (action.value) "true" else "false")
+            }
+            environments["action-value"] = if (action.value) "true" else "false"
+            environments["control-value"] = environments["action-value"]!!
+        }
+        when {
+            !action.actionID.isNullOrEmpty() -> {
+                environments["action-id"] = action.actionID
+                runtime.run(RunRequest(installed.files, installed.installation, family, parameter, dark, actionID = action.actionID, extraEnvironments = environments, buildDirectory = installed.buildDirectory))
+            }
+            !action.function.isNullOrEmpty() -> {
+                runtime.run(RunRequest(installed.files, installed.installation, family, parameter, dark, callFunction = action.function, extraEnvironments = environments, buildDirectory = installed.buildDirectory))
+            }
+        }
+    }
+
+    /** Sizes in dp the launcher may show this widget at (portrait and landscape). */
+    private fun sizes(context: Context, options: Bundle, family: String): List<SizeF> {
+        val reported = options.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES, SizeF::class.java)
+            ?.filter { it.width > 0 && it.height > 0 }?.distinct().orEmpty()
+        if (reported.isNotEmpty()) return reported.take(MAXIMUM_SIZES)
+        val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+        val maxHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+        val maxWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH)
+        val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
+        val result = ArrayList<SizeF>()
+        if (minWidth > 0 && maxHeight > 0) result += SizeF(minWidth.toFloat(), maxHeight.toFloat())
+        if (maxWidth > 0 && minHeight > 0 && (maxWidth != minWidth || minHeight != maxHeight)) result += SizeF(maxWidth.toFloat(), minHeight.toFloat())
+        if (result.isNotEmpty()) return result
+        return listOf(when (family) { "small" -> SizeF(160f, 160f); "large" -> SizeF(330f, 330f); else -> SizeF(330f, 160f) })
+    }
+
+    private fun build(context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_root)
+        views.setImageViewBitmap(R.id.widget_image, output.bitmap.asShared())
+        views.setContentDescription(R.id.widget_image, installed.displayName)
+        // With no tap target of its own, the widget opens its package in the app.
+        views.setOnClickPendingIntent(R.id.widget_image, openApp(context, appWidgetId, installed))
+        views.removeAllViews(R.id.widget_overlay)
+        for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {
+            val intent = pendingIntent(context, appWidgetId, index, region.interaction) ?: continue
+            val hit = RemoteViews(context.packageName, R.layout.widget_hit)
+            val left = region.bounds.left.coerceIn(0f, size.width)
+            val top = region.bounds.top.coerceIn(0f, size.height)
+            hit.setViewLayoutMargin(R.id.widget_hit, RemoteViews.MARGIN_LEFT, left, TypedValue.COMPLEX_UNIT_DIP)
+            hit.setViewLayoutMargin(R.id.widget_hit, RemoteViews.MARGIN_TOP, top, TypedValue.COMPLEX_UNIT_DIP)
+            hit.setViewLayoutWidth(R.id.widget_hit, (region.bounds.right.coerceAtMost(size.width) - left).coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            hit.setViewLayoutHeight(R.id.widget_hit, (region.bounds.bottom.coerceAtMost(size.height) - top).coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            hit.setOnClickPendingIntent(R.id.widget_hit, intent)
+            views.addView(R.id.widget_overlay, hit)
+        }
+        return views
+    }
+
+    private fun Bitmap.asShared(): Bitmap = this
+
+    private fun openApp(context: Context, appWidgetId: Int, installed: InstalledPackage): PendingIntent {
+        val intent = Intent(context, MainActivity::class.java)
+            .setData(Uri.parse("scriptwidget://package/${Uri.encode(installed.installation)}"))
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        return PendingIntent.getActivity(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+    }
+
+    private fun pendingIntent(context: Context, appWidgetId: Int, index: Int, interaction: JSONObject): PendingIntent? {
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val identity = Uri.parse("scriptwidget-tap://$appWidgetId/$index")
+        when (interaction.optString("type")) {
+            "link" -> {
+                val url = interaction.optString("url")
+                if (url.isEmpty()) return null
+                val intent = Intent(context, LinkActivity::class.java).setData(identity).putExtra(LinkActivity.EXTRA_URL, url)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_NO_ANIMATION)
+                return PendingIntent.getActivity(context, 0, intent, flags)
+            }
+            "button", "toggle" -> {
+                val intent = Intent(context, WidgetActionReceiver::class.java).setData(identity)
+                    .putExtra(WidgetActionReceiver.EXTRA_WIDGET, appWidgetId)
+                    .putExtra(WidgetActionReceiver.EXTRA_INTERACTION, interaction.toString())
+                return PendingIntent.getBroadcast(context, 0, intent, flags)
+            }
+        }
+        return null
+    }
+
+    /** A plain text widget for the unconfigured and missing-package states. */
+    private fun message(context: Context, appWidgetId: Int, text: String): RemoteViews {
+        val views = RemoteViews(context.packageName, R.layout.widget_loading)
+        views.setTextViewText(R.id.widget_message, text)
+        val intent = Intent(context, WidgetConfigActivity::class.java)
+            .setData(Uri.parse("scriptwidget-config://$appWidgetId"))
+            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        views.setOnClickPendingIntent(android.R.id.background, PendingIntent.getActivity(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+        return views
+    }
+}

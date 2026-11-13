@@ -13,4 +13,4 @@ dependencyResolutionManagement {
     }
 }
 rootProject.name = "ScriptWidgetAndroid"
-include(":core")
+include(":core", ":app")

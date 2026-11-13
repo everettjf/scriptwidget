@@ -89,7 +89,7 @@ class PackageCompiler(private val scripts: SharedScripts) {
     }
 
     /** Validates and transpiles a package. Throws [RuntimeError] with the engine's error kind. */
-    fun prepare(files: PackageFiles, entry: String? = null, prelude: String = "", actionID: String? = null): PreparedPackage {
+    fun prepare(files: PackageFiles, entry: String? = null, prelude: String = "", actionID: String? = null, callFunction: String? = null): PreparedPackage {
         val text = JSONObject()
         val binaries = JSONArray()
         for (path in files.paths()) {
@@ -99,6 +99,7 @@ class PackageCompiler(private val scripts: SharedScripts) {
         val job = JSONObject().put("files", text).put("binaries", binaries).put("prelude", prelude)
         if (entry != null) job.put("entry", entry)
         if (actionID != null) job.put("actionID", actionID)
+        if (callFunction != null) job.put("callFunction", callFunction)
         val output = try {
             onCompilerThread { it.setDeadline(COMPILE_TIMEOUT_MILLISECONDS); it.call("__swPrepare", job.toString()) }
         } catch (error: JsException) {

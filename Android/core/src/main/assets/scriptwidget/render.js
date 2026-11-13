@@ -2703,8 +2703,8 @@ ${join(moved)}`;
     function interactionFor(tag, reader) {
       const text2 = (name) => reader.string(name);
       if (tag === "link") return text2("url") !== null ? { type: "link", url: text2("url") } : null;
-      if (tag === "button") return { type: "button", action: text2("action"), actionID: text2("actionID"), hasHandler: reader.raw("onClick") !== void 0 && reader.raw("onClick") !== null };
-      if (tag === "toggle") return { type: "toggle", on: reader.bool("on") ?? false, actionID: text2("actionID"), stateKey: text2("stateKey"), hasHandler: reader.raw("onClick") !== void 0 && reader.raw("onClick") !== null };
+      if (tag === "button") return { type: "button", action: text2("action"), actionID: text2("actionID"), handler: text2("onClick") };
+      if (tag === "toggle") return { type: "toggle", on: reader.bool("on") ?? false, actionID: text2("actionID"), stateKey: text2("stateKey"), handler: text2("onClick") };
       return text2("linkurl") !== null ? { type: "link", url: text2("linkurl") } : null;
     }
     function dateDescription(reader) {

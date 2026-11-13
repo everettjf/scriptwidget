@@ -63,6 +63,23 @@ class StorageModule(private val directory: File) : NativeModule {
         }
     }
 
+    /** Reads a string value for native features such as toggle state; empty when missing. */
+    fun getString(packageID: String, key: String): String = synchronized(lockFor(fileFor(packageID).path)) {
+        read(fileFor(packageID)).optJSONObject(key)?.takeIf { it.optString("t") == "s" }?.optString("v").orEmpty()
+    }
+
+    /** Writes a string value on behalf of a native feature. Returns false when a limit rejects it. */
+    fun setString(packageID: String, key: String, value: String): Boolean {
+        if (!validKey(key) || !validValue("s", value)) return false
+        val file = fileFor(packageID)
+        synchronized(lockFor(file.path)) {
+            val store = read(file)
+            if (!store.has(key) && store.length() >= MAXIMUM_KEYS) return false
+            store.put(key, JSONObject().put("t", "s").put("v", value))
+            return write(file, store)
+        }
+    }
+
     /** All stored entries of a package, for the records screen and tests. */
     fun snapshot(packageID: String): JSONObject = synchronized(lockFor(fileFor(packageID).path)) { read(fileFor(packageID)) }
 

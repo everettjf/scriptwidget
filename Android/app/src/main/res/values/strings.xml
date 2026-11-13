@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">ScriptWidget</string>
+    <string name="install_package">Install in ScriptWidget</string>
+    <string name="widget_small">ScriptWidget Small</string>
+    <string name="widget_medium">ScriptWidget Medium</string>
+    <string name="widget_large">ScriptWidget Large</string>
+    <string name="widget_description">A widget you write in JavaScript and JSX.</string>
+    <string name="widget_loading">Loading…</string>
+    <string name="widget_choose">Tap to choose a widget</string>
+    <string name="widget_missing">This widget was removed. Tap to choose another.</string>
+    <string name="widget_content_description">ScriptWidget widget</string>
+</resources>

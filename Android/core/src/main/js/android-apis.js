@@ -72,3 +72,44 @@ __swRegisterAPIs(function (apis, helpers, bridge) {
     delete: (url, params) => request("DELETE", url, params, false),
   };
 });
+
+// MARK: - Capabilities Android does not have in this release
+//
+// The kernel's defaults are preview simulations that mention fixtures and
+// the web preview. On a device they must say plainly that the capability is
+// not supported, so a script can branch on isAvailable() and an unhandled
+// call produces a clear message instead of a blank widget.
+__swRegisterAPIs(function (apis, helpers, bridge) {
+  "use strict";
+  const { nativePromise } = helpers;
+  const supported = new Set(bridge.job.supportedAPIs ?? []);
+  const message = (name) => `[unsupported_platform] ${name} is not supported on Android in this release`;
+  const rejecting = (name) => () => nativePromise((resolve, reject) => reject(message(name)));
+
+  const groups = {
+    $health: { sync: { isAvailable: false, authorizationStatus: "unavailable" }, async: ["requestAuthorization", "stepCountToday", "activeEnergyToday", "heartRateLatest", "sleepSummary", "activitySummary", "workouts", "dailyStatistics"] },
+    $reminders: { sync: { isAvailable: false, authorizationStatus: "unavailable" }, async: ["requestAuthorization", "lists", "items", "create", "update", "setCompleted"] },
+    $music: { sync: { isAvailable: false, authorizationStatus: "unavailable" }, async: ["current"] },
+    $photos: { sync: { isAvailable: false, authorizationStatus: "unavailable" }, async: ["requestAuthorization", "items"] },
+    $calendar: { sync: { isAvailable: false, authorizationStatus: "unavailable" }, async: ["requestAuthorization", "calendars", "events", "create", "update"] },
+    $location: { sync: { isAvailable: false, authorizationStatus: "unavailable", isAuthorizedForWidgetUpdates: false }, async: ["requestAuthorization", "current"] },
+    $services: { sync: {}, async: ["status", "profile"] },
+    $icloud: { sync: {}, async: ["readJSON", "writeJSON", "resolveJSON", "sync", "status"] },
+    $notifications: { sync: {}, async: ["status", "pending", "schedule", "cancel"] },
+    $alarms: { sync: {}, async: ["status", "pending", "schedule", "cancel", "stop", "pause", "resume"] },
+    $documents: { sync: {}, async: ["list", "readJSON", "readCSV"] },
+    $contacts: { sync: {}, async: ["selected"] },
+    $maps: { sync: {}, async: ["search", "geocode", "reverseGeocode", "snapshot"] },
+    $weather: { sync: {}, async: ["forecast"] },
+    $home: { sync: {}, async: ["items", "setPower", "runScene"] },
+    $dataSource: { sync: {}, async: ["request"] },
+  };
+  for (const name of Object.keys(groups)) {
+    if (supported.has(name)) continue;
+    const group = groups[name];
+    const api = {};
+    for (const method of Object.keys(group.sync)) { const value = group.sync[method]; api[method] = () => value; }
+    for (const method of group.async) api[method] = rejecting(`${name}.${method}`);
+    apis[name] = api;
+  }
+});

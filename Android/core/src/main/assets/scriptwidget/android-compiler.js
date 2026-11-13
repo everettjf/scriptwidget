@@ -19,6 +19,7 @@
     try {
       const options = { files, prelude: job.prelude ?? "", manifest: job.manifest ?? null, actionID: job.actionID ?? null };
       if (typeof job.entry === "string") options.entry = job.entry;
+      if (typeof job.callFunction === "string") options.callFunction = job.callFunction;
       prepared = prepare.preparePackage(compiler, options);
     } catch (error) {
       prepared = { ok: false, error: { kind: "internalError", message: String(error) } };

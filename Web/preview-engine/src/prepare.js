@@ -8,7 +8,7 @@ const scriptFile = /\.(jsx?|mjs)$/i;
 /// Compiles the entry (wrapped in $main) and every script file (unwrapped,
 /// like $import) before execution. Precompilation keeps the Babel bundle out
 /// of the realm that runs user code and lets $import stay synchronous.
-export function preparePackage(compiler, { files, entry, prelude = "", manifest = null, actionID = null }) {
+export function preparePackage(compiler, { files, entry, prelude = "", manifest = null, actionID = null, callFunction = null }) {
   const packageFiles = createPackageFileSystem(files);
   // The on-disk manifest is authoritative, even when a host supplies a more
   // permissive object. Reject invalid packages before Babel or any user code.
@@ -34,7 +34,10 @@ export function preparePackage(compiler, { files, entry, prelude = "", manifest 
   }
   const action = actionID === null ? null : selected?.actions?.find((item) => item.id === actionID);
   if (actionID !== null && !action) return { ok: false, error: { kind: "scriptError", message: "[action:not_declared] Select a declared package action." } };
-  const main = compilePackageEntry(compiler, prelude + source, { callFunction: action?.function ?? "" });
+  // Legacy <button onClick="name"> runs a named function after the entry
+  // (ButtonActionAppIntent). Only a plain identifier is accepted.
+  if (callFunction !== null && !/^[A-Za-z_$][A-Za-z0-9_$]{0,127}$/.test(callFunction)) return { ok: false, error: { kind: "scriptError", message: "[action:invalid_function] onClick must name a function." } };
+  const main = compilePackageEntry(compiler, prelude + source, { callFunction: action?.function ?? callFunction ?? "" });
   if (!main.ok) return { ok: false, error: { kind: main.kind, message: main.message } };
 
   const imports = {};

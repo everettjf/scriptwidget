@@ -116,6 +116,16 @@ class NativeApiTest {
         assertEquals("needs network on the device: $value", "200|true|string", value)
     }
 
+    @Test fun unsupportedCapabilitiesSayTheyAreUnsupportedOnAndroid() {
+        val script = """
+            const flags = [${'$'}health.isAvailable(), ${'$'}reminders.isAvailable(), ${'$'}music.isAvailable()].join(",");
+            ${'$'}health.stepCountToday().then(v => ${'$'}render(<text>resolved</text>), e => ${'$'}render(<text>{flags + "|" + String(e)}</text>))
+        """
+        assertEquals("false,false,false|[unsupported_platform] \$health.stepCountToday is not supported on Android in this release", text(run(script)))
+        val unhandled = run("""const steps = await ${'$'}weather.forecast({latitude: 1, longitude: 1}); ${'$'}render(<text>{String(steps)}</text>)""")
+        assertTrue(unhandled.error?.message.orEmpty(), unhandled.error?.message.orEmpty().contains("[unsupported_platform] \$weather.forecast is not supported on Android"))
+    }
+
     @Test fun unresolvedPromisesEndAtTheExecutionLimit() {
         val files = MemoryPackageFiles(mapOf("main.jsx" to "const p = { then() {} }; await p; \$render(<text>never</text>)"))
         val prepared = compiler.prepare(files)
