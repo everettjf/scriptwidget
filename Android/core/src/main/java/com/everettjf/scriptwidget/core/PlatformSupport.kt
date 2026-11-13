@@ -28,7 +28,6 @@ object PlatformSupport {
 
     /** Manifest features with no Android surface in this release. */
     private val unsupportedManifestKeys: Map<String, String> = linkedMapOf(
-        "controls" to "Control Widgets are planned as Quick Settings tiles in a later Android release.",
         "pushUpdates" to "Push-triggered refresh is planned for a later Android release.",
     )
 
@@ -38,7 +37,7 @@ object PlatformSupport {
     private val unsupportedSourceMarkers: Map<String, String> = linkedMapOf(
         "\$dynamic_island" to "Dynamic Island content is not shown on Android.",
         "backgroundMaterial" to "Frosted material backgrounds fall back to the plain background color.",
-        "live-activity-state" to "Live Activities are planned as Live Updates in a later Android release.",
+        "live-activity-state" to "Live Activities appear as Android Live Updates that show the title, detail and progress only; the package's own layout is not drawn.",
     )
 
     /** User-facing lines describing what a package uses that Android does not support. */

@@ -11,4 +11,22 @@
     <string name="widget_missing">This widget was removed. Tap to choose another.</string>
     <string name="widget_content_description">ScriptWidget widget</string>
     <string name="health_rationale_title">Health data in ScriptWidget</string>
+    <string name="control_tile_1">ScriptWidget Control 1</string>
+    <string name="control_tile_2">ScriptWidget Control 2</string>
+    <string name="control_tile_3">ScriptWidget Control 3</string>
+    <string name="control_tile_4">ScriptWidget Control 4</string>
+    <string name="control_tile_5">ScriptWidget Control 5</string>
+    <string name="control_tile_6">ScriptWidget Control 6</string>
+    <string name="control_tile_7">ScriptWidget Control 7</string>
+    <string name="control_tile_8">ScriptWidget Control 8</string>
+    <string name="control_tile_label">ScriptWidget Control %1$d</string>
+    <string name="control_tile_unassigned">Not assigned</string>
+    <string name="control_tile_removed">Control removed</string>
+    <string name="control_tile_on">On</string>
+    <string name="control_tile_off">Off</string>
+    <string name="shortcut_unavailable">This ScriptWidget action is no longer available.</string>
+    <string name="shortcut_done">ScriptWidget action finished</string>
+    <string name="live_updates_channel">Live Updates</string>
+    <string name="live_updates_channel_description">Ongoing progress started from the Live Activities screen.</string>
+    <string name="live_updates_end">End</string>
 </resources>

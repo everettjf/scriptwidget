@@ -12,6 +12,8 @@
     <!-- $notifications: local reminders with inexact alarms, re-armed after a reboot. No exact-alarm permission. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <!-- Live Activities: lets the ongoing progress notification be promoted to a Live Update (Android 16 and later). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     <!-- $photos uses the system Photo Picker and needs no storage permission. -->
     <!-- $health: read-only Health Connect access for the record types the API uses. No write permission is declared. -->
     <uses-permission android:name="android.permission.health.READ_STEPS" />
@@ -136,5 +138,50 @@
         <receiver android:name=".ui.WidgetPinnedReceiver" android:exported="false" />
         <activity android:name=".widget.LinkActivity" android:exported="false" android:excludeFromRecents="true"
             android:taskAffinity="" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <!--
+            Package controls as Quick Settings tiles. Android needs tiles declared here, so eight slots exist
+            and the Controls screen assigns a package control to each. Exported because the system binds them;
+            BIND_QUICK_SETTINGS_TILE keeps every other app out.
+        -->
+        <service android:name=".actions.ControlTileService1" android:exported="true" android:label="@string/control_tile_1"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService2" android:exported="true" android:label="@string/control_tile_2"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService3" android:exported="true" android:label="@string/control_tile_3"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService4" android:exported="true" android:label="@string/control_tile_4"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService5" android:exported="true" android:label="@string/control_tile_5"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService6" android:exported="true" android:label="@string/control_tile_6"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService7" android:exported="true" android:label="@string/control_tile_7"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+        <service android:name=".actions.ControlTileService8" android:exported="true" android:label="@string/control_tile_8"
+            android:icon="@drawable/ic_control_generic" android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
+            <intent-filter><action android:name="android.service.quicksettings.action.QS_TILE" /></intent-filter>
+        </service>
+
+        <!-- Launcher shortcuts for declared actions start this invisible activity, which hands off to the receiver. -->
+        <activity android:name=".actions.ShortcutActionActivity" android:exported="false" android:excludeFromRecents="true"
+            android:noHistory="true" android:taskAffinity="" android:theme="@android:style/Theme.NoDisplay" />
+        <receiver android:name=".actions.SurfaceActionReceiver" android:exported="false" />
+        <!-- Ends a Live Update at its deadline, from its End button, or when the user dismisses it. -->
+        <receiver android:name=".live.LiveUpdateReceiver" android:exported="false" />
     </application>
 </manifest>
