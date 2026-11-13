@@ -137,7 +137,10 @@ class NativeApiTest {
         fun runWith(manifest: String): String {
             val files = MemoryPackageFiles(mapOf("main.jsx" to script, "widget.json" to manifest))
             val prepared = compiler.prepare(files)
-            return text(executor.execute(ExecutionRequest(prepared, files, modules = listOf(storage, module), packageID = "pkg-plugin")))
+            val result = executor.execute(ExecutionRequest(prepared, files, modules = listOf(storage, module), packageID = "pkg-plugin"))
+            // The live service is outside our control: a timeout skips the test instead of failing it.
+            org.junit.Assume.assumeTrue("Open-Meteo did not answer within the execution limit", result.error?.kind != "resourceLimit")
+            return text(result)
         }
         val declared = """{"entry":"main.jsx","formatVersion":2,"id":"com.example.test","name":"Test","networkDomains":["api.open-meteo.com"],"permissions":["network"],"plugins":["app.scriptwidget.datasource.open-meteo"],"runtimeVersion":"1.0","supportedFamilies":["systemSmall"],"version":"1.0.0"}"""
         assertEquals("number|true", runWith(declared))

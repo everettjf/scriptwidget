@@ -191,6 +191,8 @@ fun DetailScreen(navigation: NavController, name: String) {
         confirmButton = { TextButton(onClick = {
             confirmDelete = false
             runCatching { AppServices.library.delete(item.name); AppServices.runtime.storage.clear(item.installation) }
+            // Grants, snapshots and scheduled reminders belong to the installation and go with it.
+            runCatching { com.everettjf.scriptwidget.SystemModules.retireInstallation(context, item.installation) }
             WidgetScheduler.refreshPackage(context, item.installation)
             navigation.popBackStack("home", false)
         }) { Text("Delete") } },

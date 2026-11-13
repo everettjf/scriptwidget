@@ -32,7 +32,8 @@ object AppServices {
 
     val plugins: com.everettjf.scriptwidget.core.plugin.PluginStore by lazy { com.everettjf.scriptwidget.core.plugin.PluginStore(java.io.File(requireContext().filesDir, "Plugins")) }
     val runtime: WidgetRuntime by lazy {
-        val modules = listOf<com.everettjf.scriptwidget.core.runtime.NativeModule>(com.everettjf.scriptwidget.core.plugin.DataSourceModule(plugins))
+        val modules = listOf<com.everettjf.scriptwidget.core.runtime.NativeModule>(com.everettjf.scriptwidget.core.plugin.DataSourceModule(plugins)) +
+            SystemModules.create(requireContext())
         WidgetRuntime(requireContext(), modules).also { it.renderer.fonts.useSystemFont = settings.useSystemFont }
     }
     val library: Library by lazy { Library(requireContext()) }

@@ -80,6 +80,8 @@ fun SettingsScreen(navigation: NavController) {
                 },
             )
             Section("Data")
+            ListItem(headlineContent = { Text("System Access") }, supportingContent = { Text("Location, calendars, photos, notifications and connected services that widgets may read.") },
+                modifier = Modifier.clickable { navigation.navigate("system-access") })
             ListItem(headlineContent = { Text("Data Source Plugins") }, supportingContent = { Text("Declarative HTTPS connectors that widgets call with \$dataSource.") },
                 modifier = Modifier.clickable { navigation.navigate("plugins") })
             Section("AI")
