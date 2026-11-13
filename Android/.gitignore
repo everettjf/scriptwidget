@@ -6,3 +6,6 @@ local.properties
 .idea/
 .kotlin/
 core/src/androidTest/assets/parity-corpus.json
+keystore.properties
+*.jks
+*.keystore

@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
@@ -18,13 +20,29 @@ android {
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }
 
+    // The upload key lives outside the repository. keystore.properties (git-ignored) holds
+    // storeFile, storePassword, keyAlias and keyPassword; without it the release is debug-signed
+    // and only suitable for local installs.
+    val keystoreProperties = Properties().apply {
+        val file = rootProject.file("keystore.properties")
+        if (file.isFile) file.inputStream().use { load(it) }
+    }
+    val hasUploadKey = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it).isFile } == true
+    signingConfigs {
+        if (hasUploadKey) create("upload") {
+            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Local builds are signed with the debug key; store uploads use a release key supplied outside the repository.
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName(if (hasUploadKey) "upload" else "debug")
         }
     }
     buildFeatures { compose = true }
