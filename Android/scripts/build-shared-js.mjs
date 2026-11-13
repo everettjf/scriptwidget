@@ -9,6 +9,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { execFileSync } from "node:child_process";
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repository = path.resolve(here, "../..");
@@ -46,6 +47,12 @@ for (const name of ["core.js", "util.js", "moment.min.js"]) fs.copyFileSync(path
 for (const name of fs.readdirSync(hostSources).filter((file) => file.endsWith(".js")).sort()) {
   fs.copyFileSync(path.join(hostSources, name), path.join(output, name));
 }
+
+// The shared web renderer, bundled for QuickJS with a recording document.
+const esbuild = [path.join(repository, "Web/studio/node_modules/.bin/esbuild"), path.join(repository, "Editor/editorfe/node_modules/.bin/esbuild")].find((file) => fs.existsSync(file));
+if (!esbuild) throw new Error("esbuild not found: run npm install in Web/studio first");
+execFileSync(esbuild, [path.join(hostSources, "render/entry.mjs"), "--bundle", "--format=iife", "--global-name=__swRenderBundle", "--target=es2022",
+  "--charset=utf8", "--log-level=warning", `--outfile=${path.join(output, "render.js")}`], { stdio: "inherit" });
 
 // Parity corpus for instrumented tests: every bundled package that needs no
 // live data, with the tree JavaScriptCore produced for it.

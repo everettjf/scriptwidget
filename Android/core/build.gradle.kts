@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "com.everettjf.scriptwidget.core"
-    compileSdk = 36
+    compileSdk { version = release(37) { minorApiLevel = 0 } }
     ndkVersion = "28.1.13356709"
 
     defaultConfig {
@@ -19,6 +19,7 @@ android {
             version = "3.22.1"
         }
     }
+    androidResources { noCompress += listOf("ttf") }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -26,6 +27,7 @@ android {
 }
 
 dependencies {
+    implementation("androidx.core:core-ktx:1.19.1")
     androidTestImplementation("androidx.test:runner:1.7.0")
     androidTestImplementation("androidx.test.ext:junit:1.3.0")
     testImplementation("junit:junit:4.13.2")

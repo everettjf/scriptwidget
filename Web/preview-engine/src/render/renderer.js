@@ -144,11 +144,11 @@ function textFromChildren(element) {
   return text;
 }
 
-function collectImageURLs(element, urls) {
+function collectImageURLs(element, urls, drawableURL) {
   if (!isElement(element)) return;
   const reader = propReader(element.props);
-  if (element.tag === "image") { const url = reader.string("url", "src"); if (url && /^data:image\/(png|jpeg);base64,/.test(url)) urls.add(url); }
-  childrenAsElements(element).forEach((child) => collectImageURLs(child, urls));
+  if (element.tag === "image") { const url = reader.string("url", "src"); const drawable = url ? drawableURL(url) : null; if (drawable) urls.add(drawable); }
+  childrenAsElements(element).forEach((child) => collectImageURLs(child, urls, drawableURL));
 }
 
 async function naturalSizes(urls, doc) {
@@ -168,11 +168,15 @@ async function naturalSizes(urls, doc) {
 export async function renderWidget(treeJSON, {
   family = "medium", profile = "iphone-393", appearance = "light", renderingMode = "fullColor", lockScreen = true, resources = {}, document: doc = globalThis.document,
   now = null, animations = "live", animationElapsed = null, reduceTransparency = false, reduceMotion = false,
+  // Native hosts (Android) supply these; the web hosts use the defaults.
+  size: explicitSize = null, textMeasurer = null, resolveImageURL = null, gifPreparer = null,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
   const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
   if (reduceMotion) animations = "firstFrame";
-  const size = widgetSize(profile, family);
+  const size = explicitSize ?? widgetSize(profile, family);
+  // Which image URLs can be drawn: inline PNG/JPEG data by default.
+  const drawableURL = resolveImageURL ?? ((url) => (/^data:image\/(png|jpeg);base64,/.test(url) ? url : null));
   const diagnostics = [];
   const reported = new Set();
   const report = (severity, code, message) => {
@@ -186,7 +190,7 @@ export async function renderWidget(treeJSON, {
   const root = decodeTree(treeJSON);
   const urls = new Set(), gifUses = new Map(), preparedGifs = new Map();
   for (const [path, url] of Object.entries(resources)) if (path.startsWith("image/") && !/\.gif$/i.test(path)) urls.add(url);
-  collectImageURLs(root, urls);
+  collectImageURLs(root, urls, drawableURL);
   const collectGifs = element => {
     if (!isElement(element)) return;
     const reader = propReader(element.props);
@@ -199,14 +203,14 @@ export async function renderWidget(treeJSON, {
   // Decode only used GIFs, sequentially. Freeze failures never retain animation.
   for (const [url, use] of gifUses) {
     try {
-      const value = await prepareGif(url,{document:doc,firstFrame:reduceMotion || animations === "firstFrame" || deviceProfiles[profile]?.platform === "macos",needImage:use.image});
+      const value = await (gifPreparer ?? prepareGif)(url,{document:doc,firstFrame:reduceMotion || animations === "firstFrame" || deviceProfiles[profile]?.platform === "macos",needImage:use.image});
       preparedGifs.set(url,value);
       if (value.firstFrame) urls.add(value.firstFrame);
       if (value.info.frameLimit || value.memoryFallback) report("warning","gif.static_fallback","GIF uses its first frame because the preview animation budget was exceeded");
     } catch { preparedGifs.set(url,null); report("warning","gif.unavailable","GIF could not be decoded within preview input and canvas limits"); }
   }
   const imageSizes = await naturalSizes(urls, doc);
-  const measurer = createTextMeasurer(doc);
+  const measurer = textMeasurer ?? createTextMeasurer(doc);
 
   // Leaves carry a draw(node, element) callback.
   const leaf = (node, draw) => Object.assign(node, { draw });
@@ -478,9 +482,10 @@ export async function renderWidget(treeJSON, {
       }
       report("warning", "image.missing", `Package image "${name}" was not found in image/`);
     }
-    if (systemName === null && url !== null && /^data:image\/(png|jpeg);base64,/.test(url)) {
-      const natural = imageSizes.get(url) ?? [10, 10];
-      return leaf(new FixedNode(...natural), drawPicture(url, "fill"));
+    const drawable = systemName === null && url !== null ? drawableURL(url) : null;
+    if (drawable) {
+      const natural = imageSizes.get(drawable) ?? [10, 10];
+      return leaf(new FixedNode(...natural), drawPicture(drawable, "fill"));
     }
     if (systemName === null && url !== null) report("warning", "image.remote", `Remote image ${url.slice(0, 80)} is not loaded by the web preview`);
     return glyph(systemName ?? "questionmark.circle", elementFont(reader), null);
@@ -782,7 +787,27 @@ export async function renderWidget(treeJSON, {
         return new DecorationNode(text(tag === null ? "UnknownTagType" : "UnknownTagName", defaultFont(), null), { background: { color: color(tag === null ? "purple" : "pink") } });
       }
     }
-    return applyGeneral(content, element, reader, { isRoot });
+    const result = applyGeneral(content, element, reader, { isRoot });
+    const interaction = interactionFor(tag, reader);
+    if (interaction) result.interaction = interaction;
+    if (tag === "date") result.dateText = dateDescription(reader);
+    return result;
+  }
+
+  // What a tap on this view does, for hosts that deliver taps (Android). The
+  // web preview only records it as data attributes.
+  function interactionFor(tag, reader) {
+    const text = (name) => reader.string(name);
+    if (tag === "link") return text("url") !== null ? { type: "link", url: text("url") } : null;
+    if (tag === "button") return { type: "button", action: text("action"), actionID: text("actionID"), hasHandler: reader.raw("onClick") !== undefined && reader.raw("onClick") !== null };
+    if (tag === "toggle") return { type: "toggle", on: reader.bool("on") ?? false, actionID: text("actionID"), stateKey: text("stateKey"), hasHandler: reader.raw("onClick") !== undefined && reader.raw("onClick") !== null };
+    return text("linkurl") !== null ? { type: "link", url: text("linkurl") } : null;
+  }
+
+  // The style and target instant of a <date>, so a host with self-updating
+  // text views can keep timers and clocks current between renders.
+  function dateDescription(reader) {
+    return { style: reader.string("style") ?? "timer", date: reader.string("date") ?? reader.double("date") };
   }
 
   function progressNode(reader) {
@@ -1153,6 +1178,8 @@ export async function renderWidget(treeJSON, {
       if (modeFilters[renderingMode] && (node.decoration.background)) element.style.filter = [element.style.filter, modeFilters[renderingMode][accent ? "accent" : "plain"]].filter(Boolean).join(" ");
     }
     if (node.title) element.title = node.title;
+    if (node.interaction) element.dataset.swInteraction = JSON.stringify(node.interaction);
+    if (node.dateText) element.dataset.swDate = JSON.stringify(node.dateText);
     parent.appendChild(element);
     if (node.draw) {
       node.draw(node, element);
