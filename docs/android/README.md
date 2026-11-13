@@ -56,15 +56,45 @@ The package format, manifest, permissions and runtime API version are the same. 
 | JavaScript engine | QuickJS-NG instead of JavaScriptCore. `Intl` is a subset backed by ICU: `DateTimeFormat`, `NumberFormat`, `PluralRules`, `RelativeTimeFormat`, `Collator`, `ListFormat` and the `toLocale*String` methods |
 | Execution limit | A real interrupt at 5 seconds; no cancellation checks are compiled in |
 | Fonts | Bundled Inter and Noto Sans SC by default; the device font is a setting. SF Pro and SF Symbols are not available: symbols are drawn with the look-alike Lucide icons the web preview uses |
-| Sizes | Small, medium and large providers. The launcher decides the real size; cells are not square, so `small` is not always square |
-| Refresh | WorkManager, at most every 15 minutes, plus alarms at `timeline.dailyTimes` transitions. Android may delay background work |
+| Sizes | Small, medium, large and extra-large providers. The launcher decides the real size; cells are not square, so `small` is not always square |
+| Theme | A widget carries a light and a dark bitmap when they differ and the launcher picks one. The script runs once per theme only when it calls `$device.isdarkmode()` |
+| Refresh | WorkManager, at most every 15 minutes, plus alarms at `timeline.dailyTimes` transitions. Android may delay background work, and alarms are inexact |
 | Timeline | The script runs again at each transition as the current entry; there are no pre-rendered future entries |
-| `<date>` | `timer` and a `time` of now tick by themselves (system font). `relative`, `offset` and `date` are redrawn on refresh |
-| Animations, GIF | Static: clock and swing effects rest, a GIF shows its first frame |
+| `<date>` | `timer` and a `time` of now tick by themselves (system font, `00:36` rather than `0:36`). `relative`, `offset` and `date` are redrawn on refresh |
+| `<gif>` | Plays as up to 24 sampled frames at a uniform interval; the first frame when the system removes animations |
+| `animation` | Clock and swing effects show their pose at the last refresh; they do not move |
 | `backgroundMaterial` | The opaque `background` fallback |
 | Rendering modes | Always `fullColor` |
 | Network | The manifest allowlist as on iOS, and names that resolve to private addresses are refused |
-| Not available | `$health`, `$reminders`, `$music`, `$icloud`, `$maps`, `$weather`, `$alarms`, `$documents`, `$contacts`, `$home`, Live Activities, Dynamic Island, Control Widgets, accessory families, push updates. See the plan for which later release adds each |
+| Promises | Runtime promises have only `then(resolve, reject)`, as on iPhone |
+
+### System data
+
+| API | Android source | Notes |
+| --- | --- | --- |
+| `$location` | `LocationManager`, no Play Services | Read while the app is open; widgets see the saved position. Background location is never requested |
+| `$calendar` | Calendar Provider | Nothing is shared until calendars are selected in System Access |
+| `$photos` | Photo Picker | Individual photos only, no albums; thumbnails are copied when picked |
+| `$notifications`, `$alarms` | `AlarmManager` and notifications | Inexact: delivery can be about ten minutes late. No system alarm UI or snooze |
+| `$services` | GitHub with a fine-grained token | No OAuth sign-in |
+| `$health` | Health Connect | No ring goals or stand time (`null`); background reads need the user's extra consent |
+| `$weather` | MET Norway, as on iOS | |
+| `$documents` | Storage Access Framework | The user picks files in the app |
+| `$contacts` | System contact picker | No contacts permission; fields are stored when picked |
+| `$music` | Active media session of any app | Needs notification-listener access; `provider` is `androidMediaSession` |
+| `$dataSource` | Data Source Plugin 1.0 | Same as iOS |
+
+### System surfaces
+
+| iOS | Android |
+| --- | --- |
+| Control Widgets | Eight Quick Settings tile slots that the user assigns to package `controls` |
+| Siri and Shortcuts actions | App shortcuts on the launcher icon for package `actions`; no voice or automation entry point |
+| Live Activities | A Live Update notification with title, detail, progress and countdown. The package's JSX layout and the Dynamic Island are not drawn |
+
+### Not available
+
+`$reminders`, `$home`, accessory (Lock Screen) families, the Dynamic Island, accented and vibrant rendering modes, and push-triggered refresh. Push needs a Firebase project that has not been set up for this app.
 
 ## Security notes
 
