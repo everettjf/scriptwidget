@@ -61,7 +61,7 @@ class Library(private val context: Context) {
     fun create(name: String, source: String, manifest: String? = null): InstalledPackage = describe(store.create(store.uniqueName(name), source, manifest).directory)
 
     fun importArchive(input: InputStream, suggestedName: String): InstalledPackage {
-        val directory = store.importArchive(input, suggestedName).directory
+        val directory = store.importArchive(input, suggestedName, validate = { files -> AppServices.validatePackage(files) }).directory
         // An archive never carries another installation's identity.
         File(directory, INSTALLATION_FILE).delete()
         return describe(directory)

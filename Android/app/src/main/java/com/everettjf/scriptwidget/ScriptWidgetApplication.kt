@@ -15,6 +15,21 @@ object AppServices {
 
     private fun requireContext(): Context = context ?: error("AppServices used before Application.onCreate")
 
+    /** Instructions of the Skills the user enabled, appended to AI requests; null when none are enabled. */
+    fun skillsPrompt(): String? = runCatching { GalleryServices.get(requireContext()).skills.enabledSkillsPromptText() }.getOrNull()?.takeIf { it.isNotBlank() }
+
+    /**
+     * Full Package 2.0 validation (manifest rules and a compile of every script) for packages
+     * that arrive from outside: archives and Gallery downloads. Throws when the package is invalid.
+     */
+    fun validatePackage(files: com.everettjf.scriptwidget.core.runtime.PackageFiles) {
+        try {
+            runtime.compiler.prepare(files)
+        } catch (error: com.everettjf.scriptwidget.core.runtime.RuntimeError) {
+            throw IllegalArgumentException(error.message)
+        }
+    }
+
     val plugins: com.everettjf.scriptwidget.core.plugin.PluginStore by lazy { com.everettjf.scriptwidget.core.plugin.PluginStore(java.io.File(requireContext().filesDir, "Plugins")) }
     val runtime: WidgetRuntime by lazy {
         val modules = listOf<com.everettjf.scriptwidget.core.runtime.NativeModule>(com.everettjf.scriptwidget.core.plugin.DataSourceModule(plugins))

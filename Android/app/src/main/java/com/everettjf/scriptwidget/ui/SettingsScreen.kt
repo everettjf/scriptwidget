@@ -83,6 +83,8 @@ fun SettingsScreen(navigation: NavController) {
             ListItem(headlineContent = { Text("Data Source Plugins") }, supportingContent = { Text("Declarative HTTPS connectors that widgets call with \$dataSource.") },
                 modifier = Modifier.clickable { navigation.navigate("plugins") })
             Section("AI")
+            ListItem(headlineContent = { Text("Skills") }, supportingContent = { Text("Extra instructions for AI generation. Skills never run code or grant permissions.") },
+                modifier = Modifier.clickable { navigation.navigate("skills") })
             AiSettings()
             Section("Placed widgets")
             if (widgetIds.isEmpty()) ListItem(headlineContent = { Text("No widgets on the home screen yet") })

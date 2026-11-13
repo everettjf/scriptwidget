@@ -124,7 +124,7 @@ private class OverlayPackageFiles(private val base: PackageFiles, private val ov
  * Text of the enabled Skills for the prompt, or null. Skills only add
  * instructions to the request; wire the Skill store in here when it exists.
  */
-private fun enabledSkillsPrompt(): String? = null
+private fun enabledSkillsPrompt(): String? = com.everettjf.scriptwidget.AppServices.skillsPrompt()
 
 /**
  * Drives the agent loop off the main thread and exposes its progress as

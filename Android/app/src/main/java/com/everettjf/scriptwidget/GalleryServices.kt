@@ -32,6 +32,7 @@ class GalleryServices private constructor(context: Context) {
         // The API version this build implements; a widget that needs a newer one is refused.
         runtimeApiVersion = AppServices.runtime.scripts.contract.getString("apiVersion"),
         carriedFiles = listOf(Library.INSTALLATION_FILE),
+        widgetValidator = { files -> AppServices.validatePackage(files) },
     )
 
     companion object {

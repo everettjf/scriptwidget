@@ -46,6 +46,7 @@ class MainActivity : ComponentActivity() {
                     composable("templates") { TemplatesScreen(navigation) }
                     composable("gallery") { GalleryScreen(navigation) }
                     composable("settings") { SettingsScreen(navigation) }
+                    composable("skills") { com.everettjf.scriptwidget.ui.SkillsScreen(navigation) }
                     composable("plugins") { com.everettjf.scriptwidget.ui.PluginsScreen(navigation, AppServices.plugins) }
                     composable("ai") { AiScreen(navigation, null) }
                     composable("ai/{name}") { entry -> AiScreen(navigation, Uri.decode(entry.arguments?.getString("name").orEmpty())) }
