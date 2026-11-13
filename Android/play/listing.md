@@ -7,7 +7,8 @@ Everything needed to create the Play Console entry and an internal test release.
 - The app exists in Play Console under the AtomSprout developer account, as a draft: ScriptWidget, `com.everettjf.scriptwidget`, English (United States), App, Free.
 - Internal testing has the email list "ScriptWidget internal" selected, with `evilret@gmail.com` and `atomsprout@googlegroups.com`.
 - The default store listing is saved as a draft with the text below, the icon, the feature graphic and the six phone screenshots.
-- An internal testing release "1.2.0 (6)" is saved as a draft with the release notes below. **The app bundle is not uploaded yet and nothing is rolled out.**
+- Internal testing release "1.2.0 (6)" (version code 6) was published on 13 November 2026 and is available to internal testers. Play shows the app under a temporary name until it is reviewed. Testers join from the link under Internal testing → Testers → Copy link, or `https://play.google.com/apps/testing/com.everettjf.scriptwidget`.
+- Installing from Play on a tester's device has not been checked.
 - The App content declarations (privacy policy, ads, content rating, target audience, data safety, and the rest) are not filled in. Internal testing does not need them; closed testing and production do.
 - The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update must be signed with this key.
 
@@ -107,7 +108,7 @@ Notes to keep the answers accurate:
 
 Category "Utility, Productivity, Communication, or Other". No violence, sexual content, profanity, drugs, gambling or user-to-user communication. The app can display content from the Internet through widgets the user writes or installs: answer "Yes" where the questionnaire asks about unrestricted Internet access.
 
-## Internal testing steps
+## Internal testing steps (done once; repeat steps 2 and 4 for each new build)
 
 1. Create the app with the values above.
 2. Testing → Internal testing → Create new release; upload `app/build/outputs/bundle/release/app-release.aab` built with the upload key.
