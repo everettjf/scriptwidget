@@ -16,7 +16,7 @@ All suites were run with the final code on every device below.
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed | 53 passed |
 | Emulator, Google APIs image | 15 (API 35) | 27 passed | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
-| Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 51 passed before the last two tests were added; not re-run after |
+| Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
 
 Set `ANDROID_SERIAL` to choose the device when several are connected.
 
