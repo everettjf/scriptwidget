@@ -10,14 +10,12 @@ import org.json.JSONObject
  */
 object PlatformSupport {
     /** Android release line of this build: "1.0", "1.1" or "1.2". */
-    const val RELEASE = "1.1"
+    const val RELEASE = "1.2"
 
     /** Manifest permissions with no Android implementation in this release, with the reason shown to the user. */
     val unsupportedPermissions: Map<String, String> = linkedMapOf(
         "reminders" to "Reminders (\$reminders) has no system equivalent on Android.",
         "remindersWrite" to "Reminders (\$reminders) has no system equivalent on Android.",
-        "icloud" to "iCloud JSON sync (\$icloud) is not available on Android.",
-        "maps" to "Maps (\$maps) is planned for a later Android release.",
         "home" to "Home control (\$home) has no Android equivalent.",
     )
 
@@ -32,6 +30,7 @@ object PlatformSupport {
     private val unsupportedSourceMarkers: Map<String, String> = linkedMapOf(
         "\$dynamic_island" to "Dynamic Island content is not shown on Android.",
         "backgroundMaterial" to "Frosted material backgrounds fall back to the plain background color.",
+        "\$maps.snapshot" to "Map images (\$maps.snapshot) are not available on Android; place search and geocoding are.",
         "live-activity-state" to "Live Activities appear as Android Live Updates that show the title, detail and progress only; the package's own layout is not drawn.",
     )
 

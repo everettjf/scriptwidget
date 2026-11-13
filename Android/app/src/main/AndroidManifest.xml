@@ -33,6 +33,9 @@
     </queries>
     <!-- $alarms reuses the inexact alarms and notifications above. $documents uses the Storage Access
          Framework and $contacts the system contact picker: neither needs a storage or contacts permission. -->
+    <!-- $maps uses the platform Geocoder with text or coordinates the script supplies; it reads no location
+         and needs no permission. $icloud exchanges files with a folder the user picks through the Storage
+         Access Framework (a persisted tree permission), so it needs no storage permission either. -->
 
     <application
         android:name=".ScriptWidgetApplication"

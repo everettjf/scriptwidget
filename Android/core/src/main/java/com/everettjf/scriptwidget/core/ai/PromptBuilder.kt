@@ -76,8 +76,8 @@ object AndroidPromptNotes {
      * Keep in sync with the stub table in `core/src/main/js/android-apis.js`.
      */
     val UNSUPPORTED_GLOBALS = listOf(
-        "\$health", "\$reminders", "\$photos", "\$calendar", "\$location", "\$services", "\$icloud",
-        "\$notifications", "\$maps", "\$home", "\$dataSource",
+        "\$health", "\$reminders", "\$photos", "\$calendar", "\$location", "\$services",
+        "\$notifications", "\$home", "\$dataSource",
     )
 
     /** One line per unsupported capability: the stub globals plus everything [PlatformSupport] lists. */
@@ -85,6 +85,8 @@ object AndroidPromptNotes {
         val lines = LinkedHashSet<String>()
         lines += "These globals are not implemented and every call fails: ${UNSUPPORTED_GLOBALS.joinToString(", ")}."
         lines += PlatformSupport.unsupportedPermissions.values
+        lines += "\$maps.snapshot always fails: Android has no map image service. \$maps.search, geocode and reverseGeocode work."
+        lines += "\$icloud works, but its data lives in a sync folder the user chooses in the app, not in iCloud."
         lines += "Lock Screen accessory sizes (accessoryInline, accessoryCircular, accessoryRectangular) do not exist; only small, medium and large."
         lines += "Live Activities, Dynamic Island content (\$dynamic_island), Control Widgets and push-triggered refresh are not available."
         lines += "backgroundMaterial falls back to a plain background color; do not rely on it."

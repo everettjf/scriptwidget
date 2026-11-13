@@ -77,7 +77,7 @@ class AiProfileAndPromptTest {
         assertTrue(prompt.contains("NOT SUPPORTED ON ANDROID"))
         for (global in AndroidPromptNotes.UNSUPPORTED_GLOBALS) assertTrue(global, prompt.contains(global))
         for (reason in PlatformSupport.unsupportedPermissions.values) assertTrue(reason, prompt.contains(reason))
-        for (name in listOf("\$health", "\$location", "\$calendar", "\$icloud", "accessoryCircular", "\$dynamic_island", "backgroundMaterial", "Control Widgets")) assertTrue(name, prompt.contains(name))
+        for (name in listOf("\$health", "\$location", "\$calendar", "\$maps.snapshot", "accessoryCircular", "\$dynamic_island", "backgroundMaterial", "Control Widgets")) assertTrue(name, prompt.contains(name))
         // Network declaration contract and the reference.
         assertTrue(prompt.contains("\"networkDomains\""))
         assertTrue(prompt.contains("=== COMPONENTS (JSX tags) ===\n// === text ===\n<text>hi</text>"))

@@ -56,8 +56,11 @@ class SystemStores private constructor(context: Context, notificationReceiver: C
     val musicPlatform = AndroidMusicPlatform(appContext, MediaSessionAccessService::class.java)
     val music = MusicModule(musicPlatform, prompts)
 
+    val mapsPlatform = AndroidMapsPlatform(appContext)
+    val maps = MapsModule(mapsPlatform)
+
     /** The modules to pass to `WidgetRuntime(context, extraModules)`. */
-    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services, health, weather, alarms, documents, contacts, music)
+    val modules: List<NativeModule> = listOf(location, calendar, photos, notifications, services, health, weather, alarms, documents, contacts, music, maps)
 
     /**
      * Removes everything the Android 1.1 APIs keep for a deleted installation: its alarms and
