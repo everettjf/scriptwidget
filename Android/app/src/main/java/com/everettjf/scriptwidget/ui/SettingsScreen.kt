@@ -79,6 +79,9 @@ fun SettingsScreen(navigation: NavController) {
                     context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.parse("package:${context.packageName}")).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
                 },
             )
+            Section("Data")
+            ListItem(headlineContent = { Text("Data Source Plugins") }, supportingContent = { Text("Declarative HTTPS connectors that widgets call with \$dataSource.") },
+                modifier = Modifier.clickable { navigation.navigate("plugins") })
             Section("AI")
             AiSettings()
             Section("Placed widgets")
