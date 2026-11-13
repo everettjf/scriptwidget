@@ -1,4 +1,4 @@
-# Android test notes (1.2.0, build 6)
+# Android test notes (1.2.0, build 7)
 
 What was run before handing this build to testers, and what was not.
 
@@ -10,7 +10,7 @@ What was run before handing this build to testers, and what was not.
 | Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
 | App device tests | 56 | see below | `Android/scripts/device-test.sh app` |
 
-Every suite was run with the final code (build 6) on every device below.
+Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
@@ -66,4 +66,4 @@ Two live-service tests skip instead of failing when the remote service does not 
 - A clock animation with a custom interval turns at the right speed but its phase is not tied to the time; standard clock hands show the real time.
 - Timers use the system font and read `00:36` where iOS reads `0:36`.
 - Alarms and notifications are inexact and can be about ten minutes late.
-- `$maps.snapshot`, `$reminders`, `$home`, accessory families and the Dynamic Island are not available. Push-triggered refresh is on only in builds made with `Android/firebase.properties`; the bundle uploaded to Play internal testing as build 6 was made without it.
+- `$maps.snapshot`, `$reminders`, `$home`, accessory families and the Dynamic Island are not available. Push-triggered refresh is on only in builds made with `Android/firebase.properties`; build 6 on Play internal testing was made without it and build 7 with it.

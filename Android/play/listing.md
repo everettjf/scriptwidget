@@ -8,6 +8,7 @@ Everything needed to create the Play Console entry and an internal test release.
 - Internal testing has the email list "ScriptWidget internal" selected, with `evilret@gmail.com` and `atomsprout@googlegroups.com`.
 - The default store listing is saved as a draft with the text below, the icon, the feature graphic and the six phone screenshots.
 - Internal testing release "1.2.0 (6)" (version code 6) was published on 13 November 2026 and is available to internal testers. Play shows the app under a temporary name until it is reviewed. Testers join from the link under Internal testing → Testers → Copy link, or `https://play.google.com/apps/testing/com.everettjf.scriptwidget`.
+- Release "1.2.0 (7)" (version code 7) replaced it on the same day. It is the same app built with the Firebase project, so push-triggered refresh is on.
 - Installing from Play on a tester's device has not been checked.
 - The App content declarations (privacy policy, ads, content rating, target audience, data safety, and the rest) are not filled in. Internal testing does not need them; closed testing and production do.
 - The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update must be signed with this key.
@@ -22,7 +23,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.2.0 (version code 6) |
+| Version | 1.2.0 (version code 7) |
 | Minimum Android | 15 (API 35) |
 | Target API | 36 |
 | Contains ads | No |
