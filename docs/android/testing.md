@@ -8,13 +8,13 @@ What was run before handing this build to testers, and what was not.
 | --- | --- | --- | --- |
 | Unit tests | 468 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
 | Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
-| App device tests | 53 | see below | `Android/scripts/device-test.sh app` |
+| App device tests | 55 | see below | `Android/scripts/device-test.sh app` |
 
-All suites were run with the final code on every device below.
+The Pixel ran every suite with the final code. The emulators ran them before the last two tests (the AI loop) were added.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
-| Pixel 6 (physical) | 17 (API 37) | 27 passed | 53 passed |
+| Pixel 6 (physical) | 17 (API 37) | 27 passed | 55 passed |
 | Emulator, Google APIs image | 15 (API 35) | 27 passed | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
 | Emulator, 16 KB pages, Google Play image | 16.0 (API 36) | 27 passed, 2 of them skipped (no DNS in the emulator) | 53 passed (the picked-folder sync test skips: no folder was chosen there) |
 
@@ -30,6 +30,7 @@ All passed on the final build. The device suites cover:
 - **Library**: `.swt` import and export, rejection of traversal, bad manifests and source that does not compile, identity across rename and duplicate.
 - **Native APIs against real device services**: storage, HTTPS fetch, a Data Source Plugin request, Calendar Provider read and write with replay, notifications and alarms scheduling, Photo thumbnails, location policy, Health Connect queries, MET Norway forecast, geocoding, synced documents with two simulated devices.
 - **System surfaces**: declared actions, toggle persistence, app shortcuts, Live Update notification start, update and end.
+- **AI loop**: generate, validate on the device, feed the error back, accept the fix; with a scripted local model.
 
 Two live-service tests skip instead of failing when the remote service does not answer in time (Open-Meteo, MET Norway).
 
@@ -47,7 +48,7 @@ Two live-service tests skip instead of failing when the remote service does not 
 
 ## Not tested
 
-- **AI generation against a live provider.** No API key was available. The client is covered by unit tests with a fake transport only.
+- **AI generation against a live model.** No API key was available. On the Pixel the loop runs end to end with a real HTTP exchange against a local server that answers in the Anthropic Messages format with scripted text: a broken first answer is rejected by the runtime and fed back, the corrected answer renders, and the loop stops at its limit. What a real model returns, and a real provider's errors and timing, are untested.
 - **GitHub services with a real token.** Only the not-connected and policy-rejection paths ran.
 - **A notification or alarm actually arriving.** Scheduling, listing and cancelling ran; delivery was not waited for.
 - **Documents, contacts and music with real selections.** Only the empty and not-authorized states ran.
