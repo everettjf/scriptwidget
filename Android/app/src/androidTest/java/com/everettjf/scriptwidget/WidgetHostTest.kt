@@ -148,6 +148,17 @@ class WidgetHostTest {
         assertTrue((live[0] as Chronometer).isCountDown)
     }
 
+    @Test fun gifsPlayAsFlippedFramesInsideTheBitmapBudget() {
+        val bundled = AppServices.library.bundled().first { it.name == "Nyan Cat" }
+        val installed = AppServices.library.installBundled(bundled).also { created += it.name }
+        val live = children(inflate(place(installed)), R.id.widget_dynamic)
+        val flipper = live.filterIsInstance<android.widget.ViewFlipper>().single()
+        assertTrue("several frames: ${flipper.childCount}", flipper.childCount in 2..24)
+        var bytes = 0L
+        for (index in 0 until flipper.childCount) bytes += ((flipper.getChildAt(index) as ImageView).drawable as BitmapDrawable).bitmap.allocationByteCount
+        assertTrue("frames use $bytes bytes", bytes <= 3L * 1024 * 1024)
+    }
+
     @Test fun scriptErrorsBecomeAVisibleCardNotABlankWidget() {
         val id = place(install("""const broken = ; ${'$'}render(<text>never</text>)"""))
         val view = inflate(id)

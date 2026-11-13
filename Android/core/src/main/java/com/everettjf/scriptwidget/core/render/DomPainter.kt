@@ -43,6 +43,9 @@ class HitRegion(val bounds: RectF, val interaction: JSONObject)
 /** A `<date>` text the host may replace with a self-updating view. */
 class DateSlot(val bounds: RectF, val description: JSONObject, val style: TextStyle?, val color: Int, val align: String)
 
+/** A package GIF the host plays with its own views; it is left out of the bitmap. */
+class GifSlot(val bounds: RectF, val source: String)
+
 /** Supplies decoded images for `src` values: `res:<path>`, data URLs and fetched remote URLs. */
 fun interface ImageSource {
     fun bitmap(source: String, maximumPixels: Int): Bitmap?
@@ -58,7 +61,10 @@ class DomPainter(
     private val images: ImageSource,
     /** `<date>` styles the host draws itself with self-updating views; their text is left out of the bitmap. */
     private val liveDateStyles: Set<String> = emptySet(),
+    /** When true, GIF images are recorded as [gifSlots] instead of being drawn as a still frame. */
+    private val liveGifs: Boolean = false,
 ) {
+    val gifSlots = ArrayList<GifSlot>()
     val hitRegions = ArrayList<HitRegion>()
     val dateSlots = ArrayList<DateSlot>()
     private var activeDate: JSONObject? = null
@@ -75,6 +81,7 @@ class DomPainter(
     fun paint(canvas: Canvas, root: DomNode, scale: Float) {
         hitRegions.clear()
         dateSlots.clear()
+        gifSlots.clear()
         canvas.save()
         canvas.scale(scale, scale)
         val width = Css.pixels(root.style["width"]) ?: 0f
@@ -205,8 +212,14 @@ class DomPainter(
             if (clips) canvas.restore()
             return
         }
-        if (node.tag == "img") image(canvas, node, bounds)
-        else if (node.text != null && node.children.isEmpty()) drawText(canvas, node.text, style, bounds, context)
+        if (node.tag == "img") {
+            val source = node.attributes["src"].orEmpty()
+            if (liveGifs && source.startsWith("res:") && source.endsWith(".gif", ignoreCase = true) && node.style["objectFit"] == "contain") {
+                val mapped = RectF(bounds)
+                toWidget.mapRect(mapped)
+                gifSlots += GifSlot(mapped, source)
+            } else image(canvas, node, bounds)
+        } else if (node.text != null && node.children.isEmpty()) drawText(canvas, node.text, style, bounds, context)
         for (child in node.children) element(canvas, child, width, height, context, toWidget)
         activeDate = previousDate
         if (clips) canvas.restore()

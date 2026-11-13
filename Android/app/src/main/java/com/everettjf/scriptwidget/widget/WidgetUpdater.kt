@@ -32,6 +32,9 @@ object WidgetUpdater {
     private const val MAXIMUM_HIT_REGIONS = 24
     private const val MAXIMUM_SIZES = 2
     private const val MAXIMUM_LIVE_TEXTS = 6
+    private const val MAXIMUM_GIFS = 2
+    /** All GIF frames of one widget size together; part of the Android 17 widget bitmap budget. */
+    private const val GIF_BUDGET_BYTES = 3L * 1024 * 1024
     /** A running timer and the current time update themselves; other date styles are redrawn on refresh. */
     private val LIVE_DATE_STYLES = setOf("timer", "time")
 
@@ -65,11 +68,13 @@ object WidgetUpdater {
         val metrics = context.resources.displayMetrics
         val budget = (metrics.widthPixels.toLong() * metrics.heightPixels * 6L * 70L / 100L) / (sizes.size * 2)
 
+        // "Remove animations" in system accessibility settings keeps GIFs on their first frame.
+        val animate = runCatching { android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }.getOrDefault(1f) > 0f
         val views = LinkedHashMap<SizeF, RemoteViews>()
         var bitmapBytes = 0L
         for (size in sizes) {
-            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES)
-            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark)
+            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES, liveGifs = animate)
+            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark, liveGifs = animate)
             // Identical drawings need one bitmap; otherwise the launcher picks by its own theme.
             val themed = if (other.bitmap.sameAs(output.bitmap)) null else other
             bitmapBytes += output.bitmap.allocationByteCount + (themed?.bitmap?.allocationByteCount ?: 0)
@@ -139,6 +144,23 @@ object WidgetUpdater {
         for ((index, slot) in output.dateSlots.take(MAXIMUM_LIVE_TEXTS).withIndex()) {
             val otherColor = other?.dateSlots?.getOrNull(index)?.color ?: slot.color
             liveText(context, slot, size, if (dark) otherColor else slot.color, if (dark) slot.color else otherColor)?.let { views.addView(R.id.widget_dynamic, it) }
+        }
+        for (slot in output.gifSlots.take(MAXIMUM_GIFS)) {
+            val data = installed.files.readBytes(slot.source.removePrefix("res:")) ?: continue
+            val scale = output.scale
+            val frames = com.everettjf.scriptwidget.core.render.GifSampler.sample(data, (slot.bounds.width() * scale).toInt(), (slot.bounds.height() * scale).toInt(), GIF_BUDGET_BYTES / MAXIMUM_GIFS) ?: continue
+            val flipper = RemoteViews(context.packageName, R.layout.widget_gif)
+            flipper.setViewLayoutMargin(R.id.widget_gif, RemoteViews.MARGIN_LEFT, slot.bounds.left.coerceAtLeast(0f), TypedValue.COMPLEX_UNIT_DIP)
+            flipper.setViewLayoutMargin(R.id.widget_gif, RemoteViews.MARGIN_TOP, slot.bounds.top.coerceAtLeast(0f), TypedValue.COMPLEX_UNIT_DIP)
+            flipper.setViewLayoutWidth(R.id.widget_gif, slot.bounds.width().coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            flipper.setViewLayoutHeight(R.id.widget_gif, slot.bounds.height().coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            flipper.setInt(R.id.widget_gif, "setFlipInterval", frames.intervalMilliseconds)
+            for (frame in frames.frames) {
+                val image = RemoteViews(context.packageName, R.layout.widget_gif_frame)
+                image.setImageViewBitmap(R.id.widget_gif_frame, frame)
+                flipper.addView(R.id.widget_gif, image)
+            }
+            views.addView(R.id.widget_dynamic, flipper)
         }
         views.removeAllViews(R.id.widget_overlay)
         for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {

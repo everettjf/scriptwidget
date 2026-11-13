@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ViewFlipper xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_gif"
+    android:layout_width="1dp"
+    android:layout_height="1dp"
+    android:autoStart="true"
+    android:flipInterval="100"
+    android:importantForAccessibility="no" />
