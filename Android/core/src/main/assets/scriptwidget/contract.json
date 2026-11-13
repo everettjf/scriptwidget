@@ -1,0 +1,77 @@
+{
+  "contract": {
+    "nativeAPIVersion": "1.6",
+    "nativeCompilerFingerprint": "scriptwidget-babel-v5",
+    "apiVersion": "1.6",
+    "compilerFingerprint": "scriptwidget-android-babel-v1",
+    "maximumSourceBytes": 524288,
+    "maximumTranspiledBytes": 2097152,
+    "executionTimeoutMilliseconds": 5000,
+    "maximumElementNodes": 1000,
+    "maximumMaterialBackgrounds": 4,
+    "maximumElementDepth": 64,
+    "maximumPropsPerElement": 128,
+    "maximumDataQueries": 8,
+    "globalAPIs": [
+      "$alarms",
+      "$calendar",
+      "$component",
+      "$console",
+      "$contacts",
+      "$device",
+      "$documents",
+      "$dynamic_island",
+      "$element",
+      "$error",
+      "$fetch",
+      "$file",
+      "$getenv",
+      "$health",
+      "$home",
+      "$http",
+      "$icloud",
+      "$import",
+      "$location",
+      "$maps",
+      "$music",
+      "$notifications",
+      "$photos",
+      "$reminders",
+      "$render",
+      "$runtime",
+      "$services",
+      "$storage",
+      "$system",
+      "$weather",
+      "$xml",
+      "console",
+      "fetch"
+    ]
+  },
+  "errorCategories": {
+    "undefinedRender": {
+      "category": "Render",
+      "recovery": "Call $render(...) once from the main script."
+    },
+    "internalError": {
+      "category": "Internal",
+      "recovery": "Retry. If this persists, export the package and report the diagnostic."
+    },
+    "transformError": {
+      "category": "Syntax",
+      "recovery": "Check the highlighted JSX syntax and property values."
+    },
+    "scriptError": {
+      "category": "Runtime",
+      "recovery": "Use the reported line and stack trace to inspect the script."
+    },
+    "scriptException": {
+      "category": "Runtime",
+      "recovery": "Use the reported line and stack trace to inspect the script."
+    },
+    "resourceLimit": {
+      "category": "Resource Limit",
+      "recovery": "Reduce source size, imported work, network data, or execution time."
+    }
+  }
+}

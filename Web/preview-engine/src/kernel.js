@@ -21,6 +21,8 @@
 //   defer(callback)        run callback in a later macrotask
 //   timeout(ms, callback)  run callback once the execution budget is spent
 //   finish(resultJSON)     receives {tree, error, logs, diagnostics}
+//   installNativeAPIs(apis, helpers)   optional; native hosts replace the
+//                          preview simulations with real implementations
 // }
 export function scriptWidgetKernel(global, host, configJSON) {
   "use strict";
@@ -1286,6 +1288,16 @@ export function scriptWidgetKernel(global, host, configJSON) {
   for(const group of ObjectKeys(systemMethods)){
     apis[`$${group}`]??={};
     for(const method of systemMethods[group])apis[`$${group}`][method]=(...args)=>systemCall(group,method,args);
+  }
+
+  // Native hosts (Android) replace the preview simulations above with real
+  // implementations. The web hosts do not define this hook.
+  if (typeof host.installNativeAPIs === "function") {
+    host.installNativeAPIs(apis, {
+      config, contract, environments, nativePromise, nativeString, bridgeValue, bridgeDictionary, unbridge,
+      storageJSON, validStorageKey, utf8ByteLength, fetchPolicyError, packageAllows, hostMatches, diagnostic,
+      actionMode, timelineProjection, liveActivityPresentation,
+    });
   }
 
   apis.$fetch = apis.fetch;

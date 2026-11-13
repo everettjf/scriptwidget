@@ -1,0 +1,8 @@
+.gradle/
+build/
+local.properties
+.cxx/
+*.iml
+.idea/
+.kotlin/
+core/src/androidTest/assets/parity-corpus.json
