@@ -10,7 +10,15 @@ Everything needed to create the Play Console entry and an internal test release.
 - Internal testing release "1.2.0 (6)" (version code 6) was published on 13 November 2026 and is available to internal testers. Play shows the app under a temporary name until it is reviewed. Testers join from the link under Internal testing → Testers → Copy link, or `https://play.google.com/apps/testing/com.everettjf.scriptwidget`.
 - Release "1.2.0 (7)" (version code 7) replaced it on the same day. It is the same app built with the Firebase project, so push-triggered refresh is on.
 - Installing from Play on a tester's device has not been checked.
-- The App content declarations (privacy policy, ads, content rating, target audience, data safety, and the rest) are not filled in. Internal testing does not need them; closed testing and production do.
+- "Finish setting up your app" is complete (13 November 2026). Saved, not yet sent for review:
+  - Privacy policy `https://atomsprout.com/scriptwidget/privacy/`; sign in details: no part of the app is restricted; ads: none; advertising ID: not used; government app: no; financial features: none.
+  - Target audience: 18 and over.
+  - Content rating (IARC, "All Other App Types"): the app features online content (Gallery, AI output, widgets' network content); every other answer is No. Rating: Everyone / All ages. Contact for ratings: `atomsprout@gmail.com`.
+  - Data safety: collects "Device or other IDs" (the Firebase Cloud Messaging token) for app functionality, required, not ephemeral, encrypted in transit, not shared. No account creation. The data deletion question is left unanswered (optional).
+  - Health apps: features "Activity and fitness", "Nutrition and weight management", "Sleep management", with a written use for each of the nine Health Connect permissions.
+  - Category Tools; store contact `atomsprout@gmail.com`, website `https://atomsprout.com/scriptwidget/`.
+  - Store listing saved with the app icon and feature graphic labelled as created with AI. The screenshots are device captures and are not labelled.
+- Play sends these for review with the first closed testing release. Production access needs a closed test with at least 12 opted-in testers for at least 14 days.
 - The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update must be signed with this key.
 
 ## App
@@ -83,7 +91,7 @@ The app has no server and sends nothing to the developer.
 
 | Question | Answer |
 | --- | --- |
-| Does the app collect or share any of the required user data types? | No |
+| Does the app collect or share any of the required user data types? | Yes: Device or other IDs (Firebase Cloud Messaging token), collected for app functionality, not shared |
 | Is all user data encrypted in transit? | Not applicable (nothing is collected). Requests the user's widgets make use HTTPS or HTTP to hosts the widget declares |
 | Can users request data deletion? | Not applicable; everything is stored on the device and removed with the app |
 
@@ -118,6 +126,6 @@ Category "Utility, Productivity, Communication, or Other". No violence, sexual c
 
 ## Before production
 
-- The privacy policy page is written for the Apple apps and mentions iCloud. Add an Android section (data on device, Health Connect, user-configured AI provider) before any public track.
+- The privacy policy page has an Android section since 13 November 2026 (data on device, Health Connect, Firebase Cloud Messaging token, AI credentials). Keep it in step with the data safety form.
 - Complete the Health apps declaration, or remove the Health Connect permissions from the manifest.
 - A new personal developer account may need a closed test with a minimum number of testers before production access; check the account's requirements.

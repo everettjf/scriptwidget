@@ -16,11 +16,9 @@ What is left after 1.2.0 (build 7) went to Google Play internal testing on 13 No
 
 ## Before closed testing or production
 
-- Fill in Play Console → App content: privacy policy, ads, content rating, target audience, data safety and the remaining declarations. Answers are drafted in the listing kit.
-- Add an Android section to the privacy policy page (data stays on the device, Health Connect, user-configured AI provider, Firebase Cloud Messaging token).
-- Complete the Health apps declaration, or remove the Health Connect permissions.
+- Create a closed testing track, add testers and a release, and send it for review. This is also what sends the store listing and the App content declarations (filled in on 13 November 2026, see the listing kit) to review.
+- Production access needs at least 12 testers opted in to the closed test for at least 14 days.
 - Declare trader status for the developer account (Play asks for it by February 2027).
-- Check whether the account needs a closed test with a minimum number of testers before production access.
 - Decide whether to keep Play's automatic protection (installer check), which matters if an APK is also distributed.
 - `atomsprout@googlegroups.com` is in the internal testers' email list. Internal testing matches individual Google accounts, so members of the group may not be able to join through it; add their addresses or use a closed test with the group.
 
