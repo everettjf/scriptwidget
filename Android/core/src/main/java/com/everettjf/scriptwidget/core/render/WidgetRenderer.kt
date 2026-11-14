@@ -41,6 +41,10 @@ class RenderRequest(
     val liveGifs: Boolean = false,
     /** Leave clock and swing animations out of the bitmap; the host moves them (see [RenderOutput.motionSlots]). */
     val liveMotion: Boolean = false,
+    /** Leave the rows of the first `<list>` out of the bitmap; the host scrolls them (see [RenderOutput.listSlots]). */
+    val liveLists: Boolean = false,
+    /** System theme colors behind the `material.<role>` names (see [com.everettjf.scriptwidget.core.api.ThemeColors]); null leaves them unknown. */
+    val colors: JSONObject? = null,
 )
 
 class RenderOutput(
@@ -51,6 +55,7 @@ class RenderOutput(
     val dateSlots: List<DateSlot>,
     val gifSlots: List<GifSlot>,
     val motionSlots: List<MotionSlot>,
+    val listSlots: List<ListSlot>,
     val diagnostics: JSONArray,
     val layoutMilliseconds: Long,
     val paintMilliseconds: Long,
@@ -151,6 +156,7 @@ class WidgetRenderer(context: Context, private val scripts: SharedScripts, val f
             .put("family", request.family).put("dark", request.darkMode).put("resources", resources)
             .put("images", JSONArray(request.remoteImages.keys.toList()))
         request.nowMilliseconds?.let { job.put("now", it) }
+        request.colors?.let { job.put("colors", it) }
 
         val js = engine()
         val rendered: JSONObject
@@ -178,9 +184,10 @@ class WidgetRenderer(context: Context, private val scripts: SharedScripts, val f
         val bitmap = Bitmap.createBitmap(max(1, ceil(request.width * scale).toInt()), max(1, ceil(request.height * scale).toInt()), Bitmap.Config.ARGB_8888)
         val painter = DomPainter(text, source, request.liveDateStyles, request.liveGifs)
         painter.liveMotion = request.liveMotion
+        painter.liveLists = request.liveLists
         painter.paint(Canvas(bitmap), DomNode(rendered.getJSONObject("root")), scale)
         images = null
-        return RenderOutput(bitmap, scale, painter.hitRegions.toList(), painter.dateSlots.toList(), painter.gifSlots.toList(), painter.motionSlots.toList(), rendered.optJSONArray("diagnostics") ?: JSONArray(),
+        return RenderOutput(bitmap, scale, painter.hitRegions.toList(), painter.dateSlots.toList(), painter.gifSlots.toList(), painter.motionSlots.toList(), painter.listSlots.toList(), rendered.optJSONArray("diagnostics") ?: JSONArray(),
             layoutMilliseconds, (System.nanoTime() - paintStart) / 1_000_000)
     }
 

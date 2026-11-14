@@ -13,7 +13,7 @@ ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit
 - `macOS/ScriptWidgetMac`, `ScriptWidgetMacWidget`: Studio app and macOS widget extension. Studio features live in `Editor/`, `AIGenerate/`, `Skills/`, `Plugin/`, and `Onboarding/`.
 - `Editor/editorfe/`: Vite frontend with CodeMirror 6. Built files are copied into both platform `StudioEditor.bundle` directories.
 - `Web/preview-engine/`: browser preview engine (plain JavaScript with `.d.ts` types); `Web/studio/`: Web Studio, a React + strict TypeScript + shadcn/ui app published to GitHub Pages. Its `kernel.js` and `renderer.js` are also the Android runtime, so a change there affects the browser preview and Android together.
-- `Android/core`: QuickJS-NG with its JNI layer, the Kotlin host and native APIs, Canvas renderer, package store, Gallery, Skills, plugins and AI client. `Android/app`: Compose app, widget providers, tiles, shortcuts, Live Updates and push. `Android/core/src/main/assets/scriptwidget` is generated; do not edit it. `Android/play`: Google Play listing kit.
+- `Android/core`: QuickJS-NG with its JNI layer, the Kotlin host and native APIs, Canvas renderer, package store, Gallery, Skills, plugins and AI client. `Android/app`: Compose app, widget providers, tiles, shortcuts, Live Updates and push. `Android/core/src/main/assets/scriptwidget` is generated; do not edit it. `Android/app/src/main/assets/Script.android` holds the templates for what only Android has: the scrolling `<list>`, the `material.<role>` colors and the automation entry point, all described under "Only on Android" in `docs/android/README.md`. `Android/play`: Google Play listing kit.
 - `Tests/ScriptWidgetRuntimeTests/`: shared runtime, execution, performance, package/cache, iCloud-state, Gallery, AI, and security tests.
 - `Gallery/`: curated Gallery 1.0 index, JSON Schema, widget seeds, and Skill seeds.
 - `docs/`: authoritative user and contributor documentation; `docs/android/` covers the Android app, its test notes and its to-do. The native JSX switch is the runtime authority; Studio completion metadata lives in `Editor/editorfe/src/scriptWidgetAPI.js`. Package contracts live in `Shared/ScriptWidgetRuntime/Resource/*.schema.json`.
@@ -57,6 +57,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - Do not log credentials, OAuth tokens, full sensitive responses, HealthKit data, or user file contents.
 - AI credentials remain Keychain-backed and must not be serialized into UserDefaults, packages, prompts, logs, Skills, or Gallery metadata.
 - Imported Skills cannot execute code; Data Source Plugins cannot load native code or enlarge widget permissions.
+- The Android automation receiver is exported. Keep it off by default, gated by the user's token and per-package permission, rate-limited, and limited to actions a manifest declares. Never log the token. A list row tap carries only a number that the app resolves from its own saved taps.
 - Malformed present manifests must fail closed; do not silently reinterpret them as legacy packages.
 
 ## Coding Style

@@ -43,11 +43,13 @@ object AppServices {
 
 class ScriptWidgetApplication : Application() {
     private var nightMode = 0
+    private var themeColors = ""
 
     override fun onCreate() {
         super.onCreate()
         AppServices.attach(this)
         nightMode = resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK
+        themeColors = com.everettjf.scriptwidget.core.api.ThemeColors.signature(this)
         WidgetScheduler.schedulePeriodicRefresh(this)
         com.everettjf.scriptwidget.push.Push.start(this)
     }
@@ -56,8 +58,11 @@ class ScriptWidgetApplication : Application() {
         super.onConfigurationChanged(newConfig)
         // A bitmap does not follow the system theme by itself: redraw when it changes.
         val mode = newConfig.uiMode and Configuration.UI_MODE_NIGHT_MASK
-        if (mode != nightMode) {
+        // A new wallpaper changes the system colors behind the "material.<role>" names.
+        val colors = com.everettjf.scriptwidget.core.api.ThemeColors.signature(this)
+        if (mode != nightMode || colors != themeColors) {
             nightMode = mode
+            themeColors = colors
             WidgetScheduler.refreshAll(this)
         }
     }

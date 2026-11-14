@@ -5,7 +5,7 @@
 
 import {
   alignments, cssColor, defaultFont, elementFont, fontFamily, gradientCSS, parseColor, parseFont, parseFrame,
-  parsePadding, parsePaint, parseRotation3D, platform, propReader, setPlatform, styleFont, swiftDouble, systemBackground,
+  parsePadding, parsePaint, parseRotation3D, platform, propReader, setHostColors, setPlatform, styleFont, swiftDouble, systemBackground,
 } from "./props.js";
 import { prepareGif } from "./gif.js";
 import { clockPeriods, clockPeriod, clockPhase, swingDuration, swingDistance, swingPhase } from "./animation.js";
@@ -43,7 +43,7 @@ export function lucideIconFor(systemName) {
   return null;
 }
 import {
-  AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, GridNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
+  AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, GridNode, ListNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
   ZStackNode, createTextMeasurer, fillText,
 } from "./layout.js";
 
@@ -61,6 +61,9 @@ class BottomOverlayNode extends Node {
 }
 
 const naturalLineRatio = 1.1934;
+
+/// Rows a <list> lays out; a host draws each row as its own image.
+const maximumListRows = 100;
 
 // macOS 26 single-line heights of .system(size:) for sizes 1...160; SwiftUI
 // lays macOS text out on whole points. A fractional size uses the next whole
@@ -170,6 +173,8 @@ export async function renderWidget(treeJSON, {
   now = null, animations = "live", animationElapsed = null, reduceTransparency = false, reduceMotion = false,
   // Native hosts (Android) supply these; the web hosts use the defaults.
   size: explicitSize = null, textMeasurer = null, resolveImageURL = null, gifPreparer = null,
+  // Android only: { colors } turns on the scrolling <list> and the "material.<role>" color names.
+  android = null,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
   const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
@@ -775,6 +780,22 @@ export async function renderWidget(treeJSON, {
         }
         break;
       }
+      case "list": {
+        // Android has scrolling widgets; iPhone does not know the tag.
+        if (!android) {
+          report("warning", "tag.android_only", '<list> scrolls on Android only; iPhone shows "UnknownTagName"');
+          return new DecorationNode(text("UnknownTagName", defaultFont(), null), { background: { color: color("pink") } });
+        }
+        let rows = buildChildren(element, "v");
+        if (rows.length > maximumListRows) {
+          report("warning", "list.truncated", `<list> shows its first ${maximumListRows} rows`);
+          rows = rows.slice(0, maximumListRows);
+        }
+        for (const row of rows) row.listRow = true;
+        content = new ListNode(rows, reader.double("spacing") ?? 0);
+        content.list = true;
+        break;
+      }
       case "hgrid": case "vgrid": content = gridNode(element, reader, tag === "vgrid" ? "v" : "h"); break;
       case "gauge": content = gaugeNode(reader); break;
       case "chart": content = chartNode(reader); break;
@@ -1191,6 +1212,9 @@ export async function renderWidget(treeJSON, {
     if (node.title) element.title = node.title;
     if (node.interaction) element.dataset.swInteraction = JSON.stringify(node.interaction);
     if (node.dateText) element.dataset.swDate = JSON.stringify(node.dateText);
+    // For hosts that scroll the list with their own views (Android).
+    if (node.list) { element.dataset.swList = JSON.stringify({ contentHeight: node.contentHeight }); Object.assign(element.style, { overflowX: "hidden", overflowY: "auto" }); }
+    if (node.listRow) element.dataset.swListRow = "1";
     parent.appendChild(element);
     if (node.draw) {
       node.draw(node, element);
@@ -1273,6 +1297,7 @@ export async function renderWidget(treeJSON, {
   }
 
   const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
+  const previousColors = setHostColors(android?.colors ?? null);
   try {
     const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
     const [w, h] = rootNode.size(size.width, size.height);
@@ -1306,6 +1331,7 @@ export async function renderWidget(treeJSON, {
     return { element: widget, size, diagnostics };
   } finally {
     setPlatform(previousPlatform);
+    setHostColors(previousColors);
     measurer.dispose();
   }
 }

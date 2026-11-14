@@ -35,7 +35,9 @@ object ActionPlanner {
     const val SOURCE_WIDGET = "widget"
     const val SOURCE_CONTROL = "control"
     const val SOURCE_SHORTCUT = "shortcut"
-    private val sources = setOf(SOURCE_WIDGET, SOURCE_CONTROL, SOURCE_SHORTCUT)
+    /** Another app asked through the automation entry point (Android only). */
+    const val SOURCE_AUTOMATION = "automation"
+    private val sources = setOf(SOURCE_WIDGET, SOURCE_CONTROL, SOURCE_SHORTCUT, SOURCE_AUTOMATION)
 
     /**
      * @param actionID the declared action; for [SOURCE_CONTROL] it may be null and is then taken from the control.

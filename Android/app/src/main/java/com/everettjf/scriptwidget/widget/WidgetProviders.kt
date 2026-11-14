@@ -19,7 +19,7 @@ abstract class ScriptWidgetProvider : AppWidgetProvider() {
 
     override fun onDeleted(context: Context, appWidgetIds: IntArray) {
         AppServices.attach(context.applicationContext)
-        appWidgetIds.forEach { AppServices.widgets.remove(it) }
+        appWidgetIds.forEach { AppServices.widgets.remove(it); WidgetLists.remove(context, it) }
     }
 
     companion object {

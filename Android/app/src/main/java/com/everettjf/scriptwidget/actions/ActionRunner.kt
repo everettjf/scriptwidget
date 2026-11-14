@@ -47,7 +47,7 @@ object ActionRunner {
      *
      * @param installation stable identity of the installed package.
      * @param actionID a declared `actions[].id`; may be null for [source] `control`, where the control decides.
-     * @param source `widget`, `control` or `shortcut`; reported to the script as `action-source`.
+     * @param source `widget`, `control`, `shortcut` or `automation`; reported to the script as `action-source`.
      * @param value a toggle's new value, or null for a button.
      * @param controlID a declared `controls[].id`; required for, and only allowed with, `control`.
      * @param stateKey storage key of a widget `<toggle>`; a control always uses its declared `stateKey`.

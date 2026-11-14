@@ -127,6 +127,13 @@ var __swRenderBundle = (() => {
     return previous;
   }
   var palette = () => currentPlatform === "macos" ? macSystemColors : systemColors;
+  var hostColors = null;
+  function setHostColors(colors) {
+    const previous = hostColors;
+    hostColors = colors && typeof colors === "object" ? colors : null;
+    return previous;
+  }
+  var hostColorPrefix = "material.";
   var systemBackground = (appearance) => systemBackgrounds[currentPlatform][appearance];
   function hexColor(value) {
     const hex = value.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
@@ -157,6 +164,10 @@ var __swRenderBundle = (() => {
     return [channel(r), channel(g), channel(b), Math.min(1, channel(a2) / 255)];
   }
   function builtinColor(name, appearance) {
+    if (name.startsWith(hostColorPrefix)) {
+      const value = hostColors?.[appearance]?.[name.slice(hostColorPrefix.length)];
+      return Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item)) ? value : null;
+    }
     return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? palette()[appearance][name] : null;
   }
   function parseColor(value, appearance = "light") {
@@ -1736,6 +1747,33 @@ ${join(moved)}`;
       return mergedEdge(this.children, side);
     }
   };
+  var ListNode = class extends Node {
+    constructor(children, spacing) {
+      super();
+      this.children = children;
+      this.spacing = Math.max(0, spacing);
+      this.contentHeight = 0;
+    }
+    size(pw, ph) {
+      const offered = (value) => value !== null && value !== Infinity;
+      if (offered(pw) && offered(ph)) return [pw, ph];
+      const sizes = this.children.map((child) => child.size(offered(pw) ? pw : null, null));
+      const width = offered(pw) ? pw : sizes.reduce((widest, size) => Math.max(widest, size[0]), 0);
+      const height = offered(ph) ? ph : sizes.reduce((sum, size) => sum + size[1], 0) + this.spacing * Math.max(0, sizes.length - 1);
+      return [width, height];
+    }
+    place(x, y, width, height) {
+      super.place(x, y, width, height);
+      let cursor = 0;
+      this.children.forEach((child, index) => {
+        if (index > 0) cursor += this.spacing;
+        const [w, h] = child.size(width, null);
+        child.place(0, cursor, w, h);
+        cursor += h;
+      });
+      this.contentHeight = cursor;
+    }
+  };
   function mergedEdge(children, side) {
     const edges = children.map((child) => child.edge(side)).filter(Boolean);
     const text = edges.filter((edge) => !edge.symbol);
@@ -1975,6 +2013,7 @@ ${join(moved)}`;
     }
   };
   var naturalLineRatio = 1.1934;
+  var maximumListRows = 100;
   var macLineHeights = [2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 19, 19, 20, 21, 23, 24, 25, 26, 27, 28, 29, 30, 32, 33, 34, 35, 37, 38, 39, 40, 41, 43, 44, 45, 46, 47, 49, 50, 51, 52, 53, 54, 55, 56, 57, 59, 60, 61, 62, 63, 65, 66, 67, 68, 69, 71, 72, 73, 74, 76, 77, 78, 79, 80, 82, 83, 84, 85, 86, 88, 89, 89, 90, 91, 93, 94, 95, 96, 98, 99, 100, 101, 102, 104, 105, 106, 107, 108, 110, 111, 112, 113, 114, 116, 117, 118, 119, 121, 122, 123, 124, 124, 126, 127, 128, 129, 130, 132, 133, 134, 135, 136, 138, 139, 140, 141, 143, 144, 145, 146, 147, 149, 150, 151, 152, 153, 155, 156, 157, 158, 159, 160, 161, 162, 163, 165, 166, 167, 168, 169, 171, 172, 173, 174, 175, 177, 178, 179, 180, 181, 183, 184, 185, 186, 188, 189];
   function lineHeight(size) {
     if (platform() === "macos") {
@@ -2077,7 +2116,9 @@ ${join(moved)}`;
     size: explicitSize = null,
     textMeasurer = null,
     resolveImageURL = null,
-    gifPreparer = null
+    gifPreparer = null,
+    // Android only: { colors } turns on the scrolling <list> and the "material.<role>" color names.
+    android = null
   } = {}) {
     const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
     if (reduceMotion) animations = "firstFrame";
@@ -2675,6 +2716,21 @@ ${join(moved)}`;
           }
           break;
         }
+        case "list": {
+          if (!android) {
+            report("warning", "tag.android_only", '<list> scrolls on Android only; iPhone shows "UnknownTagName"');
+            return new DecorationNode(text("UnknownTagName", defaultFont(), null), { background: { color: color("pink") } });
+          }
+          let rows = buildChildren(element, "v");
+          if (rows.length > maximumListRows) {
+            report("warning", "list.truncated", `<list> shows its first ${maximumListRows} rows`);
+            rows = rows.slice(0, maximumListRows);
+          }
+          for (const row of rows) row.listRow = true;
+          content = new ListNode(rows, reader.double("spacing") ?? 0);
+          content.list = true;
+          break;
+        }
         case "hgrid":
         case "vgrid":
           content = gridNode(element, reader, tag === "vgrid" ? "v" : "h");
@@ -3064,6 +3120,11 @@ ${join(moved)}`;
       if (node.title) element.title = node.title;
       if (node.interaction) element.dataset.swInteraction = JSON.stringify(node.interaction);
       if (node.dateText) element.dataset.swDate = JSON.stringify(node.dateText);
+      if (node.list) {
+        element.dataset.swList = JSON.stringify({ contentHeight: node.contentHeight });
+        Object.assign(element.style, { overflowX: "hidden", overflowY: "auto" });
+      }
+      if (node.listRow) element.dataset.swListRow = "1";
       parent.appendChild(element);
       if (node.draw) {
         node.draw(node, element);
@@ -3148,6 +3209,7 @@ ${join(moved)}`;
       }
     }
     const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
+    const previousColors = setHostColors(android?.colors ?? null);
     try {
       const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
       const [w, h] = rootNode.size(size.width, size.height);
@@ -3176,6 +3238,7 @@ ${join(moved)}`;
       return { element: widget, size, diagnostics };
     } finally {
       setPlatform(previousPlatform);
+      setHostColors(previousColors);
       measurer.dispose();
     }
   }
@@ -3361,7 +3424,9 @@ ${join(moved)}`;
       // Package images are "res:<path>"; fetched remote images are passed by URL.
       resolveImageURL: (url) => /^data:image\/(png|jpeg|webp|gif);base64,/.test(url) || remote.has(url) ? url : null,
       // Android draws the first frame of a GIF.
-      gifPreparer: async (url) => ({ url, firstFrame: url, info: {} })
+      gifPreparer: async (url) => ({ url, firstFrame: url, info: {} }),
+      // The scrolling <list> and the wallpaper-based "material.<role>" colors.
+      android: { colors: request.colors ?? null }
     });
     return JSON.stringify({ width: size.width, height: size.height, root: serialize(element), diagnostics });
   }

@@ -19,6 +19,22 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!--
+        The scrolling part of a <list> widget; WidgetLists fills it with images of the rows. It has to
+        be part of this layout, because the system accepts a collection only at the top level of a widget.
+    -->
+    <ListView
+        android:id="@+id/widget_list"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:cacheColorHint="@android:color/transparent"
+        android:divider="@null"
+        android:dividerHeight="0dp"
+        android:listSelector="@android:color/transparent"
+        android:overScrollMode="ifContentScrolls"
+        android:scrollbars="none"
+        android:visibility="gone" />
+
     <FrameLayout
         android:id="@+id/widget_overlay"
         android:layout_width="match_parent"

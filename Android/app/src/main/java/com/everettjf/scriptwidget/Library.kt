@@ -92,9 +92,10 @@ class Library(private val context: Context) {
 
     fun bundled(): List<BundledPackage> {
         val result = ArrayList<BundledPackage>()
-        for (group in listOf("template", "component", "api")) {
-            for (name in context.assets.list("Script.bundle/$group")?.sorted() ?: emptyList()) {
-                val path = "Script.bundle/$group/$name"
+        // "android" holds the templates that use what only Android has; the rest are the files the Apple apps ship.
+        for ((group, directory) in listOf("android" to "Script.android/android", "template" to "Script.bundle/template", "component" to "Script.bundle/component", "api" to "Script.bundle/api")) {
+            for (name in context.assets.list(directory)?.sorted() ?: emptyList()) {
+                val path = "$directory/$name"
                 if (context.assets.list(path)?.contains("main.jsx") == true) result += BundledPackage(group, name, path)
             }
         }

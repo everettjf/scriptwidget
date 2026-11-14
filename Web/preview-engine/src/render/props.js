@@ -107,6 +107,18 @@ export function setPlatform(name) {
 }
 
 const palette = () => (currentPlatform === "macos" ? macSystemColors : systemColors);
+
+/// Colors the host takes from the system theme (Android's wallpaper-based
+/// Material colors): { light: { primary: [r, g, b, a], ... }, dark: { ... } }.
+/// Scripts name them "material.<role>". Without a host palette the names are
+/// unknown, exactly as on iPhone, and the prop is ignored.
+let hostColors = null;
+export function setHostColors(colors) {
+  const previous = hostColors;
+  hostColors = colors && typeof colors === "object" ? colors : null;
+  return previous;
+}
+const hostColorPrefix = "material.";
 export const systemBackground = (appearance) => systemBackgrounds[currentPlatform][appearance];
 
 /// Color(hex:): trims non-alphanumerics, scans leading hex digits, and treats
@@ -125,6 +137,10 @@ export function hexColor(value) {
 }
 
 function builtinColor(name, appearance) {
+  if (name.startsWith(hostColorPrefix)) {
+    const value = hostColors?.[appearance]?.[name.slice(hostColorPrefix.length)];
+    return Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item)) ? value : null;
+  }
   return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? palette()[appearance][name] : null;
 }
 

@@ -91,8 +91,83 @@ The package format, manifest, permissions and runtime API version are the same. 
 | iOS | Android |
 | --- | --- |
 | Control Widgets | Eight Quick Settings tile slots that the user assigns to package `controls` |
-| Siri and Shortcuts actions | App shortcuts on the launcher icon for package `actions`; no voice or automation entry point |
+| Siri and Shortcuts actions | App shortcuts on the launcher icon for package `actions`, and an [automation entry point](#automation-entry-point) for other apps. No voice entry point |
 | Live Activities | A Live Update notification with title, detail, progress and countdown. The package's JSX layout and the Dynamic Island are not drawn |
+
+### Only on Android
+
+Three things exist on Android and not on iPhone. A package that uses them still installs and runs on iPhone; each item says what iPhone shows. `$system.platform()` returns `"android"` here, so a script can choose.
+
+#### Scrolling lists
+
+`<list>` is a vertical stack that scrolls inside the widget. Its children are the rows.
+
+```jsx
+const android = $system.platform() === "android";
+const rows = items.map((item) => <text>{item}</text>);
+$render(
+  <vstack frame="max" alignment="leading" padding="14">
+    <text font="headline">Inbox</text>
+    {android ? <list spacing="4">{rows}</list> : <vstack alignment="leading">{rows.slice(0, 3)}</vstack>}
+  </vstack>
+);
+```
+
+- `spacing` is the gap between rows (default 0). The general props (`padding`, `frame`, `background` and the rest) work as on a stack. The list takes the room its parent offers; rows keep their natural height.
+- `<link>`, `linkurl`, `<button>` and `<toggle>` inside a row work as elsewhere in a widget. A tap anywhere else in the list opens the package in the app.
+- A list shows at most 100 rows. The rows travel to the launcher as images, a few rows per image, at most about 1.5 MB per widget size and theme; rows past that are left out. Rows with photos reach the limit sooner than rows of text.
+- One list per widget scrolls. A second list, or a list inside a rotated or scaled view, is drawn in place and cut off at its bottom edge. The same happens in the app's previews.
+- Timers, GIFs and animations inside a row are drawn as a still picture.
+- The scroll position is kept when the widget is redrawn.
+- On iPhone, and in the web preview, the tag is unknown and shows as `UnknownTagName`. Use the platform check above.
+
+Redrawing a 100-row list took about 1.3 seconds on a Pixel 6 once the app was running. The first drawing after the app process starts is much slower, because nothing is cached yet: 12 seconds was measured with a debug build right after it was installed. A release build was not measured.
+
+#### Wallpaper colors
+
+Android derives a set of Material colors from the wallpaper. A widget names one as `material.<role>` wherever a color is accepted, also with an opacity (`"material.primary,0.5"`) and inside a gradient:
+
+```jsx
+<vstack frame="max" background="material.surfaceContainer">
+  <text color="material.onSurface">Follows the wallpaper</text>
+</vstack>
+```
+
+Roles: `primary`, `onPrimary`, `primaryContainer`, `onPrimaryContainer`, the same four for `secondary` and `tertiary`, `background`, `onBackground`, `surface`, `onSurface`, `surfaceVariant`, `onSurfaceVariant`, `surfaceContainerLowest`, `surfaceContainerLow`, `surfaceContainer`, `surfaceContainerHigh`, `surfaceContainerHighest`, `outline` and `outlineVariant`.
+
+- The light bitmap uses the light value and the dark bitmap the dark one. The script does not have to ask which theme is active.
+- After the wallpaper changes, widgets are redrawn when the app notices the change (while its process is alive) and otherwise at the next background refresh.
+- On iPhone, and in the web preview, the names are unknown and the prop is ignored, so the view keeps its default color.
+
+#### Automation entry point
+
+Other apps, such as Tasker and MacroDroid, can run a package's declared `actions` or redraw its widgets by sending a broadcast. It is off until the user turns it on in Settings → Automation, where the token and the allowed packages are also set.
+
+| Field | Value |
+| --- | --- |
+| Package | `com.atomsprout.scriptwidget` |
+| Class | `com.everettjf.scriptwidget.automation.AutomationReceiver` |
+| Action, to run an action | `com.atomsprout.scriptwidget.automation.RUN_ACTION` |
+| Action, to redraw widgets | `com.atomsprout.scriptwidget.automation.REFRESH` |
+| Extra `package` | The package's name as the Automation screen lists it. Optional for a redraw: without it every allowed package is redrawn |
+| Extra `action` | An `actions[].id` from the package's `widget.json`. Not used for a redraw |
+| Extra `token` | The token shown in Settings → Automation |
+| Extra `value` | Optional `true` or `false`, passed to the action as `action-value` |
+
+Extras are text; a boolean `value` is also accepted. From a shell:
+
+```bash
+adb shell "am broadcast -a com.atomsprout.scriptwidget.automation.RUN_ACTION -p com.atomsprout.scriptwidget --es package 'Automation Counter' --es action increment --es token <token>"
+```
+
+- A request is refused unless automation is on, the token matches and the package was allowed. It can only select an action the manifest declares; it cannot name a function or carry code.
+- The action sees `$getenv("action-source") === "automation"`.
+- At most 30 requests a minute are accepted, wrong ones included.
+- A sender that asks for a result (an ordered broadcast) gets result code -1 and `OK`, or 0 and the reason.
+- The entry point only receives. A script cannot send broadcasts to other apps.
+- Android does not deliver broadcasts to an app the user force-stopped until the app is opened again.
+
+The three bundled examples are under Templates → Android only: Scrolling Checklist, Wallpaper Colors and Automation Counter. Their source is in `Android/app/src/main/assets/Script.android`.
 
 ### Synced documents and iPhone
 
@@ -112,3 +187,5 @@ The package format, manifest, permissions and runtime API version are the same. 
 - Policy is enforced in Kotlin (manifest permissions, hosts, budgets, storage namespaces). JavaScript checks exist only for early errors, because package code can replace built-ins.
 - The compile and layout contexts run trusted code only. The layout context receives the element tree as data.
 - The Studio editor WebView loads bundled assets from a private origin, cannot navigate away and has no file access.
+- The automation receiver is the app's only exported entry point that runs package code. It is closed by default and needs a 128-bit token that is kept out of backups, compared in constant time and never logged, plus a per-package permission from the user. Requests are rate-limited, and every field is treated as untrusted text.
+- A scrolling list uses one mutable tap template, as Android requires for collections. The launcher fills in only a number; the app looks the number up in the taps it saved for that widget, so a launcher cannot supply a link or an action.

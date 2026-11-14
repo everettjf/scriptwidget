@@ -1,0 +1,20 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.android.automation-counter",
+  "name": "Automation Counter",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"],
+  "permissions": ["storage"],
+  "networkDomains": [],
+  "description": "A counter with two declared actions that Tasker and similar apps can run through Settings, Automation.",
+  "category": "utilities",
+  "tags": ["android"],
+  "icon": "number.circle.fill",
+  "actions": [
+    { "id": "increment", "title": "Add one", "systemImage": "plus.circle.fill", "function": "increment" },
+    { "id": "reset", "title": "Reset the counter", "systemImage": "arrow.counterclockwise", "function": "reset" }
+  ]
+}

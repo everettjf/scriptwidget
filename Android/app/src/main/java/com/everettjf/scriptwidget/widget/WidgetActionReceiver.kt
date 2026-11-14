@@ -54,24 +54,27 @@ class WidgetActionReceiver : BroadcastReceiver() {
 class LinkActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val url = intent.getStringExtra(EXTRA_URL).orEmpty()
-        val uri = runCatching { Uri.parse(url) }.getOrNull()
-        val scheme = uri?.scheme?.lowercase()
-        if (uri != null && scheme != null && scheme !in BLOCKED_SCHEMES) {
-            val target = if (scheme == "scriptwidget") Intent(this, MainActivity::class.java).setData(uri) else Intent(Intent.ACTION_VIEW, uri)
+        open(this, intent.getStringExtra(EXTRA_URL).orEmpty())
+        finish()
+    }
+
+    companion object {
+        const val EXTRA_URL = "url"
+
+        /** Opens [url] in the app that handles it. Must be called from an activity the user just started with a tap. */
+        fun open(context: Context, url: String) {
+            val uri = runCatching { Uri.parse(url) }.getOrNull()
+            val scheme = uri?.scheme?.lowercase()
+            if (uri == null || scheme == null || scheme in BLOCKED_SCHEMES) return
+            val target = if (scheme == "scriptwidget") Intent(context, MainActivity::class.java).setData(uri) else Intent(Intent.ACTION_VIEW, uri)
             try {
-                startActivity(target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+                context.startActivity(target.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
             } catch (_: ActivityNotFoundException) {
                 Log.i("ScriptWidget", "No app can open $scheme links")
             } catch (_: SecurityException) {
                 Log.i("ScriptWidget", "Link target refused")
             }
         }
-        finish()
-    }
-
-    companion object {
-        const val EXTRA_URL = "url"
         val BLOCKED_SCHEMES = setOf("file", "content", "intent", "javascript", "data", "android-app", "android.resource", "blob", "about")
     }
 }

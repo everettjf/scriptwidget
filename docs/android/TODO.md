@@ -12,7 +12,9 @@ What is left after 1.2.0 (build 8). It went to Google Play internal testing on 1
 | `$icloud` sync through a remote cloud provider | A cloud account on two Android devices and a shared folder picked in the app |
 | Other vendors' phones (Samsung, Xiaomi and others): launcher sizes, background limits, alarms | The devices, with USB debugging on. Run `Android/scripts/device-test.sh core` and `app` |
 | AI generation from the app's own screen with a live model, and OpenAI-compatible or local providers | A key typed into Settings → AI by its owner. The loop itself passed against Anthropic in `AiLiveModelTest` |
-| `.github/workflows/android.yml` | It has never run on GitHub |
+| Wallpaper colors after the wallpaper changes | Change the wallpaper or the color theme on a phone with a `material.` widget placed, and check that the widget follows. The colors themselves, in light and dark, were checked on the Pixel 6 |
+| The automation entry point from Tasker or MacroDroid | One of those apps installed, with a Send Intent task. It was exercised with `adb shell am broadcast` and from a device test only |
+| Scrolling lists on other launchers and on Android 15 and 16 | The emulators and other vendors' phones. Lists were checked on the Pixel 6 (Android 17, Pixel Launcher) only |
 
 ## Google Play, once the new developer account is verified
 
@@ -30,8 +32,12 @@ What is left after 1.2.0 (build 8). It went to Google Play internal testing on 1
 
 ## Ideas that only Android can do (not started, new scope)
 
-- Scrollable list widgets.
-- An automation entry point (a broadcast other apps can send to run a package action), in place of Shortcuts.
+Scrolling lists, wallpaper colors and the automation entry point are done; see [Only on Android](README.md#only-on-android).
+
+
+- AI generation and the Studio completions do not know `<list>` and the `material.` colors yet; the reference they use is the iOS one.
+- A way for a script to hand data to an action (a row's own identifier), so a list row can do more than toggle a stored value.
+- Sending broadcasts from a script to automation apps, after a separate security review.
 - Faster refresh with exact alarms or a foreground service, at a battery and permission cost.
 - Notification content as a data source, after a separate privacy review.
 - Wear OS tiles, and distributing an APK outside Google Play.

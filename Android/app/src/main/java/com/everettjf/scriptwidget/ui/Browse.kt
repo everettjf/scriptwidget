@@ -7,7 +7,9 @@ import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -184,8 +186,8 @@ fun TemplatesScreen(navigation: NavController) {
                         query, { query = it.take(60) }, singleLine = true, modifier = Modifier.fillMaxWidth(),
                         leadingIcon = { Icon(Icons.Default.Search, null) }, placeholder = { Text("Search templates") },
                     )
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        for ((key, label) in listOf("template" to "Widgets", "component" to "Components", "api" to "API examples")) {
+                    Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for ((key, label) in listOf("template" to "Widgets", "android" to "Android only", "component" to "Components", "api" to "API examples")) {
                             FilterChip(selected = group == key, onClick = { group = key }, label = { Text(label) })
                         }
                     }

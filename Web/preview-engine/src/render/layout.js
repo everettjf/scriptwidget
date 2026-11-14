@@ -417,6 +417,32 @@ export class StackNode extends Node {
   }
 }
 
+/// A vertically scrolling list (Android). It takes the size it is offered and
+/// stacks its rows at their natural heights, past its own bottom edge when
+/// they do not all fit; the host scrolls them.
+export class ListNode extends Node {
+  constructor(children, spacing) { super(); this.children = children; this.spacing = Math.max(0, spacing); this.contentHeight = 0; }
+  size(pw, ph) {
+    const offered = (value) => value !== null && value !== Infinity;
+    if (offered(pw) && offered(ph)) return [pw, ph];
+    const sizes = this.children.map((child) => child.size(offered(pw) ? pw : null, null));
+    const width = offered(pw) ? pw : sizes.reduce((widest, size) => Math.max(widest, size[0]), 0);
+    const height = offered(ph) ? ph : sizes.reduce((sum, size) => sum + size[1], 0) + this.spacing * Math.max(0, sizes.length - 1);
+    return [width, height];
+  }
+  place(x, y, width, height) {
+    super.place(x, y, width, height);
+    let cursor = 0;
+    this.children.forEach((child, index) => {
+      if (index > 0) cursor += this.spacing;
+      const [w, h] = child.size(width, null);
+      child.place(0, cursor, w, h);
+      cursor += h;
+    });
+    this.contentHeight = cursor;
+  }
+}
+
 function mergedEdge(children, side) {
   // The largest text edge wins; SF Symbol edges count only without text.
   const edges = children.map((child) => child.edge(side)).filter(Boolean);

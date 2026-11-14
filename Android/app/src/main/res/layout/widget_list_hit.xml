@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    A tap target inside a list row. The clickable view must not be the root of its own layout: on the
+    root of a layout the system only records the tap for the row as a whole and sets no click listener.
+    It is not focusable: a list stops reporting taps on an item that holds a focusable view, and a tap
+    beside the target must still open the package.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <FrameLayout
+        android:id="@+id/widget_hit"
+        android:layout_width="1dp"
+        android:layout_height="1dp"
+        android:background="@drawable/widget_hit_background"
+        android:clickable="true"
+        android:focusable="false" />
+</FrameLayout>

@@ -1,0 +1,16 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.android.wallpaper-colors",
+  "name": "Wallpaper Colors",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.3",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge"],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "Colors that follow the wallpaper through the Material color names. iPhone keeps its default colors.",
+  "category": "utilities",
+  "tags": ["android"],
+  "icon": "paintpalette.fill"
+}

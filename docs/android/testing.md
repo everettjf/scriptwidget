@@ -18,6 +18,8 @@ Build 8 (the new icon and the reworked UI, see the [UI review](ui-review.md)) wa
 
 The release build of build 8 (minified, signed with the upload key) was installed on the Pixel 6 as an APK: it started, drew the starter widgets and the template previews, and logged no crash. This replaced the debug build on that phone and removed its placed widgets. The bundle itself has not been installed through Google Play.
 
+The three Android-only features (scrolling `<list>`, `material.` colors, the automation entry point; 14 November 2026, same version and build number as build 8) were run on the Pixel 6 only: 482 JVM tests, 199 preview-engine tests, 30 core device tests and 64 app device tests passed. In the app suite the live-model, push-wait and picked-folder tests skipped, as before. The emulators and other phones were not run. What was checked by hand is under [Android-only features](#android-only-features-checked-by-hand-on-the-pixel-6).
+
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed (the example.com fetch check was skipped on the last run: the site answered 403; it had returned 200 on earlier runs) | 56 passed |
@@ -52,6 +54,19 @@ Two live-service tests skip instead of failing when the remote service does not 
 - A Live Update notification with title, detail, progress and its End button.
 - Location: "Refresh position" stores a real position.
 - The release build (code and resource shrinking on) installs and redraws widgets.
+
+## Android-only features, checked by hand on the Pixel 6
+
+Android 17, Pixel Launcher, debug build, 14 November 2026.
+
+- **Scrolling list**: the Scrolling Checklist template as a large widget scrolled, kept its position after a redraw, and its row toggles updated both the row and the count in the header. A test package with 100 rows showed all 100 and a toggle on row 98 worked. In a second test package a `<link>` row opened the browser, a `linkurl` row and a plain row opened the app, a `<button>` row ran its action, and a tap on the header outside the list opened the app. Light and dark mode both drew.
+- **Redraw time of the 100-row list**: about 1.3 seconds once the app was running (layout 0.5 s, drawing 0.6 s), and 12 to 13 seconds for the first drawing right after a debug build was installed. Before row images were cached and encoded in parallel a redraw took about 5 seconds.
+- **Wallpaper colors**: the Wallpaper Colors template drew the phone's Material colors in light and in dark mode. The wallpaper was not changed, so the redraw after a wallpaper change was not seen.
+- **Automation**: turned on in Settings → Automation and the Automation Counter package allowed. With `adb shell am broadcast`: a correct request ran the action and the widget showed the new count and "Changed by automation"; it also worked addressed by package only, with a boolean `value`, and with the app process killed first. Refused, with the documented reason: automation off, a wrong token, a missing token, a package that was not allowed, an unknown package, a name with `../`, an action the manifest does not declare, and a `value` that is not a boolean. Of 36 requests sent in one burst, 30 were accepted and 6 refused as too many. Tasker and MacroDroid themselves were not used.
+
+Three problems showed up on the phone and are fixed: the system accepts a collection only in a widget's root layout; a tap target that is the root of its own layout gets no click listener, and a focusable one stops taps beside it; and on Android 15 and later a list fed by a `RemoteViewsService` is packed into the update and cut off at about 800 KB (17 of 20 rows were shown, and none of 100), so the rows are now sent as collection items in images large enough to travel by reference.
+
+Not checked: a list in landscape, in a small or medium widget on the home screen, after resizing the widget, with rows that hold photos, on other launchers, on Android 15 and 16, and through Google Play.
 
 ## Not tested
 

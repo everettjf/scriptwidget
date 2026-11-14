@@ -74,21 +74,39 @@ object WidgetUpdater {
         // "Remove animations" in system accessibility settings keeps GIFs on their first frame.
         val animate = runCatching { android.provider.Settings.Global.getFloat(context.contentResolver, android.provider.Settings.Global.ANIMATOR_DURATION_SCALE, 1f) }.getOrDefault(1f) > 0f
         val views = LinkedHashMap<SizeF, RemoteViews>()
+        val lists = WidgetLists.Update()
         var bitmapBytes = 0L
+        var layoutMilliseconds = 0L
+        var paintMilliseconds = 0L
         for (size in sizes) {
-            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES, liveGifs = animate, liveMotion = animate)
-            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark, liveGifs = animate, liveMotion = animate)
+            val output = runtime.render(request, result, size.width, size.height, density, budget, LIVE_DATE_STYLES, liveGifs = animate, liveMotion = animate, liveLists = true)
+            val other = runtime.render(otherRequest, otherResult, size.width, size.height, density, budget, LIVE_DATE_STYLES, darkMode = !dark, liveGifs = animate, liveMotion = animate, liveLists = true)
             // Identical drawings need one bitmap; otherwise the launcher picks by its own theme.
             val themed = if (other.bitmap.sameAs(output.bitmap)) null else other
             bitmapBytes += output.bitmap.allocationByteCount + (themed?.bitmap?.allocationByteCount ?: 0)
-            views[size] = build(context, appWidgetId, installed, output, size, themed, dark)
+            layoutMilliseconds += output.layoutMilliseconds + other.layoutMilliseconds
+            paintMilliseconds += output.paintMilliseconds + other.paintMilliseconds
+            val list = output.listSlots.firstOrNull()
+            val otherList = other.listSlots.firstOrNull()
+            // The other theme's rows are used only when they are cut into the same pieces; otherwise both themes show this one.
+            val drawn = list?.let { current ->
+                val counterpart = otherList?.takeIf { it.pieces.size == current.pieces.size }
+                when {
+                    counterpart == null -> WidgetLists.Drawn(current, null)
+                    dark -> WidgetLists.Drawn(counterpart, current)
+                    else -> WidgetLists.Drawn(current, counterpart)
+                }
+            }
+            views[size] = build(context, appWidgetId, installed, output, size, themed, dark, drawn, lists)
         }
+        // Saved first: a tap on the new rows must find what it does.
+        WidgetLists.saveTaps(context, appWidgetId, lists)
         val combined = if (views.size == 1) views.values.first() else RemoteViews(views)
         manager.updateAppWidget(appWidgetId, combined)
         AppServices.widgets.markUpdated(appWidgetId, System.currentTimeMillis())
         result.nextTimelineTransition?.let { WidgetScheduler.scheduleAt(context, appWidgetId, it) }
         Log.i(TAG, "widget $appWidgetId ${installed.name} $family sizes=${sizes.joinToString { "${it.width.toInt()}x${it.height.toInt()}" }} " +
-            "error=${result.execution.error?.kind} exec=${result.execution.elapsedMilliseconds}ms bitmaps=${bitmapBytes / 1024}KiB total=${(System.nanoTime() - started) / 1_000_000}ms")
+            "error=${result.execution.error?.kind} exec=${result.execution.elapsedMilliseconds}ms layout=${layoutMilliseconds}ms paint=${paintMilliseconds}ms bitmaps=${bitmapBytes / 1024}KiB total=${(System.nanoTime() - started) / 1_000_000}ms")
         return combined
     }
 
@@ -132,7 +150,10 @@ object WidgetUpdater {
         return listOf(when (family) { "small" -> SizeF(160f, 160f); "large" -> SizeF(330f, 330f); "extraLarge" -> SizeF(680f, 330f); else -> SizeF(330f, 160f) })
     }
 
-    private fun build(context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF, other: RenderOutput? = null, dark: Boolean = false): RemoteViews {
+    private fun build(
+        context: Context, appWidgetId: Int, installed: InstalledPackage, output: RenderOutput, size: SizeF, other: RenderOutput? = null, dark: Boolean = false,
+        list: WidgetLists.Drawn? = null, lists: WidgetLists.Update = WidgetLists.Update(),
+    ): RemoteViews {
         val views = RemoteViews(context.packageName, R.layout.widget_root)
         if (other == null) views.setImageViewBitmap(R.id.widget_image, output.bitmap.asShared())
         else {
@@ -166,6 +187,18 @@ object WidgetUpdater {
             views.addView(R.id.widget_dynamic, flipper)
         }
         for (slot in output.motionSlots) motion(context, slot, size)?.let { views.addView(R.id.widget_dynamic, it) }
+        views.setViewVisibility(R.id.widget_list, if (list != null) android.view.View.VISIBLE else android.view.View.GONE)
+        if (list != null) {
+            val bounds = output.listSlots.first().bounds
+            val left = bounds.left.coerceIn(0f, size.width)
+            val top = bounds.top.coerceIn(0f, size.height)
+            views.setViewLayoutMargin(R.id.widget_list, RemoteViews.MARGIN_LEFT, left, TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutMargin(R.id.widget_list, RemoteViews.MARGIN_TOP, top, TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutWidth(R.id.widget_list, (bounds.right.coerceAtMost(size.width) - left).coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            views.setViewLayoutHeight(R.id.widget_list, (bounds.bottom.coerceAtMost(size.height) - top).coerceAtLeast(1f), TypedValue.COMPLEX_UNIT_DIP)
+            views.setRemoteAdapter(R.id.widget_list, WidgetLists.items(context, list, lists))
+            views.setPendingIntentTemplate(R.id.widget_list, WidgetLists.tapTemplate(context, appWidgetId))
+        }
         views.removeAllViews(R.id.widget_overlay)
         for ((index, region) in output.hitRegions.take(MAXIMUM_HIT_REGIONS).withIndex()) {
             val intent = pendingIntent(context, appWidgetId, index, region.interaction) ?: continue

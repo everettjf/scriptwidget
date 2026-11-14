@@ -168,6 +168,20 @@
             android:taskAffinity="" android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!--
+            Automation entry point for Tasker, MacroDroid and similar apps. Exported so they can reach it;
+            it ignores everything unless the user turned automation on in the app, the sender includes the
+            token shown there, and the package was allowed. See automation/Automation.kt.
+        -->
+        <receiver android:name=".automation.AutomationReceiver" android:exported="true">
+            <intent-filter>
+                <action android:name="${applicationId}.automation.RUN_ACTION" />
+                <action android:name="${applicationId}.automation.REFRESH" />
+            </intent-filter>
+        </receiver>
+        <!-- A tap inside a scrolling <list>; invisible, it opens the link or runs the action and finishes. -->
+        <activity android:name=".widget.ListTapActivity" android:exported="false" android:excludeFromRecents="true"
+            android:noHistory="true" android:taskAffinity="" android:theme="@android:style/Theme.NoDisplay" />
+        <!--
             Package controls as Quick Settings tiles. Android needs tiles declared here, so eight slots exist
             and the Controls screen assigns a package control to each. Exported because the system binds them;
             BIND_QUICK_SETTINGS_TILE keeps every other app out.

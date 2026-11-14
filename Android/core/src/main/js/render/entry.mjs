@@ -157,6 +157,8 @@ export async function render(nativeCall, requestText) {
     resolveImageURL: (url) => (/^data:image\/(png|jpeg|webp|gif);base64,/.test(url) || remote.has(url) ? url : null),
     // Android draws the first frame of a GIF.
     gifPreparer: async (url) => ({ url, firstFrame: url, info: {} }),
+    // The scrolling <list> and the wallpaper-based "material.<role>" colors.
+    android: { colors: request.colors ?? null },
   });
   return JSON.stringify({ width: size.width, height: size.height, root: serialize(element), diagnostics });
 }

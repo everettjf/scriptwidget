@@ -53,6 +53,54 @@ class GifSlot(val bounds: RectF, val source: String)
  */
 class MotionSlot(val description: JSONObject, val anchor: android.graphics.PointF, val bitmap: Bitmap, val sizePoints: Float)
 
+/**
+ * A stretch of a scrolling list as one image: one or more whole rows, drawn at
+ * the list's width. [hitRegions] are in points from the piece's top-left corner.
+ */
+class ListPiece(val png: ByteArray, val heightPoints: Float, val hitRegions: List<HitRegion>)
+
+/**
+ * A `<list>` the host scrolls with its own views. [bounds] is the visible
+ * area in widget points; the rows are left out of the widget bitmap.
+ * [truncated] is true when rows were dropped to stay inside the image budget.
+ */
+class ListSlot(val bounds: RectF, val pieces: List<ListPiece>, val truncated: Boolean)
+
+private class PendingPiece(val png: java.util.concurrent.Future<ByteArray>, val height: Float, val hitRegions: List<HitRegion>)
+
+/**
+ * Turns list pieces into PNG data. Encoding is the slow part of drawing a
+ * long list, so it runs on several threads, and a piece whose pixels did not
+ * change since an earlier drawing reuses the data made then.
+ */
+private object PieceEncoder {
+    private val threads = Runtime.getRuntime().availableProcessors().coerceIn(2, 4)
+    private val executor = java.util.concurrent.Executors.newFixedThreadPool(threads) { runnable -> Thread(runnable, "scriptwidget-list-encode").apply { isDaemon = true } }
+    /** Bitmaps waiting to be encoded hold their pixels; the painter waits rather than queue more than this. */
+    private val waiting = java.util.concurrent.Semaphore(threads * 2)
+    private val cache = object : android.util.LruCache<String, ByteArray>(12 * 1024 * 1024) {
+        override fun sizeOf(key: String, value: ByteArray): Int = value.size
+    }
+
+    /** Takes ownership of [bitmap] and recycles it. */
+    fun encode(bitmap: Bitmap): java.util.concurrent.Future<ByteArray> {
+        waiting.acquireUninterruptibly()
+        return executor.submit<ByteArray> {
+            try {
+                val pixels = java.nio.ByteBuffer.allocate(bitmap.byteCount)
+                bitmap.copyPixelsToBuffer(pixels)
+                val digest = java.security.MessageDigest.getInstance("SHA-256").digest(pixels.array())
+                val key = "${bitmap.width}x${bitmap.height}:" + digest.joinToString("") { "%02x".format(it) }
+                synchronized(cache) { cache.get(key) } ?: java.io.ByteArrayOutputStream(64 * 1024).also { bitmap.compress(Bitmap.CompressFormat.PNG, 100, it) }.toByteArray()
+                    .also { synchronized(cache) { cache.put(key, it) } }
+            } finally {
+                bitmap.recycle()
+                waiting.release()
+            }
+        }
+    }
+}
+
 /** Supplies decoded images for `src` values: `res:<path>`, data URLs and fetched remote URLs. */
 fun interface ImageSource {
     fun bitmap(source: String, maximumPixels: Int): Bitmap?
@@ -76,6 +124,12 @@ class DomPainter(
     val motionSlots = ArrayList<MotionSlot>()
     /** Draw animated views into [motionSlots] instead of the widget bitmap. */
     var liveMotion: Boolean = false
+    /** Filled when [liveLists] is on. */
+    val listSlots = ArrayList<ListSlot>()
+    /** Draw the rows of the first `<list>` into [listSlots] instead of the widget bitmap. */
+    var liveLists: Boolean = false
+    /** Inside a list row or a moving view everything is drawn into the bitmap; nothing is handed to the host. */
+    private var staticDepth = 0
     private var pixelScale = 1f
     val hitRegions = ArrayList<HitRegion>()
     val dateSlots = ArrayList<DateSlot>()
@@ -95,6 +149,8 @@ class DomPainter(
         dateSlots.clear()
         gifSlots.clear()
         motionSlots.clear()
+        listSlots.clear()
+        staticDepth = 0
         pixelScale = scale
         canvas.save()
         canvas.scale(scale, scale)
@@ -117,7 +173,7 @@ class DomPainter(
             return
         }
 
-        if (liveMotion && motionSlots.size < MAXIMUM_MOTION_SLOTS) {
+        if (liveMotion && staticDepth == 0 && motionSlots.size < MAXIMUM_MOTION_SLOTS) {
             val motion = node.dataset["swAnimation"]?.let { runCatching { JSONObject(it) }.getOrNull() }
             if (motion != null && isSupportedMotion(motion) && recordMotion(node, motion, parentWidth, parentHeight, inherited, toWidget)) return
         }
@@ -214,7 +270,8 @@ class DomPainter(
         val saved = ArrayList(hitRegions)
         val opacity = style["opacity"]?.toFloatOrNull()?.coerceIn(0f, 1f) ?: 1f
         if (opacity < 1f) layer.saveLayerAlpha(null, (opacity * 255f + 0.5f).toInt())
-        content(layer, node, RectF(0f, 0f, width, height), inherited, Matrix())
+        staticDepth += 1
+        try { content(layer, node, RectF(0f, 0f, width, height), inherited, Matrix()) } finally { staticDepth -= 1 }
         hitRegions.clear(); hitRegions.addAll(saved)
         val point = floatArrayOf(x + anchorX, y + anchorY)
         toWidget.mapPoints(point)
@@ -258,7 +315,7 @@ class DomPainter(
             val parsed = runCatching { JSONObject(description) }.getOrNull()
             val style = parsed?.optString("style")
             // A clock view shows the current time, so only a <date> of "now" may use it.
-            if (parsed != null && style in liveDateStyles && (style != "time" || parsed.optBoolean("live"))) activeDate = parsed
+            if (parsed != null && staticDepth == 0 && style in liveDateStyles && (style != "time" || parsed.optBoolean("live"))) activeDate = parsed
         }
         val date = activeDate
         if (date != null && style.containsKey("fontSize")) {
@@ -273,15 +330,95 @@ class DomPainter(
         }
         if (node.tag == "img") {
             val source = node.attributes["src"].orEmpty()
-            if (liveGifs && source.startsWith("res:") && source.endsWith(".gif", ignoreCase = true) && node.style["objectFit"] == "contain") {
+            if (liveGifs && staticDepth == 0 && source.startsWith("res:") && source.endsWith(".gif", ignoreCase = true) && node.style["objectFit"] == "contain") {
                 val mapped = RectF(bounds)
                 toWidget.mapRect(mapped)
                 gifSlots += GifSlot(mapped, source)
             } else image(canvas, node, bounds)
         } else if (node.text != null && node.children.isEmpty()) drawText(canvas, node.text, style, bounds, context)
-        for (child in node.children) element(canvas, child, width, height, context, toWidget)
+        val list = node.dataset["swList"]
+        when {
+            list == null -> for (child in node.children) element(canvas, child, width, height, context, toWidget)
+            liveLists && staticDepth == 0 && listSlots.isEmpty() && isTranslation(toWidget) && width >= 1f && height >= 1f ->
+                recordList(node, list, bounds, context, toWidget)
+            else -> {
+                // Drawn in place: the rows that fit are visible, the rest are cut off, and so are their tap targets.
+                val firstHit = hitRegions.size
+                val visible = RectF(bounds).also { toWidget.mapRect(it) }
+                canvas.save()
+                canvas.clipRect(bounds)
+                for (child in node.children) element(canvas, child, width, height, context, toWidget)
+                canvas.restore()
+                val inside = hitRegions.subList(firstHit, hitRegions.size).filter { it.bounds.intersect(visible) }
+                while (hitRegions.size > firstHit) hitRegions.removeAt(hitRegions.size - 1)
+                hitRegions += inside
+            }
+        }
         activeDate = previousDate
         if (clips) canvas.restore()
+    }
+
+    /** A scrolling view cannot be rotated or scaled, so only a list that is merely moved can scroll. */
+    private fun isTranslation(matrix: Matrix): Boolean {
+        val values = FloatArray(9).also { matrix.getValues(it) }
+        return values[Matrix.MSCALE_X] == 1f && values[Matrix.MSCALE_Y] == 1f && values[Matrix.MSKEW_X] == 0f && values[Matrix.MSKEW_Y] == 0f &&
+            values[Matrix.MPERSP_0] == 0f && values[Matrix.MPERSP_1] == 0f
+    }
+
+    /**
+     * Draws the rows of [node] as a few images, each holding consecutive whole
+     * rows. A row reaches down to the top of the next one, so spacing is part
+     * of it. Several rows share an image because a widget update has room for
+     * a limited number of small images but passes larger ones by reference.
+     */
+    private fun recordList(node: DomNode, description: String, bounds: RectF, context: TextContext, toWidget: Matrix) {
+        val mapped = RectF(bounds)
+        toWidget.mapRect(mapped)
+        val rows = node.children.filter { it.dataset.containsKey("swListRow") }
+        val tops = rows.map { Css.pixels(it.style["top"]) ?: 0f }
+        val contentHeight = runCatching { JSONObject(description).optDouble("contentHeight", 0.0).toFloat() }.getOrDefault(0f)
+        val bottoms = rows.indices.map { index ->
+            if (index + 1 < rows.size) tops[index + 1] else max(contentHeight, tops[index] + (Css.pixels(rows[index].style["height"]) ?: 0f))
+        }
+        val width = bounds.width()
+        val pixelWidth = ceil(width * pixelScale).toInt().coerceAtLeast(1)
+        val saved = ArrayList(hitRegions)
+        val result = ArrayList<ListPiece>()
+        val pending = ArrayList<PendingPiece>()
+        var bytes = 0L
+        var truncated = false
+        staticDepth += 1
+        try {
+            var first = 0
+            while (first < rows.size) {
+                // Take rows until the piece is tall enough, without passing the tallest image a view can show.
+                var last = first
+                while (last + 1 < rows.size && bottoms[last] - tops[first] < MINIMUM_PIECE_POINTS &&
+                    ceil((bottoms[last + 1] - tops[first]) * pixelScale) <= MAXIMUM_PIECE_PIXELS) last += 1
+                val top = tops[first]
+                val height = max(1f, bottoms[last] - top)
+                val pixelHeight = ceil(height * pixelScale).toInt()
+                if (pixelHeight > MAXIMUM_PIECE_PIXELS) { truncated = true; break }
+                val bitmap = Bitmap.createBitmap(pixelWidth, pixelHeight, Bitmap.Config.ARGB_8888)
+                val layer = Canvas(bitmap)
+                layer.scale(pixelScale, pixelScale)
+                layer.translate(0f, -top)
+                hitRegions.clear()
+                for (index in first..last) element(layer, rows[index], width, max(contentHeight, bounds.height()), context, Matrix().apply { setTranslate(0f, -top) })
+                pending += PendingPiece(PieceEncoder.encode(bitmap), height, hitRegions.toList())
+                first = last + 1
+            }
+            for (piece in pending) {
+                val encoded = piece.png.get()
+                if (truncated || bytes + encoded.size > MAXIMUM_LIST_BYTES) { truncated = true; continue }
+                bytes += encoded.size
+                result += ListPiece(encoded, piece.height, piece.hitRegions)
+            }
+        } finally {
+            staticDepth -= 1
+            hitRegions.clear(); hitRegions.addAll(saved)
+        }
+        listSlots += ListSlot(mapped, result, truncated)
     }
 
     private fun textContext(style: Map<String, String>, inherited: TextContext): TextContext {
@@ -442,7 +579,15 @@ class DomPainter(
         return matrix
     }
 
-    private companion object { const val MAXIMUM_MOTION_SLOTS = 8 }
+    private companion object {
+        const val MAXIMUM_MOTION_SLOTS = 8
+        /** A piece holds whole rows until it is at least this tall. */
+        const val MINIMUM_PIECE_POINTS = 160f
+        /** One piece is one image; taller than this it could not be uploaded as a texture. */
+        const val MAXIMUM_PIECE_PIXELS = 2048
+        /** All encoded pieces of one list together. */
+        const val MAXIMUM_LIST_BYTES = 1536L * 1024
+    }
 
     @Suppress("unused") private val unusedFilter = PorterDuffColorFilter(Color.BLACK, PorterDuff.Mode.SRC_IN)
 }

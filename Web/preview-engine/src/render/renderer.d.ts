@@ -22,6 +22,9 @@ export function renderWidget(treeJSON: string, options?: {
   animationElapsed?: number | null;
   reduceTransparency?: boolean;
   reduceMotion?: boolean;
+  /// Android host only: turns on the scrolling <list> and the "material.<role>" color names.
+  /// `colors` maps each role to [red, green, blue, alpha] (0-255, alpha 0-1) for both appearances.
+  android?: { colors?: { light?: Record<string, number[]>; dark?: Record<string, number[]> } | null } | null;
 }): Promise<RenderedWidget>;
 
 export function lineHeight(size: number): number;
