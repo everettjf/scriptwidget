@@ -12,6 +12,8 @@ What was run before handing this build to testers, and what was not.
 
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
+After the application ID changed to `com.atomsprout.scriptwidget` (13 November 2026) the JVM tests passed, the debug and release builds carried the new package name, and the app suite passed on the Android 15 emulator (60 tests; the push delivery and picked-folder tests skip there). One test had assumed that class names start with the application ID and was corrected. With the new ID the core suite, the Pixel 6, the Android 16 emulator and push delivery have not been run.
+
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed (the example.com fetch check was skipped on the last run: the site answered 403; it had returned 200 on earlier runs) | 56 passed |

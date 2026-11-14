@@ -4,29 +4,31 @@ Everything needed to create the Play Console entry and an internal test release.
 
 ## Status (13 November 2026)
 
-- The app exists in Play Console under the AtomSprout developer account, as a draft: ScriptWidget, `com.everettjf.scriptwidget`, English (United States), App, Free.
-- Internal testing has the email list "ScriptWidget internal" selected, with `evilret@gmail.com` and `atomsprout@googlegroups.com`.
-- The default store listing is saved as a draft with the text below, the icon, the feature graphic and the six phone screenshots.
-- Internal testing release "1.2.0 (6)" (version code 6) was published on 13 November 2026 and is available to internal testers. Play shows the app under a temporary name until it is reviewed. Testers join from the link under Internal testing → Testers → Copy link, or `https://play.google.com/apps/testing/com.everettjf.scriptwidget`.
-- Release "1.2.0 (7)" (version code 7) replaced it on the same day. It is the same app built with the Firebase project, so push-triggered refresh is on.
-- Installing from Play on a tester's device has not been checked.
-- "Finish setting up your app" is complete (13 November 2026). Saved, not yet sent for review:
-  - Privacy policy `https://atomsprout.com/scriptwidget/privacy/`; sign in details: no part of the app is restricted; ads: none; advertising ID: not used; government app: no; financial features: none.
-  - Target audience: 18 and over.
-  - Content rating (IARC, "All Other App Types"): the app features online content (Gallery, AI output, widgets' network content); every other answer is No. Rating: Everyone / All ages. Contact for ratings: `atomsprout@gmail.com`.
-  - Data safety: collects "Device or other IDs" (the Firebase Cloud Messaging token) for app functionality, required, not ephemeral, encrypted in transit, not shared. No account creation. The data deletion question is left unanswered (optional).
-  - Health apps: features "Activity and fitness", "Nutrition and weight management", "Sleep management", with a written use for each of the nine Health Connect permissions.
-  - Category Tools; store contact `atomsprout@gmail.com`, website `https://atomsprout.com/scriptwidget/`.
-  - Store listing saved with the app icon and feature graphic labelled as created with AI. The screenshots are device captures and are not labelled.
-- Play sends these for review with the first closed testing release. Production access needs a closed test with at least 12 opted-in testers for at least 14 days.
-- The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update must be signed with this key.
+- There is no app in Play Console at the moment. The first one (`com.everettjf.scriptwidget`, under the AtomSprout developer account, with internal releases 1.2.0 (6) and (7)) was deleted by the owner.
+- A new developer account has been created; Google is verifying the owner's identity, which can take a few days. Nothing can be uploaded until then.
+- The package name is now `com.atomsprout.scriptwidget`. Only the application ID changed; the Kotlin namespace is still `com.everettjf.scriptwidget`.
+- Everything below has to be entered again in the new account: the app, testers, the store listing, the App content declarations and a release. The answers used the first time are kept in "Answers used in the first Play Console setup".
+- The Firebase project `scriptwidget-8ac0e` has an Android app registered for the old package name only. Register `com.atomsprout.scriptwidget` there and put its app ID in `Android/firebase.properties`; push has not been tested with the new package name.
+- The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. It can be reused for the new app. Keep a backup of both: every update must be signed with this key.
+
+## Answers used in the first Play Console setup
+
+- Testers: an email list "ScriptWidget internal" with `evilret@gmail.com` and `atomsprout@googlegroups.com`. Internal testing matches individual Google accounts, so members of the group may need their own addresses listed.
+- Privacy policy `https://atomsprout.com/scriptwidget/privacy/`; sign in details: no part of the app is restricted; ads: none; advertising ID: not used; government app: no; financial features: none.
+- Target audience: 18 and over.
+- Content rating (IARC, "All Other App Types"): the app features online content (Gallery, AI output, widgets' network content); every other answer is No. Rating: Everyone / All ages. Contact for ratings: `atomsprout@gmail.com`.
+- Data safety: collects "Device or other IDs" (the Firebase Cloud Messaging token) for app functionality, required, not ephemeral, encrypted in transit, not shared. No account creation. The data deletion question was left unanswered (optional).
+- Health apps: features "Activity and fitness", "Nutrition and weight management", "Sleep management", with a written use for each of the nine Health Connect permissions.
+- Category Tools; store contact `atomsprout@gmail.com`, website `https://atomsprout.com/scriptwidget/`.
+- Store listing with the app icon and feature graphic labelled as created with AI. The screenshots are device captures and are not labelled.
+- Play sends the listing and declarations for review with the first closed testing release. Production access needs a closed test with at least 12 opted-in testers for at least 14 days.
 
 ## App
 
 | Field | Value |
 | --- | --- |
 | App name | ScriptWidget |
-| Package name | `com.everettjf.scriptwidget` (cannot change after upload) |
+| Package name | `com.atomsprout.scriptwidget` (cannot change after upload) |
 | Default language | English (United States) |
 | App or game | App |
 | Free or paid | Free |

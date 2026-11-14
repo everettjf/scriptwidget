@@ -11,7 +11,8 @@ android {
     ndkVersion = "28.1.13356709"
 
     defaultConfig {
-        applicationId = "com.everettjf.scriptwidget"
+        // The Play package name. The Kotlin namespace above keeps its original name.
+        applicationId = "com.atomsprout.scriptwidget"
         minSdk = 35
         targetSdk = 36
         versionCode = 7

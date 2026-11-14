@@ -28,7 +28,7 @@ import org.junit.runner.RunWith
 /**
  * Binds real app widgets through an AppWidgetHost and inflates the
  * RemoteViews the updater sends, the way a launcher does. Needs
- * `adb shell appwidget grantbind --package com.everettjf.scriptwidget --user 0`
+ * `adb shell appwidget grantbind --package com.atomsprout.scriptwidget --user 0`
  * once (scripts/device-test.sh does it).
  */
 @RunWith(AndroidJUnit4::class)

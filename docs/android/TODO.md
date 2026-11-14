@@ -1,6 +1,6 @@
 # Android to-do
 
-What is left after 1.2.0 (build 7) went to Google Play internal testing on 13 November 2026. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
+What is left after 1.2.0 (build 7). It went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and a new developer account is waiting for identity verification. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
 
 ## Not verified yet
 
@@ -14,13 +14,14 @@ What is left after 1.2.0 (build 7) went to Google Play internal testing on 13 No
 | AI generation from the app's own screen with a live model, and OpenAI-compatible or local providers | A key typed into Settings → AI by its owner. The loop itself passed against Anthropic in `AiLiveModelTest` |
 | `.github/workflows/android.yml` | It has never run on GitHub |
 
-## Before closed testing or production
+## Google Play, once the new developer account is verified
 
-- Create a closed testing track, add testers and a release, and send it for review. This is also what sends the store listing and the App content declarations (filled in on 13 November 2026, see the listing kit) to review.
-- Production access needs at least 12 testers opted in to the closed test for at least 14 days.
-- Declare trader status for the developer account (Play asks for it by February 2027).
+- Create the app as `com.atomsprout.scriptwidget`, add testers, upload a release and fill in the store listing and App content again. The answers are in the listing kit.
+- Register `com.atomsprout.scriptwidget` as an Android app in the Firebase project `scriptwidget-8ac0e`, update `Android/firebase.properties`, and run `PushDeliveryTest` again. Push is untested with the new package name.
+- Run the instrumented tests on the Pixel 6 with the new package name. After the rename the JVM tests, the builds and the app suite on the Android 15 emulator were run; the core suite was not.
+- Send the first closed testing release for review. Production access needs at least 12 testers opted in to the closed test for at least 14 days.
+- Declare trader status for the developer account if Play asks for it.
 - Decide whether to keep Play's automatic protection (installer check), which matters if an APK is also distributed.
-- `atomsprout@googlegroups.com` is in the internal testers' email list. Internal testing matches individual Google accounts, so members of the group may not be able to join through it; add their addresses or use a closed test with the group.
 
 ## Housekeeping
 

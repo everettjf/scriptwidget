@@ -182,7 +182,9 @@ class SurfacesTest {
         assertNotNull(resolved)
         assertEquals("Focus", resolved!!.control.title)
         assertEquals("${installed.displayName} · Deep work", resolved.subtitle)
-        assertEquals("${context.packageName}.actions.ControlTileService$slot", ControlTiles.component(context, slot).className)
+        // The class keeps the Kotlin namespace; only the component's package follows the application ID.
+        assertEquals("${ControlTiles::class.java.`package`!!.name}.ControlTileService$slot", ControlTiles.component(context, slot).className)
+        assertEquals(context.packageName, ControlTiles.component(context, slot).packageName)
 
         AppServices.library.delete(installed.name)
         assertNull(ControlTiles.resolve(context, slot))

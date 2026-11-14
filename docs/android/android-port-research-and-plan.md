@@ -344,7 +344,7 @@ iOS 版功能面很宽，一次做完会把首版拖得很久，所以按三个�
 
 **版本与品牌**
 - Android 版本号独立于 iOS，但**运行时 API 版本共用**（当前 1.6）。Android 首版声明它实现的 API 版本和不可用 API 清单。
-- 全部免费、无内购，与 iOS 一致；Android 代码后续开源（D7）。不需要接入 Play Billing。`applicationId` 为 `com.everettjf.scriptwidget`（D11）。
+- 全部免费、无内购，与 iOS 一致；Android 代码后续开源（D7）。不需要接入 Play Billing。`applicationId` 为 `com.atomsprout.scriptwidget`（D11）。
 
 **跨端一致性的长期机制**
 - parity 语料在 CI 里三端跑：JavaScriptCore（参考）、V8（Web）、QuickJS（Android）。任何运行时契约改动必须三端同时更新，否则 CI 失败。
@@ -392,7 +392,7 @@ iOS 版功能面很宽，一次做完会把首版拖得很久，所以按三个�
 | D8 | Remote Compose 后端 | 1.0 前只做探测；1.2 视其发布状态转正 |
 | D9 | 分发渠道 | **只上 Google Play**；国内应用商店和其他渠道暂不考虑。因此可以依赖 Google Play 服务（Fused 定位、FCM），国产 ROM 适配不作为 1.0 的发布门槛 |
 | D10 | 中文字体 | **直接内置思源黑体（Noto Sans SC，OFL）**，优先用可变字体，一份覆盖全部字重。各机型中文排版一致，安装包增加十几兆量级（[待验证]，需实测）。日文、韩文和繁体专有字形仍回退系统字体。随应用分发时附带 OFL 许可文本 |
-| D11 | `applicationId` | **`com.everettjf.scriptwidget`**，与 iOS/macOS 的 Bundle ID 相同。上架 Google Play 后不可更改 |
+| D11 | `applicationId` | **`com.atomsprout.scriptwidget`**（2026-11-13 由 `com.everettjf.scriptwidget` 改为此值；Kotlin 命名空间不变）。上架 Google Play 后不可更改 |
 
 **中文字体调研。** 有开源且可商用的中文字体，问题只在体积（以下体积为印象值，[待验证]，需实测）：
 
