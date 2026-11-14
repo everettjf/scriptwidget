@@ -47,6 +47,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
 - [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS for the Android app in development.
 - [Android test notes](android/testing.md) and [Android to-do](android/TODO.md) — what was tested on which devices, and what is left.
+- [Android UI review](android/ui-review.md) — the screen-by-screen review behind build 8 and what it changed.
 - [Android port research and plan](android/android-port-research-and-plan.md) — research and planning draft (Chinese) for an Android version: engine and rendering choices, feature mapping, phases, and rollout.
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.

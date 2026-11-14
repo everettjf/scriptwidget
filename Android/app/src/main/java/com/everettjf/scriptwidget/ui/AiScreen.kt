@@ -483,7 +483,7 @@ fun AiSettings() {
     val endpointChanged = draft.normalizedBaseUrl != store.profile(kind).normalizedBaseUrl
 
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("Widgets can be drafted by a model you choose. Android 1.0 supports API-key providers only; signing in with an OpenAI account (OAuth) is not available.",
+        Text("Widgets can be drafted by a model you choose. The Android app supports API-key providers only; signing in with an OpenAI account (OAuth) is not available.",
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (option in AiProviderKind.entries) FilterChip(selected = kind == option, onClick = { kind = option; store.activeKind = option }, label = { Text(option.displayName) })

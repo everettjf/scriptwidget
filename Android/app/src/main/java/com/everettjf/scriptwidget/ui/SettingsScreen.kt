@@ -3,7 +3,12 @@ package com.everettjf.scriptwidget.ui
 import android.content.Intent
 import android.net.Uri
 import android.provider.Settings
+import android.widget.Toast
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.material3.FilterChip
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -49,8 +54,8 @@ fun SettingsScreen(navigation: NavController) {
     val packageInfo = remember { runCatching { context.packageManager.getPackageInfo(context.packageName, 0) }.getOrNull() }
 
     Scaffold(topBar = {
-        TopAppBar(title = { Text("Settings") }, navigationIcon = { IconButton(onClick = { navigation.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } })
-    }) { padding ->
+        TopAppBar(title = { Text("Settings") })
+    }, bottomBar = { MainBar(navigation, MainTab.SETTINGS) }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState())) {
             Section("Appearance")
             ListItem(
@@ -63,14 +68,21 @@ fun SettingsScreen(navigation: NavController) {
                 }) },
             )
             Section("Refresh")
-            for (option in listOf(15, 30, 60, 180)) ListItem(
-                headlineContent = { Text(if (option < 60) "Every $option minutes" else "Every ${option / 60} hour${if (option == 60) "" else "s"}") },
-                trailingContent = { if (minutes == option) Text("✓", color = MaterialTheme.colorScheme.primary) },
-                modifier = Modifier.clickable { minutes = option; settings.refreshMinutes = option; WidgetScheduler.schedulePeriodicRefresh(context) },
+            ListItem(
+                headlineContent = { Text("Refresh in the background") },
+                supportingContent = {
+                    Row(Modifier.horizontalScroll(rememberScrollState()).padding(top = 6.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        for (option in listOf(15, 30, 60, 180)) FilterChip(
+                            selected = minutes == option,
+                            onClick = { minutes = option; settings.refreshMinutes = option; WidgetScheduler.schedulePeriodicRefresh(context) },
+                            label = { Text(if (option < 60) "$option min" else "${option / 60} h") },
+                        )
+                    }
+                },
             )
             ListItem(
                 headlineContent = { Text("Refresh all widgets now") },
-                modifier = Modifier.clickable { WidgetScheduler.refreshAll(context) },
+                modifier = Modifier.clickable { WidgetScheduler.refreshAll(context); Toast.makeText(context, "Refreshing widgets", Toast.LENGTH_SHORT).show() },
             )
             ListItem(
                 headlineContent = { Text("Keep widgets updating") },
@@ -109,6 +121,17 @@ fun SettingsScreen(navigation: NavController) {
                 supportingContent = { Text("Runtime API ${AppServices.runtime.scripts.contract.optString("apiVersion")} · Android release ${PlatformSupport.RELEASE}") })
             ListItem(headlineContent = { Text("Not supported on Android") },
                 supportingContent = { Text(PlatformSupport.unsupportedPermissions.values.distinct().joinToString("\n")) })
+            for ((title, link) in listOf(
+                "Privacy policy" to "https://atomsprout.com/scriptwidget/privacy/",
+                "Website" to "https://atomsprout.com/scriptwidget/",
+                "Source code" to "https://github.com/everettjf/ScriptWidget",
+            )) ListItem(
+                headlineContent = { Text(title) }, supportingContent = { Text(link.removePrefix("https://")) },
+                modifier = Modifier.clickable {
+                    runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)) }
+                        .onFailure { Toast.makeText(context, "No app can open this link", Toast.LENGTH_SHORT).show() }
+                },
+            )
             ListItem(headlineContent = { Text("Open-source licenses") },
                 supportingContent = { Text("QuickJS-NG (MIT) · Inter and Noto Sans SC (SIL Open Font License 1.1) · Lucide icons (ISC) · Babel (MIT) · Moment.js (MIT)") })
         }

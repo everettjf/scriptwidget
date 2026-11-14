@@ -6,6 +6,28 @@ import android.provider.OpenableColumns
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.filled.AddToHomeScreen
+import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.ListItemDefaults
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.style.TextAlign
+import com.everettjf.scriptwidget.widget.ScriptWidgetProvider
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -81,38 +103,85 @@ fun importPackage(context: Context, uri: Uri): InstalledPackage? {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun HomeScreen(navigation: NavController) {
     val context = LocalContext.current
     var revision by remember { mutableIntStateOf(0) }
     var packages by remember { mutableStateOf(AppServices.library.list()) }
+    var placed by remember { mutableStateOf(ScriptWidgetProvider.allIds(context).isNotEmpty()) }
     var showAdd by remember { mutableStateOf(false) }
     var showName by remember { mutableStateOf(false) }
+    var menuFor by remember { mutableStateOf<String?>(null) }
     val dark = isSystemInDarkTheme()
-    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { packages = AppServices.library.list(); revision += 1 }
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) {
+        packages = AppServices.library.list(); revision += 1
+        placed = ScriptWidgetProvider.allIds(context).isNotEmpty()
+    }
     val picker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         if (uri != null) importPackage(context, uri)?.let { navigation.navigate("package/${Uri.encode(it.name)}") }
     }
 
     Scaffold(
-        topBar = { TopAppBar(title = { Text("ScriptWidget") }, actions = { IconButton(onClick = { navigation.navigate("settings") }) { Icon(Icons.Default.Settings, "Settings") } }) },
-        floatingActionButton = { FloatingActionButton(onClick = { showAdd = true }) { Icon(Icons.Default.Add, "New widget") } },
+        topBar = { TopAppBar(title = { Text("My Widgets") }) },
+        bottomBar = { MainBar(navigation, MainTab.WIDGETS) },
+        floatingActionButton = {
+            ExtendedFloatingActionButton(onClick = { showAdd = true }, icon = { Icon(Icons.Default.Add, null) }, text = { Text("New widget") })
+        },
     ) { padding ->
         if (packages.isEmpty()) {
-            Column(Modifier.padding(padding).fillMaxSize().padding(32.dp), verticalArrangement = Arrangement.Center) {
+            Column(
+                Modifier.padding(padding).fillMaxSize().padding(32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically), horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Icon(Icons.Default.Widgets, null, Modifier.size(48.dp), tint = MaterialTheme.colorScheme.primary)
                 Text("No widgets yet", style = MaterialTheme.typography.titleLarge)
-                Text("Tap + to start from a template, write one, or ask AI to draft it.", style = MaterialTheme.typography.bodyMedium)
+                Text("Start from a template, write one yourself, or describe it and let AI draft it.", style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center)
+                Button(onClick = { navigation.openTab(MainTab.TEMPLATES) }) { Text("Browse templates") }
+                OutlinedButton(onClick = { showName = true }) { Text("Start with a blank widget") }
             }
         } else {
             LazyVerticalGrid(
-                columns = GridCells.Adaptive(170.dp), modifier = Modifier.padding(padding).fillMaxSize(),
-                contentPadding = PaddingValues(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(16.dp),
+                columns = GridCells.Adaptive(156.dp), modifier = Modifier.padding(padding).fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 96.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
             ) {
+                if (!placed) item(key = "hint", span = { GridItemSpan(maxLineSpan) }) {
+                    Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer)) {
+                        Row(Modifier.padding(14.dp), horizontalArrangement = Arrangement.spacedBy(12.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.AddToHomeScreen, null, tint = MaterialTheme.colorScheme.onPrimaryContainer)
+                            Text("Open a widget and tap Add to home screen. Or touch and hold the home screen, choose Widgets, then ScriptWidget.",
+                                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        }
+                    }
+                }
                 items(packages, key = { it.installation }) { item ->
-                    Column(Modifier.clickable { navigation.navigate("package/${Uri.encode(item.name)}") }) {
-                        WidgetPreview(item.files, item.installation, "small", dark, buildDirectory = item.buildDirectory, revision = revision)
-                        Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 6.dp, start = 4.dp))
+                    Box {
+                        Column(
+                            Modifier.clip(RoundedCornerShape(26.dp)).background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .combinedClickable(
+                                    onClick = { navigation.navigate("package/${Uri.encode(item.name)}") },
+                                    onLongClick = { menuFor = item.installation }, onLongClickLabel = "More actions",
+                                ).padding(10.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            WidgetPreview(item.files, item.installation, "small", dark, buildDirectory = item.buildDirectory, revision = revision)
+                            Text(item.displayName, style = MaterialTheme.typography.titleSmall, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, start = 4.dp, end = 4.dp, bottom = 2.dp))
+                        }
+                        DropdownMenu(menuFor == item.installation, onDismissRequest = { menuFor = null }) {
+                            DropdownMenuItem(text = { Text("Add to home screen") }, leadingIcon = { Icon(Icons.Default.AddToHomeScreen, null) }, onClick = {
+                                menuFor = null
+                                if (!pinWidget(context, item, "small", "")) Toast.makeText(context, PIN_FALLBACK, Toast.LENGTH_LONG).show()
+                            })
+                            DropdownMenuItem(text = { Text("Edit code") }, leadingIcon = { Icon(Icons.Default.Code, null) }, onClick = {
+                                menuFor = null; navigation.navigate("editor/${Uri.encode(item.name)}")
+                            })
+                            DropdownMenuItem(text = { Text("Improve with AI") }, leadingIcon = { Icon(Icons.Default.AutoAwesome, null) }, onClick = {
+                                menuFor = null; navigation.navigate("ai/${Uri.encode(item.name)}")
+                            })
+                        }
                     }
                 }
             }
@@ -123,13 +192,14 @@ fun HomeScreen(navigation: NavController) {
         ModalBottomSheet(onDismissRequest = { showAdd = false }) {
             @Composable fun row(icon: ImageVector, title: String, subtitle: String, action: () -> Unit) = ListItem(
                 headlineContent = { Text(title) }, supportingContent = { Text(subtitle) }, leadingContent = { Icon(icon, null) },
+                colors = ListItemDefaults.colors(containerColor = Color.Transparent),
                 modifier = Modifier.clickable { showAdd = false; action() },
             )
             Column(Modifier.padding(bottom = 24.dp)) {
-                row(Icons.Default.Code, "Blank widget", "Start from a few lines of JSX") { showName = true }
-                row(Icons.Default.GridView, "Templates", "Ready-made widgets and API examples") { navigation.navigate("templates") }
-                row(Icons.Default.Public, "Gallery", "Verified widgets from the ScriptWidget catalog") { navigation.navigate("gallery") }
+                Text("New widget", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp))
+                row(Icons.Default.GridView, "From a template", "Ready-made widgets you can change") { navigation.openTab(MainTab.TEMPLATES) }
                 row(Icons.Default.AutoAwesome, "Generate with AI", "Describe a widget and let a model draft it") { navigation.navigate("ai") }
+                row(Icons.Default.Code, "Blank widget", "Start from a few lines of JSX") { showName = true }
                 row(Icons.Default.FileOpen, "Import .swt", "Install a package exported from iPhone, Mac or the web") { picker.launch(arrayOf("*/*")) }
             }
         }
@@ -142,6 +212,9 @@ fun HomeScreen(navigation: NavController) {
     }
 }
 
+/** Shown when the launcher cannot pin a widget from inside the app. */
+const val PIN_FALLBACK = "Touch and hold the home screen, choose Widgets, then ScriptWidget."
+
 @Composable
 fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, onConfirm: (String) -> Unit) {
     var name by remember { mutableStateOf(initial) }
@@ -151,36 +224,4 @@ fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, onConfirm:
         confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onConfirm(name.trim()) }) { Text("OK") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun TemplatesScreen(navigation: NavController) {
-    val context = LocalContext.current
-    val bundled = remember { AppServices.library.bundled() }
-    var group by remember { mutableStateOf("template") }
-    Scaffold(topBar = {
-        TopAppBar(title = { Text("Templates") }, navigationIcon = { IconButton(onClick = { navigation.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } })
-    }) { padding ->
-        Column(Modifier.padding(padding).fillMaxSize()) {
-            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for ((key, label) in listOf("template" to "Templates", "component" to "Components", "api" to "APIs")) {
-                    TextButton(onClick = { group = key }) { Text(label, color = if (group == key) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant) }
-                }
-            }
-            LazyColumn(Modifier.fillMaxSize()) {
-                items(bundled.filter { it.group == group }, key = { it.assetPath }) { item ->
-                    ListItem(
-                        headlineContent = { Text(item.name) },
-                        trailingContent = { Text("Add", color = MaterialTheme.colorScheme.primary) },
-                        modifier = Modifier.clickable {
-                            runCatching { AppServices.library.installBundled(item) }
-                                .onSuccess { navigation.navigate("package/${Uri.encode(it.name)}") { popUpTo("home") } }
-                                .onFailure { Toast.makeText(context, it.message ?: "Could not add the template", Toast.LENGTH_LONG).show() }
-                        },
-                    )
-                }
-            }
-        }
-    }
 }

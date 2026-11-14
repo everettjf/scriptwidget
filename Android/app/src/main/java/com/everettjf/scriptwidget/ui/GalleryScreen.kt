@@ -126,7 +126,7 @@ fun GalleryScreen(navigation: NavController) {
             result.onSuccess { record ->
                 snapshot?.let { states = readStates(it.index.items) }
                 if (item.kind == GalleryItemKind.WIDGET) {
-                    navigation.navigate("package/${Uri.encode(record.localIdentifier)}") { popUpTo("home") }
+                    navigation.navigate("package/${Uri.encode(record.localIdentifier)}")
                 } else {
                     Toast.makeText(context, "${item.name} installed. Turn it on under Skills to use it with AI.", Toast.LENGTH_LONG).show()
                 }
@@ -153,10 +153,9 @@ fun GalleryScreen(navigation: NavController) {
     Scaffold(topBar = {
         TopAppBar(
             title = { Text("Gallery") },
-            navigationIcon = { IconButton(onClick = { navigation.popBackStack() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
             actions = { IconButton(enabled = !loading, onClick = { refresh(force = true) }) { Icon(Icons.Default.Refresh, "Refresh") } },
         )
-    }) { padding ->
+    }, bottomBar = { MainBar(navigation, MainTab.GALLERY) }) { padding ->
         PullToRefreshBox(isRefreshing = loading, onRefresh = { refresh(force = true) }, modifier = Modifier.padding(padding).fillMaxSize()) {
             val current = snapshot
             if (current == null) {

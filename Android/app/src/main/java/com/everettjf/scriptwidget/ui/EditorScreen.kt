@@ -76,6 +76,7 @@ fun EditorScreen(navigation: NavController, name: String) {
     var revision by remember { mutableIntStateOf(0) }
     var result by remember { mutableStateOf<ExecutionResult?>(null) }
     var plain by remember { mutableStateOf(false) }
+    var family by remember { mutableStateOf("medium") }
     val dark = isSystemInDarkTheme()
     val dirty = plain && text.text != saved
 
@@ -109,13 +110,16 @@ fun EditorScreen(navigation: NavController, name: String) {
             actions = {
                 if (!plain) IconButton(onClick = { studio.format() }) { Icon(Icons.Default.AutoFixHigh, "Format") }
                 IconButton(onClick = { saveThen { plain = !plain; text = TextFieldValue(saved) } }) { Icon(Icons.Default.SwapHoriz, if (plain) "Use the Studio editor" else "Use the plain editor") }
-                IconButton(onClick = { saveThen { revision += 1 } }) { Icon(Icons.Default.PlayArrow, "Save and run") }
+                IconButton(onClick = { saveThen { revision += 1; Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.PlayArrow, "Save and run") }
             },
         )
     }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().imePadding()) {
             Box(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp), contentAlignment = Alignment.Center) {
-                WidgetPreview(installed.files, installed.installation, "medium", dark, Modifier.height(140.dp), buildDirectory = installed.buildDirectory, revision = revision) { result = it }
+                WidgetPreview(installed.files, installed.installation, family, dark, Modifier.height(140.dp), buildDirectory = installed.buildDirectory, revision = revision) { result = it }
+            }
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), horizontalArrangement = Arrangement.spacedBy(6.dp, Alignment.CenterHorizontally)) {
+                for (size in listOf("small", "medium", "large")) FilterChip(selected = family == size, onClick = { family = size }, label = { Text(size.replaceFirstChar { it.uppercase() }) })
             }
             result?.error?.let { error ->
                 Text("[${error.kind}] ${error.message}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace,

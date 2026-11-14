@@ -7,6 +7,12 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import android.graphics.Bitmap
+import android.os.Bundle
+import android.widget.RemoteViews
+import androidx.compose.runtime.rememberCoroutineScope
+import com.everettjf.scriptwidget.R
+import kotlinx.coroutines.launch
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -24,6 +30,24 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.AddToHomeScreen
+import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Code
+import androidx.compose.material.icons.filled.DarkMode
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.material3.FilledTonalIconToggleButton
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
@@ -74,6 +98,8 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
         val installation = intent.getStringExtra(EXTRA_INSTALLATION) ?: return
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) return
         AppServices.widgets.set(appWidgetId, WidgetBinding(installation, intent.getStringExtra(EXTRA_PARAMETER).orEmpty()))
+        // The request is answered; a widget added from the launcher afterwards must ask which package to show.
+        AppServices.widgets.takePendingPin()
         WidgetScheduler.refresh(context, intArrayOf(appWidgetId))
     }
 
@@ -83,8 +109,8 @@ class WidgetPinnedReceiver : BroadcastReceiver() {
     }
 }
 
-/** Asks the launcher to place a widget of [family] that shows [installed]. */
-fun pinWidget(context: Context, installed: InstalledPackage, family: String, parameter: String): Boolean {
+/** Asks the launcher to place a widget of [family] that shows [installed]. [preview] is what the launcher's dialog draws. */
+fun pinWidget(context: Context, installed: InstalledPackage, family: String, parameter: String, preview: Bitmap? = null): Boolean {
     val manager = AppWidgetManager.getInstance(context)
     if (!manager.isRequestPinAppWidgetSupported) return false
     val provider = when (family) { "small" -> SmallWidgetProvider::class.java; "large" -> LargeWidgetProvider::class.java; else -> MediumWidgetProvider::class.java }
@@ -95,7 +121,10 @@ fun pinWidget(context: Context, installed: InstalledPackage, family: String, par
         .putExtra(WidgetPinnedReceiver.EXTRA_INSTALLATION, installed.installation)
         .putExtra(WidgetPinnedReceiver.EXTRA_PARAMETER, parameter)
     val pending = PendingIntent.getBroadcast(context, 0, callback, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
-    return manager.requestPinAppWidget(ComponentName(context, provider), null, pending)
+    val extras = preview?.let { bitmap ->
+        Bundle().apply { putParcelable(AppWidgetManager.EXTRA_APPWIDGET_PREVIEW, RemoteViews(context.packageName, R.layout.widget_gif_frame).apply { setImageViewBitmap(R.id.widget_gif_frame, bitmap) }) }
+    }
+    return manager.requestPinAppWidget(ComponentName(context, provider), extras, pending)
 }
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -114,6 +143,8 @@ fun DetailScreen(navigation: NavController, name: String) {
     var menu by remember { mutableStateOf(false) }
     var rename by remember { mutableStateOf(false) }
     var confirmDelete by remember { mutableStateOf(false) }
+    var advanced by remember { mutableStateOf(false) }
+    val scope = rememberCoroutineScope()
     val useDark = dark ?: isSystemInDarkTheme()
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { installed = AppServices.library.find(name); revision += 1 }
     val exporter = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("application/zip")) { uri ->
@@ -135,7 +166,6 @@ fun DetailScreen(navigation: NavController, name: String) {
                             .onFailure { Toast.makeText(context, it.message ?: "Could not duplicate", Toast.LENGTH_LONG).show() }
                     })
                     DropdownMenuItem(text = { Text("Export .swt") }, onClick = { menu = false; exporter.launch("${item.name}.swt") })
-                    DropdownMenuItem(text = { Text("Improve with AI") }, onClick = { menu = false; navigation.navigate("ai/${Uri.encode(item.name)}") })
                     DropdownMenuItem(text = { Text("Delete") }, onClick = { menu = false; confirmDelete = true })
                 }
             },
@@ -143,17 +173,53 @@ fun DetailScreen(navigation: NavController, name: String) {
     }) { padding ->
         Column(Modifier.padding(padding).fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             WidgetPreview(item.files, item.installation, family, useDark, parameter = parameter, buildDirectory = item.buildDirectory, revision = revision) { result = it }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (size in listOf("small", "medium", "large")) FilterChip(selected = family == size, onClick = { family = size }, label = { Text(size.replaceFirstChar { it.uppercase() }) })
-                FilterChip(selected = useDark, onClick = { dark = !useDark }, label = { Text("Dark") })
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                SingleChoiceSegmentedButtonRow {
+                    val sizes = listOf("small", "medium", "large")
+                    sizes.forEachIndexed { index, size ->
+                        SegmentedButton(selected = family == size, onClick = { family = size }, shape = SegmentedButtonDefaults.itemShape(index, sizes.size), icon = {}) {
+                            Text(size.replaceFirstChar { it.uppercase() })
+                        }
+                    }
+                }
+                FilledTonalIconToggleButton(checked = useDark, onCheckedChange = { dark = it }) {
+                    Icon(if (useDark) Icons.Default.DarkMode else Icons.Default.LightMode, if (useDark) "Preview in light mode" else "Preview in dark mode")
+                }
+            }
+            if (item.description.isNotEmpty()) Text(item.description, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth())
+            Button(onClick = {
+                scope.launch {
+                    // The launcher's dialog shows the widget itself instead of the app icon.
+                    val preview = renderPreview(item.files, item.installation, family, useDark, parameter, item.buildDirectory, 1.5f).bitmap
+                    if (!pinWidget(context, item, family, parameter, preview)) Toast.makeText(context, PIN_FALLBACK, Toast.LENGTH_LONG).show()
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
+                Icon(Icons.Default.AddToHomeScreen, null, Modifier.size(18.dp))
+                Text("Add to home screen", Modifier.padding(start = 8.dp))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Button(onClick = { navigation.navigate("editor/${Uri.encode(item.name)}") }, modifier = Modifier.weight(1f)) { Text("Edit code") }
-                OutlinedButton(onClick = {
-                    if (!pinWidget(context, item, family, parameter)) Toast.makeText(context, "Long-press the home screen, choose Widgets, then ScriptWidget.", Toast.LENGTH_LONG).show()
-                }, modifier = Modifier.weight(1f)) { Text("Add to home screen") }
+                FilledTonalButton(onClick = { navigation.navigate("editor/${Uri.encode(item.name)}") }, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.Code, null, Modifier.size(18.dp))
+                    Text("Edit code", Modifier.padding(start = 8.dp))
+                }
+                FilledTonalButton(onClick = { navigation.navigate("ai/${Uri.encode(item.name)}") }, modifier = Modifier.weight(1f)) {
+                    Icon(Icons.Default.AutoAwesome, null, Modifier.size(18.dp))
+                    Text("Improve with AI", Modifier.padding(start = 8.dp), maxLines = 1)
+                }
             }
-            OutlinedTextField(parameter, { parameter = it.take(4096) }, singleLine = true, label = { Text("Widget parameter") }, modifier = Modifier.fillMaxWidth())
+            // A parameter is passed to the script as $getenv("widget-param"); most widgets do not read one.
+            Column(Modifier.fillMaxWidth()) {
+                Row(Modifier.fillMaxWidth().clip(RoundedCornerShape(12.dp)).clickable { advanced = !advanced }.padding(vertical = 8.dp, horizontal = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text("Widget parameter", style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+                    if (parameter.isNotEmpty() && !advanced) Text(parameter, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, modifier = Modifier.padding(end = 8.dp).widthIn(max = 140.dp))
+                    Icon(if (advanced) Icons.Default.ExpandLess else Icons.Default.ExpandMore, if (advanced) "Hide" else "Show")
+                }
+                if (advanced) {
+                    Text("Optional text handed to the script, so one widget can be placed several times with different settings, such as a city or a ticker.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 4.dp))
+                    OutlinedTextField(parameter, { parameter = it.take(4096) }, singleLine = true, placeholder = { Text("None") }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp))
+                }
+            }
 
             val unsupported = remember(item.installation, revision) { PlatformSupport.unsupported(item.manifest, item.files) }
             if (unsupported.isNotEmpty()) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer), modifier = Modifier.fillMaxWidth()) {
@@ -162,13 +228,17 @@ fun DetailScreen(navigation: NavController, name: String) {
                     for (line in unsupported) Text("• $line", style = MaterialTheme.typography.bodySmall)
                 }
             }
-            if (item.permissions.isNotEmpty()) FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (permission in item.permissions) AssistChip(onClick = {}, label = { Text(permission) })
+            if (item.permissions.isNotEmpty()) Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text("This widget can use", style = MaterialTheme.typography.titleSmall)
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                    for (permission in item.permissions) SuggestionChip(onClick = {}, label = { Text(permission) })
+                }
             }
             result?.let { execution ->
                 val error = execution.error
                 if (error != null || execution.logs.isNotEmpty()) Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text(if (error != null) "Error" else "Console", style = MaterialTheme.typography.titleSmall)
                         if (error != null) Text("[${error.kind}] ${error.message}", color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
                         for (log in execution.logs.takeLast(40)) Text(log.message, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace,
                             color = if (log.level == "error") MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface)
