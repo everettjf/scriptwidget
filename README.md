@@ -7,7 +7,7 @@ Website: <https://atomsprout.com/scriptwidget/>
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/everettjf/ScriptWidget?style=flat-square)](https://github.com/everettjf/ScriptWidget/network)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS-lightgrey?style=flat-square&logo=apple)](https://developer.apple.com)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Android-lightgrey?style=flat-square)](#-platforms)
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
@@ -50,6 +50,8 @@ ScriptWidget is an open-source widget development platform for building native W
 
 It combines a JavaScriptCore runtime, native SwiftUI rendering, a desktop development environment, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
 
+An Android app that runs the same packages is in testing. It is not on Google Play yet; see [ScriptWidget for Android](docs/android/README.md).
+
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
 ---
@@ -58,7 +60,7 @@ It combines a JavaScriptCore runtime, native SwiftUI rendering, a desktop develo
 
 | Feature | Description |
 |---------|-------------|
-| 🖥️ **Cross-Platform** | One codebase for iOS and macOS widgets |
+| 🖥️ **Cross-Platform** | One widget package for iPhone, iPad and Mac, and for Android (in testing) |
 | 🎨 **JSX Support** | Declarative UI with JavaScript XML syntax |
 | ⚡ **Native Rendering** | JSX elements are rendered as native SwiftUI views |
 | 🔧 **Versioned Runtime API** | Storage, files, networking, device, location, health, system, and data sources |
@@ -107,6 +109,12 @@ open iOS/ScriptWidget.xcodeproj
 open macOS/ScriptWidgetMac.xcodeproj
 ```
 
+For Android, build with Gradle instead (JDK 17 or later and the Android SDK; the app needs Android 15 or later):
+
+```bash
+cd Android && ./gradlew :app:assembleDebug
+```
+
 ### 3. Run & Explore
 
 1. Select a scheme (`ScriptWidget` / `ScriptWidgetWidget` for iOS, `ScriptWidgetMac` for macOS)
@@ -137,6 +145,13 @@ ScriptWidget/
 ├── macOS/
 │   ├── ScriptWidgetMac/       # macOS app
 │   └── ScriptWidgetMacWidget/ # macOS widget
+├── Android/
+│   ├── core/                  # QuickJS runtime, native APIs, renderer, package store
+│   ├── app/                   # Compose app, widget providers, Studio editor
+│   └── play/                  # Google Play listing kit
+├── Web/
+│   ├── preview-engine/        # Browser preview engine; its kernel and renderer also run on Android
+│   └── studio/                # Web Studio (React + TypeScript)
 ├── Editor/editorfe/           # Vite + CodeMirror 6 editor frontend
 ├── Gallery/                   # Curated Widget & Skills Gallery index
 ├── Tests/                     # Shared runtime, execution, cache & security tests
@@ -217,6 +232,7 @@ $render(
 ### Prerequisites
 
 - **Xcode** 27+ for the current development branch
+- **JDK 17** or later and the **Android SDK** (API 37 platform) for the Android app, which needs Android 15 or later
 - **macOS** 26+ for ScriptWidget Studio
 - **iOS** 16+ (for iOS widgets)
 
@@ -251,6 +267,17 @@ Run the same repository gates used by CI:
 ./Scripts/release-readiness.sh
 ./Scripts/ipad-icloud-tests.sh
 ```
+
+The Android app has its own build and tests (the gate above does not cover it):
+
+```bash
+node Android/scripts/build-shared-js.mjs   # after changing Web/preview-engine/src
+cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug
+sh scripts/device-test.sh core             # instrumented tests on a connected device
+sh scripts/device-test.sh app
+```
+
+See [ScriptWidget for Android](docs/android/README.md), its [test notes](docs/android/testing.md) and [to-do](docs/android/TODO.md).
 
 ### Create Your Own Widget
 
@@ -338,6 +365,7 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
+| **Android** | 🧪 In testing | Android 15+; version 1.2.0, not yet on Google Play. Runs the same packages; [differences from iOS](docs/android/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
 
