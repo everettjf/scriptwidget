@@ -5882,7 +5882,15 @@ extension RuntimeExecutionTests {
 }
 
 extension RuntimeExecutionTests {
-    func testDynamicCodePreservesLegacyEvalAndConstructorSemantics() throws {
+    // Dynamic code is compiled at run time, which is slow on a loaded simulator. The cases run
+    // as three short scripts so that none of them comes near the 5-second execution limit.
+    private func dynamicCodeText(_ source: String, file: StaticString = #filePath, line: UInt = #line) throws -> String {
+        let result = makeRuntime().executeJSXSyncForWidget(source)
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "", file: file, line: line)
+        return collectText(try XCTUnwrap(result.0, file: file, line: line))
+    }
+
+    func testDynamicCodePreservesLegacyEvalSemantics() throws {
         let source = """
         let local = 40;
         const direct = eval('local += 2; local');
@@ -5893,6 +5901,16 @@ extension RuntimeExecutionTests {
         const indirect = alias('__legacyDynamicValue');
         const bound = (0, eval)('__legacyDynamicValue + 1');
         const computed = globalThis['eval']('__legacyDynamicValue + 2');
+        function strictEval() { 'use strict'; const inside = 16; return eval('inside'); }
+        function customEval() { function eval(value) { return value; } return eval('unchanged'); }
+        function declarations() { eval('var legacyDeclaration = 18;'); return legacyDeclaration; }
+        $render(<text>{[direct,local,passthrough,indirect,bound,computed,strictEval(),customEval(),declarations()].join(':')}</text>);
+        """
+        XCTAssertEqual(try dynamicCodeText(source), "42:42:true:9:10:11:16:unchanged:18")
+    }
+
+    func testDynamicCodePreservesLegacyFunctionConstructorSemantics() throws {
+        let source = """
         const add = new Function('a', 'b', 'return a + b;');
         const called = Function('return this === globalThis')();
         const fromPrototype = (()=>{}).constructor('return 12')();
@@ -5900,19 +5918,21 @@ extension RuntimeExecutionTests {
         const asyncValue = await (async function(){}).constructor('return 14;')();
         const asyncGenerator = (await (async function*(){}).constructor('yield 15;')().next()).value;
         const template = Function('data', 'with(data){ return title; }')({title:'legacy'});
-        function strictEval() { 'use strict'; const inside = 16; return eval('inside'); }
-        function customEval() { function eval(value) { return value; } return eval('unchanged'); }
-        function declarations() { eval('var legacyDeclaration = 18;'); return legacyDeclaration; }
+        $render(<text>{[add(2,3),called,fromPrototype,generator,asyncValue,asyncGenerator,template].join(':')}</text>);
+        """
+        XCTAssertEqual(try dynamicCodeText(source), "5:true:12:13:14:15:legacy")
+    }
+
+    func testDynamicCodeHonorsAReassignedGlobalEval() throws {
+        let source = """
         const intrinsic = globalThis.eval;
         globalThis.eval = value => 'custom:' + value;
         const customAlias = eval;
         const reassigned = eval('direct') + '|' + customAlias('alias') + '|' + globalThis.eval('member');
         globalThis.eval = intrinsic;
-        $render(<text>{[direct,local,passthrough,indirect,bound,computed,add(2,3),called,fromPrototype,generator,asyncValue,asyncGenerator,strictEval(),customEval(),template,declarations(),reassigned].join(':')}</text>);
+        $render(<text>{reassigned}</text>);
         """
-        let result = makeRuntime().executeJSXSyncForWidget(source)
-        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
-        XCTAssertEqual(collectText(try XCTUnwrap(result.0)), "42:42:true:9:10:11:5:true:12:13:14:15:16:unchanged:legacy:18:custom:direct|custom:alias|custom:member")
+        XCTAssertEqual(try dynamicCodeText(source), "custom:direct|custom:alias|custom:member")
     }
 }
 
