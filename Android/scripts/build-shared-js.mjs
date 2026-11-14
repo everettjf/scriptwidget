@@ -52,7 +52,9 @@ for (const name of fs.readdirSync(hostSources).filter((file) => file.endsWith(".
 const esbuild = [path.join(repository, "Web/studio/node_modules/.bin/esbuild"), path.join(repository, "Editor/editorfe/node_modules/.bin/esbuild")].find((file) => fs.existsSync(file));
 if (!esbuild) throw new Error("esbuild not found: run npm install in Web/studio first");
 execFileSync(esbuild, [path.join(hostSources, "render/entry.mjs"), "--bundle", "--format=iife", "--global-name=__swRenderBundle", "--target=es2022",
-  "--charset=utf8", "--log-level=warning", `--outfile=${path.join(output, "render.js")}`], { stdio: "inherit" });
+  // esbuild writes each module's path relative to the working directory into the bundle, so the
+  // directory is fixed: the output is the same wherever the script is started from.
+  "--charset=utf8", "--log-level=warning", `--outfile=${path.join(output, "render.js")}`], { stdio: "inherit", cwd: path.join(repository, "Android") });
 
 // Parity corpus for instrumented tests: every bundled package that needs no
 // live data, with the tree JavaScriptCore produced for it.
