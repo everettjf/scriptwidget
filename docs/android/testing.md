@@ -16,6 +16,8 @@ After the application ID changed to `com.atomsprout.scriptwidget` (13 November 2
 
 Build 8 (the new icon and the reworked UI, see the [UI review](ui-review.md)) was run on the Pixel 6 only: JVM tests passed, the app suite passed (60 tests, the live-model and push-wait tests skipped). The core suite passed (27 tests) just before the UI changes, which did not touch the core module. `PushDeliveryTest` then passed with the new Firebase project `scriptwidget-77792` and the new package name: the app was in the foreground and received a test message sent from the Firebase console to the device's token, with `packageID` and `channel` as custom data. A campaign sent to all installs of the app ten minutes earlier had not arrived by then. The emulators were not re-run with build 8.
 
+The release build of build 8 (minified, signed with the upload key) was installed on the Pixel 6 as an APK: it started, drew the starter widgets and the template previews, and logged no crash. This replaced the debug build on that phone and removed its placed widgets. The bundle itself has not been installed through Google Play.
+
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed (the example.com fetch check was skipped on the last run: the site answered 403; it had returned 200 on earlier runs) | 56 passed |
