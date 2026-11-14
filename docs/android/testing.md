@@ -1,4 +1,4 @@
-# Android test notes (1.2.0, build 7)
+# Android test notes (1.2.0, build 8)
 
 What was run before handing this build to testers, and what was not.
 
@@ -12,7 +12,9 @@ What was run before handing this build to testers, and what was not.
 
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
-After the application ID changed to `com.atomsprout.scriptwidget` (13 November 2026) the JVM tests passed, the debug and release builds carried the new package name, and the app suite passed on the Android 15 emulator (60 tests; the push delivery and picked-folder tests skip there). One test had assumed that class names start with the application ID and was corrected. With the new ID the core suite, the Pixel 6, the Android 16 emulator and push delivery have not been run.
+After the application ID changed to `com.atomsprout.scriptwidget` (13 November 2026) the JVM tests passed, the debug and release builds carried the new package name, and the app suite passed on the Android 15 emulator (60 tests; the push delivery and picked-folder tests skip there). One test had assumed that class names start with the application ID and was corrected. With the new ID the Android 16 emulator has not been run.
+
+Build 8 (the new icon and the reworked UI, see the [UI review](ui-review.md)) was run on the Pixel 6 only: JVM tests passed, the app suite passed (60 tests, the live-model and push-wait tests skipped). The core suite passed (27 tests) just before the UI changes, which did not touch the core module. `PushDeliveryTest` then passed with the new Firebase project `scriptwidget-77792` and the new package name: the app was in the foreground and received a test message sent from the Firebase console to the device's token, with `packageID` and `channel` as custom data. A campaign sent to all installs of the app ten minutes earlier had not arrived by then. The emulators were not re-run with build 8.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
