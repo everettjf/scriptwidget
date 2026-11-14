@@ -18,9 +18,11 @@
 
 ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
 
+يجري حاليًا اختبار تطبيق Android يشغّل الحزم نفسها. التطبيق غير متاح بعد على Google Play؛ راجع [ScriptWidget لنظام Android](docs/android/README.md).
+
 ## لماذا ScriptWidget؟
 
-- يعمل السكربت نفسه على iOS وiPadOS وmacOS، مع تخطيطات متكيفة عبر `$getenv("widget-size")`.
+- يعمل السكربت نفسه على iOS وiPadOS وmacOS، وكذلك على Android (قيد الاختبار)، مع تخطيطات متكيفة عبر `$getenv("widget-size")`.
 - يدعم الأدوات التفاعلية، وApp Intents، وLive Activities، وDynamic Island، وControl Widgets.
 - يتضمن Studio لـ Mac محرر CodeMirror، والإكمال التلقائي، والتشخيص، ووحدة التحكم، ومعاينات بأحجام متعددة.
 - يمكنك إنشاء الأدوات وتشغيلها وتشخيصها وتحسينها بنماذج متوافقة مع OpenAI؛ وتُحفظ مفاتيح API في Keychain.
@@ -42,7 +44,13 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 في Xcode، اختر مخطط `ScriptWidgetMac` أو `ScriptWidget`، وهيئ حاوية `iCloud.ScriptWidget` وApp Group بالمعرّف `group.everettjf.scriptwidget`، ثم شغّل المشروع. يمكنك أيضًا اتباع [الدليل ذي الدقائق الخمس](docs/five-minute-tutorial.md).
 
+لنظام Android، استخدم Gradle للبناء (JDK 17 أو أحدث وAndroid SDK؛ ويتطلب التطبيق Android 15 أو أحدث):
+
 </div>
+
+```bash
+cd Android && ./gradlew :app:assembleDebug
+```
 
 ```jsx
 $render(

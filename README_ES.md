@@ -16,9 +16,11 @@
 
 ScriptWidget es una plataforma de código abierto con licencia Apache 2.0 para crear widgets. No necesitas aprender Swift: edita `main.jsx` en ScriptWidget Studio para Mac, iPhone o iPad y el entorno de ejecución convertirá el JSX declarativo en interfaces nativas de SwiftUI y WidgetKit.
 
+Una app para Android que ejecuta los mismos paquetes está en pruebas. Aún no está en Google Play; consulta [ScriptWidget para Android](docs/android/README.md).
+
 ## Por qué elegir ScriptWidget
 
-- Un mismo script funciona en iOS, iPadOS y macOS, con diseños adaptables mediante `$getenv("widget-size")`.
+- Un mismo script funciona en iOS, iPadOS y macOS, y también en Android (en pruebas), con diseños adaptables mediante `$getenv("widget-size")`.
 - Admite widgets interactivos, App Intents, Live Activities, Dynamic Island y Control Widgets.
 - Studio para Mac incluye CodeMirror, autocompletado, diagnósticos, consola y vistas previas en varios tamaños.
 - Puede generar, ejecutar, diagnosticar y mejorar widgets con modelos compatibles con OpenAI; las claves API se guardan en Keychain.
@@ -35,6 +37,12 @@ open macOS/ScriptWidgetMac.xcodeproj
 ```
 
 En Xcode, selecciona el esquema `ScriptWidgetMac` o `ScriptWidget`, configura el contenedor `iCloud.ScriptWidget` y el App Group `group.everettjf.scriptwidget`, y ejecuta el proyecto. También puedes seguir el [tutorial de cinco minutos](docs/five-minute-tutorial.md).
+
+Para Android, compila con Gradle (JDK 17 o posterior y el Android SDK; la app requiere Android 15 o posterior):
+
+```bash
+cd Android && ./gradlew :app:assembleDebug
+```
 
 ```jsx
 $render(

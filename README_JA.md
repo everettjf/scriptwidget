@@ -16,9 +16,11 @@
 
 ScriptWidget は、Apache 2.0 ライセンスのオープンソース・ウィジェット作成プラットフォームです。Swift を学ぶ必要はありません。Mac、iPhone、iPad の ScriptWidget Studio で `main.jsx` を編集すると、ランタイムが宣言的 JSX をネイティブな SwiftUI/WidgetKit UI に変換します。
 
+同じパッケージを実行できる Android アプリをテスト中です。Google Play ではまだ公開していません。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
+
 ## ScriptWidget の特長
 
-- 1 つのスクリプトが iOS、iPadOS、macOS で動作し、`$getenv("widget-size")` でサイズ別に調整できます。
+- 1 つのスクリプトが iOS、iPadOS、macOS で動作し（Android 版はテスト中）、`$getenv("widget-size")` でサイズ別に調整できます。
 - インタラクティブウィジェット、App Intents、Live Activities、Dynamic Island、Control Widgets に対応します。
 - Mac 版 Studio には CodeMirror、補完、診断、コンソール、複数サイズのプレビューがあります。
 - OpenAI 互換モデルで生成・実行・診断・改善でき、API キーは Keychain に保存されます。
@@ -35,6 +37,12 @@ open macOS/ScriptWidgetMac.xcodeproj
 ```
 
 Xcode で `ScriptWidgetMac` または `ScriptWidget` スキームを選択し、`iCloud.ScriptWidget` コンテナと `group.everettjf.scriptwidget` App Group を設定して実行します。[5 分間チュートリアル](docs/five-minute-tutorial.md)も利用できます。
+
+Android 版は Gradle でビルドします（JDK 17 以降と Android SDK が必要です。アプリの動作には Android 15 以降が必要です）。
+
+```bash
+cd Android && ./gradlew :app:assembleDebug
+```
 
 ```jsx
 $render(

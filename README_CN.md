@@ -29,9 +29,11 @@ scriptwidget preview ./MyWidget
 
 ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
+能运行同一套组件包的 Android 版应用正在测试中，尚未上架 Google Play；详见 [Android 版 ScriptWidget](docs/android/README.md)。
+
 ## 为什么选择 ScriptWidget
 
-- 一份脚本适配 iOS、iPadOS 与 macOS，多尺寸布局可通过 `$getenv("widget-size")` 调整。
+- 一份脚本适配 iOS、iPadOS 与 macOS，以及 Android（测试中），多尺寸布局可通过 `$getenv("widget-size")` 调整。
 - 支持交互式 Widget、App Intents、Live Activity、灵动岛与 Control Widget。
 - Mac Studio 内置 CodeMirror 编辑器、补全、诊断、Console 和多尺寸预览。
 - 可用 OpenAI 兼容模型生成、运行、诊断并迭代 Widget；API Key 保存在 Keychain。
@@ -48,6 +50,12 @@ open macOS/ScriptWidgetMac.xcodeproj
 ```
 
 在 Xcode 中选择 `ScriptWidgetMac` 或 `ScriptWidget` scheme，配置 `iCloud.ScriptWidget` container 与 `group.everettjf.scriptwidget` App Group，然后运行。也可以直接按照[五分钟教程](docs/five-minute-tutorial.md)创建第一个 Widget。
+
+Android 版改用 Gradle 构建（需要 JDK 17 或更高版本和 Android SDK；应用要求 Android 15 或更高版本）：
+
+```bash
+cd Android && ./gradlew :app:assembleDebug
+```
 
 最小脚本：
 
@@ -77,6 +85,17 @@ $render(
 ```bash
 ./Scripts/release-readiness.sh
 ```
+
+Android 应用有独立的构建和测试，上面的门禁不包含它：
+
+```bash
+node Android/scripts/build-shared-js.mjs   # after changing Web/preview-engine/src
+cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug
+sh scripts/device-test.sh core             # instrumented tests on a connected device
+sh scripts/device-test.sh app
+```
+
+详见 [Android 版 ScriptWidget](docs/android/README.md)、[测试说明](docs/android/testing.md)和[待办事项](docs/android/TODO.md)。
 
 安全问题请按照[安全政策](SECURITY.md)私下报告，不要在公开 Issue 中披露利用细节或个人数据。
 
