@@ -100,3 +100,5 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 ## Public website ownership
 
 Maintain and deploy functional Web Studio only from this repository at `https://asp.run/scriptwidget/studio/`. Product marketing, app downloads, support and original privacy policies remain at `https://atomsprout.com/scriptwidget/`. The Pages workflow must assemble the tested Studio build using `Scripts/build-web-site.mjs`; never rewrite Studio or sandbox HTML into Company redirects.
+
+The `/scriptwidget/` root is a simple entry page with links to Web Studio and the official Company product website. Do not auto-redirect it or publish old Company product redirect pages. Reuse the native App icon for the entry page, Studio header and browser favicon.

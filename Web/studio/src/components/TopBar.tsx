@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, LayoutGrid, Plus, Smartphone, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import appIcon from "../../../../iOS/ScriptWidget/Assets/Assets.xcassets/AppIcon.appiconset/icon-64@2x.png";
 
 interface TopBarProps {
   projectName: string;
@@ -22,10 +23,10 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
   const commit = () => { if (name.trim() !== projectName) onRename(name); };
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-card px-4 py-2">
-      <div className="flex items-center gap-2 font-semibold whitespace-nowrap">
-        <span aria-hidden="true" className="size-[22px] rounded-md bg-gradient-to-br from-[#0a84ff] to-[#5e5ce6]" />
+      <a href="../" aria-label="ScriptWidget home" className="flex items-center gap-2 rounded-sm font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
+        <img src={appIcon} width={24} height={24} alt="" className="size-6 shrink-0 rounded-md" />
         <span>ScriptWidget Studio</span>
-      </div>
+      </a>
       <label className="min-w-32 flex-[1_1_10rem]">
         <span className="sr-only">Project name</span>
         <Input
