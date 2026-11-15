@@ -13,8 +13,10 @@ fs.cpSync(studio, path.join(out, 'studio'), {recursive: true});
 const appIcon = fs.readFileSync(path.join(root, 'iOS/ScriptWidget/Assets/Assets.xcassets/AppIcon.appiconset/icon-64@2x.png'));
 const iconName = `app-icon-${createHash('sha256').update(appIcon).digest('hex').slice(0, 12)}.png`;
 fs.writeFileSync(path.join(out, iconName), appIcon);
-const entry = fs.readFileSync(path.join(root, 'Web/entry/index.html'), 'utf8').replaceAll('__APP_ICON__', iconName);
-fs.writeFileSync(path.join(out, 'index.html'), entry);
+for (const file of ['index.html', '404.html']) {
+  const entry = fs.readFileSync(path.join(root, 'Web/entry', file), 'utf8').replaceAll('__APP_ICON__', iconName);
+  fs.writeFileSync(path.join(out, file), entry);
+}
 if (fs.existsSync(path.join(root, 'site/schemas'))) fs.cpSync(path.join(root, 'site/schemas'), path.join(out, 'schemas'), {recursive: true});
 fs.writeFileSync(path.join(out, '.nojekyll'), '');
 console.log('Built ScriptWidget entry page, functional Studio and public schemas.');
