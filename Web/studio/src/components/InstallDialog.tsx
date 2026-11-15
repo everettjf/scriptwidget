@@ -1,4 +1,5 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { productLinks } from "@/lib/productLinks";
 
 export function InstallDialog({ fileName, onOpenChange }: { fileName: string | null; onOpenChange(open: boolean): void }) {
   return (
@@ -16,7 +17,7 @@ export function InstallDialog({ fileName, onOpenChange }: { fileName: string | n
         <p className="text-xs text-muted-foreground">Opening this page in Safari on iPhone lets you send it to ScriptWidget directly from the share sheet.</p>
         <p className="text-sm">
           Need the app?{" "}
-          <a className="text-primary underline-offset-4 hover:underline" href="https://apps.apple.com/us/app/scriptwidget/id1555600758" target="_blank" rel="noopener noreferrer">
+          <a className="text-primary underline-offset-4 hover:underline" href={productLinks.ios} target="_blank" rel="noopener noreferrer">
             Get ScriptWidget on the App Store
           </a>
         </p>
