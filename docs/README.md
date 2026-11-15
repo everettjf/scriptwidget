@@ -1,6 +1,6 @@
 # ScriptWidget Documentation
 
-Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quickest path is [Your first widget](getting-started.md).
+Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX. The quickest path is [Your first widget](getting-started.md).
 
 ## Start here
 
@@ -8,6 +8,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 - [Five-minute tutorial](five-minute-tutorial.md) — the built-in first-launch walkthrough and its complete workflow.
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
 - [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
+- [Platform support](platform-support.md) — which features and APIs work on iPhone and iPad, Mac, and Android.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
 - [Reminders API](reminders-api.md) — selected-list reads, bounded windows and explicit user actions with write receipts.
@@ -55,7 +56,7 @@ Build native widgets for iPhone, iPad, and Mac with JavaScript and JSX. The quic
 
 ## Supported platforms
 
-ScriptWidget focuses on iOS, iPadOS, and macOS. A single `main.jsx` can adapt its layout with `$getenv("widget-size")`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.
+ScriptWidget runs on iOS, iPadOS and macOS, and on Android (in testing, not yet on Google Play). [Platform support](platform-support.md) lists every feature and API by platform. A single `main.jsx` can adapt its layout with `$getenv("widget-size")` and branch on `$system.platform()`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.
 
 - [Opt-in iCloud JSON API](icloud-json-api.md) — native grants, immutable revisions, conflicts and Web mocks.
 

@@ -15,8 +15,8 @@ android {
         applicationId = "com.atomsprout.scriptwidget"
         minSdk = 35
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.2.0"
+        versionCode = 1
+        versionName = "1.0.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }

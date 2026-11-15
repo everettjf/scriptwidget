@@ -1,4 +1,4 @@
-# Google Play listing kit (ScriptWidget 1.2.0)
+# Google Play listing kit (ScriptWidget 1.0.0)
 
 Everything needed to create the Play Console entry and an internal test release.
 
@@ -9,7 +9,7 @@ Everything needed to create the Play Console entry and an internal test release.
 - The package name is now `com.atomsprout.scriptwidget`. Only the application ID changed; the Kotlin namespace is still `com.everettjf.scriptwidget`.
 - Everything below has to be entered again in the new account: the app, testers, the store listing, the App content declarations and a release. The answers used the first time are kept in "Answers used in the first Play Console setup".
 - Firebase: project `scriptwidget-77792`, owned by the `atomsprout@gmail.com` Google account, has the Android app `com.atomsprout.scriptwidget`. Gemini and Analytics are off. `Android/firebase.properties` (git-ignored) holds its values. A test message sent from the Firebase console to the Pixel 6's token was received by the app on 13 November 2026. The first project (`scriptwidget-8ac0e`, under another account) is no longer used.
-- Build 8 (version code 8) is the build to upload: `Android/app/build/outputs/bundle/release/app-release.aab`, signed with the upload key. It has the new package name, the iOS icon and the reworked UI.
+- Version 1.0.0 (version code 1) is the build to upload: `Android/app/build/outputs/bundle/release/app-release.aab`, signed with the upload key. The app starts again at 1.0.0 because the developer account and the package name are new; during development it was numbered 1.2.0, builds 6 to 8. It has the new package name, the iOS icon, the reworked UI and the three Android-only features (scrolling lists, wallpaper colors, the automation entry point).
 - The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. It can be reused for the new app. Keep a backup of both: every update must be signed with this key.
 
 ## Answers used in the first Play Console setup
@@ -34,7 +34,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.2.0 (version code 8) |
+| Version | 1.0.0 (version code 1) |
 | Minimum Android | 15 (API 35) |
 | Target API | 36 |
 | Contains ads | No |
@@ -78,7 +78,7 @@ Everything needed to create the Play Console entry and an internal test release.
 
 **Release notes for the internal test:**
 
-> First Android build for testing. Small, medium, large and extra-large widgets, the editor, templates with previews, Gallery, AI generation with your own key, Quick Settings tiles, app shortcuts and Live Updates. Tested on a Pixel 6 with Android 17: please report the device and launcher with any problem.
+> First Android build for testing. Small, medium, large and extra-large widgets, the editor, templates with previews, Gallery, AI generation with your own key, Quick Settings tiles, app shortcuts and Live Updates. Only on Android: scrolling lists, colors that follow the wallpaper, and an automation entry point for apps such as Tasker. Tested on a Pixel 6 with Android 17: please report the device and launcher with any problem.
 
 ## Graphics in this folder
 

@@ -365,9 +365,11 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
-| **Android** | 🧪 In testing | Android 15+; version 1.2.0, not yet on Google Play. Runs the same packages; [differences from iOS](docs/android/README.md) |
+| **Android** | 🧪 In testing | Android 15+; version 1.0.0, not yet on Google Play. Runs the same packages; [differences from iOS](docs/android/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
+
+Feature-by-feature support is in [Platform support](docs/platform-support.md).
 
 ---
 

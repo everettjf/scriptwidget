@@ -1,6 +1,6 @@
 # Android to-do
 
-What is left after 1.2.0 (build 8). It went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and a new developer account is waiting for identity verification. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
+What is left before 1.0.0 (version code 1) goes to Google Play. The version was renumbered from 1.2.0 (build 8) on 14 November 2026, because the app starts again under a new developer account and package name; the earlier build numbers in these notes are that development history. Build 7 went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and a new developer account is waiting for identity verification. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
 
 ## Not verified yet
 
@@ -18,7 +18,7 @@ What is left after 1.2.0 (build 8). It went to Google Play internal testing on 1
 
 ## Google Play, once the new developer account is verified
 
-- Follow the submission checklist in the listing kit: create the app as `com.atomsprout.scriptwidget`, add testers, upload build 8 and fill in the store listing and App content again.
+- Follow the submission checklist in the listing kit: create the app as `com.atomsprout.scriptwidget`, add testers, upload 1.0.0 and fill in the store listing and App content again.
 - Tablets, other launchers and other vendors' phones have not been checked with the reworked UI (see the [UI review](ui-review.md)).
 - Send the first closed testing release for review. Production access needs at least 12 testers opted in to the closed test for at least 14 days.
 - Declare trader status for the developer account if Play asks for it.

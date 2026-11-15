@@ -90,7 +90,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 ## Current Product Priorities
 
 - Stabilize and document the now-versioned runtime, Package 2.0, Skills 1.0, Gallery 1.0, and Data Source Plugin 1.0 contracts before expanding them.
-- Bring Android 1.2.0 to Google Play: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
+- Bring Android 1.0.0 to Google Play: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
 - Grow the curated Gallery and beginner templates while keeping every example verified, permission-correct, and runnable offline where appropriate.
 - Improve Studio authoring ergonomics, diagnostics, accessibility, localization, and multi-file workflows without weakening crash recovery or iCloud conflict safety.
 - Establish repeatable on-device performance baselines for timeline generation, JavaScript evaluation, cold launch, editor latency, and widget-extension memory.

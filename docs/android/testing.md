@@ -1,4 +1,4 @@
-# Android test notes (1.2.0, build 8)
+# Android test notes (1.0.0)
 
 What was run before handing this build to testers, and what was not.
 
@@ -19,6 +19,8 @@ Build 8 (the new icon and the reworked UI, see the [UI review](ui-review.md)) wa
 The release build of build 8 (minified, signed with the upload key) was installed on the Pixel 6 as an APK: it started, drew the starter widgets and the template previews, and logged no crash. This replaced the debug build on that phone and removed its placed widgets. The bundle itself has not been installed through Google Play.
 
 The three Android-only features (scrolling `<list>`, `material.` colors, the automation entry point; 14 November 2026, same version and build number as build 8) were run on the Pixel 6 only: 482 JVM tests, 199 preview-engine tests, 30 core device tests and 64 app device tests passed. In the app suite the live-model, push-wait and picked-folder tests skipped, as before. The emulators and other phones were not run. What was checked by hand is under [Android-only features](#android-only-features-checked-by-hand-on-the-pixel-6).
+
+The version was then renumbered to 1.0.0 (version code 1) with no code change: the 482 JVM tests passed, and the debug APK and the release bundle were built, the bundle signed with the upload key. The debug APK reports `versionName` 1.0.0 and `versionCode` 1. This build was not installed on a device and the device suites were not re-run. The Pixel 6 still has the earlier debug build (version code 8); Android refuses to install a lower version code over it, so that build must be uninstalled first, which removes its widgets.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
