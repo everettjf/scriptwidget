@@ -5,7 +5,7 @@ The Android app is built in two flavors from the same source, with the same appl
 | Flavor | Goes to | Contains | Build |
 | --- | --- | --- | --- |
 | `play` | Google Play | Firebase Cloud Messaging, for push-triggered refresh | `./gradlew :app:bundlePlayRelease` → `app/build/outputs/bundle/playRelease/app-play-release.aab` |
-| `foss` | GitHub Releases, and from there IzzyOnDroid | No Google or other proprietary library; no push-triggered refresh | `./gradlew :app:assembleFossRelease` → `app/build/outputs/apk/foss/release/app-foss-release.apk` |
+| `foss` | GitHub Releases | No Google or other proprietary library; no push-triggered refresh | `./gradlew :app:assembleFossRelease` → `app/build/outputs/apk/foss/release/app-foss-release.apk` |
 
 Everything else is the same code. The only flavor-specific files are `Android/app/src/play` and `Android/app/src/foss` (`PushBackend` and the Firebase service entry). `foss` never reads `Android/firebase.properties`.
 
@@ -13,7 +13,7 @@ Neither flavor contains analytics or crash reporting, and the app has no way to 
 
 ## Signing
 
-Both flavors are signed with the key in `Android/keystore.properties` (git-ignored). For the GitHub APK this key is permanent: Android installs an update only when it is signed with the same key, and IzzyOnDroid records the key when it adds the app. Its certificate SHA-256 is `ef474602e80cb63c5ef39e39eda81eb6ae9e77d27c8d13c573e2aad4bb6c1c96`.
+Both flavors are signed with the key in `Android/keystore.properties` (git-ignored). For the GitHub APK this key is permanent: Android installs an update only when it is signed with the same key. Its certificate SHA-256 is `ef474602e80cb63c5ef39e39eda81eb6ae9e77d27c8d13c573e2aad4bb6c1c96`.
 
 On Google Play the same key is the upload key. If Play App Signing generates its own app signing key, a Play install and a GitHub install are signed differently and one cannot update the other: the user has to uninstall first, which removes widgets and data.
 
@@ -27,20 +27,15 @@ On Google Play the same key is the upload key. If Play App Signing generates its
 
 The repository also holds releases of the command line tool (`cli-v…`) and tags of the Apple apps (`v…`), so anything that follows Android releases must filter on the `android-v` prefix.
 
-## IzzyOnDroid
+## IzzyOnDroid: not requested
 
-[IzzyOnDroid](https://apt.izzysoft.de/fdroid/) is an F-Droid-compatible repository that takes the developer's own APK from GitHub releases. Its [inclusion policy](https://izzyondroid.org/docs/general/AppInclusionPolicy/) asks for a free license, no proprietary components or trackers, a release-signed APK attached to tagged releases, and the description, icon and screenshots in the repository in the fastlane layout. Those are in `fastlane/metadata/android/en-US/`.
+[IzzyOnDroid](https://apt.izzysoft.de/fdroid/) is an F-Droid-compatible repository that takes the developer's own APK from GitHub releases. The `foss` APK and the fastlane metadata meet the technical side of its [inclusion policy](https://izzyondroid.org/docs/general/AppInclusionPolicy/): a free license, no proprietary components or trackers, a release-signed APK on tagged releases, under 30 MB.
 
-Inclusion is requested once, by its owner, with an issue at <https://codeberg.org/IzzyOnDroid/repodata/issues> using the template there. After that, new releases are picked up from GitHub. The request needs:
+No request was filed, because the app does not meet the policy's AI section (read on 14 November 2026):
 
-| Field | Value |
-| --- | --- |
-| Name | ScriptWidget |
-| Source | https://github.com/everettjf/scriptwidget (the Android app is under `Android/`) |
-| License | Apache-2.0 |
-| APKs | GitHub releases tagged `android-v*`, file `scriptwidget-android-<version>.apk` |
-| Package name | `com.atomsprout.scriptwidget` |
-| Category | Tools; home screen widgets written in JavaScript and JSX |
-| Notes | Needs Android 15 or later. The repository also has `cli-v*` releases without an APK. Permissions: location, calendar and Health Connect reads are each used only by widgets that declare the capability, after the user allows it in the app |
+- Apps whose code was created fully or in part by generative AI tools are rejected. Most of the Android app's code was written with an AI coding assistant, and the request form asks for this to be declared.
+- Apps that integrate with LLM services are rejected. The app's optional AI generation calls a model provider with the user's own key.
 
-Not checked: whether the build is reproducible from source (IzzyOnDroid shows a badge when it is), and the app on a device without Google services.
+The request form at <https://codeberg.org/IzzyOnDroid/repodata/issues> also asks its author to confirm that human developers reviewed and manually tested all AI-generated changes. Only the app's owner can state that. Codeberg's own terms now restrict projects written with heavy use of LLMs as well.
+
+F-Droid's main repository builds from source and was not looked into; whether it has a comparable rule is unknown.

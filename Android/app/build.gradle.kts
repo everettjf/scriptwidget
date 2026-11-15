@@ -36,8 +36,8 @@ android {
     }
     val firebaseFields = listOf("FIREBASE_PROJECT_ID" to "projectId", "FIREBASE_APP_ID" to "applicationId", "FIREBASE_API_KEY" to "apiKey", "FIREBASE_SENDER_ID" to "senderId")
     // Two builds of the same app. `play` is the Google Play build and contains Firebase Cloud
-    // Messaging. `foss` contains no Google library and is the APK published on GitHub Releases
-    // and picked up by F-Droid-style repositories; it never reads firebase.properties.
+    // Messaging. `foss` contains no Google library and is the APK published on GitHub Releases;
+    // it never reads firebase.properties.
     flavorDimensions += "distribution"
     productFlavors {
         create("play") {
