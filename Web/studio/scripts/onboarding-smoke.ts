@@ -28,7 +28,13 @@ try {
   await page.waitFor("!!document.querySelector('#hero-preview .sw-widget')");
   assert.equal(await page.evaluate("document.querySelectorAll('.hero .actions a').length"), 3);
   assert.equal(await page.evaluate("document.querySelector('.hero .actions a:first-child').classList.contains('primary')"), true);
-  assert.equal(await page.evaluate("document.querySelector('.hero .actions a:first-child').href"), "https://apps.apple.com/us/app/scriptwidget/id1555600758");
+  assert.equal(await page.evaluate("new URL(document.querySelector('.hero .actions a:first-child').href).hash"), "#downloads");
+  assert.deepEqual(await page.evaluate("[...document.querySelectorAll('#downloads a')].map(a=>a.href)"), [
+    "https://apps.apple.com/app/id1555600758?platform=iphone",
+    "https://apps.apple.com/app/id1555600758?platform=mac",
+    "https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0",
+    "https://asp.run/scriptwidget/studio/",
+  ]);
   assert.equal(await page.evaluate("document.querySelectorAll('[data-hero-example]').length"), 3);
   assert.equal(await page.evaluate("new URL(document.querySelector('.hero .actions a:last-child').href).pathname"), "/studio/");
   const output = process.env.SCRIPTWIDGET_ONBOARDING_SCREENSHOTS;

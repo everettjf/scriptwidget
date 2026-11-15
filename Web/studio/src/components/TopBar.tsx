@@ -24,7 +24,7 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
   const commit = () => { if (name.trim() !== projectName) onRename(name); };
   return (
     <header className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-card px-4 py-2">
-      <div className="order-1 flex w-full items-center gap-3 xl:contents">
+      <div className="order-1 flex w-full flex-wrap items-center gap-3 xl:contents">
         <a href="../" aria-label="ScriptWidget home" className="order-1 flex items-center gap-2 rounded-sm font-semibold whitespace-nowrap focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring">
           <img src={appIcon} width={24} height={24} alt="" className="size-6 shrink-0 rounded-md" />
           <span>ScriptWidget Studio</span>
