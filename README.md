@@ -446,3 +446,7 @@ Inspired by:
 ## System capabilities under development
 
 Runtime 1.6 adds opt-in notifications, HealthKit daily history, owned calendar writes, normalized forecasts, AlarmKit timers, imported JSON/CSV, selected contacts, MapKit places/snapshots and selected HomeKit controls. Native user grants and OS permissions are separate from exported widgets; Web Studio offers isolated editable mocks. See the [contracts, nine examples and device acceptance checklist](docs/system-services-api.md). Physical-device verification is required before release.
+
+## Website ownership
+
+Product information, downloads, support and privacy pages live at https://atomsprout.com/scriptwidget/. Functional Web Studio lives at https://asp.run/scriptwidget/studio/ and is built from this repository on changes to the Web runtime, editor support scripts, templates or Gallery. `.github/workflows/pages.yml` tests and builds Studio, then `Scripts/build-web-site.mjs` assembles its Pages artifact. Company must not keep a compiled Studio copy. The personal `/scriptwidget/` entry opens Studio; old product documentation paths point to Company.

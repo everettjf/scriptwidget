@@ -96,3 +96,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - Establish repeatable on-device performance baselines for timeline generation, JavaScript evaluation, cold launch, editor latency, and widget-extension memory.
 - Design authenticated data sources only with an explicit, user-owned credential capability; never expose secrets directly to imported widgets or plugin manifests.
 - Continue security review of execution, network, archive, shared-container, Gallery, AI, and plugin boundaries, and fail closed on unsupported capabilities.
+
+## Public website ownership
+
+Maintain and deploy functional Web Studio only from this repository at `https://asp.run/scriptwidget/studio/`. Product marketing, app downloads, support and original privacy policies remain at `https://atomsprout.com/scriptwidget/`. The Pages workflow must assemble the tested Studio build using `Scripts/build-web-site.mjs`; never rewrite Studio or sandbox HTML into Company redirects.

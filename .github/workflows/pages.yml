@@ -10,7 +10,7 @@ on:
       - 'Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/**'
       - 'Gallery/widgets/**'
       - '.github/workflows/pages.yml'
-      - 'Scripts/redirect-legacy-site.py'
+      - 'Scripts/build-web-site.mjs'
   workflow_dispatch:
 permissions:
   contents: read
@@ -40,14 +40,9 @@ jobs:
         run: npm ci && npm test && npm run build
       - name: Verify homepage code and preview
         run: node Web/studio/scripts/hero-smoke.ts
-      - name: Assemble site
-        run: |
-          mkdir -p _site
-          cp -R site/. _site/
-          cp -R Web/studio/dist _site/studio
+      - name: Assemble functional Web Studio site
+        run: node Scripts/build-web-site.mjs
       - uses: actions/configure-pages@v6
-      - name: Redirect legacy website to AtomSprout
-        run: python3 Scripts/redirect-legacy-site.py _site scriptwidget
       - uses: actions/upload-pages-artifact@v5
         with: { path: _site }
       - id: deployment

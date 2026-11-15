@@ -15,3 +15,6 @@ Tools/ScriptWidgetPreview/ScriptWidgetPreview.xcodeproj/project.xcworkspace/xcus
 Tools/ScriptWidgetCLI/ScriptWidgetCLI.xcodeproj/xcuserdata/
 Tools/ScriptWidgetCLI/ScriptWidgetCLI.xcodeproj/project.xcworkspace/xcuserdata/
 Tools/ScriptWidgetCLI/**/__pycache__/
+
+# Functional Pages assembly output
+_site/
