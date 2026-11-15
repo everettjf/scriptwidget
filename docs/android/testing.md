@@ -22,6 +22,8 @@ The three Android-only features (scrolling `<list>`, `material.` colors, the aut
 
 The version was then renumbered to 1.0.0 (version code 1) with no code change: the 482 JVM tests passed, and the debug APK and the release bundle were built, the bundle signed with the upload key. The debug APK reports `versionName` 1.0.0 and `versionCode` 1. This build was not installed on a device and the device suites were not re-run. The Pixel 6 still has the earlier debug build (version code 8); Android refuses to install a lower version code over it, so that build must be uninstalled first, which removes its widgets.
 
+The app was then split into the `play` and `foss` flavors (14 November 2026; see [Android distribution](distribution.md)), moving the Firebase code out of the shared source. On the Pixel 6: the 482 JVM tests passed; the app suite passed as `foss` (63 tests; it has no push delivery test) and as `play` (64 tests), with the live-model, push-wait and picked-folder tests skipped as before. The core suite was not re-run, since `core` did not change. The signed `foss` release APK (28.5 MB, no Firebase or Google Play services classes, not debuggable) was installed in place of the debug build: it started, listed the starter widgets, drew the three Android-only template previews, and logged no crash. Widgets were not placed on the home screen from this APK.
+
 | Device | Android | Core | App |
 | --- | --- | --- | --- |
 | Pixel 6 (physical) | 17 (API 37) | 27 passed (the example.com fetch check was skipped on the last run: the site answered 403; it had returned 200 on earlier runs) | 56 passed |

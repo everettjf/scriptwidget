@@ -2,12 +2,19 @@
 # Runs instrumented tests of a module on the connected device without
 # uninstalling the test APK, so files the tests save can be pulled afterwards.
 #   scripts/device-test.sh core [ClassName[#method]]   -> prints the result
+# The app is tested as its `play` flavor; set FLAVOR=foss for the build without Firebase.
 set -e
 cd "$(dirname "$0")/.."
 module="${1:-core}"
 package="com.everettjf.scriptwidget.$module.test"
 [ "$module" = "app" ] && package="com.atomsprout.scriptwidget.test"
-./gradlew -q ":$module:installDebugAndroidTest" $( [ "$module" = "app" ] && echo ":app:installDebug" ) >/dev/null
+flavor="${FLAVOR:-play}"
+variant="$(printf %s "$flavor" | cut -c1 | tr a-z A-Z)$(printf %s "$flavor" | cut -c2-)Debug"
+if [ "$module" = "app" ]; then
+  ./gradlew -q ":app:install${variant}AndroidTest" ":app:install${variant}" >/dev/null
+else
+  ./gradlew -q ":$module:installDebugAndroidTest" >/dev/null
+fi
 # Lets the app's tests bind widgets through their own AppWidgetHost.
 [ "$module" = "app" ] && adb shell appwidget grantbind --package com.atomsprout.scriptwidget --user 0
 class=""

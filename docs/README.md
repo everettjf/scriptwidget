@@ -47,6 +47,7 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity (iOS and macOS), sandbox isolation, and known differences. The macOS comparison app lives in `Tools/ScriptWidgetPreview`.
 - [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
 - [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS for the Android app in development.
+- [Android distribution](android/distribution.md) — the Play and GitHub build flavors, signing, the release steps and IzzyOnDroid.
 - [Android test notes](android/testing.md) and [Android to-do](android/TODO.md) — what was tested on which devices, and what is left.
 - [Android UI review](android/ui-review.md) — the screen-by-screen review behind build 8 and what it changed.
 - [Android port research and plan](android/android-port-research-and-plan.md) — research and planning draft (Chinese) for an Android version: engine and rendering choices, feature mapping, phases, and rollout.

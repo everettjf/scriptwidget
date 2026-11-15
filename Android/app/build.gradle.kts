@@ -34,9 +34,20 @@ android {
         val file = rootProject.file("firebase.properties")
         if (file.isFile) file.inputStream().use { load(it) }
     }
-    defaultConfig {
-        for ((field, key) in listOf("FIREBASE_PROJECT_ID" to "projectId", "FIREBASE_APP_ID" to "applicationId", "FIREBASE_API_KEY" to "apiKey", "FIREBASE_SENDER_ID" to "senderId")) {
-            buildConfigField("String", field, "\"" + firebaseProperties.getProperty(key, "").replace("\"", "") + "\"")
+    val firebaseFields = listOf("FIREBASE_PROJECT_ID" to "projectId", "FIREBASE_APP_ID" to "applicationId", "FIREBASE_API_KEY" to "apiKey", "FIREBASE_SENDER_ID" to "senderId")
+    // Two builds of the same app. `play` is the Google Play build and contains Firebase Cloud
+    // Messaging. `foss` contains no Google library and is the APK published on GitHub Releases
+    // and picked up by F-Droid-style repositories; it never reads firebase.properties.
+    flavorDimensions += "distribution"
+    productFlavors {
+        create("play") {
+            dimension = "distribution"
+            isDefault = true
+            for ((field, key) in firebaseFields) buildConfigField("String", field, "\"" + firebaseProperties.getProperty(key, "").replace("\"", "") + "\"")
+        }
+        create("foss") {
+            dimension = "distribution"
+            for ((field, _) in firebaseFields) buildConfigField("String", field, "\"\"")
         }
     }
     val hasUploadKey = keystoreProperties.getProperty("storeFile")?.let { rootProject.file(it).isFile } == true
@@ -84,7 +95,7 @@ dependencies {
     implementation("androidx.navigation:navigation-compose:2.10.2")
     implementation("androidx.core:core-ktx:1.19.1")
     implementation("androidx.work:work-runtime-ktx:2.11.2")
-    implementation("com.google.firebase:firebase-messaging:26.0.2")
+    "playImplementation"("com.google.firebase:firebase-messaging:26.0.2")
     // The Health Connect permission contract used by the System Access screen.
     implementation("androidx.health.connect:connect-client:1.1.0")
     debugImplementation("androidx.compose.ui:ui-tooling")

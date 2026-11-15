@@ -24,6 +24,13 @@ What is left before 1.0.0 (version code 1) goes to Google Play. The version was 
 - Declare trader status for the developer account if Play asks for it.
 - Decide whether to keep Play's automatic protection (installer check), which matters if an APK is also distributed.
 
+## Other channels
+
+- GitHub Releases: publish the `foss` APK as `android-v1.0.0`, following [Android distribution](distribution.md).
+- IzzyOnDroid: once that release exists, its owner files the inclusion request described there.
+- Decide how Play signs the app before the first upload: with its own key, a Play install and a GitHub install cannot update each other.
+- The `foss` build has not been run on a device without Google services, and whether it builds reproducibly has not been checked.
+
 ## Housekeeping
 
 - Back up the upload key (`~/.scriptwidget-android/scriptwidget-upload.jks`) and `Android/keystore.properties`. Every update must be signed with this key.

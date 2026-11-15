@@ -7,11 +7,6 @@ import com.everettjf.scriptwidget.BuildConfig
 import com.everettjf.scriptwidget.core.push.PushRegistration
 import com.everettjf.scriptwidget.widget.ScriptWidgetProvider
 import com.everettjf.scriptwidget.widget.WidgetScheduler
-import com.google.firebase.FirebaseApp
-import com.google.firebase.FirebaseOptions
-import com.google.firebase.messaging.FirebaseMessaging
-import com.google.firebase.messaging.FirebaseMessagingService
-import com.google.firebase.messaging.RemoteMessage
 import java.util.concurrent.Executors
 
 /** Sends a registration body; replaced in tests. Returns the HTTP status. */
@@ -22,17 +17,19 @@ fun interface PushTransport {
 /**
  * Push-triggered widget refresh for packages that declare `pushUpdates`.
  *
- * It needs a Firebase project. The build reads its identifiers from
- * `Android/firebase.properties` (git-ignored); without that file push stays
- * off and widgets keep refreshing on their schedule. The package never sees
- * the token: the app posts it to the package's declared registration URL.
+ * It needs Firebase Cloud Messaging, which only the `play` build flavor
+ * contains (see `PushBackend`), and a Firebase project. The build reads the
+ * project's identifiers from `Android/firebase.properties` (git-ignored).
+ * In the `foss` flavor, or without that file, push stays off and widgets
+ * keep refreshing on their schedule. The package never sees the token: the
+ * app posts it to the package's declared registration URL.
  */
 object Push {
     private const val TAG = "ScriptWidget"
     private val executor = Executors.newSingleThreadExecutor { runnable -> Thread(runnable, "scriptwidget-push").apply { isDaemon = true } }
 
-    /** True when this build was given a Firebase project. */
-    val configured: Boolean get() = BuildConfig.FIREBASE_PROJECT_ID.isNotEmpty() && BuildConfig.FIREBASE_APP_ID.isNotEmpty() &&
+    /** True when this build contains the messaging library and was given a Firebase project. */
+    val configured: Boolean get() = PushBackend.AVAILABLE && BuildConfig.FIREBASE_PROJECT_ID.isNotEmpty() && BuildConfig.FIREBASE_APP_ID.isNotEmpty() &&
         BuildConfig.FIREBASE_API_KEY.isNotEmpty() && BuildConfig.FIREBASE_SENDER_ID.isNotEmpty()
 
     /** Told which widgets a received push scheduled; set by tests that wait for a real delivery. */
@@ -46,12 +43,8 @@ object Push {
     fun start(context: Context) {
         if (!configured) return
         runCatching {
-            if (FirebaseApp.getApps(context).isEmpty()) {
-                FirebaseApp.initializeApp(context, FirebaseOptions.Builder()
-                    .setProjectId(BuildConfig.FIREBASE_PROJECT_ID).setApplicationId(BuildConfig.FIREBASE_APP_ID)
-                    .setApiKey(BuildConfig.FIREBASE_API_KEY).setGcmSenderId(BuildConfig.FIREBASE_SENDER_ID).build())
-            }
-            FirebaseMessaging.getInstance().token.addOnSuccessListener { token -> executor.execute { register(context.applicationContext, token) } }
+            PushBackend.start(context)
+            PushBackend.token { token -> executor.execute { register(context.applicationContext, token) } }
         }.onFailure { Log.w(TAG, "push.start -> unavailable") }
     }
 
@@ -82,7 +75,7 @@ object Push {
     /** Called when the set of placed widgets or their packages changes. */
     fun refreshRegistrations(context: Context) {
         if (!configured) return
-        runCatching { FirebaseMessaging.getInstance().token.addOnSuccessListener { token -> executor.execute { register(context.applicationContext, token) } } }
+        runCatching { PushBackend.token { token -> executor.execute { register(context.applicationContext, token) } } }
     }
 
     /**
@@ -102,9 +95,4 @@ object Push {
         onHandled?.invoke(ids)
         return ids
     }
-}
-
-class PushService : FirebaseMessagingService() {
-    override fun onNewToken(token: String) { Push.register(applicationContext, token) }
-    override fun onMessageReceived(message: RemoteMessage) { Push.handle(applicationContext, message.data) }
 }

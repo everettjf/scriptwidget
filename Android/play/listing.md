@@ -9,7 +9,7 @@ Everything needed to create the Play Console entry and an internal test release.
 - The package name is now `com.atomsprout.scriptwidget`. Only the application ID changed; the Kotlin namespace is still `com.everettjf.scriptwidget`.
 - Everything below has to be entered again in the new account: the app, testers, the store listing, the App content declarations and a release. The answers used the first time are kept in "Answers used in the first Play Console setup".
 - Firebase: project `scriptwidget-77792`, owned by the `atomsprout@gmail.com` Google account, has the Android app `com.atomsprout.scriptwidget`. Gemini and Analytics are off. `Android/firebase.properties` (git-ignored) holds its values. A test message sent from the Firebase console to the Pixel 6's token was received by the app on 13 November 2026. The first project (`scriptwidget-8ac0e`, under another account) is no longer used.
-- Version 1.0.0 (version code 1) is the build to upload: `Android/app/build/outputs/bundle/release/app-release.aab`, signed with the upload key. The app starts again at 1.0.0 because the developer account and the package name are new; during development it was numbered 1.2.0, builds 6 to 8. It has the new package name, the iOS icon, the reworked UI and the three Android-only features (scrolling lists, wallpaper colors, the automation entry point).
+- Version 1.0.0 (version code 1) is the build to upload: `Android/app/build/outputs/bundle/playRelease/app-play-release.aab` (`./gradlew :app:bundlePlayRelease`), signed with the upload key. The app starts again at 1.0.0 because the developer account and the package name are new; during development it was numbered 1.2.0, builds 6 to 8. It has the new package name, the iOS icon, the reworked UI and the three Android-only features (scrolling lists, wallpaper colors, the automation entry point).
 - The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. It can be reused for the new app. Keep a backup of both: every update must be signed with this key.
 
 ## Answers used in the first Play Console setup
@@ -80,14 +80,16 @@ Everything needed to create the Play Console entry and an internal test release.
 
 > First Android build for testing. Small, medium, large and extra-large widgets, the editor, templates with previews, Gallery, AI generation with your own key, Quick Settings tiles, app shortcuts and Live Updates. Only on Android: scrolling lists, colors that follow the wallpaper, and an automation entry point for apps such as Tasker. Tested on a Pixel 6 with Android 17: please report the device and launcher with any problem.
 
-## Graphics in this folder
+## Graphics
+
+The graphics and the listing text are kept once, in `fastlane/metadata/android/en-US/` at the repository root, in the layout that F-Droid-style repositories read. Play Console gets the same files by hand.
 
 | File | Use |
 | --- | --- |
-| `icon-512.png` | App icon, 512 × 512: the iOS app icon, resized |
-| `feature-graphic-1024x500.png` | Feature graphic: the icon artwork with the name, drawn by a script |
-| `screenshots/01-library.png` … `05-gallery.png` | Phone screenshots, 1080 × 2400, taken on a Pixel 6 from build 8: My Widgets, Templates, a widget's page, the editor, the Gallery |
-| `screenshots/06-home-screen.png` | Two widgets on the home screen, 1080 × 1920 (cropped below the status bar) |
+| `images/icon.png` | App icon, 512 × 512: the iOS app icon, resized |
+| `images/featureGraphic.png` | Feature graphic, 1024 × 500: the icon artwork with the name, drawn by a script |
+| `images/phoneScreenshots/1.png` … `5.png` | Phone screenshots, 1080 × 2400, taken on a Pixel 6 from build 8: My Widgets, Templates, a widget's page, the editor, the Gallery |
+| `images/phoneScreenshots/6.png` | Two widgets on the home screen, 1080 × 1920 (cropped below the status bar) |
 
 The first upload to Play used two wrong pictures (a Google Lens screen in place of the Gallery and the Templates list). All six were retaken.
 
@@ -96,8 +98,8 @@ Play asks whether each graphic was created or edited with AI. The screenshots ar
 ## Submission checklist (once the developer account is verified)
 
 1. Create the app: ScriptWidget, English (United States), App, Free. The package name comes from the bundle.
-2. Internal testing: create the testers list, create a release, upload `app-release.aab`, paste the release notes below, roll out.
-3. Store listing: name, short and full description from this file; the icon, feature graphic and six screenshots from this folder; answer the AI question as above.
+2. Internal testing: create the testers list, create a release, upload `app-play-release.aab`, paste the release notes below, roll out.
+3. Store listing: name, short and full description from this file; the icon, feature graphic and six screenshots from `fastlane/metadata/android/en-US/images`; answer the AI question as above.
 4. Store settings: category Tools; contact email `atomsprout@gmail.com`; website `https://atomsprout.com/scriptwidget/`.
 5. App content: enter the answers under "Answers used in the first Play Console setup". Health Connect needs a written use for each of the nine permissions; the texts used the first time said that the `$health` API reads the value so a widget the user created or installed can show it, read-only, on the device, with no server.
 6. Install from the opt-in link on a device signed in to a tester account and place a widget.
@@ -138,7 +140,7 @@ Category "Utility, Productivity, Communication, or Other". No violence, sexual c
 ## Internal testing steps (done once; repeat steps 2 and 4 for each new build)
 
 1. Create the app with the values above.
-2. Testing → Internal testing → Create new release; upload `app/build/outputs/bundle/release/app-release.aab` built with the upload key.
+2. Testing → Internal testing → Create new release; upload `app/build/outputs/bundle/playRelease/app-play-release.aab` built with the upload key.
 3. Testers → create an email list containing `evilret@gmail.com`.
 4. Roll out and send the opt-in link.
 

@@ -31,7 +31,7 @@ Widget packages live under `Scripts/<PackageName>/`. Package 2.0 uses `widget.js
 - Editor development: `npm start`, `npm test`, `npm run build`, `npm run docs`.
 - Editor release: `npm run release`; this rebuilds and replaces both checked-in `StudioEditor.bundle` directories. Always include generated bundle changes when frontend source or API completions change.
 - Metadata-only release checks: `node Scripts/validate-release.mjs` and `node Scripts/validate-doc-links.mjs`.
-- Android (not covered by `release-readiness.sh`): `node Android/scripts/build-shared-js.mjs` after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`; `cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug`; `sh Android/scripts/device-test.sh core` and `app` on a connected device or emulator; `./gradlew :app:bundleRelease` for the Play bundle.
+- Android (not covered by `release-readiness.sh`): `node Android/scripts/build-shared-js.mjs` after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`; `cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug`; `sh Android/scripts/device-test.sh core` and `app` on a connected device or emulator; `./gradlew :app:bundlePlayRelease` for the Play bundle and `:app:assembleFossRelease` for the APK published on GitHub Releases. The app has two flavors: `play` contains Firebase Cloud Messaging, `foss` must contain no Google or other proprietary library.
 
 The app uses `iCloud.ScriptWidget` and `group.everettjf.scriptwidget`. Signed real-container tests require a trusted, signed-in device; deterministic cache/iCloud-state tests do not.
 

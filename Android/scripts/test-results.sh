@@ -1,7 +1,8 @@
 #!/bin/sh
 # Prints a one-line summary and any failures from the latest connected test run of a module.
 module="${1:-core}"
-for f in "$module"/build/outputs/androidTest-results/connected/debug/TEST-*.xml; do
+for f in "$module"/build/outputs/androidTest-results/connected/debug/TEST-*.xml "$module"/build/outputs/androidTest-results/connected/debug/flavors/*/TEST-*.xml; do
+  [ -f "$f" ] || continue
   python3 - "$f" <<'P'
 import sys, xml.etree.ElementTree as ET
 r = ET.parse(sys.argv[1]).getroot()

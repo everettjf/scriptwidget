@@ -1,0 +1,6 @@
+First Android release.
+
+- Small, medium, large and extra-large home screen widgets written in JavaScript and JSX
+- Code editor with live preview, more than 140 templates, the Gallery, and AI generation with your own key
+- Quick Settings tiles, app shortcuts and Live Updates
+- Only on Android: scrolling lists, colors that follow the wallpaper, and an automation entry point for apps such as Tasker

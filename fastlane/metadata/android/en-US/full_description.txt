@@ -1,0 +1,25 @@
+ScriptWidget lets you build your own home screen widgets with JavaScript and JSX.
+
+Write a few lines, see a live preview, and put the result on your home screen. The same widget package runs on iPhone, iPad, Mac and Android.
+
+WHAT YOU CAN BUILD
+• Clocks, countdowns and timers that tick on the home screen
+• Habit trackers, checklists and counters with buttons you tap right in the widget
+• Weather, calendar, health and photo widgets from data you choose to share
+• Dashboards from any HTTPS API you declare
+• Charts, gauges, rings, gradients, icons and animated GIFs
+
+HOW IT WORKS
+• A code editor with syntax highlighting, completion and a live preview
+• More than 140 templates and examples to start from
+• A Gallery of verified widgets you can install and remix
+• Optional AI generation with your own API key: describe a widget and get a working draft
+• Import and export .swt packages to share widgets between devices
+
+PRIVATE BY DESIGN
+• Widgets run on your device in a sandbox with a time and memory limit
+• A widget can only reach the network hosts its package declares
+• Location, calendars, photos, contacts and health data are shared only after you allow it in the app, and only with widgets that declare the capability
+• No account, no ads, no tracking
+
+ScriptWidget is free and open source.
