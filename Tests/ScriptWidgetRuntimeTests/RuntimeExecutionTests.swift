@@ -182,6 +182,7 @@ final class RuntimeExecutionTests: XCTestCase {
         }
         XCTAssertTrue(try text(7).contains("0 days"))
         XCTAssertTrue(try text(7).contains("Check in"))
+        XCTAssertTrue(try text(7).contains("0 total"))
         try tap(7)
         try tap(7)
         XCTAssertTrue(try text(7).contains("1 day"))
@@ -192,7 +193,10 @@ final class RuntimeExecutionTests: XCTestCase {
         XCTAssertTrue(try text(8).contains("Check in"))
         try tap(8)
         XCTAssertTrue(try text(8).contains("2 days"))
+        XCTAssertTrue(try text(8).contains("2 total"))
+        // A missed day ends the streak but never lowers the total.
         XCTAssertTrue(try text(10).contains("0 days"))
+        XCTAssertTrue(try text(10).contains("2 total"))
         try tap(10)
         try tap(10, "checkInRun")
         let stored = habitRuntime(package).executeJSXSyncForWidget("""

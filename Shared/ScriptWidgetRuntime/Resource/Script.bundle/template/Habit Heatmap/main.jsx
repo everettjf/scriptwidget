@@ -110,6 +110,10 @@ const CheckIn = ({ habit }) => (
   </button>
 );
 
+// The flame counts consecutive days and returns to 0 after a missed day; this
+// count is every recorded check-in and never goes down.
+const Total = ({ habit }) => <text font="caption" color="#8B949E">{`${daysFor(habit).length} total`}</text>;
+
 // App Intent calls the named function after evaluating this source.
 if (size === "action") {
   // Do not render a widget while handling a tap.
@@ -129,7 +133,7 @@ if (size === "action") {
     <vstack alignment="leading" spacing="4" padding="12" background="#0D1117">
       <Header habit={habits[0]} font="headline" />
       <Grid log={logs[0]} colors={habits[0].color} weeks={8} cell={9} gap={2} />
-      <CheckIn habit={habits[0]} />
+      <hstack><CheckIn habit={habits[0]} /><spacer /><Total habit={habits[0]} /></hstack>
     </vstack>
   );
 } else if (size === "medium") {
@@ -137,7 +141,7 @@ if (size === "action") {
     <vstack alignment="leading" spacing="4" padding="12" background="#0D1117">
       <Header habit={habits[0]} font="headline" />
       <Grid log={logs[0]} colors={habits[0].color} weeks={22} cell={10} gap={2} />
-      <CheckIn habit={habits[0]} />
+      <hstack><CheckIn habit={habits[0]} /><spacer /><Total habit={habits[0]} /></hstack>
     </vstack>
   );
 } else if (size === "extraLarge") {
@@ -147,7 +151,7 @@ if (size === "action") {
         <vstack alignment="leading" spacing="10" frame="max">
           <Header habit={habit} font="headline" />
           <Grid log={logs[index]} colors={habit.color} weeks={11} cell={12} gap={3} />
-          <CheckIn habit={habit} />
+          <hstack><CheckIn habit={habit} /><spacer /><Total habit={habit} /></hstack>
         </vstack>
       ))}
     </hstack>
@@ -157,7 +161,7 @@ if (size === "action") {
     <vstack alignment="leading" spacing="12" padding="16" background="#0D1117">
       {habits.map((habit, index) => (
         <vstack alignment="leading" spacing="5">
-          <hstack><Header habit={habit} font="subheadline" /><CheckIn habit={habit} /></hstack>
+          <hstack spacing="8"><Header habit={habit} font="subheadline" /><Total habit={habit} /><CheckIn habit={habit} /></hstack>
           <Grid log={logs[index]} colors={habit.color} weeks={26} cell={7} gap={3} />
         </vstack>
       ))}

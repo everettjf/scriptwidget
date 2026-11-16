@@ -47,6 +47,8 @@ All passed on the final build. The device suites cover:
 
 Two live-service tests skip instead of failing when the remote service does not answer in time (Open-Meteo, MET Norway).
 
+On 16 November 2026, after the Habit Heatmap template gained a total count, the unit tests passed and the core device suite passed on the Pixel 6 (30 tests, including parity with JavaScriptCore on the regenerated trees). The app device suite was not run for that change, and the widget was not placed on a home screen.
+
 ## Checked by hand on the Pixel 6
 
 - Pinning a widget from the app, and the Pixel Launcher drawing it with system corners.
