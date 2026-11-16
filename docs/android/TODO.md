@@ -1,6 +1,6 @@
 # Android to-do
 
-What is left before 1.0.0 (version code 1) goes to Google Play. The version was renumbered from 1.2.0 (build 8) on 14 November 2026, because the app starts again under a new developer account and package name; the earlier build numbers in these notes are that development history. Build 7 went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and a new developer account is waiting for identity verification. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
+What is left before 1.0.0 (version code 1) is public on Google Play. On 15 November 2026 it was uploaded to the closed testing track and sent to Google for review. The version was renumbered from 1.2.0 (build 8) on 14 November 2026, because the app starts again under a new developer account and package name; the earlier build numbers in these notes are that development history. Build 7 went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and the app was created again under the new, verified developer account on 15 November 2026. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
 
 ## Not verified yet
 
@@ -16,20 +16,21 @@ What is left before 1.0.0 (version code 1) goes to Google Play. The version was 
 | The automation entry point from Tasker or MacroDroid | One of those apps installed, with a Send Intent task. It was exercised with `adb shell am broadcast` and from a device test only |
 | Scrolling lists on other launchers and on Android 15 and 16 | The emulators and other vendors' phones. Lists were checked on the Pixel 6 (Android 17, Pixel Launcher) only |
 
-## Google Play, once the new developer account is verified
+## Google Play
 
-- Follow the submission checklist in the listing kit: create the app as `com.atomsprout.scriptwidget`, add testers, upload 1.0.0 and fill in the store listing and App content again.
+- Wait for the review of the first closed testing release (1.0.0, sent 15 November 2026). Then copy the opt-in link from the track's Testers tab and send it to the Google Group `atomsprout@googlegroups.com`.
+- Production access needs at least 12 testers opted in to the closed test for 14 days in a row. Then apply for production in Play Console.
+- Install from Play on a device signed in to a tester's account and place a widget. Not done yet.
 - Tablets, other launchers and other vendors' phones have not been checked with the reworked UI (see the [UI review](ui-review.md)).
-- Send the first closed testing release for review. Production access needs at least 12 testers opted in to the closed test for at least 14 days.
 - Declare trader status for the developer account if Play asks for it.
-- Decide whether to keep Play's automatic protection (installer check), which matters if an APK is also distributed.
+- Decide whether to keep Play's automatic protection (installer check). It is on, the default; it matters because an APK is also distributed on GitHub.
 
 ## Other channels
 
 - GitHub Releases: `android-v1.0.0` is published with the `foss` APK (14 November 2026). Later versions follow [Android distribution](distribution.md).
 - IzzyOnDroid: not requested. Its policy rejects apps written with generative AI and apps that integrate with LLM services; see the same page.
 - Samsung Galaxy Store and other stores: put off (decided 15 November 2026) until the app is on Google Play and has users there. Until then the GitHub APK is the only channel besides Play. Read a store's policy before registering for it.
-- Play signing is decided: one key for every channel. At the first Play upload, choose the option that uses the existing key rather than a key Google generates, so that a Play install and a GitHub install can update each other. The option names in Play Console have not been checked yet.
+- Play signing is done: Play signs with the existing key (set on 15 November 2026 with "Export and upload a key from Java keystore"), so a Play install and a GitHub install have the same signature. Updating one from the other has not been tried on a device.
 - The `foss` build has not been run on a device without Google services, and whether it builds reproducibly has not been checked.
 
 ## Housekeeping

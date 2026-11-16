@@ -4,7 +4,7 @@ What runs where. One Package 2.0 widget installs on every platform below; a feat
 
 | | iPhone and iPad | Mac | Android |
 | --- | --- | --- | --- |
-| Status | Released | Released | Version 1.0.0 in testing, not yet on Google Play |
+| Status | Released | Released | Version 1.0.0 on GitHub Releases; Google Play closed test in review |
 | System version | iOS 16 or later | macOS 26 or later | Android 15 or later |
 | Widgets | WidgetKit | WidgetKit | App Widgets |
 | JavaScript engine | JavaScriptCore | JavaScriptCore | QuickJS-NG |

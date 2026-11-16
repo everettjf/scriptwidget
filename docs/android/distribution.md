@@ -15,7 +15,7 @@ Neither flavor contains analytics or crash reporting, and the app has no way to 
 
 Both flavors are signed with the key in `Android/keystore.properties` (git-ignored). For the GitHub APK this key is permanent: Android installs an update only when it is signed with the same key. Its certificate SHA-256 is `ef474602e80cb63c5ef39e39eda81eb6ae9e77d27c8d13c573e2aad4bb6c1c96`.
 
-On Google Play the same key is the upload key. If Play App Signing generates its own app signing key, a Play install and a GitHub install are signed differently and one cannot update the other: the user has to uninstall first, which removes widgets and data.
+On Google Play the same key is both the app signing key and the upload key. Play Console generates its own app signing key when an app is created; on 15 November 2026 it was replaced with this key (App signing → Change key → "Export and upload a key from Java keystore") before the first upload. With a different key, a Play install and a GitHub install could not update each other: the user would have to uninstall first, which removes widgets and data.
 
 ## A GitHub release
 

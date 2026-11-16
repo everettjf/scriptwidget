@@ -2,15 +2,18 @@
 
 Everything needed to create the Play Console entry and an internal test release.
 
-## Status (13 November 2026)
+## Status (15 November 2026)
 
-- There is no app in Play Console at the moment. The first one (`com.everettjf.scriptwidget`, under the AtomSprout developer account, with internal releases 1.2.0 (6) and (7)) was deleted by the owner.
-- A new developer account has been created; Google is verifying the owner's identity, which can take a few days. Nothing can be uploaded until then.
-- The package name is now `com.atomsprout.scriptwidget`. Only the application ID changed; the Kotlin namespace is still `com.everettjf.scriptwidget`.
-- Everything below has to be entered again in the new account: the app, testers, the store listing, the App content declarations and a release. The answers used the first time are kept in "Answers used in the first Play Console setup".
-- Firebase: project `scriptwidget-77792`, owned by the `atomsprout@gmail.com` Google account, has the Android app `com.atomsprout.scriptwidget`. Gemini and Analytics are off. `Android/firebase.properties` (git-ignored) holds its values. A test message sent from the Firebase console to the Pixel 6's token was received by the app on 13 November 2026. The first project (`scriptwidget-8ac0e`, under another account) is no longer used.
-- Version 1.0.0 (version code 1) is the build to upload: `Android/app/build/outputs/bundle/playRelease/app-play-release.aab` (`./gradlew :app:bundlePlayRelease`), signed with the upload key. The app starts again at 1.0.0 because the developer account and the package name are new; during development it was numbered 1.2.0, builds 6 to 8. It has the new package name, the iOS icon, the reworked UI and the three Android-only features (scrolling lists, wallpaper colors, the automation entry point).
-- The upload key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. It can be reused for the new app. Keep a backup of both: every update must be signed with this key.
+- The app exists in Play Console under the AtomSprout developer account (verified): ScriptWidget, `com.atomsprout.scriptwidget`, English (United States), App, Free, category Tools.
+- Release 1 (1.0.0) is on the closed testing track "Closed testing - Alpha" and was sent to Google for review on 15 November 2026 together with the store listing and the App content declarations (15 changes). Managed publishing is off, so it goes live for testers as soon as it is approved. The result of the review is not known yet.
+- Testers: the Google Group `atomsprout@googlegroups.com` ("Atomsprout Testers", https://groups.google.com/g/atomsprout, anyone can join). Feedback address: the GitHub issues page. Countries: all 177 offered plus rest of world.
+- App signing: Play signs with our existing key, the one that signs the GitHub APK (certificate SHA-256 `EF:47:46:02:E8:0C:B6:3C:5E:F3:9E:39:ED:A8:1E:B6:AE:9E:77:D2:7C:8D:13:C5:73:E2:AA:D4:BB:6C:1C:96`). Play Console generated its own key when the app was created; it was replaced before the first upload through "Export and upload a key from Java keystore" (the PEPK tool). The same key is the upload key. Google now holds a copy of the private key.
+- Automatic protection (the installer check) is on, the default. It was not changed. Whether it should stay on while an APK is also published on GitHub is still to be decided, under Protected with Play.
+- The bundle uploaded is `Android/app/build/outputs/bundle/playRelease/app-play-release.aab`, SHA-256 `6b0b644ce85c2a1ac6c310d6d8cb703553eec0da32cffadcc39b188f9d42532a`, built 14 November 2026. The commits after it changed documentation only.
+- The answers entered are the ones under "Answers used in the first Play Console setup", with these differences: testers are the Google Group alone; the Health apps declaration now also asks for a written use of each of the nine Health Connect permissions (entered, see the submission checklist); "Can users log in with accounts created outside the app" was answered No.
+- Not done: installing from Play on a device, internal testing (not used), tablet screenshots (not required so far), the production application (needs 12 testers opted in for 14 days).
+- Firebase: project `scriptwidget-77792`, owned by the `atomsprout@gmail.com` Google account, has the Android app `com.atomsprout.scriptwidget`. Gemini and Analytics are off. `Android/firebase.properties` (git-ignored) holds its values. The first project (`scriptwidget-8ac0e`, under another account) is no longer used.
+- The signing key is outside the repository; `Android/keystore.properties` (git-ignored) points to it. Keep a backup of both: every update, on Play and on GitHub, must be signed with this key.
 
 ## Answers used in the first Play Console setup
 
