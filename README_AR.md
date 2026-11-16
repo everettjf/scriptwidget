@@ -18,7 +18,7 @@
 
 ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
 
-يجري حاليًا اختبار تطبيق Android يشغّل الحزم نفسها. التطبيق غير متاح بعد على Google Play؛ راجع [ScriptWidget لنظام Android](docs/android/README.md).
+تطبيق Android (الإصدار 1.0.0، يتطلب Android 15 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
 
 ## لماذا ScriptWidget؟
 

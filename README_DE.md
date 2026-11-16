@@ -16,7 +16,7 @@
 
 ScriptWidget ist eine Open-Source-Plattform unter der Apache 2.0-Lizenz zum Erstellen von Widgets. Du musst kein Swift lernen: Bearbeite `main.jsx` in ScriptWidget Studio auf Mac, iPhone oder iPad, und die Laufzeit bildet deklaratives JSX auf native SwiftUI- und WidgetKit-Oberflächen ab.
 
-Eine Android-App, die dieselben Pakete ausführt, wird derzeit getestet. Sie ist noch nicht bei Google Play erhältlich; siehe [ScriptWidget für Android](docs/android/README.md).
+Die Android-App (Version 1.0.0, ab Android 15) gibt es als [APK in den GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). Bei Google Play läuft ein geschlossener Test: Wer teilnehmen möchte, tritt der [Gruppe Atomsprout Testers](https://groups.google.com/g/atomsprout) bei. Siehe [ScriptWidget für Android](docs/android/README.md).
 
 ## Warum ScriptWidget?
 

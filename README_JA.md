@@ -16,7 +16,7 @@
 
 ScriptWidget は、Apache 2.0 ライセンスのオープンソース・ウィジェット作成プラットフォームです。Swift を学ぶ必要はありません。Mac、iPhone、iPad の ScriptWidget Studio で `main.jsx` を編集すると、ランタイムが宣言的 JSX をネイティブな SwiftUI/WidgetKit UI に変換します。
 
-同じパッケージを実行できる Android アプリをテスト中です。Google Play ではまだ公開していません。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
+Android アプリ（バージョン 1.0.0、Android 15 以降）は [GitHub Releases の APK](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) で入手できます。Google Play ではクローズドテスト中です。参加するには [Atomsprout Testers グループ](https://groups.google.com/g/atomsprout) に参加してください。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
 
 ## ScriptWidget の特長
 

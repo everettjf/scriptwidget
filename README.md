@@ -11,13 +11,15 @@ Website: <https://atomsprout.com/scriptwidget/>
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**Create native widgets for iPhone, iPad, and Mac with JavaScript, JSX, and AI**
+**Create native widgets for iPhone, iPad, Mac, and Android with JavaScript, JSX, and AI**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
 </div>
 
-> ✨ *Build iPhone, iPad, and Mac widgets in ScriptWidget Studio—without writing Swift.*
+> ✨ *Build iPhone, iPad, Mac, and Android widgets in ScriptWidget Studio—without writing Swift or Kotlin.*
+
+**Get it:** [iPhone and iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0 (APK)](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) · [Web Studio in your browser](https://asp.run/scriptwidget/studio/)
 
 ## Create with your Agent — scriptwidget-creator
 
@@ -46,11 +48,11 @@ Preview links carry the validated package in a URL fragment and load a separate 
 
 ## 🎯 What is ScriptWidget?
 
-ScriptWidget is an open-source widget development platform for building native WidgetKit experiences with **JavaScript** and **JSX-like syntax**. Write once, preview on Mac, and run the same package on iPhone, iPad, and Mac—without requiring Swift for widget authoring.
+ScriptWidget is an open-source widget development platform for building native widgets with **JavaScript** and **JSX-like syntax**: WidgetKit on iPhone, iPad, and Mac, and App Widgets on Android. Write once, preview on Mac or in the browser, and run the same package on all four—without requiring Swift or Kotlin for widget authoring.
 
-It combines a JavaScriptCore runtime, native SwiftUI rendering, a desktop development environment, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
+It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple platforms, a QuickJS runtime with its own renderer on Android, a desktop development environment, a browser studio, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
 
-An Android app that runs the same packages is in testing. It is not on Google Play yet; see [ScriptWidget for Android](docs/android/README.md).
+The Android app (version 1.0.0, Android 15 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout); the install link is sent to the group once Google approves the test. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
 
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
@@ -60,7 +62,7 @@ An Android app that runs the same packages is in testing. It is not on Google Pl
 
 | Feature | Description |
 |---------|-------------|
-| 🖥️ **Cross-Platform** | One widget package for iPhone, iPad and Mac, and for Android (in testing) |
+| 🖥️ **Cross-Platform** | One widget package for iPhone, iPad, Mac and Android |
 | 🎨 **JSX Support** | Declarative UI with JavaScript XML syntax |
 | ⚡ **Native Rendering** | JSX elements are rendered as native SwiftUI views |
 | 🔧 **Versioned Runtime API** | Storage, files, networking, device, location, health, system, and data sources |
@@ -365,7 +367,7 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
-| **Android** | 🧪 In testing | Android 15+; version 1.0.0, not yet on Google Play. Runs the same packages; [differences from iOS](docs/android/README.md) |
+| **Android** | ✅ 1.0.0 | Android 15+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
 

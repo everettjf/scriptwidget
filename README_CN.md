@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**使用 JavaScript、JSX 和 AI，为 iPhone、iPad 与 Mac 创建原生 Widget**
+**使用 JavaScript、JSX 和 AI，为 iPhone、iPad、Mac 与 Android 创建原生 Widget**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -29,11 +29,11 @@ scriptwidget preview ./MyWidget
 
 ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
-能运行同一套组件包的 Android 版应用正在测试中，尚未上架 Google Play；详见 [Android 版 ScriptWidget](docs/android/README.md)。
+Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout) 即可参与，Google 审核通过后安装链接会发到群组。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
 ## 为什么选择 ScriptWidget
 
-- 一份脚本适配 iOS、iPadOS 与 macOS，以及 Android（测试中），多尺寸布局可通过 `$getenv("widget-size")` 调整。
+- 一份脚本适配 iOS、iPadOS 与 macOS，以及 Android，多尺寸布局可通过 `$getenv("widget-size")` 调整。
 - 支持交互式 Widget、App Intents、Live Activity、灵动岛与 Control Widget。
 - Mac Studio 内置 CodeMirror 编辑器、补全、诊断、Console 和多尺寸预览。
 - 可用 OpenAI 兼容模型生成、运行、诊断并迭代 Widget；API Key 保存在 Keychain。
