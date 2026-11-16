@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-12T17:07:53.501Z",
+  "generatedAt": "2026-11-16T16:22:21.698Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -184,9 +184,9 @@
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/lib/records.js"
         },
         {
-          "bytes": 7716,
+          "bytes": 8155,
           "path": "main.jsx",
-          "sha256": "72898fbb7bb7fd80f2def57fb226156bab8de376e66d7adb156a5c1582749e4f",
+          "sha256": "d5c8d8d5224bdcaf059a5719b1e076e9cba790bbc32fd89f0939150112baba4c",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/main.jsx"
         },
         {
@@ -204,7 +204,7 @@
         {
           "bytes": 1487,
           "path": "widget.json",
-          "sha256": "a8e22985d811dd1623081a16e5622a775f8819e9c8205da2320786c5916217f1",
+          "sha256": "854007a790145f2d4316829645093b9c88c3ad31cc2a23918a5d83d764a45a0b",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/widget.json"
         }
       ],
@@ -219,7 +219,7 @@
       "tags": [
         "productivity"
       ],
-      "version": "1.2.0"
+      "version": "1.3.0"
     },
     {
       "author": "ScriptWidget",
