@@ -21,6 +21,10 @@ The management window, as the program drew it on 2026-11-17 (saved by the progra
 | ![My widgets](images/library.png) | ![Templates](images/templates.png) |
 | ![Editor with live preview](images/editor.png) | ![Settings](images/settings.png) |
 
+The interface follows the Windows display language, English or Simplified Chinese:
+
+![My widgets in Chinese](images/library-zh.png)
+
 ## Using it
 
 - **First start.** The app puts one clock widget on the desktop and opens the management window.

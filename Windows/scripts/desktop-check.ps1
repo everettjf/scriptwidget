@@ -91,6 +91,9 @@ try {
     $widgets = [SwCheck]::Find('ScriptWidgetWidget')
     Check 'first start places one widget' ($widgets.Count -eq 1) "($($widgets.Count) widget windows)"
     Check 'the host is still running' (-not $process.HasExited)
+    # Windows refuses the tray icon when no taskbar is running (a build agent, for example).
+    $tray = (LogLines) -match 'tray icon added: True'
+    if ($tray) { Check 'the tray icon is added' $true } else { Write-Host 'SKIP  the tray icon was not accepted: no taskbar in this session' }
 
     # A second widget with a button
     $template = Join-Path $windows '..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\template\Habit Heatmap'

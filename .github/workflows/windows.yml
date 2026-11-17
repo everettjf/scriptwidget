@@ -47,6 +47,22 @@ jobs:
           ./Windows/scripts/build-native.ps1 -Arch x64 -Asan
           cd Windows
           dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo -p:SwNativeSuffix=-asan --filter "FullyQualifiedName~QuickJs" --logger "console;verbosity=minimal"
+      # The desktop host on the build agent's desktop: window content, window order, drag, clicks,
+      # system events and the show-desktop self-test. Pictures of the widget windows are uploaded.
+      - name: Desktop check
+        shell: pwsh
+        run: |
+          $hostPath = Get-ChildItem Windows/src/ScriptWidget.App/bin -Recurse -Filter ScriptWidget.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+          powershell -NoProfile -ExecutionPolicy Bypass -File Windows/scripts/desktop-check.ps1 -HostPath $hostPath -Output "$env:RUNNER_TEMP\desktop-check"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-desktop-check
+          path: |
+            ${{ runner.temp }}/desktop-check/*.png
+            ${{ runner.temp }}/desktop-check/*.log
+            ${{ runner.temp }}/desktop-check/data/host.log
+          if-no-files-found: ignore
       - uses: actions/upload-artifact@v7
         if: always()
         with:

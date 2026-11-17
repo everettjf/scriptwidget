@@ -79,6 +79,7 @@ internal sealed unsafe class TrayIcon : NativeWindow
         var data = Data();
         data.Flags = Win32.NIF_MESSAGE | Win32.NIF_ICON | Win32.NIF_TIP | Win32.NIF_SHOWTIP;
         added = Win32.Shell_NotifyIconW(Win32.NIM_ADD, &data) != 0;
+        if (Log.Verbose) Log.Write($"tray icon added: {added}");
         data.VersionOrTimeout = Win32.NOTIFYICON_VERSION_4;
         Win32.Shell_NotifyIconW(Win32.NIM_SETVERSION, &data);
     }

@@ -55,11 +55,12 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 
 ### Desktop host (`ScriptWidget.exe`)
 
-`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 23 of 23, with the debug build and with the native AOT build from the package layout.
+`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 24 of 24, with the debug build and with the native AOT build from the package layout.
 
 | Check | Result |
 | --- | --- |
 | First start: installs the clock template and places one widget | Yes |
+| Windows accepts the tray icon | Yes. Its menu was not opened |
 | What each widget window shows, captured from the window | The rendered widget, 494×255 pixels (329×170 points at 150%), with transparent rounded corners; the clock shows the current time |
 | Window order with two widgets on the desktop | Both widget windows directly above `Progman` (the desktop) and below every other visible window; a window opened afterwards goes above them |
 | Drag (posted pointer messages) | The widget moves by the dragged distance, snaps to the top edge of the screen, and the new place is saved in `widgets.json` |
@@ -88,6 +89,7 @@ Driven through UI Automation (the real controls are invoked, with no pointer), a
 | "Save" | Works |
 | "Templates": groups, search box, previews; "Use this template" | Drawn correctly, 130 templates; the template is installed, placed on the desktop and opened in the editor |
 | "Settings": "Lock positions" | Written to `settings.json` |
+| The interface in Simplified Chinese (`SCRIPTWIDGET_LANGUAGE=zh`) | "My widgets", the editor and "Settings" are drawn correctly; nothing is cut off |
 | Accessible names | The back button, the "more actions" button, the switches and the inputs had none; they have now |
 | Typing in the code editor, file pickers (import, export), rename, duplicate, delete | Not run |
 

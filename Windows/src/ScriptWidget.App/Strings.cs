@@ -5,7 +5,7 @@ namespace ScriptWidget.App;
 /// <summary>The few words the tray and widget menus need, in Simplified Chinese and English.</summary>
 internal static class Strings
 {
-    private static readonly bool Chinese = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "zh";
+    private static readonly bool Chinese = (Environment.GetEnvironmentVariable("SCRIPTWIDGET_LANGUAGE") ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName).StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
     private static string Pick(string english, string chinese) => Chinese ? chinese : english;
 

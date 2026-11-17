@@ -6,7 +6,8 @@ namespace ScriptWidget.Studio.Services;
 /// <summary>The management window's text in English and Simplified Chinese, chosen by the Windows display language.</summary>
 public static class Loc
 {
-    public static bool Chinese { get; } = CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "zh";
+    /// <summary>Chinese when Windows is shown in Chinese. SCRIPTWIDGET_LANGUAGE=zh or en chooses for one run.</summary>
+    public static bool Chinese { get; } = (Environment.GetEnvironmentVariable("SCRIPTWIDGET_LANGUAGE") ?? CultureInfo.CurrentUICulture.TwoLetterISOLanguageName).StartsWith("zh", StringComparison.OrdinalIgnoreCase);
 
     private static readonly Dictionary<string, (string English, string Chinese)> Text = new()
     {
