@@ -12,6 +12,15 @@ ScriptWidget for Windows puts the same Package 2.0 widgets that run on iPhone, i
 | Management window (`ScriptWidgetStudio.exe`) | Opens from the Start menu or the tray icon. Your widgets, the templates, the code editor with a live preview, and the settings. Closing it frees its memory; the widgets keep running |
 | Command line (`swcli.exe`) | Checks, runs and draws a package from a folder. Used by the build to produce reference images; not installed with the app |
 
+## Pictures
+
+The management window, as the program drew it on 2026-11-17 (saved by the program itself with `--screenshot`; the editor picture is the window picture with the code editor's own picture laid over the editor area, because a window picture leaves a WebView2 blank). There is no picture of widgets on the desktop yet: see [testing.md](testing.md).
+
+| | |
+| --- | --- |
+| ![My widgets](images/library.png) | ![Templates](images/templates.png) |
+| ![Editor with live preview](images/editor.png) | ![Settings](images/settings.png) |
+
 ## Using it
 
 - **First start.** The app puts one clock widget on the desktop and opens the management window.
