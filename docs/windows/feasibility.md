@@ -2,7 +2,7 @@
 
 ScriptWidget 值得做 Windows 版，但不应作为一个独立的新项目立刻开工：建议先把 Linux 计划里的 Rust 核心（QuickJS 宿主、共用渲染器、画笔、命令行）做出来，再让 Windows 成为这套核心的第二个展示端，并且排在 Omarchy 插件之前。理由有三条。第一，Windows 11 的官方小组件面板只接受 Adaptive Card，不能自绘，也没有任何官方的"桌面小组件"位置，所以主形态只能是自己画的桌面窗口，官方面板最多作为附加出口。第二，桌面小组件的需求是真实的（Rainmeter 最近 100 个版本累计下载 7,566 万次，Windows 11 设备超过 10 亿台），而"普通人能写脚本、能安全安装别人的小组件、还能带到手机上"这个位置目前没有成规模的产品占着。第三，对一位在中国的个人开发者，微软商店的 MSIX 是唯一不花钱、不弹警告的分发方式：注册免费，微软代为签名和托管；商店之外的签名服务 Artifact Signing 不对中国的个人或公司开放。最大的不确定性集中在三处：Rust 文字渲染在 Windows 字体上的保真度、桌面窗口在 Win+D 等场景下的行为、以及官方面板能否接受位图。这三处都没有在 Windows 真机上验证过，本报告的全部结论都以一轮 1 到 2 周的原型为前提。
 
-状态：调研稿，2026-11-16。对比的背景是 [Linux（Omarchy）开发计划](../linux/plan.md)；四份原始调研笔记（英文）在 [notes/](notes/) 下：[官方小组件平台](notes/official_widget_platform.md)、[竞品与市场](notes/competitors_and_market.md)、[分发与签名](notes/distribution_and_signing.md)、[技术路线](notes/technical_route.md)。
+状态：调研稿，2026-11-16。**调研之后的决定（同日）**：先做 Windows，用 C++ 加 Direct2D 和 DirectWrite，Linux 搁置；因此本文"先做与 Linux 共用的 Rust 核心"的建议不再采用，其余事实和待验证事项仍然有效。现行计划见 [Windows 开发计划](plan.md)。对比的背景是 [Linux（Omarchy）开发计划](../linux/plan.md)；四份原始调研笔记（英文）在 [notes/](notes/) 下：[官方小组件平台](notes/official_widget_platform.md)、[竞品与市场](notes/competitors_and_market.md)、[分发与签名](notes/distribution_and_signing.md)、[技术路线](notes/technical_route.md)。
 
 标注约定沿用 Linux 计划：**[已核实]** 指调研时直接读到官方页面、项目源码或本仓库文件；**[二手]** 指媒体、论坛、第三方估算或只看到搜索摘要；**[待验证]** 指没有可靠来源，或必须在 Windows 真机上做原型才能确认。调研日期为 2026-11-16，期间没有在任何 Windows 机器上运行过代码。
 
