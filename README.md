@@ -52,7 +52,7 @@ ScriptWidget is an open-source widget development platform for building native w
 
 It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple platforms, a QuickJS runtime with its own renderer on Android, a desktop development environment, a browser studio, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
 
-The Android app (version 1.0.0, Android 15 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout); the install link is sent to the group once Google approves the test. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
+The Android app (version 1.0.0, Android 15 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout), then [become a tester](https://play.google.com/apps/testing/com.atomsprout.scriptwidget) and install from Google Play. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
 
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 

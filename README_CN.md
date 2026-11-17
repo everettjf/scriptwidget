@@ -29,7 +29,7 @@ scriptwidget preview ./MyWidget
 
 ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
-Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout) 即可参与，Google 审核通过后安装链接会发到群组。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
+Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
 ## 为什么选择 ScriptWidget
 
