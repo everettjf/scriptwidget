@@ -14,7 +14,7 @@ Checks that need a person at an unlocked Windows desktop. The first night of dev
 | The tray menu and the right-click menu of a widget appear where expected | Left and right click. Their actions are covered by `desktop-check.ps1` |
 | The widgets come back after signing out and in | Turn on "Start when I sign in", sign out, sign in |
 | Explorer restart, seen on screen | Restart Explorer in Task Manager and look: the tray icon and the widgets must come back. A real restart was run with the screen locked; the host re-added its icon and kept the widget above the new desktop window |
-| Sleep and resume | Sleep the PC for a minute; the clock must be right afterwards |
+| Sleep and resume, seen on screen | Sleep the PC for a minute; the clock must be right afterwards. A real 107-second sleep was run with the screen locked; the host redrew on resume |
 | Two displays with different scales | Drag a widget across; unplug and replug the second display |
 | Typing in the code editor, import and export through the file pickers | Edit the text of a widget and watch the preview and the desktop widget follow |
 | ARM64 on a PC | Install and run on an ARM64 PC. The tests and the desktop check pass on the CI ARM64 machine |
