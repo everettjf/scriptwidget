@@ -39,12 +39,14 @@ jobs:
       - name: Test
         working-directory: Windows
         run: dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo --logger "console;verbosity=normal" --logger "trx;LogFileName=tests.trx"
-      - name: Test again with AddressSanitizer in swcore
+      # The engine binding (swcore.c) under AddressSanitizer. The rest of the suite is not run this
+      # way: compiling packages with Babel inside a sanitized QuickJS hosted by .NET does not finish.
+      - name: Engine binding tests with AddressSanitizer in swcore
         shell: pwsh
         run: |
           ./Windows/scripts/build-native.ps1 -Arch x64 -Asan
           cd Windows
-          dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo -p:SwNativeSuffix=-asan --filter "FullyQualifiedName!~Render" --logger "console;verbosity=minimal"
+          dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo -p:SwNativeSuffix=-asan --filter "FullyQualifiedName~QuickJs" --logger "console;verbosity=minimal"
       - uses: actions/upload-artifact@v7
         if: always()
         with:

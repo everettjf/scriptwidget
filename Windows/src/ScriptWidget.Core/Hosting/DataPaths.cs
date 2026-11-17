@@ -1,16 +1,29 @@
 namespace ScriptWidget.Core.Hosting;
 
 /// <summary>
-/// Where ScriptWidget keeps its data. Installed from the Microsoft Store, the
-/// system redirects this folder into the package's private storage, so the
-/// same code serves the packaged and the unpackaged program.
+/// Where ScriptWidget keeps its data: <c>%LOCALAPPDATA%\ScriptWidget</c>, or
+/// the package's own local folder when the program is installed from the
+/// Microsoft Store, which Windows removes on uninstall.
 /// </summary>
 public sealed class DataPaths
 {
     public DataPaths(string? root = null)
     {
-        Root = root ?? Environment.GetEnvironmentVariable("SCRIPTWIDGET_DATA") ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ScriptWidget");
+        Root = root ?? Environment.GetEnvironmentVariable("SCRIPTWIDGET_DATA") ?? DefaultRoot();
         Directory.CreateDirectory(Root);
+    }
+
+    private static string DefaultRoot()
+    {
+        if (StartupRegistration.IsPackaged)
+        {
+            // The real folder, not %LOCALAPPDATA%: Windows would redirect that for a packaged program,
+            // and the redirection does not support moving a directory, which a transactional
+            // package install does.
+            try { return Path.Combine(Windows.Storage.ApplicationData.Current.LocalFolder.Path, "ScriptWidget"); }
+            catch (Exception error) when (error is not OutOfMemoryException) { }
+        }
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "ScriptWidget");
     }
 
     public string Root { get; }

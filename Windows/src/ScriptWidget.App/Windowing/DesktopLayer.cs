@@ -11,11 +11,14 @@ namespace ScriptWidget.App.Windowing;
 /// The widgets are top-level windows held at the bottom of the window order
 /// (the approach Rainmeter uses) rather than children of the shell's desktop
 /// window, which broke for other programs when Windows 11 24H2 rearranged
-/// that window. "Show desktop" (Win+D, the taskbar corner) raises the shell's
-/// desktop window above everything, which would cover the widgets, so while
-/// that state lasts the widgets are raised too. The state is detected with a
-/// hidden probe window that always stays at the bottom: when the desktop
-/// window sits above the probe, the desktop is being shown.
+/// that window. "Show desktop" (Win+D, the taskbar corner) puts the desktop
+/// icons in a WorkerW window raised above everything, which would cover the
+/// widgets, so while that state lasts the widgets are raised too. The state
+/// is detected with a hidden probe window that always stays at the bottom:
+/// the desktop is being shown when such a WorkerW exists, sits above the
+/// probe, and is the foreground window. Every condition must hold. If a
+/// Windows version shows the desktop another way, the widgets are covered
+/// until the desktop is left, rather than raised over ordinary windows.
 /// </summary>
 internal sealed unsafe class DesktopLayer : NativeWindow
 {
@@ -65,8 +68,12 @@ internal sealed unsafe class DesktopLayer : NativeWindow
         }
     }
 
-    /// <summary>The top-level window that hosts the desktop icons: Progman, or a WorkerW on some configurations.</summary>
-    private static nint DesktopHost()
+    /// <summary>
+    /// The WorkerW window that hosts the desktop icons while the desktop is shown, or 0. Ordinarily
+    /// the icons live in Progman, which is always the bottom window and is never treated as "shown":
+    /// clicking the wallpaper also makes it the foreground window.
+    /// </summary>
+    private static nint RaisedDesktop()
     {
         fixed (char* workerClass = "WorkerW")
         fixed (char* viewClass = "SHELLDLL_DefView")
@@ -77,33 +84,24 @@ internal sealed unsafe class DesktopLayer : NativeWindow
                 if (Win32.FindWindowExW(worker, 0, viewClass, null) != 0) return worker;
             }
         }
-        return Win32.GetShellWindow();
+        return 0;
     }
 
     /// <summary>Compares the desktop window with the probe and raises or lowers the widgets when the state changed.</summary>
     public void Check()
     {
-        var host = DesktopHost();
+        var host = RaisedDesktop();
         var shown = false;
         if (host != 0 && Win32.IsWindowVisible(host) != 0)
         {
             // FindWindowEx searches the windows below `host` in the window order.
-            fixed (char* probe = ProbeClass) shown = Win32.FindWindowExW(0, host, probe, null) == Handle && IsDesktopForeground();
+            fixed (char* probe = ProbeClass) shown = Win32.FindWindowExW(0, host, probe, null) == Handle && Win32.GetForegroundWindow() == host;
         }
         if (shown == DesktopShown) return;
         DesktopShown = shown;
         foreach (var window in windows) Place(window);
         if (shown) Win32.SetTimer(Handle, RecheckTimer, 500, 0);
         else Win32.KillTimer(Handle, RecheckTimer);
-    }
-
-    /// <summary>The probe is also below the desktop window when nothing was raised; only a foreground desktop means "show desktop".</summary>
-    private static bool IsDesktopForeground()
-    {
-        var foreground = Win32.GetForegroundWindow();
-        if (foreground == 0) return false;
-        var name = Win32.ClassName(foreground);
-        return name is "WorkerW" or "Progman";
     }
 
     protected override nint? OnMessage(uint message, nuint wParam, nint lParam)

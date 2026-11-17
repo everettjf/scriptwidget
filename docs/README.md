@@ -51,6 +51,9 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [Android test notes](android/testing.md) and [Android to-do](android/TODO.md) — what was tested on which devices, and what is left.
 - [Android UI review](android/ui-review.md) — the screen-by-screen review behind build 8 and what it changed.
 - [Android port research and plan](android/android-port-research-and-plan.md) — research and planning draft (Chinese) for an Android version: engine and rendering choices, feature mapping, phases, and rollout.
+- [ScriptWidget for Windows](windows/README.md) — the preview of the Windows desktop app: what it does, how it runs a widget, differences from the other platforms, security notes and build commands.
+- [Windows test notes](windows/testing.md) and [Windows to-do](windows/TODO.md) — what was tested on which machine, and what is left.
+- [Windows plan](windows/plan.md) and [Windows feasibility research](windows/feasibility.md) — the plan the Windows app follows and the research behind it (Chinese).
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.
 - [Roadmap](../ROADMAP.md), [governance](../GOVERNANCE.md), and [changelog](../CHANGELOG.md) — direction, decisions, and shipped work.

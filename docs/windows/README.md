@@ -70,7 +70,7 @@ Scripts, imported archives and network responses are untrusted, as on every plat
 
 - **Package paths.** In addition to the shared rules (no traversal, absolute paths, symlinks, backslashes or case collisions), Windows refuses reserved device names such as `CON` and `NUL` with or without an extension, names that end in a dot or a space, colons (alternate data streams and drive letters), UNC and drive-letter forms, and reparse points.
 - **Network.** Requests go through `HttpClient` with a connect step that resolves the host itself and refuses private, loopback and link-local addresses before connecting to the address it checked. Redirects are followed by hand with the same checks at every hop.
-- **Engine isolation.** In this release package code runs inside the host process, as on iPhone and Android: QuickJS exposes no system interface, and memory, stack and time are bounded. A separate restricted process is planned (see [TODO.md](TODO.md)). The build runs the whole test suite a second time with AddressSanitizer in the QuickJS library.
+- **Engine isolation.** In this release package code runs inside the host process, as on iPhone and Android: QuickJS exposes no system interface, and memory, stack and time are bounded. A separate restricted process is planned (see [TODO.md](TODO.md)). The build runs the tests of the engine binding a second time with AddressSanitizer in the QuickJS library.
 - **Local time.** QuickJS on Windows computed every date's local time from today's UTC offset, which is wrong across a daylight-saving change. The Windows build asks ICU for the offset at the date in question; the vendored QuickJS source is unchanged.
 - **The management window's editor** is the only web content in the app. It loads files from the app's own folder under a private host name and cannot navigate, open windows, download or reach the network.
 - **The pipe** between the management window and the host is created for the current user only. Requests name packages and widgets; nothing sent over it is run as code.
@@ -105,4 +105,4 @@ Run `node Windows/scripts/build-shared-js.mjs` again after changing `Web/preview
 | `Windows/package` | MSIX manifest and images |
 | `Windows/assets`, `Windows/native/out`, `Windows/artifacts` | Generated; not checked in |
 
-User data is in `%LOCALAPPDATA%\ScriptWidget` (`Packages`, `Storage`, `Plugins`, `Cache`, `widgets.json`, `settings.json`, `host.log`). When the app is installed from the Store, Windows keeps that folder inside the app's private storage and removes it on uninstall.
+User data is in `%LOCALAPPDATA%\ScriptWidget` (`Packages`, `Storage`, `Plugins`, `Cache`, `widgets.json`, `settings.json`, `host.log`). When the app is installed from the Store it is in the package's own folder instead, `%LOCALAPPDATA%\Packages\<package family>\LocalState\ScriptWidget`, which Windows removes on uninstall.
