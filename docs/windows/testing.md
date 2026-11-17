@@ -31,7 +31,7 @@ dotnet test tests/ScriptWidget.Core.Tests -c Debug
 | Check | Result |
 | --- | --- |
 | Preview engine tests on Windows (`npm test` in `Web/preview-engine`) | 199 of 199 pass, after adding `.gitattributes` (a CRLF checkout broke the shared build scripts before) |
-| `dotnet test` of `ScriptWidget.Core.Tests`, Debug, x64 | 234 of 234 pass |
+| `dotnet test` of `ScriptWidget.Core.Tests`, Debug, x64 | 235 of 235 pass |
 | Parity: bundled packages that need no live data, element tree compared byte for byte with the JavaScriptCore reference | 127 of 127 identical |
 | Renderer: every parity package drawn at 170×170, 329×170 and 329×345, scale 2 | No exception, no empty bitmap |
 | Engine limits: memory limit, deadline, stack limit | Each raises its error (in `QuickJsTests`) |
