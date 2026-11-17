@@ -1,0 +1,73 @@
+name: Windows
+on:
+  pull_request:
+    paths: ['Windows/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/windows.yml']
+  push:
+    branches: [main]
+    paths: ['Windows/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/windows.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Build and test (x64)
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Preview engine tests on Windows
+        working-directory: Web/preview-engine
+        run: npm test
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - name: Shared JavaScript
+        run: node Windows/scripts/build-shared-js.mjs
+      - name: swcore (QuickJS)
+        shell: pwsh
+        run: ./Windows/scripts/build-native.ps1 -Arch x64
+      - name: Build
+        working-directory: Windows
+        run: dotnet build ScriptWidget.slnx -c Release --nologo
+      - name: Test
+        working-directory: Windows
+        run: dotnet test tests/ScriptWidget.Core.Tests -c Release --no-build --nologo --logger "console;verbosity=normal" --logger "trx;LogFileName=tests.trx"
+      - name: Test again with AddressSanitizer in swcore
+        shell: pwsh
+        run: |
+          ./Windows/scripts/build-native.ps1 -Arch x64 -Asan
+          cd Windows
+          dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo -p:SwNativeSuffix=-asan --filter "FullyQualifiedName!~Render" --logger "console;verbosity=minimal"
+      - uses: actions/upload-artifact@v6
+        if: always()
+        with:
+          name: windows-test-results
+          path: Windows/tests/ScriptWidget.Core.Tests/TestResults
+          if-no-files-found: ignore
+  arm64:
+    name: Build (ARM64, not run)
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - run: node Windows/scripts/build-shared-js.mjs
+      - name: swcore (QuickJS) for ARM64
+        shell: pwsh
+        run: ./Windows/scripts/build-native.ps1 -Arch arm64
+      - name: Build
+        working-directory: Windows
+        run: dotnet build ScriptWidget.slnx -c Release -p:Platform=ARM64 --nologo

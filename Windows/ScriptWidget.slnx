@@ -1,5 +1,8 @@
 <Solution>
   <Folder Name="/src/">
+    <Project Path="src/ScriptWidget.App/ScriptWidget.App.csproj">
+      <Platform Project="x64" />
+    </Project>
     <Project Path="src/ScriptWidget.Core/ScriptWidget.Core.csproj" />
   </Folder>
   <Folder Name="/tests/">
