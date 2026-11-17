@@ -58,7 +58,7 @@ jobs:
           api-level: 35
           arch: x86_64
           target: google_apis
-          disable-animations: true
+          disable-animations: false
           script: |
             sh Android/scripts/device-test.sh core | tee device-test.log
             FLAVOR=foss sh Android/scripts/device-test.sh app | tee app-device-test.log
