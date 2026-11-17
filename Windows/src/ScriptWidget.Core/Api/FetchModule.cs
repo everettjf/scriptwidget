@@ -28,6 +28,12 @@ public sealed class FetchModule : INativeModule
 
     internal const string BlockedMessage = "Local and private network hosts are not allowed";
 
+    /// <summary>Request headers that carry credentials; they stay with the origin the script addressed.</summary>
+    private static readonly HashSet<string> CredentialHeaders = new(StringComparer.OrdinalIgnoreCase) { "Authorization", "Proxy-Authorization", "Cookie" };
+
+    private static bool SameOrigin(Uri first, Uri second) =>
+        first.Scheme.Equals(second.Scheme, StringComparison.OrdinalIgnoreCase) && first.Host.Equals(second.Host, StringComparison.OrdinalIgnoreCase) && first.Port == second.Port;
+
     /// <summary>Sent when the script sets no User-Agent of its own.</summary>
     public static string DefaultUserAgent { get; } = $"ScriptWidget-Windows/{(typeof(FetchModule).Assembly.GetName().Version is { } version ? $"{version.Major}.{version.Minor}.{version.Build}" : "0")}";
     private const string TimedOutMessage = "The request timed out.";
@@ -227,7 +233,14 @@ public sealed class FetchModule : INativeModule
             using var message = new HttpRequestMessage(new HttpMethod(currentMethod), current);
             HttpContent? content = currentBody is not null && currentMethod != "GET" ? new ByteArrayContent(currentBody) : null;
             var unique = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var (name, value) in headers) unique[name] = value;
+            // A redirect to another origin does not get the credentials meant for the first one, as in
+            // browsers and curl. (The Android transport this is ported from sends them on.)
+            var otherOrigin = !SameOrigin(start, current);
+            foreach (var (name, value) in headers)
+            {
+                if (otherOrigin && CredentialHeaders.Contains(name)) continue;
+                unique[name] = value;
+            }
             foreach (var (name, value) in unique)
             {
                 if (name.Equals("Host", StringComparison.OrdinalIgnoreCase) || name.Equals("Content-Length", StringComparison.OrdinalIgnoreCase)) continue;
