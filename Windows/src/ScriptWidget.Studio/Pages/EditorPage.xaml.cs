@@ -71,6 +71,19 @@ public sealed partial class EditorPage : Page
         Web.Close();
     }
 
+    /// <summary>Development aid: saves a picture of the code editor, which a picture of the window does not include.</summary>
+    public async Task CaptureEditorAsync(string file)
+    {
+        if (Web.CoreWebView2 is null) { await File.WriteAllTextAsync(file + ".error.txt", $"The editor did not start. ready={editor?.IsReady}"); return; }
+        using var stream = new Windows.Storage.Streams.InMemoryRandomAccessStream();
+        await Web.CoreWebView2.CapturePreviewAsync(Microsoft.Web.WebView2.Core.CoreWebView2CapturePreviewImageFormat.Png, stream);
+        var bytes = new byte[stream.Size];
+        stream.Seek(0);
+        await stream.ReadAsync(System.Runtime.InteropServices.WindowsRuntime.WindowsRuntimeBufferExtensions.AsBuffer(bytes), (uint)bytes.Length, Windows.Storage.Streams.InputStreamOptions.None);
+        await File.WriteAllBytesAsync(file, bytes);
+        await File.WriteAllTextAsync(file + ".txt", $"ready={editor?.IsReady} length={(await editor!.ContentAsync())?.Length}");
+    }
+
     private string SelectedFamily => (Family.SelectedItem as ComboBoxItem)?.Tag as string ?? "medium";
 
     // MARK: - Files

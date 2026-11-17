@@ -70,6 +70,11 @@ public sealed partial class MainWindow : Window
 
     public void ShowTemplates() => Navigation.SelectedItem = TemplatesItem;
 
+    /// <summary>The editor page when it is showing.</summary>
+    public EditorPage? EditorPage => ContentFrame.Content as EditorPage;
+
+    public void ShowSettings() => Navigation.SelectedItem = SettingsItem;
+
     /// <summary>A short message at the bottom of the window.</summary>
     public void Notify(string message, InfoBarSeverity severity = InfoBarSeverity.Success)
     {

@@ -11,6 +11,11 @@
   var sequence = 0;
   var send = function (message) { host.postMessage(JSON.stringify(message)); };
   window.webkit = window.webkit || {};
+  // The bundle is served from an https origin here, as in the Android app.
+  // It tells an embedding app from the public Web Studio site by this object
+  // (see isWebStudio in Editor/editorfe/src/main.js); without it the editor
+  // would ask to pair with a phone.
+  window.ScriptWidgetAndroid = window.ScriptWidgetAndroid || { host: "windows" };
   window.WKWebViewJavascriptBridge = {
     registerHandler: function (name, handler) { handlers[name] = handler; },
     callHandler: function (name, data, callback) {
