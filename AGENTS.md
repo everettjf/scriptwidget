@@ -88,6 +88,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - Use concise, action-oriented commit subjects. Add a body when behavior, security tradeoffs, migrations, or generated artifacts need explanation.
 - PRs should state the user outcome, linked issue, security/compatibility impact, commands/schemes run, and any skipped physical-device or signed-iCloud checks.
 - Include before/after screenshots for visible UI changes and keep documentation/schema/generated bundles in the same PR as the behavior they describe.
+- GitHub releases: the newest app release (Apple `v…`, Android `android-v…` or Windows `windows-v…`) is marked Latest; `cli-v…` releases and previews are created with `--latest=false`. See `docs/release-readiness.md`.
 - Never describe a skipped check as passing. Link the exact successful CI run or local evidence when claiming release readiness.
 
 ## Current Product Priorities

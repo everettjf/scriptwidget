@@ -79,6 +79,15 @@ The editor budgets are enforced by repeated CodeMirror state creation and edit t
 5. Archive both apps with distribution signing, validate, then distribute to TestFlight for a final smoke pass.
 6. Tag the exact tested commit; never rebuild from an untested commit.
 
+### GitHub releases
+
+The repository's Releases list holds four products, told apart by tag prefix: `v<version>` for the Apple apps, `android-v<version>` for Android, `windows-v<version>` for Windows and `cli-v<version>` for the command line tool.
+
+- The newest app release (Apple, Android or Windows) carries the Latest mark, so the repository page shows a recent date. Create it with `gh release create … --latest`.
+- A command line tool release never takes the mark, and neither does a preview of an app (such as Windows 0.1.0): create these with `--latest=false`.
+- When an Apple version goes live on the App Store, tag the commit it was built from as `v<version>` and create a release with the App Store release notes and the two App Store links. It has no files attached.
+- Do not publish a release without notes.
+
 ### Apple build/upload and manual review
 
 For the current A/B release, App Review is submitted manually by the user.

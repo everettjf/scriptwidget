@@ -23,7 +23,7 @@ On Google Play the same key is both the app signing key and the upload key. Play
 2. Run the tests ([test notes](testing.md)), then `cd Android && ./gradlew :app:assembleFossRelease`.
 3. Check the APK: it is signed with the key above, is not debuggable, contains no `com.google.firebase` or `com.google.android.gms` classes, and is under 30 MB (IzzyOnDroid's usual limit per app).
 4. Install it on a device and start it.
-5. Commit, push, and create the release on that commit with the tag `android-v<versionName>` and the APK named `scriptwidget-android-<versionName>.apk`. Pass `--latest=false`: the repository's latest release stays with the other products that share it.
+5. Commit, push, and create the release on that commit with the tag `android-v<versionName>` and the APK named `scriptwidget-android-<versionName>.apk`. Pass `--latest`: the newest app release carries the repository's Latest mark (see [GitHub releases](../release-readiness.md#github-releases)).
 
 The repository also holds releases of the command line tool (`cli-v…`) and tags of the Apple apps (`v…`), so anything that follows Android releases must filter on the `android-v` prefix.
 
