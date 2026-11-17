@@ -21,6 +21,13 @@ Checks that need a person at an unlocked Windows desktop. The first night of dev
 
 `ScriptWidget.exe --selftest-window 30 <log file>` shows one test card for 30 seconds and writes the window order once a second; use it while trying Win+D.
 
+The installer on GitHub Releases:
+
+- **It is not signed.** SmartScreen warns on every download. A code-signing certificate (or Azure Trusted Signing) would remove the warning.
+- **No automatic update.** A newer version has to be downloaded and run by hand. A check for a newer release, or a winget manifest, would help.
+- **The installer and the Store version do not know of each other.** Both can be installed; there is one host per user and each keeps its widgets in its own folder. Neither warns about the other.
+- **Seen by a person:** the installer's pages in English and Chinese, the question about deleting the widgets when uninstalling, a double-click on a `.swt` file, and an installation on a PC without the development tools.
+
 Decisions and accounts:
 
 - **Partner Center.** Reserve the app name, then build with `package.ps1 -IdentityName … -Publisher … -PublisherDisplayName … -FrameworkDependent`. The default identity is for local testing only.

@@ -1,6 +1,6 @@
 # ScriptWidget for Windows
 
-Status: preview. Not yet in the Microsoft Store. The plan is in [plan.md](plan.md), what was tested and on which machine is in [testing.md](testing.md), and what is left is in [TODO.md](TODO.md).
+Status: preview. An installer is on [GitHub Releases](https://github.com/everettjf/scriptwidget/releases); the app is not yet in the Microsoft Store. The plan is in [plan.md](plan.md), what was tested and on which machine is in [testing.md](testing.md), and what is left is in [TODO.md](TODO.md).
 
 ScriptWidget for Windows puts the same Package 2.0 widgets that run on iPhone, iPad, Mac and Android on the Windows 11 desktop. A widget is a small window that the app draws itself: it sits on the desktop below your other windows, shows what its script returns, refreshes on a schedule, and reacts to clicks on buttons, toggles and links.
 
@@ -26,6 +26,16 @@ The management window, as the program drew it on 2026-11-17 (saved by the progra
 The interface follows the Windows display language, English or Simplified Chinese:
 
 ![My widgets in Chinese](images/library-zh.png)
+
+## Installing it
+
+Needs Windows 11. Download `ScriptWidget-<version>-x64-setup.exe` (or `-arm64-` for an ARM64 PC) from [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) and run it.
+
+- **The installer is not signed.** Windows SmartScreen says "Windows protected your PC"; choose "More info", then "Run anyway". Each release lists the SHA-256 of its files.
+- **It installs for you only**, without administrator rights, into `%LOCALAPPDATA%\Programs\ScriptWidget`, and adds ScriptWidget to the Start menu and to "Installed apps". `.swt` files open in ScriptWidget.
+- **Updating.** There is no automatic update. Run the installer of the newer version: it closes the running app, replaces the program and keeps your widgets.
+- **Removing it.** Uninstall it in Settings > Apps > Installed apps. The uninstaller asks whether to delete your widgets and settings too; they are in `%LOCALAPPDATA%\ScriptWidget`.
+- **Not together with the Store version.** There is one widget host per user, and the two installations keep their widgets in different folders. Use one of them.
 
 ## Using it
 
@@ -108,6 +118,8 @@ dotnet test tests/ScriptWidget.Core.Tests -c Debug
 
 `powershell -File Windows/scripts/package.ps1` builds the MSIX package into `Windows/artifacts`. For a Store submission pass the identity values from Partner Center (`-IdentityName`, `-Publisher`, `-PublisherDisplayName`) and `-FrameworkDependent`.
 
+`powershell -File Windows/scripts/installer.ps1 -Arch x64 -Version 0.1.0` builds the installer for GitHub Releases, `Windows/artifacts/ScriptWidget-0.1.0-x64-setup.exe`, from the same program folder as the self-contained MSIX package. It needs [NSIS 3](https://nsis.sourceforge.io). `powershell -File Windows/scripts/installer-check.ps1 -Installer <setup.exe>` installs it, starts it, installs it again over the running copy and removes it, checking each step; it refuses to run on a PC where ScriptWidget is installed that way. The "Windows installers" workflow, started by hand, does both for x64 and ARM64 and keeps the installers as artifacts of the run. Releases are tagged `windows-v<version>`.
+
 Run `node Windows/scripts/build-shared-js.mjs` again after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`. Those sources are shared with Android: a change there needs the Android suites as well.
 
 ## Folders
@@ -121,6 +133,7 @@ Run `node Windows/scripts/build-shared-js.mjs` again after changing `Web/preview
 | `Windows/src/ScriptWidget.Cli` | `swcli` |
 | `Windows/tests` | xUnit tests, most of them ported from `Android/core` |
 | `Windows/package` | MSIX manifest and images |
+| `Windows/installer` | NSIS script of the installer for GitHub Releases |
 | `Windows/assets`, `Windows/native/out`, `Windows/artifacts` | Generated; not checked in |
 
 User data is in `%LOCALAPPDATA%\ScriptWidget` (`Packages`, `Storage`, `Plugins`, `Cache`, `widgets.json`, `settings.json`, `host.log`). When the app is installed from the Store it is in the package's own folder instead, `%LOCALAPPDATA%\Packages\<package family>\LocalState\ScriptWidget`, which Windows removes on uninstall.

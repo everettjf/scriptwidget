@@ -26,11 +26,12 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Capabilities without an Android implementation report `[unsupported_platform]` and are listed on the package page. See [ScriptWidget for Android](docs/android/README.md).
 - Verified on one device (Pixel 6, Android 17). Other vendors' launchers and background limits are untested; AI generation has not been run against a live provider.
 
-### Windows (preview, `windows` branch)
+### Windows (preview)
 
 - Add a Windows 11 app that runs the same Package 2.0 widgets on the desktop: QuickJS-NG with the shared execution kernel, the shared renderer painted with Win2D, and small, medium, large and extra-large widgets in windows that sit on the desktop.
 - Add a tray icon, a management window with the library, the bundled templates, the code editor with a live preview, settings, and `.swt` import and export.
 - `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work; the other data APIs report `[unsupported_platform]`. See [ScriptWidget for Windows](docs/windows/README.md).
+- Add an installer for GitHub Releases (x64 and ARM64): it installs for the current user without administrator rights, updates over a running copy and removes itself from Installed apps. It is not signed, so Windows SmartScreen warns about it; there is no automatic update.
 - Automated tests and a scripted desktop check pass on one x64 PC and in CI on x64 and ARM64. The desktop behavior was first checked from window captures, the window order and posted input while the PC was locked, then on the unlocked desktop with the real Win+D key and real mouse input, which found and fixed two Show Desktop bugs and one in the bundled network templates. Signing out and in, a second display and an ARM64 PC are untried. See [the test notes](docs/windows/testing.md).
 
 ### Compatibility fixes

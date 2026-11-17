@@ -1,0 +1,60 @@
+name: Windows installers
+# Builds the installers that are attached to a GitHub release, one per processor, and tries each:
+# install, start, update over a running copy, uninstall. Started by hand. It publishes nothing;
+# the installers are artifacts of the run, and a person attaches them to the release.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Version, three numbers (the one in Windows/Directory.Build.props)
+        required: true
+        default: 0.1.0
+permissions:
+  contents: read
+jobs:
+  installer:
+    name: Installer (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {arch: x64, runner: windows-2025}
+          - {arch: arm64, runner: windows-11-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - name: NSIS
+        shell: pwsh
+        run: |
+          if (-not (Get-Command makensis.exe -ErrorAction SilentlyContinue) -and -not (Test-Path "${env:ProgramFiles(x86)}\NSIS\makensis.exe")) { choco install nsis -y --no-progress }
+      - name: Build the installer
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+        run: ./Windows/scripts/installer.ps1 -Arch ${{ matrix.arch }} -Version $env:VERSION
+      - name: Install, start, update and uninstall
+        shell: pwsh
+        env:
+          VERSION: ${{ inputs.version }}
+        run: powershell -NoProfile -ExecutionPolicy Bypass -File Windows/scripts/installer-check.ps1 -Installer "Windows/artifacts/ScriptWidget-$env:VERSION-${{ matrix.arch }}-setup.exe" -Output "$env:RUNNER_TEMP\installer-check"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: scriptwidget-windows-${{ matrix.arch }}-setup
+          path: Windows/artifacts/ScriptWidget-*-setup.exe
+          if-no-files-found: error
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: installer-check-${{ matrix.arch }}
+          path: |
+            ${{ runner.temp }}/installer-check/*.png
+            ${{ runner.temp }}/installer-check/*.log
+          if-no-files-found: ignore

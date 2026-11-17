@@ -115,6 +115,21 @@ Both forms were built, registered from their layout folder in Developer Mode, tr
 
 The Store form at first showed "This application could not be started": the bootstrapper for unpackaged programs ran inside the package. It is switched off for that form now.
 
+### Installer for GitHub Releases (Dev PC, 17 November 2026)
+
+`installer.ps1` built `ScriptWidget-0.1.0-x64-setup.exe` (51.1 MB) with NSIS 3.12, and `installer-check.ps1` ran it on the Dev PC, where the copy registered from the MSIX layout was quit first. All 26 checks passed:
+
+| Step | What was checked |
+| --- | --- |
+| Silent install (`/S`) | Exit code 0; host, management window and `resources.pri` in `%LOCALAPPDATA%ProgramsScriptWidget`; no `AppxManifest.xml`; the uninstaller; the Start menu shortcut; the entry in Installed apps with version and folder; `.swt` opens the management window |
+| The installed program | The host starts and logs `packaged False`; the first start puts the clock widget on the desktop; the management window opens and draws the Templates page (a picture was saved) |
+| Installing again over the running host | Exit code 0; the host was asked to quit and logged `host stopped`; the files are there; the widgets are kept |
+| Silent uninstall while the host runs | The host is stopped; the program files, the shortcut, the entry in Installed apps, the file type and the start-at-sign-in value are gone; a file the installer did not put into the folder is left alone; the widgets are kept |
+
+Three mistakes in the installer script were found by this check and fixed before anything was published: the command that closes the running copy was cut off at its first single quote; a script text longer than 1024 characters is cut off by NSIS; and the 32-bit installer started a 32-bit PowerShell, which cannot read the path of a 64-bit process and so did not find the running host.
+
+Not run: the pages of the installer on screen (a picture of the window came out black), the question about deleting the widgets in a non-silent uninstall, a double-click on a `.swt` file with this installation, signing out and in with its start-at-sign-in value, a PC that never had the development tools, and the ARM64 installer on a PC (it runs in the "Windows installers" workflow only).
+
 ## 2026-11-17, CI
 
 GitHub Actions run 44076023162 on `windows-2025` (Windows Server 2025, x64, 100% scale, no graphics card).

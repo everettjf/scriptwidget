@@ -92,6 +92,12 @@ internal sealed unsafe class AppHost : NativeWindow
     public static int Run(string[] arguments)
     {
         using var single = new Mutex(true, @"Local\ScriptWidget.Host", out var first);
+        if (arguments.Contains("--quit"))
+        {
+            // The installer and the uninstaller stop the running host this way before they touch its files.
+            if (!first) HostPipe.Send(new JsonObject { ["command"] = "quit" });
+            return 0;
+        }
         if (!first)
         {
             // Another instance owns the desktop: ask it to show the management window instead.
