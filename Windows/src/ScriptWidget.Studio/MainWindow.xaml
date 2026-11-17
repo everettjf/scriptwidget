@@ -24,7 +24,12 @@
                         <FontIcon Glyph="&#xF0E2;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="ExamplesItem" Tag="examples">
+                <NavigationViewItem x:Name="ComponentsItem" Tag="components">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xEA86;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="ApisItem" Tag="apis">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE943;" />
                     </NavigationViewItem.Icon>

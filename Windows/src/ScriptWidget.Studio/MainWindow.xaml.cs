@@ -20,7 +20,8 @@ public sealed partial class MainWindow : Window
         Title = "ScriptWidget";
         LibraryItem.Content = Loc.T("nav.library");
         TemplatesItem.Content = Loc.T("nav.templates");
-        ExamplesItem.Content = Loc.T("nav.examples");
+        ComponentsItem.Content = Loc.T("nav.components");
+        ApisItem.Content = Loc.T("nav.apis");
         SettingsItem.Content = Loc.T("nav.settings");
         var icon = Path.Combine(AppContext.BaseDirectory, "ScriptWidget.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
@@ -52,7 +53,8 @@ public sealed partial class MainWindow : Window
         {
             case "library": ContentFrame.Navigate(typeof(LibraryPage)); break;
             case "templates": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Templates); break;
-            case "examples": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Examples); break;
+            case "components": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Components); break;
+            case "apis": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Apis); break;
             case "settings": ContentFrame.Navigate(typeof(SettingsPage)); break;
         }
     }
@@ -72,13 +74,17 @@ public sealed partial class MainWindow : Window
 
     public void ShowTemplates() => Navigation.SelectedItem = TemplatesItem;
 
-    public void ShowExamples() => Navigation.SelectedItem = ExamplesItem;
+    public void ShowComponents() => Navigation.SelectedItem = ComponentsItem;
+
+    public void ShowApis() => Navigation.SelectedItem = ApisItem;
+
+    private NavigationViewItem ListItem(string mode) => mode switch { TemplatesPage.Components => ComponentsItem, TemplatesPage.Apis => ApisItem, _ => TemplatesItem };
 
     /// <summary>Opens one bundled template or example. The list it came from stays selected in the sidebar.</summary>
     public void ShowDetail(ScriptWidget.Core.Hosting.BundledPackage bundled)
     {
-        var item = bundled.Group == "template" ? TemplatesItem : ExamplesItem;
-        if (Navigation.SelectedItem != item) Navigation.SelectedItem = item;
+        var item = ListItem(TemplatesPage.ModeOf(bundled.Group));
+        if (!ReferenceEquals(Navigation.SelectedItem, item)) Navigation.SelectedItem = item;
         ContentFrame.Navigate(typeof(TemplateDetailPage), bundled);
     }
 
@@ -98,7 +104,7 @@ public sealed partial class MainWindow : Window
     {
         if (ContentFrame.Content is not TemplateDetailPage) return;
         if (ContentFrame.CanGoBack && ContentFrame.BackStack[^1].SourcePageType == typeof(TemplatesPage)) ContentFrame.GoBack();
-        else ContentFrame.Navigate(typeof(TemplatesPage), Navigation.SelectedItem == ExamplesItem ? TemplatesPage.Examples : TemplatesPage.Templates);
+        else ContentFrame.Navigate(typeof(TemplatesPage), (Navigation.SelectedItem as NavigationViewItem)?.Tag as string ?? TemplatesPage.Templates);
     }
 
     /// <summary>Clicking the selected sidebar entry while one of its templates is open goes back to the list.</summary>

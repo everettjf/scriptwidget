@@ -13,7 +13,7 @@ using ScriptWidget.Studio.Services;
 namespace ScriptWidget.Studio.Pages;
 
 /// <summary>
-/// One bundled template or example, opened from the grid: what it draws, its
+/// One bundled template or example, opened from its list: what it draws, its
 /// code (read only), which hosts it contacts, and the one action that copies
 /// it into the user's widgets. Nothing is installed until that action.
 /// </summary>
