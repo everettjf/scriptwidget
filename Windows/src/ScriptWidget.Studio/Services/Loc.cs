@@ -13,6 +13,7 @@ public static class Loc
     {
         ["nav.library"] = ("My widgets", "我的小组件"),
         ["nav.templates"] = ("Templates", "模板"),
+        ["nav.examples"] = ("Examples", "示例"),
         ["nav.settings"] = ("Settings", "设置"),
 
         ["library.title"] = ("My widgets", "我的小组件"),
@@ -31,6 +32,8 @@ public static class Loc
         ["action.delete"] = ("Delete", "删除"),
         ["action.more"] = ("More actions", "更多操作"),
         ["action.use"] = ("Use this template", "使用此模板"),
+        ["action.openCopy"] = ("Open a copy in the editor", "在编辑器中打开副本"),
+        ["action.copyCode"] = ("Copy code", "复制代码"),
         ["action.save"] = ("Save", "保存"),
         ["action.format"] = ("Format", "格式化"),
         ["action.back"] = ("Back", "返回"),
@@ -41,7 +44,16 @@ public static class Loc
         ["action.openFolder"] = ("Open folder", "打开文件夹"),
 
         ["templates.title"] = ("Templates", "模板"),
-        ["templates.detail"] = ("Ready-made widgets you can put on the desktop and change.", "现成的小组件，可以放到桌面上再改成自己的。"),
+        ["templates.detail"] = ("Ready-made widgets. Open one to see what it shows and how it is written, then put it on the desktop.", "现成的小组件。点开可以看它的效果和代码，再放到桌面上。"),
+        ["examples.title"] = ("Examples", "示例"),
+        ["examples.detail"] = ("Short pieces of code, each showing one component or one API. Open one to read it.", "一段段简短的代码，每个演示一个组件或一个 API。点开即可阅读。"),
+        ["examples.search"] = ("Search examples", "搜索示例"),
+        ["detail.code"] = ("Code", "代码"),
+        ["detail.readOnly"] = ("Read only", "只读"),
+        ["detail.network"] = ("Connects to {0}", "会访问 {0}"),
+        ["detail.noNetwork"] = ("Does not use the network", "不访问网络"),
+        ["detail.noUI"] = ("This example draws nothing. What it prints is under Output.", "这个示例不画界面，它打印的内容在“输出”里。"),
+        ["detail.noOutput"] = ("Draws nothing and prints nothing.", "不画界面，也没有输出。"),
         ["templates.group.template"] = ("Widgets", "小组件"),
         ["templates.group.component"] = ("Components", "组件示例"),
         ["templates.group.api"] = ("APIs", "API 示例"),
@@ -85,6 +97,7 @@ public static class Loc
         ["dialog.error.title"] = ("That did not work", "操作没有成功"),
 
         ["toast.added"] = ("Added to the desktop", "已添加到桌面"),
+        ["toast.copied"] = ("Code copied", "代码已复制"),
         ["toast.exported"] = ("Exported to {0}", "已导出到 {0}"),
         ["toast.hostMissing"] = ("The desktop host is not running, so the widget could not be placed.", "桌面常驻程序没有运行，无法放置小组件。"),
 

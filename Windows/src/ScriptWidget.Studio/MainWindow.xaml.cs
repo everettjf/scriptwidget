@@ -20,6 +20,7 @@ public sealed partial class MainWindow : Window
         Title = "ScriptWidget";
         LibraryItem.Content = Loc.T("nav.library");
         TemplatesItem.Content = Loc.T("nav.templates");
+        ExamplesItem.Content = Loc.T("nav.examples");
         SettingsItem.Content = Loc.T("nav.settings");
         var icon = Path.Combine(AppContext.BaseDirectory, "ScriptWidget.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
@@ -50,7 +51,8 @@ public sealed partial class MainWindow : Window
         switch (item.Tag as string)
         {
             case "library": ContentFrame.Navigate(typeof(LibraryPage)); break;
-            case "templates": ContentFrame.Navigate(typeof(TemplatesPage)); break;
+            case "templates": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Templates); break;
+            case "examples": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Examples); break;
             case "settings": ContentFrame.Navigate(typeof(SettingsPage)); break;
         }
     }
@@ -69,6 +71,41 @@ public sealed partial class MainWindow : Window
     }
 
     public void ShowTemplates() => Navigation.SelectedItem = TemplatesItem;
+
+    public void ShowExamples() => Navigation.SelectedItem = ExamplesItem;
+
+    /// <summary>Opens one bundled template or example. The list it came from stays selected in the sidebar.</summary>
+    public void ShowDetail(ScriptWidget.Core.Hosting.BundledPackage bundled)
+    {
+        var item = bundled.Group == "template" ? TemplatesItem : ExamplesItem;
+        if (Navigation.SelectedItem != item) Navigation.SelectedItem = item;
+        ContentFrame.Navigate(typeof(TemplateDetailPage), bundled);
+    }
+
+    /// <summary>Opens a bundled template or example by name; false when there is none.</summary>
+    public bool ShowDetail(string name)
+    {
+        var all = AppServices.Library.Bundled();
+        var found = all.FirstOrDefault(item => item.Group == "template" && item.Name.Equals(name, StringComparison.OrdinalIgnoreCase))
+            ?? all.FirstOrDefault(item => item.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+        if (found is null) return false;
+        ShowDetail(found);
+        return true;
+    }
+
+    /// <summary>Leaves the detail page for the list it was opened from.</summary>
+    public void BackFromDetail()
+    {
+        if (ContentFrame.Content is not TemplateDetailPage) return;
+        if (ContentFrame.CanGoBack && ContentFrame.BackStack[^1].SourcePageType == typeof(TemplatesPage)) ContentFrame.GoBack();
+        else ContentFrame.Navigate(typeof(TemplatesPage), Navigation.SelectedItem == ExamplesItem ? TemplatesPage.Examples : TemplatesPage.Templates);
+    }
+
+    /// <summary>Clicking the selected sidebar entry while one of its templates is open goes back to the list.</summary>
+    private void OnItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs arguments)
+    {
+        if (ContentFrame.Content is TemplateDetailPage && ReferenceEquals(arguments.InvokedItemContainer, Navigation.SelectedItem)) BackFromDetail();
+    }
 
     /// <summary>The editor page when it is showing.</summary>
     public EditorPage? EditorPage => ContentFrame.Content as EditorPage;

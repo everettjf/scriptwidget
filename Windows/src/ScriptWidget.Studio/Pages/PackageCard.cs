@@ -13,6 +13,7 @@ public sealed class PackageCard : INotifyPropertyChanged
 {
     private ImageSource? image;
     private string detail = "";
+    private string output = "";
     private bool rendering;
 
     public required string Title { get; init; }
@@ -37,7 +38,16 @@ public sealed class PackageCard : INotifyPropertyChanged
 
     public Visibility DetailVisibility => detail.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility SubtitleVisibility => Subtitle.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
-    public Visibility PlaceholderVisibility => image is null ? Visibility.Visible : Visibility.Collapsed;
+    /// <summary>What an example that draws nothing printed; shown in place of a picture.</summary>
+    public string Output
+    {
+        get => output;
+        private set { output = value; Changed(nameof(Output)); Changed(nameof(OutputVisibility)); Changed(nameof(PlaceholderVisibility)); }
+    }
+
+    public string OutputLabel => Loc.T("editor.logs");
+    public Visibility OutputVisibility => output.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+    public Visibility PlaceholderVisibility => image is null && output.Length == 0 ? Visibility.Visible : Visibility.Collapsed;
     public Visibility InstalledVisibility => Installed is not null ? Visibility.Visible : Visibility.Collapsed;
     public Visibility BundledVisibility => Bundled is not null ? Visibility.Visible : Visibility.Collapsed;
 
@@ -46,7 +56,7 @@ public sealed class PackageCard : INotifyPropertyChanged
     public string UseLabel => Loc.T("action.use");
     public string MoreLabel => Loc.T("action.more");
 
-    public bool HasPreview => image is not null || rendering;
+    public bool HasPreview => image is not null || output.Length > 0 || rendering;
 
     /// <summary>Draws the medium-size preview once. Safe to call again; later calls do nothing.</summary>
     public async Task RenderAsync(double scale)
@@ -62,7 +72,12 @@ public sealed class PackageCard : INotifyPropertyChanged
             else if (Bundled is { } bundled) { files = new DiskPackageFiles(bundled.Directory); id = "template:" + bundled.Group + "/" + bundled.Name; }
             else return;
             var result = await Preview.RenderAsync(files, id, "medium", Preview.SystemIsDark, "", scale, build);
-            Image = result.Image;
+            if (Preview.DrawsNothing(result.Execution))
+            {
+                var lines = Preview.LogLines(result.Execution);
+                Output = lines.Count > 0 ? string.Join("\n", lines) : Loc.T("detail.noOutput");
+            }
+            else Image = result.Image;
         }
         catch (Exception error) when (error is not OutOfMemoryException) { /* the placeholder stays */ }
         finally { rendering = false; }

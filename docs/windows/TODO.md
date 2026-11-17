@@ -29,6 +29,10 @@ Decisions and accounts:
 
 Known gaps in the code:
 
+- **A slow request is reported as "Script exceeded the 5-second execution limit".** The message does not say that the script was waiting for the network. Daily Quote's preview failed this way four times in the management window on 17 November 2026 and then never again; the cause was not found (see the test notes).
+- **The code editor's own toolbar (Layout, Theme, Assets) shows on a template's read-only code**, where it does nothing useful. It belongs to the shared editor bundle.
+- **Animation Clock at the small size** wraps its text one letter per line.
+
 - **Proxies.** Requests do not go through the system proxy, because the address behind a proxy cannot be checked against the private-address rule. A PC that reaches the Internet only through a proxy cannot fetch. Decide between keeping this and trusting a configured proxy.
 - **Memory with a clock on the desktop.** The layout engine stays loaded while a widget redraws every minute or second: about 85 MB private memory against about 22 MB with only static widgets. Releasing it between redraws would cost a few hundred milliseconds of processor time each minute.
 - **A timer redraws every second by laying the whole widget out again.** Fine for one or two timers; a host-drawn text layer over the bitmap would be cheaper.

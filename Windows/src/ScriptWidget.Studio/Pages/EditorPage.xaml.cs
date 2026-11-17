@@ -269,7 +269,7 @@ public sealed partial class EditorPage : Page
             ErrorBar.Title = execution.Error?.Kind ?? "";
             ErrorBar.Message = execution.Error?.Message ?? "";
             editor?.PublishDiagnostics(execution.Error?.Message);
-            var lines = execution.Logs.Select(entry => entry.Level == "error" ? "✕ " + entry.Message : entry.Message).ToList();
+            var lines = Preview.LogLines(execution);
             Logs.Text = lines.Count > 0 ? string.Join("\n", lines) : execution.Error is null ? Loc.T("editor.ok", execution.ElapsedMilliseconds) : Loc.T("editor.noLogs");
         }
         catch (Exception error) when (error is not OutOfMemoryException)

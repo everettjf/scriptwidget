@@ -2,7 +2,8 @@
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="using:ScriptWidget.Studio.Pages"
-      xmlns:s="using:ScriptWidget.Studio.Services">
+      xmlns:s="using:ScriptWidget.Studio.Services"
+      NavigationCacheMode="Required">
     <Grid Padding="32,28,0,0" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -10,8 +11,8 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
         <StackPanel Spacing="4" Margin="0,0,32,0">
-            <TextBlock Text="{s:T Key=templates.title}" Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock Text="{s:T Key=templates.detail}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <TextBlock x:Name="TitleText" Style="{StaticResource TitleTextBlockStyle}" />
+            <TextBlock x:Name="DetailText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
         </StackPanel>
         <Grid Grid.Row="1" Margin="0,0,32,0" ColumnSpacing="12">
             <Grid.ColumnDefinitions>
@@ -19,14 +20,15 @@
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="280" />
             </Grid.ColumnDefinitions>
+            <!-- Only the examples have groups; the templates page shows widgets alone. -->
             <SelectorBar x:Name="Groups" SelectionChanged="OnGroupChanged">
-                <SelectorBarItem x:Name="GroupTemplate" Tag="template" IsSelected="True" />
-                <SelectorBarItem x:Name="GroupComponent" Tag="component" />
+                <SelectorBarItem x:Name="GroupComponent" Tag="component" IsSelected="True" />
                 <SelectorBarItem x:Name="GroupApi" Tag="api" />
             </SelectorBar>
-            <AutoSuggestBox x:Name="Search" Grid.Column="2" QueryIcon="Find" AutomationProperties.Name="{s:T Key=templates.search}" TextChanged="OnSearchChanged" PlaceholderText="{s:T Key=templates.search}" VerticalAlignment="Center" />
+            <AutoSuggestBox x:Name="Search" Grid.Column="2" QueryIcon="Find" TextChanged="OnSearchChanged" VerticalAlignment="Center" />
         </Grid>
-        <GridView x:Name="Cards" Grid.Row="2" SelectionMode="None" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
+        <!-- A card opens the template; it is used from there, after its code has been seen. -->
+        <GridView x:Name="Cards" Grid.Row="2" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:PackageCard">
                     <Grid Width="320" Margin="6" Padding="14" RowSpacing="10" CornerRadius="10"
@@ -34,16 +36,19 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="170" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
                         <Grid CornerRadius="8" Background="{ThemeResource LayerFillColorAltBrush}">
                             <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="8">
                                 <Image Source="{x:Bind Image, Mode=OneWay}" Width="329" Height="170" Stretch="Fill" />
                             </Viewbox>
+                            <!-- An example that draws nothing shows what it printed. -->
+                            <StackPanel Visibility="{x:Bind OutputVisibility, Mode=OneWay}" Padding="14,12" Spacing="6">
+                                <TextBlock Text="{x:Bind OutputLabel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind Output, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap" MaxLines="7" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
                             <ProgressRing IsActive="True" Width="24" Height="24" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
                         </Grid>
                         <TextBlock Grid.Row="1" Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
-                        <Button Grid.Row="2" Content="{x:Bind UseLabel}" Click="OnUse" Style="{StaticResource AccentButtonStyle}" />
                     </Grid>
                 </DataTemplate>
             </GridView.ItemTemplate>

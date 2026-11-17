@@ -136,4 +136,15 @@ public static class Preview
     }
 
     public static bool SystemIsDark => DeviceInfo.IsDarkMode();
+
+    /// <summary>
+    /// True when the script finished without drawing anything. The shared kernel then returns one
+    /// text element saying so; an example that only prints to the console ends this way.
+    /// </summary>
+    public static bool DrawsNothing(ExecutionResult execution) =>
+        execution.Error is null && execution.Tree is { } tree && tree.Contains("#UI Not Found#", StringComparison.Ordinal);
+
+    /// <summary>The console output of a run, one line per entry.</summary>
+    public static IReadOnlyList<string> LogLines(ExecutionResult execution) =>
+        execution.Logs.Select(entry => entry.Level == "error" ? "✕ " + entry.Message : entry.Message).ToList();
 }

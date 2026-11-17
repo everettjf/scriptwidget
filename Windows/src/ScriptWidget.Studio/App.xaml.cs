@@ -35,6 +35,8 @@ public partial class App : Application
         if (request.ImportFile is { } file) _ = window.ImportArchiveAsync(file);
         else if (request.OpenPackage is { } package) window.OpenEditor(package);
         else if (request.Page == "templates") window.ShowTemplates();
+        else if (request.Page == "examples") window.ShowExamples();
+        else if (request.Page is { } page && page.StartsWith("template:", StringComparison.Ordinal)) window.ShowDetail(page["template:".Length..]);
         else if (request.Page == "settings") window.ShowSettings();
         if (request.Screenshot is { } picture) _ = CaptureAsync(picture);
     }

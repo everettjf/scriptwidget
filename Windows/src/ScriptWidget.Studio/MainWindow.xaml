@@ -11,7 +11,8 @@
                         IsPaneToggleButtonVisible="False"
                         PaneDisplayMode="Left"
                         OpenPaneLength="200"
-                        SelectionChanged="OnSelectionChanged">
+                        SelectionChanged="OnSelectionChanged"
+                        ItemInvoked="OnItemInvoked">
             <NavigationView.MenuItems>
                 <NavigationViewItem x:Name="LibraryItem" Tag="library">
                     <NavigationViewItem.Icon>
@@ -21,6 +22,11 @@
                 <NavigationViewItem x:Name="TemplatesItem" Tag="templates">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xF0E2;" />
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="ExamplesItem" Tag="examples">
+                    <NavigationViewItem.Icon>
+                        <FontIcon Glyph="&#xE943;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

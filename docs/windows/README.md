@@ -9,7 +9,7 @@ ScriptWidget for Windows puts the same Package 2.0 widgets that run on iPhone, i
 | Part | What it does |
 | --- | --- |
 | Desktop host (`ScriptWidget.exe`) | Runs all the time behind a tray icon. Owns the widget windows, runs the scripts on a schedule, handles clicks |
-| Management window (`ScriptWidgetStudio.exe`) | Opens from the Start menu or the tray icon. Your widgets, the templates, the code editor with a live preview, and the settings. Closing it frees its memory; the widgets keep running |
+| Management window (`ScriptWidgetStudio.exe`) | Opens from the Start menu or the tray icon. Your widgets, the templates, the examples, the code editor with a live preview, and the settings. Closing it frees its memory; the widgets keep running |
 | Command line (`swcli.exe`) | Checks, runs and draws a package from a folder. Used by the build to produce reference images; not installed with the app |
 
 ## Pictures
@@ -20,6 +20,7 @@ The management window, as the program drew it on 2026-11-17 (saved by the progra
 | --- | --- |
 | ![My widgets](images/library.png) | ![Templates](images/templates.png) |
 | ![Editor with live preview](images/editor.png) | ![Settings](images/settings.png) |
+| ![A template opened: preview and code](images/template-detail.png) | ![Examples](images/examples.png) |
 
 The interface follows the Windows display language, English or Simplified Chinese:
 
@@ -28,7 +29,8 @@ The interface follows the Windows display language, English or Simplified Chines
 ## Using it
 
 - **First start.** The app puts one clock widget on the desktop and opens the management window.
-- **Add a widget.** In the management window pick a template or one of your widgets and choose "Add to desktop", or right-click the tray icon and choose "Add widget".
+- **Add a widget.** In the management window open a template, look at its preview and its code, and choose "Use this template": a copy is added to your widgets, placed on the desktop and opened in the editor. For one of your own widgets choose "Add to desktop", or right-click the tray icon and choose "Add widget".
+- **Learn from the examples.** "Examples" holds short pieces of code, one per component and per API. Opening one shows what it draws (or prints) beside its code; "Open a copy in the editor" adds an editable copy to your widgets without putting it on the desktop.
 - **Move a widget.** Drag it. It snaps to the edges of the screen. "Lock positions" in the tray menu stops accidental drags.
 - **Change its size or remove it.** Right-click the widget.
 - **Edit it.** Right-click the widget and choose "Edit…". The preview next to the code is drawn by the same renderer as the desktop widget, so what you see there is what the desktop shows.

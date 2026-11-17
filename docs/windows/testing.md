@@ -151,6 +151,25 @@ The owner signed in and the desktop was unlocked, so the host ran on the real de
 
 Not seen there: the tray icon's own menu (the same menu class as the right-click menu), a link opening the browser, a full-screen program in front, a scale change.
 
+### Templates and examples in the management window (Dev PC, 17 November 2026)
+
+The templates page was split after the owner tried it: "Templates" lists the widgets, a new "Examples" entry lists the component and API examples, a card opens a page with the preview and the read-only code, and the one button that copies it is on that page. Driven through UI Automation on the unlocked desktop, with pictures of the window:
+
+| Check | Result |
+| --- | --- |
+| Templates page | Widgets only, no group tabs, no button on the cards |
+| Clicking a card | Opens the template: preview, size and dark switch, read-only code, "Connects to …" with the hosts the copy will declare, "Use this template" |
+| Back, and clicking the selected sidebar entry | Returns to the list with the same tab chosen |
+| Examples page | Components and APIs tabs; an example that draws nothing shows what it printed instead of "#UI Not Found#", on its card and on its page |
+| "Copy code" | The clipboard holds the example's code |
+| "Open a copy in the editor" | A copy named after the example is in the library and open in the editor; nothing is added to the desktop |
+| Chinese interface | The new pages and buttons are in Chinese |
+
+Two things seen while doing this, neither changed:
+
+- **Daily Quote's preview said "Script exceeded the 5-second execution limit" four times in a row** in the management window while the command line ran the same template in 0.3 seconds, and then worked every time. Timing added to the request and to the run showed nothing wrong once it worked. The cause was not found.
+- **The Weather templates time out** because `api.open-meteo.com` did not answer from this PC at the time (a plain request from PowerShell timed out after 20 seconds too). The message is the same "5-second execution limit"; it does not say that a request is what was slow.
+
 ### Not run on any machine
 
 - Watching the desktop over time for flicker; the pictures above are single moments.
