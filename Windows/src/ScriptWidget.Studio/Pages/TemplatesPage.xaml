@@ -21,7 +21,7 @@
             <AutoSuggestBox x:Name="Search" Grid.Column="1" QueryIcon="Find" TextChanged="OnSearchChanged" VerticalAlignment="Bottom" />
         </Grid>
 
-        <!-- Templates and components: a card opens it; it is used from there, after its code has been seen. -->
+        <!-- Templates: a card opens it; it is used from there, after its code has been seen. -->
         <GridView x:Name="Cards" Grid.Row="1" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:PackageCard">
@@ -48,30 +48,27 @@
             </GridView.ItemTemplate>
         </GridView>
 
-        <!-- APIs: a list to look a name up in. A row shows the name and the first line of its example. -->
-        <ListView x:Name="Rows" Grid.Row="1" Visibility="Collapsed" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,32,24" MaxWidth="860" HorizontalAlignment="Left" ContainerContentChanging="OnRowChanging">
-            <ListView.ItemContainerStyle>
-                <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
-                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
-                    <Setter Property="Padding" Value="0" />
-                    <Setter Property="Margin" Value="0,2" />
-                </Style>
-            </ListView.ItemContainerStyle>
-            <ListView.ItemTemplate>
+        <!-- Components: small tiles. Only a template is shown at the size of a widget. -->
+        <GridView x:Name="Tiles" Grid.Row="1" Visibility="Collapsed" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
+            <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:PackageCard">
-                    <Grid Padding="16,10" ColumnSpacing="16" CornerRadius="6"
+                    <Grid Width="168" Margin="4" Padding="8" RowSpacing="6" CornerRadius="8"
                           Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="150" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        <TextBlock Grid.Column="1" Text="{x:Bind Snippet}" FontFamily="Cascadia Mono, Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
-                        <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontSize="12" Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="80" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid CornerRadius="6" Background="{ThemeResource LayerFillColorAltBrush}">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                <Image Source="{x:Bind Image, Mode=OneWay}" Width="329" Height="170" Stretch="Fill" />
+                            </Viewbox>
+                            <TextBlock Visibility="{x:Bind OutputVisibility, Mode=OneWay}" Text="{x:Bind Output, Mode=OneWay}" Margin="8,6" FontFamily="Cascadia Mono, Consolas" FontSize="10" TextWrapping="Wrap" MaxLines="5" TextTrimming="CharacterEllipsis" />
+                            <ProgressRing IsActive="True" Width="16" Height="16" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
+                        </Grid>
+                        <TextBlock Grid.Row="1" Text="{x:Bind Title}" FontFamily="Cascadia Mono, Consolas" FontSize="13" TextTrimming="CharacterEllipsis" Margin="2,0" />
                     </Grid>
                 </DataTemplate>
-            </ListView.ItemTemplate>
-        </ListView>
+            </GridView.ItemTemplate>
+        </GridView>
     </Grid>
 </Page>

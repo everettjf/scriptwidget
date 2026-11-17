@@ -54,7 +54,7 @@ public sealed partial class MainWindow : Window
             case "library": ContentFrame.Navigate(typeof(LibraryPage)); break;
             case "templates": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Templates); break;
             case "components": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Components); break;
-            case "apis": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Apis); break;
+            case "apis": ContentFrame.Navigate(typeof(ApisPage)); break;
             case "settings": ContentFrame.Navigate(typeof(SettingsPage)); break;
         }
     }
@@ -103,7 +103,9 @@ public sealed partial class MainWindow : Window
     public void BackFromDetail()
     {
         if (ContentFrame.Content is not TemplateDetailPage) return;
-        if (ContentFrame.CanGoBack && ContentFrame.BackStack[^1].SourcePageType == typeof(TemplatesPage)) ContentFrame.GoBack();
+        var list = ContentFrame.CanGoBack ? ContentFrame.BackStack[^1].SourcePageType : null;
+        if (list == typeof(TemplatesPage) || list == typeof(ApisPage)) ContentFrame.GoBack();
+        else if (ReferenceEquals(Navigation.SelectedItem, ApisItem)) ContentFrame.Navigate(typeof(ApisPage));
         else ContentFrame.Navigate(typeof(TemplatesPage), (Navigation.SelectedItem as NavigationViewItem)?.Tag as string ?? TemplatesPage.Templates);
     }
 

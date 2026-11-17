@@ -18,8 +18,6 @@ public sealed class PackageCard : INotifyPropertyChanged
 
     public required string Title { get; init; }
     public string Subtitle { get; init; } = "";
-    /// <summary>For an API example: the first line of its code, shown beside the name in the list.</summary>
-    public string Snippet { get; init; } = "";
     /// <summary>Set for an installed package.</summary>
     public InstalledPackage? Installed { get; init; }
     /// <summary>Set for a bundled template.</summary>

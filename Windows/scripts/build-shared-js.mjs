@@ -6,7 +6,9 @@
 //
 // Output (not checked in): Windows/assets/scriptwidget/ and the parity
 // corpus in Windows/tests/assets/.
+import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { buildSharedJS, repository } from "../../Scripts/lib/shared-js.mjs";
 
 await buildSharedJS({
@@ -27,3 +29,11 @@ await buildSharedJS({
   bundleDirectory: path.join(repository, "Android"),
   corpusOutput: path.join(repository, "Windows/tests/assets"),
 });
+
+// The API reference of the management window: the metadata the code editor completes from
+// (Editor/editorfe/src/scriptWidgetAPI.js), as data. Generating it keeps the two from disagreeing.
+const { scriptWidgetAPI } = await import(pathToFileURL(path.join(repository, "Editor/editorfe/src/scriptWidgetAPI.js")).href);
+fs.writeFileSync(
+  path.join(repository, "Windows/assets/scriptwidget/api-reference.json"),
+  JSON.stringify({ functions: scriptWidgetAPI.functions, components: scriptWidgetAPI.components, globalProperties: scriptWidgetAPI.globalProperties }) + "\n",
+);

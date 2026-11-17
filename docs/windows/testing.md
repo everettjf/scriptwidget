@@ -153,15 +153,16 @@ Not seen there: the tray icon's own menu (the same menu class as the right-click
 
 ### Templates and examples in the management window (Dev PC, 17 November 2026)
 
-The templates page was split after the owner tried it: the sidebar has "Templates" (the widgets), "Components" (one example per component, as previews) and "APIs" (one example per API, as a list with the line that uses it). An entry opens a page with the preview and the read-only code, and the one button that copies it is on that page. Driven through UI Automation on the unlocked desktop, with pictures of the window:
+The templates page was split after the owner tried it, in three rounds: the sidebar has "Templates" (the widgets, as cards the size of a widget), "Components" (one example per component, as small tiles) and "APIs" (a reference: globals on the left, the functions of the chosen one on the right). A template or example opens a page with the preview and the read-only code, and the one button that copies it is on that page. Driven through UI Automation on the unlocked desktop, with pictures of the window:
 
 | Check | Result |
 | --- | --- |
 | Templates page | Widgets only, no group tabs, no button on the cards |
 | Clicking a card | Opens the template: preview, size and dark switch, read-only code, "Connects to …" with the hosts the copy will declare, "Use this template" |
 | Back, and clicking the selected sidebar entry | Returns to the list it was opened from |
-| Components and APIs | Each is its own sidebar entry with no tabs inside. APIs is a list: name, the line of the example that uses the API, and a chevron. An example that draws nothing shows what it printed instead of "#UI Not Found#" |
-| Opening an API or a component | The same page as a template, with "Open a copy in the editor" and "Copy code"; its sidebar entry stays selected |
+| APIs | 111 functions in 24 globals from the editor's metadata. Choosing `$device` lists its 9 functions with arguments and return types; `$xml`, which has no bundled example, shows no "View example"; `console`, which has only an example, says so; `$health` is listed last and says it is not available on Windows. "View example" opens the example and Back returns with the same global chosen. Searching "battery" lists `$device.battery() → json` |
+| Components | Small tiles, five to a row at the default window size. Opening `toggle` shows its description, its four properties with their types (`on` is marked required), the attributes every component takes, a preview and the example's code. `attribute-frame` shows the `frame` attribute |
+| An example that draws nothing | Shows what it printed instead of "#UI Not Found#" |
 | "Copy code" | The clipboard holds the example's code |
 | "Open a copy in the editor" | A copy named after the example is in the library and open in the editor; nothing is added to the desktop |
 | Chinese interface | The new pages and buttons are in Chinese |

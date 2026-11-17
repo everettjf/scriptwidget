@@ -29,6 +29,9 @@ Decisions and accounts:
 
 Known gaps in the code:
 
+- **The API reference is in English only**, also in the Chinese interface: its sentences come from the editor's completion metadata, which has no translations.
+- **The reference has no entry for `console`, `$getenv`, `$render`, `$import` and the animation attributes**; those are listed with their example only.
+
 - **A slow request is reported as "Script exceeded the 5-second execution limit".** The message does not say that the script was waiting for the network. Daily Quote's preview failed this way four times in the management window on 17 November 2026 and then never again; the cause was not found (see the test notes).
 - **The code editor's own toolbar (Layout, Theme, Assets) shows on a template's read-only code**, where it does nothing useful. It belongs to the shared editor bundle.
 - **Animation Clock at the small size** wraps its text one letter per line.

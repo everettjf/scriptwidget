@@ -60,7 +60,41 @@
                 </Grid>
                 <TextBlock x:Name="NoUIText" Grid.Row="2" Text="{s:T Key=detail.noUI}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="Collapsed" />
                 <InfoBar x:Name="ErrorBar" Grid.Row="3" Severity="Error" IsClosable="False" IsOpen="False" />
-                <Grid Grid.Row="4" RowSpacing="6">
+                <!-- A component: what it is and which properties it takes -->
+                <Grid x:Name="ReferencePanel" Grid.Row="4" RowSpacing="6" Visibility="Collapsed">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+                    <TextBlock x:Name="ReferenceText" TextWrapping="Wrap" />
+                    <TextBlock x:Name="CommonText" Grid.Row="3" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" Margin="0,4,0,0" />
+                    <TextBlock Grid.Row="1" Text="{s:T Key=detail.properties}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <ListView x:Name="Properties" Grid.Row="2" SelectionMode="None" IsItemClickEnabled="False" AutomationProperties.Name="{s:T Key=detail.properties}">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                <Setter Property="Padding" Value="0" />
+                                <Setter Property="MinHeight" Value="0" />
+                                <Setter Property="IsTabStop" Value="False" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="s:ComponentProperty">
+                                <StackPanel Padding="0,7" Spacing="2" BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}" BorderThickness="0,0,0,1">
+                                    <TextBlock TextWrapping="Wrap" IsTextSelectionEnabled="True">
+                                        <Run Text="{x:Bind Name}" FontFamily="Cascadia Mono, Consolas" FontWeight="SemiBold" />
+                                        <Run Text="  " />
+                                        <Run Text="{x:Bind Type}" FontFamily="Cascadia Mono, Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                    </TextBlock>
+                                    <TextBlock Text="{x:Bind Documentation}" Style="{StaticResource CaptionTextBlockStyle}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Visibility="{x:Bind DocumentationVisibility}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+                <Grid x:Name="OutputPanel" Grid.Row="4" RowSpacing="6">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />

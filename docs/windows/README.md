@@ -20,7 +20,8 @@ The management window, as the program drew it on 2026-11-17 (saved by the progra
 | --- | --- |
 | ![My widgets](images/library.png) | ![Templates](images/templates.png) |
 | ![Editor with live preview](images/editor.png) | ![Settings](images/settings.png) |
-| ![A template opened: preview and code](images/template-detail.png) | ![APIs](images/apis.png) |
+| ![A template opened: preview and code](images/template-detail.png) | ![API reference](images/apis.png) |
+| ![Components](images/components.png) | |
 
 The interface follows the Windows display language, English or Simplified Chinese:
 
@@ -30,7 +31,7 @@ The interface follows the Windows display language, English or Simplified Chines
 
 - **First start.** The app puts one clock widget on the desktop and opens the management window.
 - **Add a widget.** In the management window open a template, look at its preview and its code, and choose "Use this template": a copy is added to your widgets, placed on the desktop and opened in the editor. For one of your own widgets choose "Add to desktop", or right-click the tray icon and choose "Add widget".
-- **Learn from the examples.** "Components" shows one example per component as a grid of previews; "APIs" is a list of what a widget's code can call, each row with the line of its example that uses it, and can be searched by name or by call (`$storage`). Opening one shows what it draws (or prints) beside its code; "Open a copy in the editor" adds an editable copy to your widgets without putting it on the desktop.
+- **Look things up.** "APIs" is a reference: the globals a widget's code can use on the left (`$storage`, `$device`, `fetch`…), the functions of the chosen one on the right with their arguments, what they return and a sentence each. The search looks through every function. A global Windows does not implement is listed last and says so. "View example" opens the bundled example. "Components" shows one small tile per component; opening one shows its properties beside a preview and the example's code. The reference is generated from the metadata the code editor completes from, and is in English. Opening an example shows what it draws (or prints) beside its code; "Open a copy in the editor" adds an editable copy to your widgets without putting it on the desktop.
 - **Move a widget.** Drag it. It snaps to the edges of the screen. "Lock positions" in the tray menu stops accidental drags.
 - **Change its size or remove it.** Right-click the widget.
 - **Edit it.** Right-click the widget and choose "Edit…". The preview next to the code is drawn by the same renderer as the desktop widget, so what you see there is what the desktop shows.

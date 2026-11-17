@@ -37,6 +37,13 @@ public class BundledManifestTests
     }
 
     [Fact]
+    public void NamesTheGlobalsWindowsDoesNotImplement()
+    {
+        foreach (var name in new[] { "health", "calendar", "location", "music" }) Assert.True(Library.IsUnsupportedApi(name), name);
+        foreach (var name in new[] { "storage", "device", "system", "file", "http", "xml", "weather", "dataSource", "healthy", "" }) Assert.False(Library.IsUnsupportedApi(name), name);
+    }
+
+    [Fact]
     public void HostsThatCannotBeDeclaredAreLeftOut()
     {
         var manifest = Library.BundledManifest("Odd", Files(

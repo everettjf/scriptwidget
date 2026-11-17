@@ -176,6 +176,9 @@ public sealed partial class Library
     [GeneratedRegex(@"\$(health|calendar|reminders|photos|contacts|home|icloud|alarms|maps|services|music|notifications|location|documents)\b")]
     private static partial Regex UnsupportedAPI();
 
+    /// <summary>True for a script global without the dollar sign, such as <c>health</c>, that Windows does not implement in this release.</summary>
+    public static bool IsUnsupportedApi(string name) => UnsupportedAPI().IsMatch("$" + name) && UnsupportedAPI().Match("$" + name).Length == name.Length + 1;
+
     /// <summary>The bundled templates that can run on Windows, grouped as the Apple apps group them.</summary>
     public IReadOnlyList<BundledPackage> Bundled()
     {

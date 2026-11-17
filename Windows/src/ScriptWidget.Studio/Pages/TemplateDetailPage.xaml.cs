@@ -41,6 +41,18 @@ public sealed partial class TemplateDetailPage : Page
         UseButton.Content = Loc.T(IsExample ? "action.openCopy" : "action.use");
         CopyButton.Visibility = IsExample ? Visibility.Visible : Visibility.Collapsed;
         Logs.Text = Loc.T("editor.noLogs");
+        // A component example shows the component's reference entry where the others show their output.
+        var reference = package.Group == "component" ? ApiReference.Component(package.Name) : null;
+        ReferencePanel.Visibility = reference is not null ? Visibility.Visible : Visibility.Collapsed;
+        OutputPanel.Visibility = reference is not null ? Visibility.Collapsed : Visibility.Visible;
+        if (reference is not null)
+        {
+            ReferenceText.Text = reference.Documentation;
+            ReferenceText.Visibility = reference.Documentation.Length > 0 ? Visibility.Visible : Visibility.Collapsed;
+            CommonText.Text = reference.CommonAttributes.Count > 0 ? Loc.T("detail.common", string.Join(", ", reference.CommonAttributes)) : "";
+            CommonText.Visibility = reference.CommonAttributes.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+            Properties.ItemsSource = reference.Properties;
+        }
 
         IReadOnlyDictionary<string, byte[]> files;
         try { files = await Task.Run(() => AppServices.Library.BundledFiles(package)); }
