@@ -108,7 +108,21 @@ Both forms were built, registered from their layout folder in Developer Mode, tr
 
 The Store form at first showed "This application could not be started": the bootstrapper for unpackaged programs ran inside the package. It is switched off for that form now.
 
-### Not run
+## 2026-11-17, CI
+
+GitHub Actions run 44076023162 on `windows-2025` (Windows Server 2025, x64, 100% scale, no graphics card).
+
+| Check | Result |
+| --- | --- |
+| Build of swcore, the shared JavaScript and the solution for x64; build for ARM64 | Pass |
+| Preview engine tests on Windows | Pass |
+| `dotnet test`, Release, x64 | Pass |
+| Engine binding tests with AddressSanitizer in swcore | Pass |
+| `desktop-check.ps1` on the build agent's desktop | 24 of 24, with the 14 show-desktop stand-in checks: the widgets were drawn (329×170 pixels), sat directly above the desktop window, were dragged and clicked, and Windows accepted the tray icon. The uploaded pictures show the clock and the habit widget drawn correctly |
+
+This is a second machine and another Windows version, but nobody looked at its screen either.
+
+### Not run on any machine
 
 - Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
 - The real "Show desktop" (Win+D). Its handling passes with a stand-in desktop window; whether Windows moves the real desktop window the way that stand-in is moved has not been seen. If it does not, widgets are covered until the desktop is left; they are never raised over ordinary windows.
