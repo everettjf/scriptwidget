@@ -60,13 +60,10 @@ if (-not (Test-Path (Join-Path $layout 'ScriptWidget.exe'))) { throw "No build i
 # Debug symbols and build leftovers do not belong in the package.
 Get-ChildItem $layout -Recurse -Include '*.pdb', '*.lib', '*.exp' | Remove-Item -Force
 
-# Tile images. The management window publishes its own resources.pri (its XAML resources), which
-# must stay as it is, so the images are not indexed by scale: the 200% versions are used at every scale.
-$assets = Join-Path $layout 'Assets'
-New-Item -ItemType Directory -Force $assets | Out-Null
-foreach ($name in 'Square44x44Logo', 'Square150x150Logo', 'Wide310x150Logo', 'StoreLogo') {
-    Copy-Item (Join-Path $windows "package\Assets\$name.scale-200.png") (Join-Path $assets "$name.png") -Force
-}
+# Tile and taskbar images belong to the management window's project: its resources.pri indexes them
+# with their qualifiers (scale, target size, unplated) beside its XAML resources. Without the
+# unplated images the taskbar draws the icon on a plate in the user's accent color.
+if (-not (Test-Path (Join-Path $layout 'Assets\Square44x44Logo.targetsize-24_altform-unplated.png'))) { throw 'The tile images were not published into the layout.' }
 if (-not (Test-Path (Join-Path $layout 'resources.pri'))) { throw 'resources.pri is missing: the management window was not published into the layout.' }
 
 $dependencies = ''

@@ -51,6 +51,7 @@ The shared-JavaScript build was refactored into `Scripts/lib/shared-js.mjs`; reg
 - **The code editor asked to pair with a phone.** The shared editor bundle tells an embedding app from the Web Studio site by a marker object, which the Windows bridge now provides.
 - **Requests without a user agent.** The GitHub API answered 403. Requests now send `ScriptWidget-Windows/<version>` unless the script sets its own.
 - **Size names.** `supportedFamilies` uses `systemMedium`; it was compared with `medium`.
+- **The taskbar icon of the installed app had an edge in the accent color** (the owner saw it after switching to the dark theme with a pink accent). The package held one plain image per logo, so the taskbar drew the icon on its colored plate, which showed around the rounded corners. The images with their scale, target-size and unplated variants are now part of the management window's project and indexed in its `resources.pri`; a picture of the taskbar afterwards shows the icon without the plate.
 - **Show desktop was missed on the real desktop, twice.** See "On the unlocked desktop": the desktop window is raised later than it becomes the foreground window, and lowered later than it stops being it.
 - **Bundled network templates could not reach the network** once copied into the library. See the same section.
 - **Show desktop was looked for in the wrong window.** Only a WorkerW that takes over the desktop icons was recognized, which is how Windows showed the desktop before 11 24H2. On 24H2 and later (this PC) Progman itself is raised; both are handled now.
