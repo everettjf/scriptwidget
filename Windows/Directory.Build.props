@@ -18,6 +18,8 @@
     <Product>ScriptWidget</Product>
     <!-- Win2D needs the Windows App SDK next to the program when it is not installed from an MSIX package. -->
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <!-- A Store package declares the Windows App Runtime framework package instead (package.ps1 -FrameworkDependent). -->
+    <WindowsAppSDKSelfContained Condition="'$(SwFrameworkDependent)' == 'true'">false</WindowsAppSDKSelfContained>
     <WindowsPackageType>None</WindowsPackageType>
     <!-- Lets the dotnet CLI run the Windows App SDK resource tasks without Visual Studio's MSBuild. -->
     <EnableMsixTooling>true</EnableMsixTooling>

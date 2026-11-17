@@ -45,6 +45,9 @@ internal sealed class WidgetController(WidgetPlacement placement, WidgetWindow w
 internal sealed unsafe class AppHost : NativeWindow
 {
     private const nuint ScheduleTimer = 1;
+    private const nuint TrimTimer = 2;
+    /// <summary>How long after the last render the layout engine is let go when nothing needs it soon.</summary>
+    private const uint TrimDelayMilliseconds = 20_000;
     private const uint WM_WTSSESSION_CHANGE = 0x02B1;
     private const int WTS_SESSION_LOCK = 7, WTS_SESSION_UNLOCK = 8;
 
@@ -371,6 +374,16 @@ internal sealed unsafe class AppHost : NativeWindow
         }
     }
 
+    /// <summary>
+    /// Frees what only a render needs: the layout engine with the renderer script loaded in it. The
+    /// next render creates it again, which costs a fraction of a second.
+    /// </summary>
+    private void Trim()
+    {
+        runtime.Value.Renderer.Release();
+        GC.Collect(GC.MaxGeneration, GCCollectionMode.Aggressive, blocking: true, compacting: true);
+    }
+
     private void RefreshAll()
     {
         foreach (var controller in widgets.Values) QueueRefresh(controller);
@@ -388,6 +401,9 @@ internal sealed unsafe class AppHost : NativeWindow
         if (Handle == 0) return;
         var earliest = long.MaxValue;
         foreach (var controller in widgets.Values) earliest = Math.Min(earliest, Math.Min(controller.NextRun, controller.NextRedraw));
+        // Nothing to draw for a while: schedule the release of the layout engine and its script heap.
+        if (earliest - Environment.TickCount64 > 2 * 60_000) Win32.SetTimer(Handle, TrimTimer, TrimDelayMilliseconds, 0);
+        else Win32.KillTimer(Handle, TrimTimer);
         if (earliest == long.MaxValue || sessionLocked) { Win32.KillTimer(Handle, ScheduleTimer); return; }
         var delay = Math.Clamp(earliest - Environment.TickCount64, 50, 60_000);
         Win32.SetTimer(Handle, ScheduleTimer, (uint)delay, 0);
@@ -535,6 +551,10 @@ internal sealed unsafe class AppHost : NativeWindow
         {
             case Win32.WM_TIMER when wParam == ScheduleTimer:
                 OnTimer();
+                return 0;
+            case Win32.WM_TIMER when wParam == TrimTimer:
+                Win32.KillTimer(Handle, TrimTimer);
+                if (widgets.Values.All(controller => !controller.Busy) && runtime.IsValueCreated) work.Add(Trim);
                 return 0;
             case Win32.WM_DISPLAYCHANGE:
                 // Displays were added, removed or rescaled: put every widget back where it belongs.

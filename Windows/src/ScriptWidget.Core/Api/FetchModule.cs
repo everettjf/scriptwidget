@@ -27,6 +27,9 @@ public sealed class FetchModule : INativeModule
     public static readonly IReadOnlyList<string> ExposedHeaders = ["content-type", "cache-control", "expires", "last-modified", "date", "retry-after"];
 
     internal const string BlockedMessage = "Local and private network hosts are not allowed";
+
+    /// <summary>Sent when the script sets no User-Agent of its own.</summary>
+    public static string DefaultUserAgent { get; } = $"ScriptWidget-Windows/{(typeof(FetchModule).Assembly.GetName().Version is { } version ? $"{version.Major}.{version.Minor}.{version.Build}" : "0")}";
     private const string TimedOutMessage = "The request timed out.";
     private static readonly HashSet<string> Methods = new(StringComparer.Ordinal) { "OPTIONS", "GET", "HEAD", "POST", "PUT", "DELETE", "PATCH", "TRACE" };
     private static readonly HashSet<string> ContentHeaders = new(StringComparer.OrdinalIgnoreCase)
@@ -243,6 +246,10 @@ public sealed class FetchModule : INativeModule
                 // The name is the script's own; the value is not repeated.
                 if (!added) throw new FetchException($"Request header {Printable(name)} is not valid");
             }
+            // The system network stacks on iPhone and Android name the client by themselves; HttpClient
+            // sends nothing, and services such as the GitHub API refuse a request without a user agent.
+            // A script's own User-Agent header wins. No user or device detail is included.
+            if (!unique.ContainsKey("User-Agent")) message.Headers.TryAddWithoutValidation("User-Agent", DefaultUserAgent);
             message.Content = content;
             try
             {

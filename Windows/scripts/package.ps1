@@ -44,8 +44,8 @@ if (-not $SkipBuild) {
     Invoke-Checked { node (Join-Path $windows 'scripts\build-shared-js.mjs') } 'shared JavaScript'
     & (Join-Path $windows 'scripts\build-native.ps1') -Arch $Arch
     if (Test-Path $layout) { Remove-Item $layout -Recurse -Force }
-    $selfContained = if ($FrameworkDependent) { 'false' } else { 'true' }
-    $common = @('-c', 'Release', '-r', $rid, "-p:Platform=$platform", "-p:Version=$($Version -replace '\.\d+$', '')", "-p:WindowsAppSDKSelfContained=$selfContained", '--nologo', '-v', 'q', '-o', $layout)
+    $dependencyMode = if ($FrameworkDependent) { 'true' } else { 'false' }
+    $common = @('-c', 'Release', '-r', $rid, "-p:Platform=$platform", "-p:Version=$($Version -replace '\.\d+$', '')", "-p:SwFrameworkDependent=$dependencyMode", '--nologo', '-v', 'q', '-o', $layout)
     # The always-running host is compiled ahead of time: no .NET runtime to load, less memory.
     Invoke-Checked { dotnet publish (Join-Path $windows 'src\ScriptWidget.App') @common '-p:PublishAot=true' } 'host publish'
     Invoke-Checked { dotnet publish (Join-Path $windows 'src\ScriptWidget.Studio') @common '--self-contained' 'true' } 'management window publish'
@@ -55,9 +55,14 @@ if (-not (Test-Path (Join-Path $layout 'ScriptWidget.exe'))) { throw "No build i
 # Debug symbols and build leftovers do not belong in the package.
 Get-ChildItem $layout -Recurse -Include '*.pdb', '*.lib', '*.exp' | Remove-Item -Force
 
+# Tile images. The management window publishes its own resources.pri (its XAML resources), which
+# must stay as it is, so the images are not indexed by scale: the 200% versions are used at every scale.
 $assets = Join-Path $layout 'Assets'
 New-Item -ItemType Directory -Force $assets | Out-Null
-Copy-Item (Join-Path $windows 'package\Assets\*.png') $assets -Force
+foreach ($name in 'Square44x44Logo', 'Square150x150Logo', 'Wide310x150Logo', 'StoreLogo') {
+    Copy-Item (Join-Path $windows "package\Assets\$name.scale-200.png") (Join-Path $assets "$name.png") -Force
+}
+if (-not (Test-Path (Join-Path $layout 'resources.pri'))) { throw 'resources.pri is missing: the management window was not published into the layout.' }
 
 $dependencies = ''
 if ($FrameworkDependent) {
@@ -72,17 +77,6 @@ $manifest = $manifest.Replace('{{Version}}', $Version).Replace('{{Architecture}}
 $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
 $makeappx = Get-ChildItem $kits -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
 if (-not $makeappx) { throw 'makeappx.exe was not found. Install the Windows SDK.' }
-$makepri = Join-Path $makeappx.DirectoryName 'makepri.exe'
-
-# resources.pri lets Windows pick the tile image for the display scale.
-Push-Location $layout
-try {
-    if (Test-Path 'resources.pri') { Remove-Item 'resources.pri' -Force }
-    $config = Join-Path $artifacts "priconfig-$Arch.xml"
-    Invoke-Checked { & $makepri createconfig /cf $config /dq en-US /o | Out-Null } 'makepri createconfig'
-    Invoke-Checked { & $makepri new /pr $layout /cf $config /mn (Join-Path $layout 'AppxManifest.xml') /of (Join-Path $layout 'resources.pri') /o | Out-Null } 'makepri new'
-} finally { Pop-Location }
-
 $package = Join-Path $artifacts "ScriptWidget_${Version}_$Arch.msix"
 if (Test-Path $package) { Remove-Item $package -Force }
 Invoke-Checked { & $makeappx.FullName pack /d $layout /p $package /o | Out-Null } 'makeappx pack'

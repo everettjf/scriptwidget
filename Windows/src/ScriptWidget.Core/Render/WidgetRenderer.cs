@@ -296,7 +296,7 @@ public sealed partial class WidgetRenderer : IDisposable
             created.Evaluate(
                 "globalThis.__swRenderStart = function (request) { globalThis.__swRenderResult = null; globalThis.__swRenderError = null;" +
                 " __swRenderBundle.render(globalThis.__swRenderNative, request).then(function (value) { globalThis.__swRenderResult = value; }," +
-                " function (error) { globalThis.__swRenderError = String(error && error.stack ? error.stack : error); }); };" +
+                " function (error) { globalThis.__swRenderError = (error && error.stack ? String(error.message || error) + '\\n' + error.stack : String(error)); }); };" +
                 " globalThis.__swRenderTake = function (name) { var value = globalThis[name]; globalThis[name] = null; return value; };",
                 "render-driver.js");
             engine = created;

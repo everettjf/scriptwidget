@@ -80,11 +80,23 @@ public sealed class TextEngine(FontRegistry fonts)
                 continue;
             }
             // Break at word boundaries, and inside a word only when the word alone does not fit.
-            using var layout = new CanvasTextLayout(Device, paragraph, Paint(style), Math.Max(limit, 0.01f), 0f) { WordWrapping = CanvasWordWrapping.EmergencyBreak };
-            var start = 0;
-            foreach (var metrics in layout.LineMetrics)
+            // Every line gets the same height, so the line a point falls on is known without asking for
+            // line metrics: the WinRT array of line metrics cannot be marshalled under native AOT.
+            var lineHeight = Math.Max(style.Size * 1.5f, 1f);
+            using var layout = new CanvasTextLayout(Device, paragraph, Paint(style), Math.Max(limit, 0.01f), 0f)
             {
-                var end = Math.Min(paragraph.Length, start + metrics.CharacterCount);
+                WordWrapping = CanvasWordWrapping.EmergencyBreak,
+                LineSpacingMode = CanvasLineSpacingMode.Uniform,
+                LineSpacing = lineHeight,
+                LineSpacingBaseline = lineHeight * 0.8f,
+            };
+            var count = layout.LineCount;
+            var start = 0;
+            for (var index = 1; index <= count; index++)
+            {
+                // The first character of the next line; the end of the text after the last line.
+                var end = paragraph.Length;
+                if (index < count && layout.HitTest(0f, (index + 0.5f) * lineHeight, out var region)) end = Math.Clamp(region.CharacterIndex, start, paragraph.Length);
                 if (end <= start) continue;
                 var line = paragraph[start..end].TrimEnd(' ');
                 result.Add(new TextLine(line, Measure(line, style)));
@@ -115,11 +127,20 @@ public sealed class TextEngine(FontRegistry fonts)
     public void Draw(CanvasDrawingSession session, string text, TextStyle style, float x, float baseline, ICanvasBrush brush)
     {
         if (text.Length == 0) return;
-        using var layout = new CanvasTextLayout(Device, text, Paint(style), 0f, 0f) { Options = DrawOptions };
-        var lines = layout.LineMetrics;
-        // A fallback font may be taller than the style's font; the line's own baseline keeps the glyphs in place.
-        var top = baseline - (lines.Length > 0 ? lines[0].Baseline : fonts.Typeface(style.Family, style.Weight).Ascent * style.Size);
-        session.DrawTextLayout(layout, x, top, brush);
+        // A fallback font may be taller than the style's font and would move the line. A fixed line box
+        // puts the baseline where this code says, whatever fonts the line ends up using. (Reading the
+        // line's own baseline from its metrics is not possible under native AOT.)
+        var ascent = fonts.Typeface(style.Family, style.Weight).Ascent * style.Size;
+        var height = Math.Max(style.Size * 2f, 1f);
+        var offset = Math.Min(Math.Max(ascent, 0f), height);
+        using var layout = new CanvasTextLayout(Device, text, Paint(style), 0f, 0f)
+        {
+            Options = DrawOptions,
+            LineSpacingMode = CanvasLineSpacingMode.Uniform,
+            LineSpacing = height,
+            LineSpacingBaseline = offset,
+        };
+        session.DrawTextLayout(layout, x, baseline - offset, brush);
     }
 
     private const int MaximumFormats = 512;
