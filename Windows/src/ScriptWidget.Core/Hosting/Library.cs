@@ -214,12 +214,54 @@ public sealed partial class Library
         return result;
     }
 
+    /// <summary>
+    /// The manifest for a bundled template that has no <c>widget.json</c>. A copy in the library always
+    /// has a manifest, and a manifest without <c>network</c> stops every request, so the hosts the
+    /// template names in its own source are declared for it. This is done only for the templates
+    /// shipped with the app, never for an imported package.
+    /// </summary>
+    public static JsonObject BundledManifest(string name, IReadOnlyDictionary<string, byte[]> files)
+    {
+        var metadata = files.TryGetValue(PackageManifests.LegacyMetadata, out var bytes) ? Encoding.UTF8.GetString(bytes) : null;
+        var manifest = PackageManifests.LegacyManifest(name, metadata);
+        manifest["id"] = PackageManifests.FreshId();
+        var hosts = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (var (path, content) in files)
+        {
+            if (!path.EndsWith(".js", StringComparison.Ordinal) && !path.EndsWith(".jsx", StringComparison.Ordinal)) continue;
+            foreach (var line in Encoding.UTF8.GetString(content).Split('\n'))
+            {
+                if (line.TrimStart().StartsWith("//", StringComparison.Ordinal)) continue;
+                foreach (Match match in SourceUrl().Matches(line))
+                {
+                    var host = match.Groups[1].Value.ToLowerInvariant();
+                    if (DeclarableHost().IsMatch(host)) hosts.Add(host);
+                }
+            }
+        }
+        if (hosts.Count > 0)
+        {
+            manifest["permissions"] = Json.Array(["network"]);
+            manifest["networkDomains"] = Json.Array(hosts);
+        }
+        return manifest;
+    }
+
+    [GeneratedRegex(@"https?://([A-Za-z0-9.-]+)")]
+    private static partial Regex SourceUrl();
+
+    [GeneratedRegex(@"^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\.[a-z]{2,}$")]
+    private static partial Regex DeclarableHost();
+
     public InstalledPackage InstallBundled(BundledPackage bundled)
     {
         var files = BundledFiles(bundled);
         if (!files.TryGetValue(PackageManifests.LegacyEntry, out var main)) throw new PackageException(PackageErrors.MissingEntry, "Template has no main.jsx");
-        var manifest = files.TryGetValue(PackageManifests.FileName, out var manifestBytes) ? Encoding.UTF8.GetString(manifestBytes) : null;
-        var created = Store.Create(Store.UniqueName(bundled.Name), Encoding.UTF8.GetString(main), manifest);
+        var name = Store.UniqueName(bundled.Name);
+        var manifest = files.TryGetValue(PackageManifests.FileName, out var manifestBytes)
+            ? Encoding.UTF8.GetString(manifestBytes)
+            : Encoding.UTF8.GetString(PackageManifests.Encode(BundledManifest(name, files)));
+        var created = Store.Create(name, Encoding.UTF8.GetString(main), manifest);
         foreach (var (path, bytes) in files)
         {
             if (path != PackageManifests.LegacyEntry && path != PackageManifests.FileName) Store.WriteFile(created.Name, path, bytes);

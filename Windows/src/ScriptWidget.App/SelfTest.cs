@@ -127,6 +127,27 @@ internal static unsafe class SelfTest
             foreground = other.Handle;
             layer.Check();
             Check("second time: back in place", !layer.DesktopShown && !IsTopmost(window.Handle) && InFront(window.Handle, desktop.Handle) && InFront(other.Handle, window.Handle));
+
+            // What a real Win+D does: the desktop becomes the foreground window first and is raised
+            // only after the other windows have minimized, and nothing reports the raise.
+            foreground = desktop.Handle;
+            layer.Check();
+            Check("late raise: not shown before the desktop is raised", !layer.DesktopShown);
+            Pump(300);
+            Win32.SetWindowPos(desktop.Handle, 0, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            Pump(500);
+            Check("late raise: detected without another foreground change", layer.DesktopShown && IsTopmost(window.Handle) && InFront(window.Handle, desktop.Handle));
+
+            // Leaving, the other way round: the foreground window changes while the desktop is still
+            // raised, and the desktop goes back to the bottom afterwards.
+            foreground = other.Handle;
+            layer.Check();
+            Check("late drop: no longer shown", !layer.DesktopShown && !IsTopmost(window.Handle));
+            Win32.SetWindowPos(other.Handle, 0, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            Win32.SetWindowPos(desktop.Handle, Win32.HWND_BOTTOM, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            Pump(900);
+            Check("late drop: the widget ends in front of the desktop", InFront(window.Handle, desktop.Handle));
+            Check("late drop: the ordinary window ends in front of the widget", InFront(other.Handle, window.Handle));
         }
         finally
         {
@@ -138,6 +159,23 @@ internal static unsafe class SelfTest
     }
 
     [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint GetWindowLongPtrW(nint window, int index);
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern int PeekMessageW(Win32.MSG* message, nint window, uint filterMinimum, uint filterMaximum, uint remove);
+
+    /// <summary>Runs the message loop for a while, so timers fire.</summary>
+    private static void Pump(int milliseconds)
+    {
+        var end = Environment.TickCount64 + milliseconds;
+        Win32.MSG message;
+        while (Environment.TickCount64 < end)
+        {
+            while (PeekMessageW(&message, 0, 0, 0, 1 /* PM_REMOVE */) != 0)
+            {
+                Win32.TranslateMessage(&message);
+                Win32.DispatchMessageW(&message);
+            }
+            Thread.Sleep(10);
+        }
+    }
 
     /// <summary>An empty tool window used as a stand-in in the self-tests.</summary>
     private sealed class PlainWindow : NativeWindow

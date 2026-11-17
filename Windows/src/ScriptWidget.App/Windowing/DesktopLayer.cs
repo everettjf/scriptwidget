@@ -30,8 +30,9 @@ internal sealed unsafe class DesktopLayer : NativeWindow
 {
     private const string ProbeClass = "ScriptWidgetDesktopProbe";
     private const nuint RecheckTimer = 1;
-    private const nuint SettleTimer = 2;
-    private int settleAttempts;
+    private const nuint LowerTimer = 2;
+    private bool watching;
+    private int lowerAttempts;
     private static DesktopLayer? current;
 
     private const uint GW_HWNDPREV = 3;
@@ -135,33 +136,52 @@ internal sealed unsafe class DesktopLayer : NativeWindow
         var host = IconsHost();
         var shown = false;
         var foreground = ForegroundOverride?.Invoke() ?? Win32.GetForegroundWindow();
-        if (host != 0 && Win32.IsWindowVisible(host) != 0 && foreground == host)
+        var desktopInFront = host != 0 && Win32.IsWindowVisible(host) != 0 && foreground == host;
+        if (desktopInFront)
         {
             // FindWindowEx searches the windows below `host` in the window order: the probe is
             // there only after the desktop window was raised above it.
             fixed (char* probe = ProbeClass) shown = Win32.FindWindowExW(0, host, probe, null) == Handle;
-            // The foreground change can arrive a moment before the window order changes.
-            if (!shown && !DesktopShown && settleAttempts == 0) { settleAttempts = 6; Win32.SetTimer(Handle, SettleTimer, 40, 0); }
+        }
+        // Windows makes the desktop the foreground window first and raises it some time later
+        // (on a real desktop, after the windows have finished minimizing), and no event reports
+        // the raise. So the order is looked at again for as long as the desktop is in front.
+        var watch = desktopInFront || DesktopShown;
+        if (watch != watching || shown != DesktopShown)
+        {
+            watching = watch;
+            if (watch) Win32.SetTimer(Handle, RecheckTimer, shown ? 500u : 100u, 0);
+            else Win32.KillTimer(Handle, RecheckTimer);
         }
         if (shown == DesktopShown) return;
         DesktopShown = shown;
+        if (Log.Verbose) Log.Write(shown ? "desktop shown: widgets raised" : "desktop left: widgets lowered");
         foreach (var window in windows) Place(window);
-        if (!shown) PlaceProbe();
-        if (shown) Win32.SetTimer(Handle, RecheckTimer, 500, 0);
-        else Win32.KillTimer(Handle, RecheckTimer);
+        if (!shown)
+        {
+            PlaceProbe();
+            // The desktop window is still high in the window order when the foreground window
+            // changes and drops to the bottom a moment later. A widget placed "directly above the
+            // desktop" now would be left above ordinary windows, so the placing is repeated until
+            // the desktop window has settled.
+            lowerAttempts = 8;
+            Win32.SetTimer(Handle, LowerTimer, 250, 0);
+        }
+        else
+        {
+            lowerAttempts = 0;
+            Win32.KillTimer(Handle, LowerTimer);
+        }
     }
 
     protected override nint? OnMessage(uint message, nuint wParam, nint lParam)
     {
         if (message == Win32.WM_TIMER && wParam == RecheckTimer) { Check(); return 0; }
-        if (message == Win32.WM_TIMER && wParam == SettleTimer)
+        if (message == Win32.WM_TIMER && wParam == LowerTimer)
         {
-            settleAttempts -= 1;
-            var remaining = settleAttempts;
-            settleAttempts = -1; // keeps Check from starting another round
-            Check();
-            settleAttempts = DesktopShown ? 0 : Math.Max(remaining, 0);
-            if (settleAttempts == 0) Win32.KillTimer(Handle, SettleTimer);
+            lowerAttempts -= 1;
+            if (lowerAttempts <= 0 || DesktopShown) Win32.KillTimer(Handle, LowerTimer);
+            if (!DesktopShown) { PlaceProbe(); foreach (var window in windows) Place(window); }
             return 0;
         }
         if (message == Win32.WM_WINDOWPOSCHANGING)

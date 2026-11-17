@@ -4,14 +4,14 @@ What is left before and after the first Store release. The plan is in [plan.md](
 
 ## Before the Store preview
 
-Checks that need a person at an unlocked Windows desktop. The first night of development ran while the development PC was locked. `Windows/scripts/desktop-check.ps1` covers what can be checked without looking (window content, window order, drag, clicks, system events) and passes; these are the ones it cannot do.
+Checks that need a person at an unlocked Windows desktop. The first night of development ran while the development PC was locked; the next morning the desktop was unlocked and the first four rows were run with real input and screen pictures (they found three bugs, now fixed; see the test notes). What is left of those rows is a person's own look. `Windows/scripts/desktop-check.ps1` covers what can be checked without looking (window content, window order, drag, clicks, system events) and passes; these are the ones it cannot do.
 
 | Check | How |
 | --- | --- |
-| Widgets look right against the wallpaper and icons | Start `ScriptWidget.exe` and look |
-| Widgets stay visible when the desktop is shown | Press Win+D twice. The handling in `DesktopLayer.cs` passes its self-test with a stand-in desktop window and follows what Rainmeter's source documents for this Windows version, but the real Win+D has not been seen. If the widgets disappear while the desktop is shown, compare the window order with the self-test; they should never appear over ordinary windows |
-| Dragging and clicking with a real mouse; the pointer becomes a hand over a button | Drag a widget; use the Habit Heatmap template ("Check in") and a template with a link |
-| The tray menu and the right-click menu of a widget appear where expected | Left and right click. Their actions are covered by `desktop-check.ps1` |
+| Widgets look right against the wallpaper and icons | Start `ScriptWidget.exe` and look. Screen pictures were taken and look right |
+| Widgets stay visible when the desktop is shown | Press Win+D twice. Done with the real key on Windows 11 build 26200 after two fixes; other Windows builds are untried |
+| A template with a link opens the browser | Click the link. Dragging, a button click and the hand pointer were done with real mouse input |
+| The tray menu appears where expected | Left and right click the tray icon. The right-click menu of a widget was opened with the real mouse and appeared at the pointer |
 | The widgets come back after signing out and in | Turn on "Start when I sign in", sign out, sign in |
 | Explorer restart, seen on screen | Restart Explorer in Task Manager and look: the tray icon and the widgets must come back. A real restart was run with the screen locked; the host re-added its icon and kept the widget above the new desktop window |
 | Sleep and resume, seen on screen | Sleep the PC for a minute; the clock must be right afterwards. A real 107-second sleep was run with the screen locked; the host redrew on resume |

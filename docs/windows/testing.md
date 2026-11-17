@@ -51,6 +51,8 @@ The shared-JavaScript build was refactored into `Scripts/lib/shared-js.mjs`; reg
 - **The code editor asked to pair with a phone.** The shared editor bundle tells an embedding app from the Web Studio site by a marker object, which the Windows bridge now provides.
 - **Requests without a user agent.** The GitHub API answered 403. Requests now send `ScriptWidget-Windows/<version>` unless the script sets its own.
 - **Size names.** `supportedFamilies` uses `systemMedium`; it was compared with `medium`.
+- **Show desktop was missed on the real desktop, twice.** See "On the unlocked desktop": the desktop window is raised later than it becomes the foreground window, and lowered later than it stops being it.
+- **Bundled network templates could not reach the network** once copied into the library. See the same section.
 - **Show desktop was looked for in the wrong window.** Only a WorkerW that takes over the desktop icons was recognized, which is how Windows showed the desktop before 11 24H2. On 24H2 and later (this PC) Progman itself is raised; both are handled now.
 - **Widgets were underneath the desktop.** `HWND_BOTTOM` put the widget windows below `Progman` in the window order on this Windows build, where they would be neither seen nor clicked. They are now inserted directly above the desktop window.
 
@@ -76,8 +78,8 @@ The shared-JavaScript build was refactored into `Scripts/lib/shared-js.mjs`; reg
 | Redraw cost after the first render | Layout 3 to 35 ms, paint 1 to 65 ms |
 | Idle cost, native AOT build, two widgets, one of them a clock | 85 MB private memory, 93 MB working set; 0.05 s of processor time in 30 s |
 | Idle cost, native AOT build, one widget without dates | 22 MB private memory, 58 MB working set, 10 threads; 0.00 s of processor time in 30 s |
-| "Show desktop", acted out with a stand-in for the desktop window (`--selftest-showdesktop`) | 14 of 14: a click on the wallpaper is not mistaken for it; when the desktop window is raised and is the foreground window the widget becomes topmost in front of it; afterwards the widget is back directly above the desktop and behind ordinary windows; a second round behaves the same |
-| "Show desktop" for real | Not checkable while locked: `Shell.Application.ToggleDesktop` changed nothing in the window order. The detection follows what Rainmeter's source documents for Windows 11 24H2 and later (Progman itself is raised and becomes the foreground window) and for earlier versions (a WorkerW takes over the icons) |
+| "Show desktop", acted out with a stand-in for the desktop window (`--selftest-showdesktop`) | 19 of 19 (five were added for the late raise and late drop found on the real desktop). The first 14: a click on the wallpaper is not mistaken for it; when the desktop window is raised and is the foreground window the widget becomes topmost in front of it; afterwards the widget is back directly above the desktop and behind ordinary windows; a second round behaves the same |
+| "Show desktop" for real | Done on the unlocked desktop, see "On the unlocked desktop" below |
 
 ### Management window (`ScriptWidgetStudio.exe`)
 
@@ -128,11 +130,31 @@ This is a second machine and another Windows version, but nobody looked at its s
 
 Run 44077877354 added the ARM64 machine (`windows-11-arm`, image `windows-11-vs2026-arm64`): swcore and the solution were built natively for ARM64, `dotnet test` passed 235 of 235 (the parity packages and the renderer included), and `desktop-check.ps1` passed with both widgets drawn correctly in the uploaded pictures.
 
+### On the unlocked desktop (Dev PC, 17 November 2026)
+
+The owner signed in and the desktop was unlocked, so the host ran on the real desktop with nine widgets (Datetime Current, Month Calendar, World Clock Faces, Animation Clock, Year in Dots, Daily Quote, Day Rhythm, Portfolio Pulse, Habit Heatmap) placed between the desktop icons and an open window. Pictures were taken from the screen, and the keyboard and mouse input was real input (`keybd_event`, `SetCursorPos`, `mouse_event`), not posted messages. The pictures were sent to the owner; this section records what the pictures and the window order showed, not a person's judgement.
+
+![Widgets on the desktop](images/desktop.png)
+
+| Check | Result |
+| --- | --- |
+| The widgets against the wallpaper and icons | Drawn with rounded corners and no border or halo against the wallpaper; text is sharp at 150% |
+| Widgets stay behind ordinary windows | Yes: a widget dragged under an open window is covered by it |
+| Win+D, first try | **Failed.** The widgets disappeared until Win+D was pressed again. Windows made the desktop the foreground window first and raised it later, after the host had stopped looking at the window order. Fixed: the order is looked at again for as long as the desktop is the foreground window |
+| Leaving Win+D, after that fix | **Failed.** The widgets were left above ordinary windows that were not in front, because the desktop window was still raised when they were put "directly above the desktop". Fixed: the placing is repeated for two seconds after the desktop is left |
+| Win+D, with both fixes (debug build, then the rebuilt native AOT build) | All widgets visible and topmost while the desktop is shown; afterwards directly above the desktop window again, below every other window |
+| Dragging with the mouse | The widget moved by exactly the distance the pointer moved (37, 290 pixels) and the new position was saved |
+| Right-click on a widget | The menu opened at the pointer (Refresh, Size, Edit…, Lock positions, Remove from desktop) and closed with Esc |
+| Pointer shape | An arrow over the widget, a hand over the "Check in" button |
+| Clicking a button | "Check in" of Habit Heatmap ran its action: the widget showed "Done today", "1 day", "1 total" |
+| A template that uses the network, copied into the library | **Failed** for Daily Quote: "Network host is not declared in widget.json". A bundled template without `widget.json` got a manifest without the `network` permission when it was copied into the library. Nine bundled templates were affected. Fixed in `Library.BundledManifest`: the hosts the template names in its own source are declared. With the host declared, Daily Quote showed the quote of the day |
+
+Not seen there: the tray icon's own menu (the same menu class as the right-click menu), a link opening the browser, a full-screen program in front, a scale change.
+
 ### Not run on any machine
 
-- Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
-- The real "Show desktop" (Win+D). Its handling passes with a stand-in desktop window; whether Windows moves the real desktop window the way that stand-in is moved has not been seen. If it does not, widgets are covered until the desktop is left; they are never raised over ordinary windows.
-- A real mouse: dragging, clicking, the pointer shape. The popup menus on screen (their actions were run without showing them).
+- Watching the desktop over time for flicker; the pictures above are single moments.
+- The tray icon's menu on screen.
 - Signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 in a person's hands: it ran on the CI ARM64 machine only.
 - The Android instrumented suites on a phone after the shared-JavaScript refactor. The JVM tests and both suites on an emulator pass in CI.

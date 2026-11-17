@@ -50,3 +50,7 @@ Scrolling lists, wallpaper colors and the automation entry point are done; see [
 - Faster refresh with exact alarms or a foreground service, at a battery and permission cost.
 - Notification content as a data source, after a separate privacy review.
 - Wear OS tiles, and distributing an APK outside Google Play.
+
+## Found while testing Windows
+
+- **Bundled templates without `widget.json` that use the network.** On Windows, a copy of such a template (Daily Quote, Currency Pulse, Weather and six more) failed with "Network host is not declared in widget.json": `PackageStore.create` gives the copy a manifest with no permissions. `Library.installBundled` in the Android app calls the same `create` the same way, so the same failure is expected here. This comes from reading the code; it was not reproduced on a device. The Windows fix is `Library.BundledManifest` in `Windows/src/ScriptWidget.Core/Hosting/Library.cs`.
