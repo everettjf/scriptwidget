@@ -83,7 +83,9 @@ __swRegisterAPIs(function (apis, helpers, bridge) {
   "use strict";
   const { nativePromise } = helpers;
   const supported = new Set(bridge.job.supportedAPIs ?? []);
-  const message = (name) => `[unsupported_platform] ${name} is not supported on Android in this release`;
+  // The host names itself; the Android host does not pass a name.
+  const platform = typeof bridge.job.platformName === "string" ? bridge.job.platformName : "Android";
+  const message = (name) => `[unsupported_platform] ${name} is not supported on ${platform} in this release`;
   const rejecting = (name) => () => nativePromise((resolve, reject) => reject(message(name)));
 
   const groups = {

@@ -1,0 +1,29 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0-windows10.0.22621.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.22000.0</TargetPlatformMinVersion>
+    <SupportedOSPlatformVersion>10.0.22000.0</SupportedOSPlatformVersion>
+    <Platforms>x64;ARM64</Platforms>
+    <Platform Condition="'$(Platform)' == '' or '$(Platform)' == 'AnyCPU'">x64</Platform>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' == 'ARM64'">win-arm64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <NoWarn>$(NoWarn);NU1903;CA1416</NoWarn>
+    <Version>0.1.0</Version>
+    <Company>AtomSprout</Company>
+    <Product>ScriptWidget</Product>
+    <!-- Win2D needs the Windows App SDK next to the program when it is not installed from an MSIX package. -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- Lets the dotnet CLI run the Windows App SDK resource tasks without Visual Studio's MSBuild. -->
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <SwNativeArch Condition="'$(Platform)' == 'ARM64'">arm64</SwNativeArch>
+    <SwNativeArch Condition="'$(SwNativeArch)' == ''">x64</SwNativeArch>
+    <SwNativeDirectory>$(MSBuildThisFileDirectory)native\out\$(SwNativeArch)$(SwNativeSuffix)</SwNativeDirectory>
+    <SwAssetsDirectory>$(MSBuildThisFileDirectory)assets</SwAssetsDirectory>
+  </PropertyGroup>
+</Project>

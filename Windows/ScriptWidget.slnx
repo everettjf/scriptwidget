@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/ScriptWidget.Core/ScriptWidget.Core.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ScriptWidget.Core.Tests/ScriptWidget.Core.Tests.csproj" />
+  </Folder>
+</Solution>

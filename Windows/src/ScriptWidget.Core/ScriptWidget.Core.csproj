@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ScriptWidget.Core</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />
+    <InternalsVisibleTo Include="ScriptWidget.Core.Tests" />
+  </ItemGroup>
+  <!-- Files every program that uses the runtime needs next to it. -->
+  <ItemGroup>
+    <Content Include="$(SwNativeDirectory)\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <Content Include="$(SwAssetsDirectory)\scriptwidget\**" Link="assets\scriptwidget\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <Content Include="$(SwAssetsDirectory)\fonts\**" Link="assets\fonts\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+</Project>
