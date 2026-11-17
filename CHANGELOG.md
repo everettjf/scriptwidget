@@ -31,7 +31,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Add a Windows 11 app that runs the same Package 2.0 widgets on the desktop: QuickJS-NG with the shared execution kernel, the shared renderer painted with Win2D, and small, medium, large and extra-large widgets in windows that sit on the desktop.
 - Add a tray icon, a management window with the library, the bundled templates, the code editor with a live preview, settings, and `.swt` import and export.
 - `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work; the other data APIs report `[unsupported_platform]`. See [ScriptWidget for Windows](docs/windows/README.md).
-- Automated tests pass on one x64 PC and in CI. The desktop behavior was checked by reading the window order and by posted clicks only, because the PC was locked; nothing has been seen on a real desktop yet, and ARM64 has not run. See [the test notes](docs/windows/testing.md).
+- Automated tests and a scripted desktop check pass on one x64 PC and in CI on x64 and ARM64. The desktop behavior was checked from window captures, the window order and posted input, because the PC was locked; nobody has looked at it on a real desktop yet. See [the test notes](docs/windows/testing.md).
 
 ### Compatibility fixes
 

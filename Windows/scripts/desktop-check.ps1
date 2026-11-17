@@ -9,6 +9,7 @@
 #   - a drag moves the widget, snaps it to the screen edge and saves the place,
 #   - a button click runs the declared action,
 #   - display, clock, sleep, lock and theme events redraw the widgets,
+#   - the actions of the tray menu and of a widget's right-click menu work,
 #   - "show desktop" raises the widgets and puts them back, using a stand-in
 #     for the desktop window.
 # Pictures of the widget windows are saved in the output folder.
@@ -22,7 +23,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $windows = Resolve-Path (Join-Path $PSScriptRoot '..')
-if (-not $HostPath) { $HostPath = Get-ChildItem (Join-Path $windows 'src\ScriptWidget.App\bin') -Recurse -Filter ScriptWidget.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName }
+# The newest build that has the runtime assets next to it (an intermediate native AOT output has none).
+if (-not $HostPath) { $HostPath = Get-ChildItem (Join-Path $windows 'src\ScriptWidget.App\bin') -Recurse -Filter ScriptWidget.exe | Where-Object { Test-Path (Join-Path $_.DirectoryName 'assets\scriptwidget\kernel.js') } | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName }
 if (-not $HostPath -or -not (Test-Path $HostPath)) { throw 'ScriptWidget.exe was not found. Build src/ScriptWidget.App or pass -HostPath.' }
 $cli = Get-ChildItem (Join-Path $windows 'src\ScriptWidget.Cli\bin') -Recurse -Filter swcli.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
 if (-not $cli) { throw 'swcli.exe was not found. Build src/ScriptWidget.Cli.' }
@@ -176,7 +178,65 @@ try {
     Check 'a theme change redraws the widgets' ((Wait-Log 'theme or format change' $before 5) -and (Wait-Log 'drawn ' $before 8))
     $after = Rect $h
     Check 'the widget keeps its place through the events' ($after.L -eq $moved.L -and $after.T -eq $moved.T)
+    # Menus: every action of the tray menu and of a widget's right-click menu, run through the
+    # host's debugging requests (the popup itself needs a pointer and is not shown).
+    function Send-Host($request) {
+        $file = Join-Path $Output 'request.json'
+        # The request goes through a file name-safe argument: quotes inside JSON do not survive a command line.
+        $json = ($request | ConvertTo-Json -Compress -Depth 6) -replace '"', '\"'
+        (& $cli host $json | Out-String) | ConvertFrom-Json
+    }
+    function Widget-List { (& $cli widgets | Out-String | ConvertFrom-Json).widgets }
+    $tray = Send-Host @{ command = 'debug-menu'; target = 'tray' }
+    Check 'the tray menu has its entries' ($tray.ok -and $tray.items.Count -eq 8 -and $tray.items[1].children.Count -ge 2) "($(($tray.items | Where-Object { $_.text } | ForEach-Object { $_.text }) -join ' | '))"
+    $list = Widget-List
+    $target = $list | Select-Object -First 1
+    $menu = Send-Host @{ command = 'debug-menu'; target = $target.id }
+    Check 'a widget menu has its entries' ($menu.ok -and $menu.items.Count -eq 7 -and $menu.items[1].children.Count -ge 1)
+    # Size: pick a size that is not the current one and watch the window change.
+    $sizes = $menu.items[1].children
+    $other = 0..($sizes.Count - 1) | Where-Object { -not $sizes[$_].checked } | Select-Object -First 1
+    $countBefore = (LogLines).Count
+    $widthsBefore = ([SwCheck]::Find('ScriptWidgetWidget') | ForEach-Object { (Rect $_).R - (Rect $_).L } | Sort-Object) -join ','
+    $answer = Send-Host @{ command = 'debug-invoke'; target = $target.id; path = @(1, $other) }
+    $drawn = Wait-Log 'drawn ' $countBefore
+    Start-Sleep -Milliseconds 500
+    $widthsAfter = ([SwCheck]::Find('ScriptWidgetWidget') | ForEach-Object { (Rect $_).R - (Rect $_).L } | Sort-Object) -join ','
+    Check 'the size menu changes the widget size' ($answer.ok -and $drawn -and $widthsAfter -ne $widthsBefore) "($widthsBefore -> $widthsAfter pixels wide)"
+    # Lock positions: a drag must not move a locked widget.
+    $answer = Send-Host @{ command = 'debug-invoke'; target = 'tray'; path = @(4) }
+    $locked = (Send-Host @{ command = 'debug-menu'; target = 'tray' }).items[4].checked
+    $h2 = [SwCheck]::Find('ScriptWidgetWidget') | Select-Object -First 1
+    $place = Rect $h2
+    [SwCheck]::PostMessage($h2, 0x201, [IntPtr]1, (LParam 60 60)) | Out-Null
+    [SwCheck]::PostMessage($h2, 0x200, [IntPtr]1, (LParam 160 160)) | Out-Null
+    Start-Sleep -Milliseconds 200
+    [SwCheck]::PostMessage($h2, 0x202, [IntPtr]0, (LParam 160 160)) | Out-Null
+    Start-Sleep -Milliseconds 500
+    $still = Rect $h2
+    Check 'lock positions stops a drag' ($answer.ok -and $locked -and $still.L -eq $place.L -and $still.T -eq $place.T)
+    Send-Host @{ command = 'debug-invoke'; target = 'tray'; path = @(4) } | Out-Null
+    Check 'lock positions turns off again' (-not (Send-Host @{ command = 'debug-menu'; target = 'tray' }).items[4].checked)
+    # Add widget from the tray, refresh all, remove from the widget menu.
+    $before = @(Widget-List).Count
+    $answer = Send-Host @{ command = 'debug-invoke'; target = 'tray'; path = @(1, 0) }
+    Start-Sleep -Seconds 2
+    Check 'the tray menu adds a widget' ($answer.ok -and @(Widget-List).Count -eq $before + 1)
+    $countBefore = (LogLines).Count
+    $answer = Send-Host @{ command = 'debug-invoke'; target = 'tray'; path = @(3) }
+    Check 'refresh all redraws the widgets' ($answer.ok -and (Wait-Log 'drawn ' $countBefore))
+    $newest = Widget-List | Select-Object -Last 1
+    $answer = Send-Host @{ command = 'debug-invoke'; target = $newest.id; path = @(6) }
+    Start-Sleep -Seconds 1
+    Check 'the widget menu removes the widget' ($answer.ok -and @(Widget-List).Count -eq $before -and @([SwCheck]::Find('ScriptWidgetWidget')).Count -eq $before)
+
     Check 'the host is still running at the end' (-not $process.HasExited)
+    # Quit from the tray menu ends the program by itself.
+    $errorsBeforeQuit = LogLines | Where-Object { $_ -match 'failed|crashed|refused' }
+    Send-Host @{ command = 'debug-invoke'; target = 'tray'; path = @(7) } | Out-Null
+    $quit = $process.WaitForExit(8000)
+    Check 'quit from the tray menu ends the host' ($quit -and $process.ExitCode -eq 0)
+    Check 'the place survives a restart' ([bool]((Get-Content "$data\widgets.json" -Raw | ConvertFrom-Json).widgets | Where-Object { $_.y -eq 0 }))
     $errors = LogLines | Where-Object { $_ -match 'failed|crashed|refused' }
     Check 'the log holds no failures' (-not $errors) ($errors | Select-Object -First 2 | Out-String)
 }

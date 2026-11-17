@@ -7,9 +7,10 @@ Every entry says what ran, on which machine, and what the result was. A check th
 | Name | System | Notes |
 | --- | --- | --- |
 | Dev PC | Windows 11 Home build 26200, x64, one 3840×2160 display at 150% | Visual Studio 2026 (MSVC 14.51), Windows SDK 26100, .NET SDK 10.0.401, Node 26.13.1, Developer Mode on |
-| CI | GitHub Actions `windows-2025`, x64 | `.github/workflows/windows.yml` |
+| CI x64 | GitHub Actions `windows-2025` (Windows Server 2025), x64 | `.github/workflows/windows.yml` |
+| CI ARM64 | GitHub Actions `windows-11-arm` (Windows 11, ARM64) | Same workflow, job "Build and test (ARM64)" |
 
-No ARM64 machine was available. ARM64 is compiled in CI and has never been run. The MSVC ARM64 tools are not installed on the Dev PC.
+ARM64 runs on the CI ARM64 machine only; no ARM64 PC was available to a person, and the MSVC ARM64 tools are not installed on the Dev PC.
 
 ## How to run the automated checks
 
@@ -55,12 +56,13 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 
 ### Desktop host (`ScriptWidget.exe`)
 
-`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 24 of 24, with the debug build and with the native AOT build from the package layout.
+`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 34 of 34, with the debug build and with the native AOT build from the package layout.
 
 | Check | Result |
 | --- | --- |
 | First start: installs the clock template and places one widget | Yes |
-| Windows accepts the tray icon | Yes. Its menu was not opened |
+| Windows accepts the tray icon | Yes |
+| The actions of the tray menu and of the right-click menu of a widget, run through the host's debugging requests (the popup itself was not shown) | Size changes the window (494 to 255 pixels wide for small); "Lock positions" stops a drag and turns off again; "Add widget" adds one; "Refresh all" redraws; "Remove from desktop" removes the widget and its window; "Quit" ends the host with exit code 0 |
 | What each widget window shows, captured from the window | The rendered widget, 494×255 pixels (329×170 points at 150%), with transparent rounded corners; the clock shows the current time |
 | Window order with two widgets on the desktop | Both widget windows directly above `Progman` (the desktop) and below every other visible window; a window opened afterwards goes above them |
 | Drag (posted pointer messages) | The widget moves by the dragged distance, snaps to the top edge of the screen, and the new place is saved in `widgets.json` |
@@ -122,11 +124,13 @@ GitHub Actions run 44076023162 on `windows-2025` (Windows Server 2025, x64, 100%
 
 This is a second machine and another Windows version, but nobody looked at its screen either.
 
+Run 44077877354 added the ARM64 machine (`windows-11-arm`, image `windows-11-vs2026-arm64`): swcore and the solution were built natively for ARM64, `dotnet test` passed 235 of 235 (the parity packages and the renderer included), and `desktop-check.ps1` passed with both widgets drawn correctly in the uploaded pictures.
+
 ### Not run on any machine
 
 - Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
 - The real "Show desktop" (Win+D). Its handling passes with a stand-in desktop window; whether Windows moves the real desktop window the way that stand-in is moved has not been seen. If it does not, widgets are covered until the desktop is left; they are never raised over ordinary windows.
-- A real mouse: dragging, clicking, the pointer shape. The tray icon and its menu, the right-click menu of a widget.
+- A real mouse: dragging, clicking, the pointer shape. The popup menus on screen (their actions were run without showing them).
 - A real Explorer restart, a real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
-- ARM64 on a real machine.
+- ARM64 in a person's hands: it ran on the CI ARM64 machine only.
 - The Android suites after the shared-JavaScript refactor.

@@ -11,13 +11,13 @@ Checks that need a person at an unlocked Windows desktop. The first night of dev
 | Widgets look right against the wallpaper and icons | Start `ScriptWidget.exe` and look |
 | Widgets stay visible when the desktop is shown | Press Win+D twice. The handling in `DesktopLayer.cs` passes its self-test with a stand-in desktop window and follows what Rainmeter's source documents for this Windows version, but the real Win+D has not been seen. If the widgets disappear while the desktop is shown, compare the window order with the self-test; they should never appear over ordinary windows |
 | Dragging and clicking with a real mouse; the pointer becomes a hand over a button | Drag a widget; use the Habit Heatmap template ("Check in") and a template with a link |
-| Tray icon, its menu, the right-click menu of a widget | Left and right click |
+| The tray menu and the right-click menu of a widget appear where expected | Left and right click. Their actions are covered by `desktop-check.ps1` |
 | The widgets come back after signing out and in | Turn on "Start when I sign in", sign out, sign in |
 | Explorer restart | Restart Explorer in Task Manager; the tray icon and the widgets must come back |
 | Sleep and resume | Sleep the PC for a minute; the clock must be right afterwards |
 | Two displays with different scales | Drag a widget across; unplug and replug the second display |
 | Typing in the code editor, import and export through the file pickers | Edit the text of a widget and watch the preview and the desktop widget follow |
-| ARM64 | Install and run on an ARM64 PC. ARM64 is compiled in CI and has never run |
+| ARM64 on a PC | Install and run on an ARM64 PC. The tests and the desktop check pass on the CI ARM64 machine |
 
 `ScriptWidget.exe --selftest-window 30 <log file>` shows one test card for 30 seconds and writes the window order once a second; use it while trying Win+D.
 

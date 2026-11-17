@@ -39,6 +39,7 @@ internal static class Program
           widgets                             List the widgets on the desktop (needs the host running).
           add <package> [--family <name>]     Put a package on the desktop (needs the host running).
           refresh                             Refresh every desktop widget (needs the host running).
+          host <json>                         Send one request to the host and print the answer (for scripts).
         """;
 
     private static int Main(string[] arguments)
@@ -61,6 +62,7 @@ internal static class Program
                 "widgets" => Host(new JsonObject { ["command"] = "list" }),
                 "add" => Add(options),
                 "refresh" => Host(new JsonObject { ["command"] = "refresh" }),
+                "host" => Host(Json.ParseObject(options.Positional(0, "request"))),
                 _ => Fail($"Unknown command {arguments[0]}\n\n{Usage}", 2),
             };
         }

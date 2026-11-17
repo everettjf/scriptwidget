@@ -611,6 +611,26 @@ internal sealed unsafe class AppHost : NativeWindow
 
     private static JsonObject Failure(string message) => new() { ["ok"] = false, ["error"] = message };
 
+    /// <summary>The tray menu for "tray", or the right-click menu of the widget with that identifier.</summary>
+    private IReadOnlyList<MenuItem>? DebugMenu(string target) =>
+        target == "tray" ? TrayMenu() : widgets.TryGetValue(target, out var controller) ? WidgetMenu(controller) : null;
+
+    private static JsonArray Describe(IReadOnlyList<MenuItem> items)
+    {
+        var array = new JsonArray();
+        foreach (var item in items)
+        {
+            array.Append(new JsonObject
+            {
+                ["text"] = item.Text,
+                ["checked"] = item.Checked,
+                ["enabled"] = item.Enabled,
+                ["children"] = item.Children is null ? null : Describe(item.Children),
+            });
+        }
+        return array;
+    }
+
     private JsonObject HandleOnUiThread(string command, JsonObject request)
     {
         switch (command)
@@ -667,6 +687,24 @@ internal sealed unsafe class AppHost : NativeWindow
             case "quit":
                 Quit();
                 return new JsonObject { ["ok"] = true };
+            // For desktop-check.ps1 (SCRIPTWIDGET_VERBOSE=1 only): the menus as data, and running one
+            // of their items, so the menu actions are checked without a pointer.
+            case "debug-menu" when Log.Verbose:
+                return DebugMenu(request.OptString("target")) is { } menu ? new JsonObject { ["ok"] = true, ["items"] = Describe(menu) } : Failure("Widget not found");
+            case "debug-invoke" when Log.Verbose:
+            {
+                if (DebugMenu(request.OptString("target")) is not { } items) return Failure("Widget not found");
+                MenuItem? item = null;
+                foreach (var index in request.OptArray("path")?.Select(node => (int)(node?.AsDouble() ?? -1)) ?? [])
+                {
+                    if (index < 0 || index >= items.Count) return Failure("No such menu item");
+                    item = items[index];
+                    items = item.Children ?? [];
+                }
+                if (item?.Invoke is null || !item.Enabled) return Failure("The menu item cannot be invoked");
+                item.Invoke();
+                return new JsonObject { ["ok"] = true, ["text"] = item.Text };
+            }
             default:
                 return Failure($"Unknown command {command}");
         }
