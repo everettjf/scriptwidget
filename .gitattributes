@@ -1,0 +1,8 @@
+# Text is stored and checked out with LF on every platform. The shared
+# JavaScript build scripts match line ends with "\n", and the parity trees are
+# compared byte for byte, so a CRLF checkout on Windows breaks both.
+* text=auto eol=lf
+
+# Windows-only scripts that need CRLF.
+*.bat text eol=crlf
+*.cmd text eol=crlf
