@@ -10,7 +10,7 @@ namespace ScriptWidget.Core.Packages;
 /// manifest validator's job (<see cref="ScriptWidget.Core.Runtime.PackageCompiler.ValidateManifest"/>)
 /// and is not repeated here.
 /// </summary>
-internal static class PackageManifests
+public static class PackageManifests
 {
     public const string FileName = "widget.json";
     public const string LegacyEntry = "main.jsx";

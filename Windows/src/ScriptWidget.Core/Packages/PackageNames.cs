@@ -113,6 +113,25 @@ public static partial class PackageNames
         return cleaned.Length == 0 ? "Widget" : cleaned;
     }
 
+    /// <summary>
+    /// The library directory name for a package whose manifest name Windows cannot store as a
+    /// directory, such as "Ratio 16:9" or "Notes?". Characters Windows reserves become a hyphen
+    /// and trailing dots and spaces are dropped; the manifest keeps its own name, which is what
+    /// the user sees. A name that is still not valid (a device name such as "CON", a hidden or
+    /// blank name) is returned unchanged so the caller refuses it.
+    /// </summary>
+    public static string DirectoryName(string name)
+    {
+        if (IsValid(name)) return name;
+        // Path separators and leading dots are refused on every platform; they are not repaired here.
+        if (name.Contains('/') || name.Contains('\\') || name.StartsWith('.')) return name;
+        var cleaned = WindowsReserved().Replace(name, "-").TrimEnd('.', ' ');
+        return IsValid(cleaned) ? cleaned : name;
+    }
+
+    [GeneratedRegex("[:*?\"<>|]", RegexOptions.CultureInvariant)]
+    private static partial Regex WindowsReserved();
+
     /// <summary>Start index of every grapheme cluster, followed by the text length.</summary>
     private static int[] GraphemeBoundaries(string text) => [.. StringInfo.ParseCombiningCharacters(text), text.Length];
 }

@@ -1,9 +1,13 @@
 <Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="ARM64" />
+  </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/ScriptWidget.App/ScriptWidget.App.csproj">
-      <Platform Project="x64" />
-    </Project>
+    <Project Path="src/ScriptWidget.App/ScriptWidget.App.csproj" />
+    <Project Path="src/ScriptWidget.Cli/ScriptWidget.Cli.csproj" />
     <Project Path="src/ScriptWidget.Core/ScriptWidget.Core.csproj" />
+    <Project Path="src/ScriptWidget.Studio/ScriptWidget.Studio.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/ScriptWidget.Core.Tests/ScriptWidget.Core.Tests.csproj" />

@@ -163,11 +163,22 @@ public sealed class WindowsPackageSecurityTests : IDisposable
     [Fact]
     public void ImportRefusesManifestAndLegacyNamesWindowsCannotStore()
     {
-        foreach (var name in new[] { "CON", "nul.txt", "Ratio 16:9", "Widget.", "Widget ", "a*b", "COM\u00B9" })
+        // Device names cannot be made safe by replacing characters.
+        foreach (var name in new[] { "CON", "nul.txt", "COM\u00B9" })
         {
             var error = Assert.Throws<PackageException>(() => store.ImportArchive(new MemoryStream(PackageZip(root: "W", name: name)), null));
             Assert.True(error.Code == PackageErrors.InvalidName, $"{name}: {error.Code}");
             Assert.False(Directory.Exists(library) && Tree(library).Count > 0, name);
+            Assert.Empty(StagingTree());
+        }
+        // A name another platform allows is stored under a directory name Windows accepts; the manifest keeps its name.
+        foreach (var (name, directory) in new[] { ("Ratio 16:9", "Ratio 16-9"), ("Notes?", "Notes-"), ("a*b", "a-b"), ("Trailing.", "Trailing") })
+        {
+            var imported = store.ImportArchive(new MemoryStream(PackageZip(root: "W", name: name)), null);
+            Assert.Equal(directory, imported.Name);
+            Assert.Equal(name, imported.ManifestName);
+            Assert.True(PackageNames.IsValid(imported.Name), imported.Name);
+            store.Delete(imported.Name);
             Assert.Empty(StagingTree());
         }
         // A legacy package is named after its top-level directory, which is an archive path and fails earlier.

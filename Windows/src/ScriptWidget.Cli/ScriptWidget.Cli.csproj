@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>swcli</AssemblyName>
+    <RootNamespace>ScriptWidget.Cli</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScriptWidget.Core\ScriptWidget.Core.csproj" />
+  </ItemGroup>
+</Project>

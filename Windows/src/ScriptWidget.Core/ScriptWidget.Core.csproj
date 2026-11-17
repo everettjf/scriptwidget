@@ -13,5 +13,7 @@
     <Content Include="$(SwAssetsDirectory)\scriptwidget\**" Link="assets\scriptwidget\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <!-- The fonts Android bundles, so text measures the same. Noto Sans SC stays out: Chinese falls back to the system font. -->
     <Content Include="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\*.ttf" Exclude="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\NotoSansSC.ttf" Link="assets\fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- The templates the Apple apps ship. The library hides the ones that need APIs Windows does not have. -->
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**" Exclude="$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\__Build\**;$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\.*;$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\preview.png" Link="templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 </Project>

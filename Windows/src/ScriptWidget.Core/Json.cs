@@ -117,10 +117,15 @@ public static class Json
     public static double? AsDouble(this JsonNode node)
     {
         if (node is not JsonValue value) return null;
-        if (value.TryGetValue<double>(out var number)) return number;
-        if (value.TryGetValue<long>(out var whole)) return whole;
-        if (value.TryGetValue<string>(out var text) && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)) return parsed;
-        return null;
+        // A value built in memory holds its CLR type (int, float, decimal…), a parsed one a JSON
+        // element; the JSON text of a number is the one form every case shares.
+        var text = value.GetValueKind() switch
+        {
+            JsonValueKind.Number => value.ToJsonString(),
+            JsonValueKind.String => value.TryGetValue<string>(out var content) ? content : null,
+            _ => null,
+        };
+        return text is not null && double.TryParse(text, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed) ? parsed : null;
     }
 
     public static bool IsString(this JsonNode? node) => node is JsonValue value && value.TryGetValue<string>(out _);

@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>ScriptWidgetStudio</AssemblyName>
+    <RootNamespace>ScriptWidget.Studio</RootNamespace>
+    <UseWinUI>true</UseWinUI>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\package\Assets\ScriptWidget.ico</ApplicationIcon>
+    <DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
+    <SatelliteResourceLanguages>en;zh-Hans</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.241114003" />
+    <ProjectReference Include="..\ScriptWidget.Core\ScriptWidget.Core.csproj" />
+    <Content Include="..\..\package\Assets\ScriptWidget.ico" Link="ScriptWidget.ico" CopyToOutputDirectory="PreserveNewest" />
+    <!-- The code editor is the bundle the Apple and Android apps embed, built from Editor/editorfe. -->
+    <Content Include="..\..\..\macOS\ScriptWidgetMac\StudioEditor.bundle\**" Link="StudioEditor\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <Content Include="Editor\windows-bridge.js" Link="StudioEditor\windows-bridge.js" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

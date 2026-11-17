@@ -149,6 +149,8 @@ public sealed partial class PackageStore(string libraryRoot, string stagingRoot,
         if (ManifestPresent(prepared))
         {
             name = PackageManifests.StringValue(ReadManifest(files), "name") ?? throw new PackageException(PackageErrors.InvalidManifest, "widget.json is invalid.");
+            // A package made on another platform may be named with characters Windows reserves.
+            name = PackageNames.DirectoryName(name);
         }
         else
         {
