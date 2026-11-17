@@ -33,7 +33,7 @@ jobs:
   # emulator. Started by hand only: Actions > Android > Run workflow. An emulator is not a phone;
   # the suites on a real device are still run with Android/scripts/device-test.sh.
   device:
-    name: Core device tests on an emulator
+    name: Device tests on an emulator
     if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
@@ -59,10 +59,15 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: sh Android/scripts/device-test.sh core | tee device-test.log && grep -q "^OK (" device-test.log
+          script: |
+            sh Android/scripts/device-test.sh core | tee device-test.log
+            FLAVOR=foss sh Android/scripts/device-test.sh app | tee app-device-test.log
+            grep -q "^OK (" device-test.log && grep -q "^OK (" app-device-test.log
       - uses: actions/upload-artifact@v7
         if: always()
         with:
           name: android-core-device-test
-          path: device-test.log
+          path: |
+            device-test.log
+            app-device-test.log
           if-no-files-found: ignore
