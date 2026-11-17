@@ -50,11 +50,12 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 - **The code editor asked to pair with a phone.** The shared editor bundle tells an embedding app from the Web Studio site by a marker object, which the Windows bridge now provides.
 - **Requests without a user agent.** The GitHub API answered 403. Requests now send `ScriptWidget-Windows/<version>` unless the script sets its own.
 - **Size names.** `supportedFamilies` uses `systemMedium`; it was compared with `medium`.
+- **Show desktop was looked for in the wrong window.** Only a WorkerW that takes over the desktop icons was recognized, which is how Windows showed the desktop before 11 24H2. On 24H2 and later (this PC) Progman itself is raised; both are handled now.
 - **Widgets were underneath the desktop.** `HWND_BOTTOM` put the widget windows below `Progman` in the window order on this Windows build, where they would be neither seen nor clicked. They are now inserted directly above the desktop window.
 
 ### Desktop host (`ScriptWidget.exe`)
 
-`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 22 of 22, with the debug build and with the native AOT build from the package layout.
+`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 23 of 23, with the debug build and with the native AOT build from the package layout.
 
 | Check | Result |
 | --- | --- |
@@ -70,7 +71,8 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 | Redraw cost after the first render | Layout 3 to 35 ms, paint 1 to 65 ms |
 | Idle cost, native AOT build, two widgets, one of them a clock | 85 MB private memory, 93 MB working set; 0.05 s of processor time in 30 s |
 | Idle cost, native AOT build, one widget without dates | 22 MB private memory, 58 MB working set, 10 threads; 0.00 s of processor time in 30 s |
-| "Show desktop" | Not checkable while locked: `Shell.Application.ToggleDesktop` changed nothing in the window order |
+| "Show desktop", acted out with a stand-in for the desktop window (`--selftest-showdesktop`) | 14 of 14: a click on the wallpaper is not mistaken for it; when the desktop window is raised and is the foreground window the widget becomes topmost in front of it; afterwards the widget is back directly above the desktop and behind ordinary windows; a second round behaves the same |
+| "Show desktop" for real | Not checkable while locked: `Shell.Application.ToggleDesktop` changed nothing in the window order. The detection follows what Rainmeter's source documents for Windows 11 24H2 and later (Progman itself is raised and becomes the foreground window) and for earlier versions (a WorkerW takes over the icons) |
 
 ### Management window (`ScriptWidgetStudio.exe`)
 
@@ -107,7 +109,7 @@ The Store form at first showed "This application could not be started": the boot
 ### Not run
 
 - Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
-- "Show desktop" (Win+D). The detection is conservative: if this Windows version shows the desktop in a way it does not recognize, widgets are covered until the desktop is left; they are never raised over ordinary windows.
+- The real "Show desktop" (Win+D). Its handling passes with a stand-in desktop window; whether Windows moves the real desktop window the way that stand-in is moved has not been seen. If it does not, widgets are covered until the desktop is left; they are never raised over ordinary windows.
 - A real mouse: dragging, clicking, the pointer shape. The tray icon and its menu, the right-click menu of a widget.
 - A real Explorer restart, a real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 on a real machine.

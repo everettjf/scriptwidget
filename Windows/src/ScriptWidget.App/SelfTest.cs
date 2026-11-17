@@ -51,6 +51,101 @@ internal static unsafe class SelfTest
         return 0;
     }
 
+    /// <summary>
+    /// <c>ScriptWidget.exe --selftest-showdesktop &lt;log&gt;</c>: acts out "show desktop" with a stand-in
+    /// for the desktop window and checks that a widget is raised while the desktop is shown and
+    /// returns to its place directly above the desktop afterwards. The real desktop window is not
+    /// touched, so this also runs on a locked or unattended machine. Exit code 0 when every check passes.
+    /// </summary>
+    public static int RunShowDesktop(string[] arguments)
+    {
+        var logPath = arguments.Length > 1 ? arguments[1] : Path.Combine(Path.GetTempPath(), "scriptwidget-showdesktop-selftest.log");
+        File.WriteAllText(logPath, "");
+        var failures = 0;
+        void Check(string what, bool ok)
+        {
+            if (!ok) failures++;
+            File.AppendAllText(logPath, $"{(ok ? "PASS" : "FAIL")}  {what}{Environment.NewLine}");
+        }
+        // True when `upper` is in front of `lower` in the window order.
+        static bool InFront(nint upper, nint lower)
+        {
+            for (var window = Win32.GetWindow(upper, 2 /* GW_HWNDNEXT */); window != 0; window = Win32.GetWindow(window, 2)) if (window == lower) return true;
+            return false;
+        }
+        static bool IsTopmost(nint window) => (GetWindowLongPtrW(window, -20) & Win32.WS_EX_TOPMOST) != 0;
+
+        using var desktop = new PlainWindow("ScriptWidgetSelfTestDesktop");
+        using var other = new PlainWindow("ScriptWidgetSelfTestOther");
+        // The stand-in desktop starts behind the stand-in for an ordinary window, like the real desktop.
+        Win32.SetWindowPos(other.Handle, 0 /* HWND_TOP */, 60, 60, 200, 120, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
+        Win32.SetWindowPos(desktop.Handle, other.Handle, 40, 40, 400, 300, Win32.SWP_NOACTIVATE | Win32.SWP_SHOWWINDOW);
+        var foreground = other.Handle;
+        DesktopLayer.HostOverride = desktop.Handle;
+        DesktopLayer.ForegroundOverride = () => foreground;
+        try
+        {
+            using var layer = new DesktopLayer();
+            using var window = new WidgetWindow();
+            window.MoveTo(80, 80);
+            window.SetBitmap(Card(120, 80, 12), 120, 80);
+            layer.Add(window);
+            layer.Reassert();
+
+            Check("normally: the widget is in front of the desktop", InFront(window.Handle, desktop.Handle));
+            Check("normally: an ordinary window is in front of the widget", InFront(other.Handle, window.Handle));
+            Check("normally: the widget is not topmost", !IsTopmost(window.Handle));
+
+            // A click on the wallpaper: the desktop becomes the foreground window but is not raised.
+            foreground = desktop.Handle;
+            layer.Check();
+            Check("wallpaper click: not treated as show desktop", !layer.DesktopShown);
+            Check("wallpaper click: the widget stays behind the ordinary window", InFront(other.Handle, window.Handle) && !IsTopmost(window.Handle));
+
+            // Show desktop: the desktop is raised above everything and is the foreground window.
+            Win32.SetWindowPos(desktop.Handle, 0 /* HWND_TOP */, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            layer.Check();
+            Check("show desktop: detected", layer.DesktopShown);
+            Check("show desktop: the widget is in front of the raised desktop", InFront(window.Handle, desktop.Handle));
+            Check("show desktop: the widget is topmost", IsTopmost(window.Handle));
+
+            // Leaving: an ordinary window is activated and the desktop goes back to the bottom.
+            Win32.SetWindowPos(desktop.Handle, Win32.HWND_BOTTOM, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            foreground = other.Handle;
+            layer.Check();
+            Check("afterwards: no longer shown", !layer.DesktopShown);
+            Check("afterwards: the widget is not topmost", !IsTopmost(window.Handle));
+            Check("afterwards: the widget is in front of the desktop", InFront(window.Handle, desktop.Handle));
+            Check("afterwards: the ordinary window is in front of the widget", InFront(other.Handle, window.Handle));
+
+            // A second round must work the same way.
+            Win32.SetWindowPos(desktop.Handle, 0, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            foreground = desktop.Handle;
+            layer.Check();
+            Check("second time: detected and raised", layer.DesktopShown && IsTopmost(window.Handle));
+            Win32.SetWindowPos(desktop.Handle, Win32.HWND_BOTTOM, 0, 0, 0, 0, Win32.SWP_NOMOVE | Win32.SWP_NOSIZE | Win32.SWP_NOACTIVATE);
+            foreground = other.Handle;
+            layer.Check();
+            Check("second time: back in place", !layer.DesktopShown && !IsTopmost(window.Handle) && InFront(window.Handle, desktop.Handle) && InFront(other.Handle, window.Handle));
+        }
+        finally
+        {
+            DesktopLayer.HostOverride = 0;
+            DesktopLayer.ForegroundOverride = null;
+        }
+        File.AppendAllText(logPath, failures == 0 ? "all checks passed" + Environment.NewLine : $"{failures} check(s) failed{Environment.NewLine}");
+        return failures == 0 ? 0 : 1;
+    }
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")] private static extern nint GetWindowLongPtrW(nint window, int index);
+
+    /// <summary>An empty tool window used as a stand-in in the self-tests.</summary>
+    private sealed class PlainWindow : NativeWindow
+    {
+        public PlainWindow(string className) => Create(className, Win32.WS_EX_TOOLWINDOW | Win32.WS_EX_NOACTIVATE, Win32.WS_POPUP);
+        protected override nint? OnMessage(uint message, nuint wParam, nint lParam) => message == Win32.WM_MOUSEACTIVATE ? Win32.MA_NOACTIVATE : null;
+    }
+
     /// <summary>A rounded card with a gradient, as premultiplied BGRA.</summary>
     private static byte[] Card(int width, int height, int radius)
     {

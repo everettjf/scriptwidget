@@ -9,21 +9,29 @@ namespace ScriptWidget.App.Windowing;
 /// still visible when the user asks Windows to show the desktop.
 ///
 /// The widgets are top-level windows held directly above the desktop window
-/// in the window order (the approach Rainmeter uses) rather than children of the shell's desktop
-/// window, which broke for other programs when Windows 11 24H2 rearranged
-/// that window. "Show desktop" (Win+D, the taskbar corner) puts the desktop
-/// icons in a WorkerW window raised above everything, which would cover the
-/// widgets, so while that state lasts the widgets are raised too. The state
-/// is detected with a hidden probe window that always stays at the bottom:
-/// the desktop is being shown when such a WorkerW exists, sits above the
-/// probe, and is the foreground window. Every condition must hold. If a
-/// Windows version shows the desktop another way, the widgets are covered
-/// until the desktop is left, rather than raised over ordinary windows.
+/// in the window order (the approach Rainmeter uses) rather than children of
+/// the shell's desktop window, which broke for other programs when Windows
+/// 11 24H2 rearranged that window.
+///
+/// "Show desktop" (Win+D, the taskbar corner) raises the window that hosts
+/// the desktop icons above everything and makes it the foreground window,
+/// which would cover the widgets, so while that state lasts the widgets are
+/// raised too. Since Windows 11 24H2 that window is Progman itself; before,
+/// it is a WorkerW that takes over the icons (Rainmeter's System.cpp
+/// documents both layouts). The state is detected with a hidden probe window
+/// kept directly above the desktop like the widgets: the desktop is being
+/// shown when the icons window is the foreground window and has moved above
+/// the probe. Both conditions must hold, so a click on the wallpaper, which
+/// makes the desktop the foreground window without raising it, never lifts
+/// widgets over ordinary windows. If a Windows version shows the desktop
+/// another way, the widgets are covered until the desktop is left.
 /// </summary>
 internal sealed unsafe class DesktopLayer : NativeWindow
 {
     private const string ProbeClass = "ScriptWidgetDesktopProbe";
     private const nuint RecheckTimer = 1;
+    private const nuint SettleTimer = 2;
+    private int settleAttempts;
     private static DesktopLayer? current;
 
     private const uint GW_HWNDPREV = 3;
@@ -31,6 +39,11 @@ internal sealed unsafe class DesktopLayer : NativeWindow
     private nint hook;
     private bool placingProbe;
     private readonly uint taskbarCreated;
+
+    /// <summary>For the self-test: a stand-in for the desktop window, so "show desktop" can be acted out without touching the real one.</summary>
+    internal static nint HostOverride;
+    /// <summary>For the self-test: which window counts as the foreground window.</summary>
+    internal static Func<nint>? ForegroundOverride;
 
     /// <summary>True while Windows is showing the desktop and the widgets are raised above it.</summary>
     public bool DesktopShown { get; private set; }
@@ -96,16 +109,13 @@ internal sealed unsafe class DesktopLayer : NativeWindow
     /// <summary>The top-level window that hosts the desktop icons: Progman, or a WorkerW on some configurations.</summary>
     private static nint IconsHost()
     {
-        var worker = RaisedDesktop();
+        if (HostOverride != 0) return HostOverride;
+        var worker = IconsWorker();
         return worker != 0 ? worker : Win32.GetShellWindow();
     }
 
-    /// <summary>
-    /// The WorkerW window that hosts the desktop icons while the desktop is shown, or 0. Ordinarily
-    /// the icons live in Progman, which stays at the bottom and is never treated as "shown":
-    /// clicking the wallpaper also makes it the foreground window.
-    /// </summary>
-    private static nint RaisedDesktop()
+    /// <summary>A WorkerW window that hosts the desktop icons, or 0 when the icons live in Progman.</summary>
+    private static nint IconsWorker()
     {
         fixed (char* workerClass = "WorkerW")
         fixed (char* viewClass = "SHELLDLL_DefView")
@@ -122,12 +132,16 @@ internal sealed unsafe class DesktopLayer : NativeWindow
     /// <summary>Compares the desktop window with the probe and raises or lowers the widgets when the state changed.</summary>
     public void Check()
     {
-        var host = RaisedDesktop();
+        var host = IconsHost();
         var shown = false;
-        if (host != 0 && Win32.IsWindowVisible(host) != 0)
+        var foreground = ForegroundOverride?.Invoke() ?? Win32.GetForegroundWindow();
+        if (host != 0 && Win32.IsWindowVisible(host) != 0 && foreground == host)
         {
-            // FindWindowEx searches the windows below `host` in the window order.
-            fixed (char* probe = ProbeClass) shown = Win32.FindWindowExW(0, host, probe, null) == Handle && Win32.GetForegroundWindow() == host;
+            // FindWindowEx searches the windows below `host` in the window order: the probe is
+            // there only after the desktop window was raised above it.
+            fixed (char* probe = ProbeClass) shown = Win32.FindWindowExW(0, host, probe, null) == Handle;
+            // The foreground change can arrive a moment before the window order changes.
+            if (!shown && !DesktopShown && settleAttempts == 0) { settleAttempts = 6; Win32.SetTimer(Handle, SettleTimer, 40, 0); }
         }
         if (shown == DesktopShown) return;
         DesktopShown = shown;
@@ -140,6 +154,16 @@ internal sealed unsafe class DesktopLayer : NativeWindow
     protected override nint? OnMessage(uint message, nuint wParam, nint lParam)
     {
         if (message == Win32.WM_TIMER && wParam == RecheckTimer) { Check(); return 0; }
+        if (message == Win32.WM_TIMER && wParam == SettleTimer)
+        {
+            settleAttempts -= 1;
+            var remaining = settleAttempts;
+            settleAttempts = -1; // keeps Check from starting another round
+            Check();
+            settleAttempts = DesktopShown ? 0 : Math.Max(remaining, 0);
+            if (settleAttempts == 0) Win32.KillTimer(Handle, SettleTimer);
+            return 0;
+        }
         if (message == Win32.WM_WINDOWPOSCHANGING)
         {
             // Only this class moves the probe in the window order.

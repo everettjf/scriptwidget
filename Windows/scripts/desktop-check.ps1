@@ -8,12 +8,14 @@
 #   - widget windows sit directly above the desktop and below every other window,
 #   - a drag moves the widget, snaps it to the screen edge and saves the place,
 #   - a button click runs the declared action,
-#   - display, clock, sleep, lock and theme events redraw the widgets.
+#   - display, clock, sleep, lock and theme events redraw the widgets,
+#   - "show desktop" raises the widgets and puts them back, using a stand-in
+#     for the desktop window.
 # Pictures of the widget windows are saved in the output folder.
 #
 # Pointer input is posted to the windows as messages; it is not a real mouse.
-# What this cannot check is listed in docs/windows/TODO.md (Win+D, the tray
-# menu, how the widgets look against the wallpaper).
+# What this cannot check is listed in docs/windows/TODO.md (the real Win+D,
+# the tray menu, how the widgets look against the wallpaper).
 param(
     [string] $HostPath,
     [string] $Output = (Join-Path $env:TEMP 'scriptwidget-desktop-check')
@@ -75,6 +77,12 @@ function Wait-Log([string] $pattern, [int] $from, [int] $seconds = 8) {
     return $false
 }
 
+# "Show desktop", acted out with a stand-in for the desktop window (the real one is not touched).
+$showDesktopLog = Join-Path $Output 'showdesktop.log'
+$selfTest = Start-Process $HostPath -ArgumentList '--selftest-showdesktop', "`"$showDesktopLog`"" -PassThru -Wait
+if (Test-Path $showDesktopLog) { Get-Content $showDesktopLog | Where-Object { $_ -match '^(PASS|FAIL)' } | ForEach-Object { Write-Host ($_ -replace '^(PASS|FAIL)  ', '$1  show desktop stand-in: ') } }
+Check 'show desktop is handled (stand-in desktop window)' ($selfTest.ExitCode -eq 0)
+
 $process = Start-Process $HostPath -ArgumentList '--startup' -PassThru
 try {
     # First start
@@ -91,7 +99,13 @@ try {
     $before = (LogLines).Count
     & $cli add 'Habit Heatmap' --family medium | Out-Null
     Check 'a second widget is added and drawn' (Wait-Log 'drawn ' $before)
-    $widgets = [SwCheck]::Find('ScriptWidgetWidget')
+    # The second window exists before its first picture is drawn; wait until both are shown.
+    for ($i = 0; $i -lt 40; $i++) {
+        $widgets = [SwCheck]::Find('ScriptWidgetWidget')
+        $shown = @($widgets | Where-Object { $r = Rect $_; [SwCheck]::IsWindowVisible($_) -and ($r.R - $r.L) -gt 0 })
+        if ($shown.Count -eq 2) { break }
+        Start-Sleep -Milliseconds 250
+    }
     Check 'two widget windows exist' ($widgets.Count -eq 2)
 
     # Pictures of what the windows show

@@ -9,7 +9,7 @@ Checks that need a person at an unlocked Windows desktop. The first night of dev
 | Check | How |
 | --- | --- |
 | Widgets look right against the wallpaper and icons | Start `ScriptWidget.exe` and look |
-| Widgets stay visible when the desktop is shown | Press Win+D twice. The detection in `DesktopLayer.cs` follows the approach Rainmeter uses and has not been seen working. If the widgets disappear while the desktop is shown, it needs adjusting for this Windows version; they should never appear over ordinary windows |
+| Widgets stay visible when the desktop is shown | Press Win+D twice. The handling in `DesktopLayer.cs` passes its self-test with a stand-in desktop window and follows what Rainmeter's source documents for this Windows version, but the real Win+D has not been seen. If the widgets disappear while the desktop is shown, compare the window order with the self-test; they should never appear over ordinary windows |
 | Dragging and clicking with a real mouse; the pointer becomes a hand over a button | Drag a widget; use the Habit Heatmap template ("Check in") and a template with a link |
 | Tray icon, its menu, the right-click menu of a widget | Left and right click |
 | The widgets come back after signing out and in | Turn on "Start when I sign in", sign out, sign in |
