@@ -1,0 +1,128 @@
+name: Windows
+on:
+  pull_request:
+    paths: ['Windows/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/windows.yml']
+  push:
+    branches: [main]
+    paths: ['Windows/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/windows.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: windows-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Build and test (x64)
+    runs-on: windows-2025
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Preview engine tests on Windows
+        working-directory: Web/preview-engine
+        run: npm test
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - name: Shared JavaScript
+        run: node Windows/scripts/build-shared-js.mjs
+      - name: swcore (QuickJS)
+        shell: pwsh
+        run: ./Windows/scripts/build-native.ps1 -Arch x64
+      - name: Build
+        working-directory: Windows
+        run: dotnet build ScriptWidget.slnx -c Release -p:Platform=x64 --nologo
+      - name: Test
+        working-directory: Windows
+        run: dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo --logger "console;verbosity=normal" --logger "trx;LogFileName=tests.trx"
+      # The engine binding (swcore.c) under AddressSanitizer. The rest of the suite is not run this
+      # way: compiling packages with Babel inside a sanitized QuickJS hosted by .NET does not finish.
+      - name: Engine binding tests with AddressSanitizer in swcore
+        shell: pwsh
+        run: |
+          ./Windows/scripts/build-native.ps1 -Arch x64 -Asan
+          cd Windows
+          dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo -p:SwNativeSuffix=-asan --filter "FullyQualifiedName~QuickJs" --logger "console;verbosity=minimal"
+      # The desktop host on the build agent's desktop: window content, window order, drag, clicks,
+      # system events and the show-desktop self-test. Pictures of the widget windows are uploaded.
+      - name: Desktop check
+        shell: pwsh
+        run: |
+          $hostPath = Get-ChildItem Windows/src/ScriptWidget.App/bin -Recurse -Filter ScriptWidget.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+          powershell -NoProfile -ExecutionPolicy Bypass -File Windows/scripts/desktop-check.ps1 -HostPath $hostPath -Output "$env:RUNNER_TEMP\desktop-check"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-desktop-check
+          path: |
+            ${{ runner.temp }}/desktop-check/*.png
+            ${{ runner.temp }}/desktop-check/*.log
+            ${{ runner.temp }}/desktop-check/data/host.log
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-test-results
+          path: Windows/tests/ScriptWidget.Core.Tests/TestResults
+          if-no-files-found: ignore
+  arm64:
+    name: Build (ARM64, cross-compiled on x64)
+    runs-on: windows-2025
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - run: node Windows/scripts/build-shared-js.mjs
+      - name: swcore (QuickJS) for ARM64
+        shell: pwsh
+        run: ./Windows/scripts/build-native.ps1 -Arch arm64
+      - name: Build
+        working-directory: Windows
+        run: dotnet build ScriptWidget.slnx -c Release -p:Platform=ARM64 --nologo
+  arm64-run:
+    name: Build and test (ARM64)
+    runs-on: windows-11-arm
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      - uses: actions/setup-dotnet@v5
+        with: {dotnet-version: '10.0.x'}
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - run: node Windows/scripts/build-shared-js.mjs
+      - name: swcore (QuickJS) for ARM64
+        shell: pwsh
+        run: ./Windows/scripts/build-native.ps1 -Arch arm64
+      - name: Build
+        working-directory: Windows
+        run: dotnet build ScriptWidget.slnx -c Release -p:Platform=ARM64 --nologo
+      - name: Test
+        working-directory: Windows
+        run: dotnet test tests/ScriptWidget.Core.Tests -c Release -p:Platform=ARM64 --nologo --logger "console;verbosity=normal"
+      - name: Desktop check
+        shell: pwsh
+        run: |
+          $hostPath = Get-ChildItem Windows/src/ScriptWidget.App/bin -Recurse -Filter ScriptWidget.exe | Sort-Object LastWriteTime -Descending | Select-Object -First 1 -ExpandProperty FullName
+          powershell -NoProfile -ExecutionPolicy Bypass -File Windows/scripts/desktop-check.ps1 -HostPath $hostPath -Output "$env:RUNNER_TEMP\desktop-check"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-arm64-desktop-check
+          path: |
+            ${{ runner.temp }}/desktop-check/*.png
+            ${{ runner.temp }}/desktop-check/*.log
+            ${{ runner.temp }}/desktop-check/data/host.log
+          if-no-files-found: ignore

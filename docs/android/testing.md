@@ -49,6 +49,10 @@ Two live-service tests skip instead of failing when the remote service does not 
 
 On 16 November 2026, after the Habit Heatmap template gained a total count, the unit tests passed and the core device suite passed on the Pixel 6 (30 tests, including parity with JavaScriptCore on the regenerated trees). The app device suite was not run for that change, and the widget was not placed on a home screen.
 
+### After the shared-JavaScript build moved to `Scripts/lib/shared-js.mjs` (`windows` branch)
+
+The build script now calls the library shared with Windows, and `android-apis.js` takes the platform name in its "not supported" message from the host (default: Android). In CI on that branch: the regenerated assets equal the checked-in ones, `:core:testDebugUnitTest` passes (run 44081171658), and on an API 35 x86_64 emulator the core instrumented suite passes 30 of 30 and the app suite (`foss` flavor) 63 of 63 (run 44094364212; start it from Actions > Android > Run workflow). Earlier emulator runs failed for reasons of the job, not of the code: Open-Meteo did not answer once, and with system animations turned off the four widget animation tests fail, because the app shows no animation frames then. Not re-run: both instrumented suites on the Pixel 6.
+
 ## Checked by hand on the Pixel 6
 
 - Pinning a widget from the app, and the Pixel Launcher drawing it with system corners.

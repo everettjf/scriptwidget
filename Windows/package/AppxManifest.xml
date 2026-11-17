@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  MSIX manifest of ScriptWidget for Windows. Windows/scripts/package.ps1 fills
+  the {{...}} values: the identity comes from the Partner Center reservation
+  (Product identity page), the version and architecture from the build.
+-->
+<Package
+  xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10"
+  xmlns:uap="http://schemas.microsoft.com/appx/manifest/uap/windows10"
+  xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
+  xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
+  IgnorableNamespaces="uap uap5 rescap">
+
+  <Identity Name="{{IdentityName}}" Publisher="{{Publisher}}" Version="{{Version}}" ProcessorArchitecture="{{Architecture}}" />
+
+  <Properties>
+    <DisplayName>ScriptWidget</DisplayName>
+    <PublisherDisplayName>{{PublisherDisplayName}}</PublisherDisplayName>
+    <Logo>Assets\StoreLogo.png</Logo>
+    <Description>Desktop widgets written in JavaScript and JSX.</Description>
+  </Properties>
+
+  <Dependencies>
+    <TargetDeviceFamily Name="Windows.Desktop" MinVersion="10.0.22000.0" MaxVersionTested="10.0.26100.0" />
+{{FrameworkDependencies}}  </Dependencies>
+
+  <Resources>
+    <Resource Language="en-us" />
+    <Resource Language="zh-cn" />
+  </Resources>
+
+  <Applications>
+    <!-- The Start menu entry opens the management window, which starts the desktop host when it is not running. -->
+    <Application Id="ScriptWidget" Executable="ScriptWidgetStudio.exe" EntryPoint="Windows.FullTrustApplication">
+      <uap:VisualElements
+        DisplayName="ScriptWidget"
+        Description="Desktop widgets written in JavaScript and JSX."
+        BackgroundColor="transparent"
+        Square150x150Logo="Assets\Square150x150Logo.png"
+        Square44x44Logo="Assets\Square44x44Logo.png">
+        <uap:DefaultTile Wide310x150Logo="Assets\Wide310x150Logo.png" />
+      </uap:VisualElements>
+      <Extensions>
+        <!-- Off until the user turns on "Start when I sign in". -->
+        <uap5:Extension Category="windows.startupTask" Executable="ScriptWidget.exe" EntryPoint="Windows.FullTrustApplication">
+          <uap5:StartupTask TaskId="ScriptWidgetStartup" Enabled="false" DisplayName="ScriptWidget" />
+        </uap5:Extension>
+        <!-- Widget packages exported from any ScriptWidget app. Opening one starts the reviewed import, never an install without confirmation. -->
+        <uap:Extension Category="windows.fileTypeAssociation">
+          <uap:FileTypeAssociation Name="scriptwidgetpackage">
+            <uap:DisplayName>ScriptWidget package</uap:DisplayName>
+            <uap:SupportedFileTypes>
+              <uap:FileType>.swt</uap:FileType>
+            </uap:SupportedFileTypes>
+          </uap:FileTypeAssociation>
+        </uap:Extension>
+      </Extensions>
+    </Application>
+  </Applications>
+
+  <Capabilities>
+    <!-- Widgets fetch data from the hosts their manifest declares. -->
+    <Capability Name="internetClient" />
+    <!-- A classic desktop program: draws its own windows on the desktop. -->
+    <rescap:Capability Name="runFullTrust" />
+  </Capabilities>
+</Package>

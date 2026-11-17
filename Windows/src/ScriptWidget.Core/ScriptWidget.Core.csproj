@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <RootNamespace>ScriptWidget.Core</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Only programs carry the Windows App SDK files; a library that did too would publish them twice. -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.3.2" />
+    <InternalsVisibleTo Include="ScriptWidget.Core.Tests" />
+  </ItemGroup>
+  <!-- Files every program that uses the runtime needs next to it. -->
+  <ItemGroup>
+    <Content Include="$(SwNativeDirectory)\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <Content Include="$(SwAssetsDirectory)\scriptwidget\**" Link="assets\scriptwidget\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- The fonts Android bundles, so text measures the same. Noto Sans SC stays out: Chinese falls back to the system font. -->
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\*.ttf" Exclude="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\NotoSansSC.ttf" Link="assets\fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- The templates the Apple apps ship. The library hides the ones that need APIs Windows does not have. -->
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**" Exclude="$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\__Build\**;$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\.*;$(MSBuildThisFileDirectory)..\..\..\Shared\ScriptWidgetRuntime\Resource\Script.bundle\**\preview.png" Link="templates\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+  </ItemGroup>
+</Project>

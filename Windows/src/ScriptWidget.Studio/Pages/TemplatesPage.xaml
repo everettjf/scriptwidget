@@ -1,0 +1,74 @@
+<Page x:Class="ScriptWidget.Studio.Pages.TemplatesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:ScriptWidget.Studio.Pages"
+      xmlns:s="using:ScriptWidget.Studio.Services"
+      NavigationCacheMode="Required">
+    <Grid Padding="32,28,0,0" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,32,0" ColumnSpacing="24">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="280" />
+            </Grid.ColumnDefinitions>
+            <StackPanel Spacing="4">
+                <TextBlock x:Name="TitleText" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock x:Name="DetailText" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
+            </StackPanel>
+            <AutoSuggestBox x:Name="Search" Grid.Column="1" QueryIcon="Find" TextChanged="OnSearchChanged" VerticalAlignment="Bottom" />
+        </Grid>
+
+        <!-- Templates: a card opens it; it is used from there, after its code has been seen. -->
+        <GridView x:Name="Cards" Grid.Row="1" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="local:PackageCard">
+                    <Grid Width="320" Margin="6" Padding="14" RowSpacing="10" CornerRadius="10"
+                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="170" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid CornerRadius="8" Background="{ThemeResource LayerFillColorAltBrush}">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="8">
+                                <Image Source="{x:Bind Image, Mode=OneWay}" Width="329" Height="170" Stretch="Fill" />
+                            </Viewbox>
+                            <!-- One that draws nothing shows what it printed. -->
+                            <StackPanel Visibility="{x:Bind OutputVisibility, Mode=OneWay}" Padding="14,12" Spacing="6">
+                                <TextBlock Text="{x:Bind OutputLabel}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                <TextBlock Text="{x:Bind Output, Mode=OneWay}" FontFamily="Cascadia Mono, Consolas" FontSize="12" TextWrapping="Wrap" MaxLines="7" TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                            <ProgressRing IsActive="True" Width="24" Height="24" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
+                        </Grid>
+                        <TextBlock Grid.Row="1" Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <!-- Components: small tiles. Only a template is shown at the size of a widget. -->
+        <GridView x:Name="Tiles" Grid.Row="1" Visibility="Collapsed" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnOpen" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="local:PackageCard">
+                    <Grid Width="168" Margin="4" Padding="8" RowSpacing="6" CornerRadius="8"
+                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="80" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid CornerRadius="6" Background="{ThemeResource LayerFillColorAltBrush}">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="2">
+                                <Image Source="{x:Bind Image, Mode=OneWay}" Width="329" Height="170" Stretch="Fill" />
+                            </Viewbox>
+                            <TextBlock Visibility="{x:Bind OutputVisibility, Mode=OneWay}" Text="{x:Bind Output, Mode=OneWay}" Margin="8,6" FontFamily="Cascadia Mono, Consolas" FontSize="10" TextWrapping="Wrap" MaxLines="5" TextTrimming="CharacterEllipsis" />
+                            <ProgressRing IsActive="True" Width="16" Height="16" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
+                        </Grid>
+                        <TextBlock Grid.Row="1" Text="{x:Bind Title}" FontFamily="Cascadia Mono, Consolas" FontSize="13" TextTrimming="CharacterEllipsis" Margin="2,0" />
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</Page>

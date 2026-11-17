@@ -1,5 +1,5 @@
 import { readFile, readdir, stat } from "node:fs/promises";
-import { dirname, join, relative, resolve } from "node:path";
+import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
@@ -34,7 +34,7 @@ for (const entry of roots) {
       try { decoded = decodeURIComponent(target); }
       catch { failures.push(`${relative(root, markdownPath)}: invalid URL encoding in ${target}`); continue; }
       const destination = resolve(dirname(markdownPath), decoded);
-      if (destination !== root && !destination.startsWith(`${root}/`)) {
+      if (destination !== root && !destination.startsWith(`${root}${sep}`)) {
         failures.push(`${relative(root, markdownPath)}: link escapes repository: ${target}`);
         continue;
       }

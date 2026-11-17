@@ -1,0 +1,67 @@
+<Page x:Class="ScriptWidget.Studio.Pages.LibraryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:ScriptWidget.Studio.Pages"
+      xmlns:s="using:ScriptWidget.Studio.Services">
+    <Grid Padding="32,28,0,0" RowSpacing="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid Margin="0,0,32,0" ColumnSpacing="8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="{s:T Key=library.title}" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
+            <Button Grid.Column="1" Click="OnImport" Content="{s:T Key=library.import}" />
+            <Button Grid.Column="2" Click="OnNew" Style="{StaticResource AccentButtonStyle}" Content="{s:T Key=library.new}" />
+        </Grid>
+
+        <StackPanel x:Name="Empty" Grid.Row="1" Visibility="Collapsed" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="12" Margin="0,0,32,80" MaxWidth="420">
+            <FontIcon Glyph="&#xE80F;" FontSize="44" Opacity="0.5" />
+            <TextBlock Text="{s:T Key=library.empty.title}" Style="{StaticResource SubtitleTextBlockStyle}" HorizontalAlignment="Center" />
+            <TextBlock Text="{s:T Key=library.empty.detail}" TextWrapping="Wrap" TextAlignment="Center" Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+            <Button Click="OnBrowseTemplates" HorizontalAlignment="Center" Style="{StaticResource AccentButtonStyle}" Content="{s:T Key=library.empty.templates}" />
+        </StackPanel>
+
+        <GridView x:Name="Cards" Grid.Row="1" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnCardClick" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="local:PackageCard">
+                    <Grid Width="320" Margin="6" Padding="14" RowSpacing="10" CornerRadius="10"
+                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="170" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <Grid CornerRadius="8" Background="{ThemeResource LayerFillColorAltBrush}">
+                            <Viewbox Stretch="Uniform" StretchDirection="DownOnly" Margin="8">
+                                <Image Source="{x:Bind Image, Mode=OneWay}" Width="329" Height="170" Stretch="Fill" />
+                            </Viewbox>
+                            <ProgressRing IsActive="True" Width="24" Height="24" Visibility="{x:Bind PlaceholderVisibility, Mode=OneWay}" />
+                        </Grid>
+                        <StackPanel Grid.Row="1" Spacing="2">
+                            <TextBlock Text="{x:Bind Title}" Style="{StaticResource BodyStrongTextBlockStyle}" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind Subtitle}" Visibility="{x:Bind SubtitleVisibility}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextTrimming="CharacterEllipsis" MaxLines="2" TextWrapping="Wrap" />
+                            <TextBlock Text="{x:Bind Detail, Mode=OneWay}" Visibility="{x:Bind DetailVisibility, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        </StackPanel>
+                        <Grid Grid.Row="2" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="{x:Bind AddLabel}" Click="OnAdd" Style="{StaticResource AccentButtonStyle}" />
+                            <Button Grid.Column="1" Content="{x:Bind EditLabel}" Click="OnEdit" HorizontalAlignment="Left" />
+                            <Button Grid.Column="2" Click="OnMore" Padding="8,6" AutomationProperties.Name="{x:Bind MoreLabel}" ToolTipService.ToolTip="{x:Bind MoreLabel}">
+                                <FontIcon Glyph="&#xE712;" FontSize="14" />
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+    </Grid>
+</Page>

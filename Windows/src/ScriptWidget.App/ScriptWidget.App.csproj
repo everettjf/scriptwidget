@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <AssemblyName>ScriptWidget</AssemblyName>
+    <RootNamespace>ScriptWidget.App</RootNamespace>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\package\Assets\ScriptWidget.ico</ApplicationIcon>
+    <IsAotCompatible>true</IsAotCompatible>
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\ScriptWidget.Core\ScriptWidget.Core.csproj" />
+    <Content Include="..\..\package\Assets\ScriptWidget.ico" Link="ScriptWidget.ico" CopyToOutputDirectory="PreserveNewest" Condition="Exists('..\..\package\Assets\ScriptWidget.ico')" />
+  </ItemGroup>
+</Project>
