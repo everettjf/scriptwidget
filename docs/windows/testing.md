@@ -50,6 +50,7 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 - **The code editor asked to pair with a phone.** The shared editor bundle tells an embedding app from the Web Studio site by a marker object, which the Windows bridge now provides.
 - **Requests without a user agent.** The GitHub API answered 403. Requests now send `ScriptWidget-Windows/<version>` unless the script sets its own.
 - **Size names.** `supportedFamilies` uses `systemMedium`; it was compared with `medium`.
+- **Widgets were underneath the desktop.** `HWND_BOTTOM` put the widget windows below `Progman` in the window order on this Windows build, where they would be neither seen nor clicked. They are now inserted directly above the desktop window.
 
 ### Desktop host (`ScriptWidget.exe`)
 
@@ -59,6 +60,7 @@ Run with a scratch data folder (`SCRIPTWIDGET_DATA`).
 | --- | --- |
 | First start: installs the clock template and places one widget | Yes; `widgets.json` holds the placement at the top right of the work area |
 | Widget windows exist, are visible to the window manager, and have the size of the widget | Two windows, 494×255 pixels (329×170 points at 150%), layered, tool-window and no-activate styles |
+| Window order, read with `GetWindow` while two widgets were on the desktop | Both widget windows directly above `Progman` (the desktop) and below every other visible window; a window opened afterwards went above them |
 | Requests over the pipe: `list`, `add`, `remove` | Work (`swcli widgets`, `swcli add`) |
 | Import of a `.swt` archive and placing it | Works (`swcli pack`, `swcli install`, `swcli add` with Habit Heatmap) |
 | A click on a button runs its declared action | A click posted to the window at the "Check in" button ran `checkInRead`; the package's storage then held today's date and the widget drew "Done today". The click was a posted window message, not a real mouse click |
