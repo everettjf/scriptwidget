@@ -26,8 +26,9 @@ public sealed class InstalledPackage(string name, string directory, string insta
     {
         get
         {
-            var declared = Manifest.OptArray("supportedFamilies")?.Select(item => item?.AsText() ?? "").Where(WidgetFamilies.IsKnown).Distinct().ToList();
-            return declared is { Count: > 0 } ? declared : WidgetFamilies.All;
+            // The manifest uses the WidgetKit names ("systemMedium"); $getenv("widget-size") uses the short ones.
+            var declared = Manifest.OptArray("supportedFamilies")?.Select(item => WidgetFamilies.FromManifest(item?.AsText() ?? "")).OfType<string>().Distinct().ToList();
+            return declared is { Count: > 0 } ? WidgetFamilies.All.Where(declared.Contains).ToList() : WidgetFamilies.All;
         }
     }
 }

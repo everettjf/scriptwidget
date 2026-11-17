@@ -145,6 +145,7 @@ internal sealed unsafe class WidgetWindow : NativeWindow
 
             case Win32.WM_LBUTTONUP:
             {
+                if (Log.Verbose) Log.Write($"button up: pressed={pressed} dragging={dragging} at {Win32.LowWord(lParam)},{Win32.HighWord(lParam)}");
                 if (!pressed) return null;
                 var wasDragging = dragging;
                 pressed = false;
@@ -156,9 +157,9 @@ internal sealed unsafe class WidgetWindow : NativeWindow
             }
 
             case Win32.WM_CAPTURECHANGED:
-                if (pressed && dragging) Moved?.Invoke();
-                pressed = false;
-                dragging = false;
+                // Capture also ends when the button is released; only a drag in progress is finished here,
+                // so a click still arrives with the button-up message.
+                if (pressed && dragging) { pressed = false; dragging = false; Moved?.Invoke(); }
                 return 0;
 
             case Win32.WM_RBUTTONUP:

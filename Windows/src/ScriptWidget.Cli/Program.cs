@@ -171,7 +171,17 @@ internal static class Program
         report["layoutMilliseconds"] = rendered.LayoutMilliseconds;
         report["paintMilliseconds"] = rendered.PaintMilliseconds;
         report["renderDiagnostics"] = rendered.Diagnostics.DeepClone();
-        report["hitRegions"] = rendered.HitRegions.Count;
+        var regions = new JsonArray();
+        foreach (var region in rendered.HitRegions)
+        {
+            regions.Append(new JsonObject
+            {
+                ["x"] = Math.Round(region.Bounds.Left, 1), ["y"] = Math.Round(region.Bounds.Top, 1),
+                ["width"] = Math.Round(region.Bounds.Width, 1), ["height"] = Math.Round(region.Bounds.Height, 1),
+                ["interaction"] = region.Interaction.DeepClone(),
+            });
+        }
+        report["hitRegions"] = regions;
         Print(report);
         return result.Execution.Error is null ? 0 : 1;
     }

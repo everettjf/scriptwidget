@@ -111,6 +111,8 @@ internal static class Log
 {
     private static readonly object Gate = new();
     public static string? File { get; set; }
+    /// <summary>Extra detail for diagnosing input on a real desktop; set SCRIPTWIDGET_VERBOSE=1.</summary>
+    public static bool Verbose { get; } = Environment.GetEnvironmentVariable("SCRIPTWIDGET_VERBOSE") == "1";
 
     public static void Write(string message)
     {

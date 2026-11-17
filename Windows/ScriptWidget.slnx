@@ -4,12 +4,27 @@
     <Platform Name="ARM64" />
   </Configurations>
   <Folder Name="/src/">
-    <Project Path="src/ScriptWidget.App/ScriptWidget.App.csproj" />
-    <Project Path="src/ScriptWidget.Cli/ScriptWidget.Cli.csproj" />
-    <Project Path="src/ScriptWidget.Core/ScriptWidget.Core.csproj" />
-    <Project Path="src/ScriptWidget.Studio/ScriptWidget.Studio.csproj" />
+    <Project Path="src/ScriptWidget.App/ScriptWidget.App.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
+    <Project Path="src/ScriptWidget.Cli/ScriptWidget.Cli.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
+    <Project Path="src/ScriptWidget.Core/ScriptWidget.Core.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
+    <Project Path="src/ScriptWidget.Studio/ScriptWidget.Studio.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/ScriptWidget.Core.Tests/ScriptWidget.Core.Tests.csproj" />
+    <Project Path="tests/ScriptWidget.Core.Tests/ScriptWidget.Core.Tests.csproj">
+      <Platform Solution="*|x64" Project="x64" />
+      <Platform Solution="*|ARM64" Project="ARM64" />
+    </Project>
   </Folder>
 </Solution>

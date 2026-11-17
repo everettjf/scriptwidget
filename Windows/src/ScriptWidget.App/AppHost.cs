@@ -343,7 +343,7 @@ internal sealed unsafe class AppHost : NativeWindow
     private static void Perform(WidgetRuntime engine, InstalledPackage installed, string family, string parameter, bool dark, WidgetAction action)
     {
         // A manifest that is present but unreadable fails closed: nothing is stored and nothing runs.
-        if (installed.ManifestPresent && installed.Manifest is null) return;
+        if (installed.ManifestPresent && installed.Manifest is null) { Log.Write("action refused: the manifest cannot be read"); return; }
         var environments = new Dictionary<string, string> { ["action-source"] = ActionPlanner.SourceWidget };
         if (action.Type == "toggle" && action.Value is { } value)
         {
@@ -357,14 +357,17 @@ internal sealed unsafe class AppHost : NativeWindow
         {
             // Only an action the manifest declares can be selected by a click.
             PackageSurfaces surfaces;
-            try { surfaces = SurfaceManifest.Parse(installed.Manifest); } catch (SurfaceManifestException) { return; }
-            if (surfaces.Action(action.ActionID) is not { } declared) return;
+            try { surfaces = SurfaceManifest.Parse(installed.Manifest); }
+            catch (SurfaceManifestException error) { Log.Write($"action refused: {error.Code}"); return; }
+            if (surfaces.Action(action.ActionID) is not { } declared) { Log.Write("action refused: not declared in the manifest"); return; }
             environments["action-id"] = declared.ID;
-            engine.Run(new RunRequest { Files = installed.Files, PackageID = installed.Installation, Family = family, Parameter = parameter, DarkMode = dark, ActionID = declared.ID, ExtraEnvironments = environments, BuildDirectory = installed.BuildDirectory });
+            var result = engine.Run(new RunRequest { Files = installed.Files, PackageID = installed.Installation, Family = family, Parameter = parameter, DarkMode = dark, ActionID = declared.ID, ExtraEnvironments = environments, BuildDirectory = installed.BuildDirectory });
+            Log.Write($"action {installed.Name}: {result.Execution.Error?.Kind ?? "ok"}");
         }
         else if (SurfaceManifest.IsValidFunction(action.Function))
         {
-            engine.Run(new RunRequest { Files = installed.Files, PackageID = installed.Installation, Family = family, Parameter = parameter, DarkMode = dark, CallFunction = action.Function, ExtraEnvironments = environments, BuildDirectory = installed.BuildDirectory });
+            var result = engine.Run(new RunRequest { Files = installed.Files, PackageID = installed.Installation, Family = family, Parameter = parameter, DarkMode = dark, CallFunction = action.Function, ExtraEnvironments = environments, BuildDirectory = installed.BuildDirectory });
+            Log.Write($"action {installed.Name}: {result.Execution.Error?.Kind ?? "ok"}");
         }
     }
 
@@ -433,8 +436,10 @@ internal sealed unsafe class AppHost : NativeWindow
 
     private void OnClick(WidgetController controller, int pixelX, int pixelY)
     {
+        if (Log.Verbose) Log.Write($"click at {pixelX},{pixelY}: {controller.HitRegions.Count} regions, scale {controller.RenderedScale}");
         if (HitTest(controller, pixelX, pixelY) is not { } region) return;
         var interaction = region.Interaction;
+        Log.Write($"click: {interaction.OptString("type")}");
         string? Text(string name) => interaction.IsNull(name) ? null : interaction.OptString(name) is { Length: > 0 } value ? value : null;
         switch (interaction.OptString("type"))
         {

@@ -57,6 +57,16 @@ public static class WidgetFamilies
 
     public static bool IsKnown(string family) => All.Contains(family);
 
+    /// <summary>The size for a <c>supportedFamilies</c> entry of widget.json, or null for one Windows does not have (Lock Screen sizes).</summary>
+    public static string? FromManifest(string name) => name switch
+    {
+        "systemSmall" or "small" => "small",
+        "systemMedium" or "medium" => "medium",
+        "systemLarge" or "large" => "large",
+        "systemExtraLarge" or "extraLarge" => "extraLarge",
+        _ => null,
+    };
+
     public static (double Width, double Height) Size(string family) => family switch
     {
         "small" => (170, 170),
