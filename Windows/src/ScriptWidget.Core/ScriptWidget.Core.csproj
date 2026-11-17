@@ -11,6 +11,7 @@
   <ItemGroup>
     <Content Include="$(SwNativeDirectory)\*.dll" Link="%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <Content Include="$(SwAssetsDirectory)\scriptwidget\**" Link="assets\scriptwidget\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
-    <Content Include="$(SwAssetsDirectory)\fonts\**" Link="assets\fonts\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <!-- The fonts Android bundles, so text measures the same. Noto Sans SC stays out: Chinese falls back to the system font. -->
+    <Content Include="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\*.ttf" Exclude="$(MSBuildThisFileDirectory)..\..\..\Android\core\src\main\assets\fonts\NotoSansSC.ttf" Link="assets\fonts\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 </Project>
