@@ -130,6 +130,8 @@ Three mistakes in the installer script were found by this check and fixed before
 
 Not run: the pages of the installer on screen (a picture of the window came out black), the question about deleting the widgets in a non-silent uninstall, a double-click on a `.swt` file with this installation, signing out and in with its start-at-sign-in value, a PC that never had the development tools, and the ARM64 installer on a PC (it runs in the "Windows installers" workflow only).
 
+The "Windows installers" workflow then built both installers from commit `0bbec5a` and ran the same 26 checks on the CI x64 and CI ARM64 machines; all passed on both. Those two files are the ones attached to the release `windows-v0.1.0`: `ScriptWidget-0.1.0-x64-setup.exe` (51.1 MB) and `ScriptWidget-0.1.0-arm64-setup.exe` (46.6 MB). The files of the release were not installed again on a PC after downloading them from the release page.
+
 ## 2026-11-17, CI
 
 GitHub Actions run 44076023162 on `windows-2025` (Windows Server 2025, x64, 100% scale, no graphics card).
