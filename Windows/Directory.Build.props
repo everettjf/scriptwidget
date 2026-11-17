@@ -20,6 +20,9 @@
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <!-- A Store package declares the Windows App Runtime framework package instead (package.ps1 -FrameworkDependent). -->
     <WindowsAppSDKSelfContained Condition="'$(SwFrameworkDependent)' == 'true'">false</WindowsAppSDKSelfContained>
+    <!-- Inside the package the framework comes from the package dependency. The bootstrapper is for
+         programs that are not packaged; in a package it fails and shows "could not be started". -->
+    <WindowsAppSdkBootstrapInitialize Condition="'$(SwFrameworkDependent)' == 'true'">false</WindowsAppSdkBootstrapInitialize>
     <WindowsPackageType>None</WindowsPackageType>
     <!-- Lets the dotnet CLI run the Windows App SDK resource tasks without Visual Studio's MSBuild. -->
     <EnableMsixTooling>true</EnableMsixTooling>

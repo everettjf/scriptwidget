@@ -24,7 +24,7 @@
                 <SelectorBarItem x:Name="GroupComponent" Tag="component" />
                 <SelectorBarItem x:Name="GroupApi" Tag="api" />
             </SelectorBar>
-            <AutoSuggestBox x:Name="Search" Grid.Column="2" QueryIcon="Find" TextChanged="OnSearchChanged" PlaceholderText="{s:T Key=templates.search}" VerticalAlignment="Center" />
+            <AutoSuggestBox x:Name="Search" Grid.Column="2" QueryIcon="Find" AutomationProperties.Name="{s:T Key=templates.search}" TextChanged="OnSearchChanged" PlaceholderText="{s:T Key=templates.search}" VerticalAlignment="Center" />
         </Grid>
         <GridView x:Name="Cards" Grid.Row="2" SelectionMode="None" Padding="0,0,24,24" ContainerContentChanging="OnContainerChanging">
             <GridView.ItemTemplate>

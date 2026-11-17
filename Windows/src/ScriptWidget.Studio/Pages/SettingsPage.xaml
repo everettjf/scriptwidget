@@ -22,7 +22,7 @@
                     <TextBlock Text="{s:T Key=settings.refresh}" />
                     <TextBlock Text="{s:T Key=settings.refresh.detail}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                 </StackPanel>
-                <ComboBox x:Name="Refresh" Grid.Column="1" MinWidth="150" VerticalAlignment="Center" SelectionChanged="OnRefreshChanged" />
+                <ComboBox x:Name="Refresh" Grid.Column="1" MinWidth="150" VerticalAlignment="Center" SelectionChanged="OnRefreshChanged" AutomationProperties.Name="{s:T Key=settings.refresh}" />
             </Grid>
 
             <Grid Style="{StaticResource Row}">
@@ -31,7 +31,7 @@
                     <TextBlock Text="{s:T Key=settings.lock}" />
                     <TextBlock Text="{s:T Key=settings.lock.detail}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                 </StackPanel>
-                <ToggleSwitch x:Name="Lock" Grid.Column="1" Toggled="OnLockToggled" OnContent="" OffContent="" MinWidth="0" />
+                <ToggleSwitch x:Name="Lock" Grid.Column="1" AutomationProperties.Name="{s:T Key=settings.lock}" Toggled="OnLockToggled" OnContent="" OffContent="" MinWidth="0" />
             </Grid>
 
             <Grid Style="{StaticResource Row}">
@@ -40,7 +40,7 @@
                     <TextBlock Text="{s:T Key=settings.pause}" />
                     <TextBlock Text="{s:T Key=settings.pause.detail}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                 </StackPanel>
-                <ToggleSwitch x:Name="Pause" Grid.Column="1" Toggled="OnPauseToggled" OnContent="" OffContent="" MinWidth="0" />
+                <ToggleSwitch x:Name="Pause" Grid.Column="1" AutomationProperties.Name="{s:T Key=settings.pause}" Toggled="OnPauseToggled" OnContent="" OffContent="" MinWidth="0" />
             </Grid>
 
             <Grid Style="{StaticResource Row}">
@@ -49,7 +49,7 @@
                     <TextBlock Text="{s:T Key=settings.startup}" />
                     <TextBlock Text="{s:T Key=settings.startup.detail}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap" />
                 </StackPanel>
-                <ToggleSwitch x:Name="StartAtLogin" Grid.Column="1" Toggled="OnStartupToggled" OnContent="" OffContent="" MinWidth="0" />
+                <ToggleSwitch x:Name="StartAtLogin" Grid.Column="1" AutomationProperties.Name="{s:T Key=settings.startup}" Toggled="OnStartupToggled" OnContent="" OffContent="" MinWidth="0" />
             </Grid>
 
             <Grid Style="{StaticResource Row}">

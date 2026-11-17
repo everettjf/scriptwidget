@@ -180,12 +180,17 @@ internal sealed unsafe class AppHost : NativeWindow
             // A new widget: cascade from the top-right corner of the primary work area.
             var primary = monitors.FirstOrDefault(item => item.Primary) ?? Monitors.Primary();
             var margin = (int)Math.Round(24 * primary.Scale);
-            var step = (int)Math.Round(28 * primary.Scale) * (widgets.Count - 1);
             var width = (int)Math.Round(pointWidth * primary.Scale);
             placement.Monitor = primary.Device;
             placement.Scale = primary.Scale;
-            placement.OffsetX = primary.Work.Right - primary.Bounds.Left - width - margin - step;
-            placement.OffsetY = primary.Work.Top - primary.Bounds.Top + margin + step;
+            // The first free step of the cascade, so a new widget never lands exactly on another one.
+            for (var index = 0; index < WidgetPlacements.MaximumWidgets; index++)
+            {
+                var step = (int)Math.Round(28 * primary.Scale) * index;
+                placement.OffsetX = primary.Work.Right - primary.Bounds.Left - width - margin - step;
+                placement.OffsetY = primary.Work.Top - primary.Bounds.Top + margin + step;
+                if (!widgets.Values.Any(other => other.Placement != placement && other.Placement.Monitor == placement.Monitor && other.Placement.OffsetX == placement.OffsetX && other.Placement.OffsetY == placement.OffsetY)) break;
+            }
             placements.Update(placement);
         }
         // A display that was unplugged keeps its name in the placement, so the widget returns when it is back.
@@ -205,6 +210,7 @@ internal sealed unsafe class AppHost : NativeWindow
 
     private void OnMoved(WidgetController controller)
     {
+        if (Log.Verbose) Log.Write($"moved to {controller.Window.X},{controller.Window.Y}");
         var window = controller.Window;
         var monitor = Monitors.Containing(window.X + window.Width / 2, window.Y + window.Height / 2);
         var placement = controller.Placement;
@@ -288,6 +294,7 @@ internal sealed unsafe class AppHost : NativeWindow
         }
         controller.LastRequest = request;
         controller.LastResult = result;
+        if (Log.Verbose) Log.Write($"drawn {controller.Placement.Family} {output?.PixelWidth}x{output?.PixelHeight} layout {output?.LayoutMilliseconds} ms paint {output?.PaintMilliseconds} ms");
         var now = Environment.TickCount64;
         var next = now + settings.RefreshMinutes * 60_000L;
         if (result?.NextTimelineTransition is { } transition)
@@ -557,24 +564,27 @@ internal sealed unsafe class AppHost : NativeWindow
                 if (widgets.Values.All(controller => !controller.Busy) && runtime.IsValueCreated) work.Add(Trim);
                 return 0;
             case Win32.WM_DISPLAYCHANGE:
+                if (Log.Verbose) Log.Write("display change");
                 // Displays were added, removed or rescaled: put every widget back where it belongs.
                 foreach (var controller in widgets.Values) { Position(controller); QueueRefresh(controller, redrawOnly: true); }
                 layer.Reassert();
                 return null;
             case Win32.WM_SETTINGCHANGE:
                 // The light/dark theme or the regional format changed.
-                if (lParam != 0 && Marshal.PtrToStringUni(lParam) is "ImmersiveColorSet" or "intl") RefreshAll();
+                if (lParam != 0 && Marshal.PtrToStringUni(lParam) is "ImmersiveColorSet" or "intl") { if (Log.Verbose) Log.Write("theme or format change"); RefreshAll(); }
                 return null;
             case Win32.WM_TIMECHANGE:
+                if (Log.Verbose) Log.Write("time change");
                 RefreshAll();
                 return null;
             case Win32.WM_POWERBROADCAST when (int)wParam == Win32.PBT_APMRESUMEAUTOMATIC:
                 // Timers do not run while the machine sleeps: everything may be stale.
+                if (Log.Verbose) Log.Write("resume from sleep");
                 RefreshAll();
                 return 1;
             case WM_WTSSESSION_CHANGE:
-                if ((int)wParam == WTS_SESSION_LOCK) { sessionLocked = true; ArmTimer(); }
-                else if ((int)wParam == WTS_SESSION_UNLOCK) { sessionLocked = false; RefreshAll(); ArmTimer(); layer.Reassert(); }
+                if ((int)wParam == WTS_SESSION_LOCK) { if (Log.Verbose) Log.Write("session locked"); sessionLocked = true; ArmTimer(); }
+                else if ((int)wParam == WTS_SESSION_UNLOCK) { if (Log.Verbose) Log.Write("session unlocked"); sessionLocked = false; RefreshAll(); ArmTimer(); layer.Reassert(); }
                 return 0;
             case Win32.WM_ENDSESSION when wParam != 0:
                 Quit();

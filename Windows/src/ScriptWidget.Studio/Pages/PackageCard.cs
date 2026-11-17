@@ -44,6 +44,7 @@ public sealed class PackageCard : INotifyPropertyChanged
     public string EditLabel => Loc.T("action.edit");
     public string AddLabel => Loc.T("action.addToDesktop");
     public string UseLabel => Loc.T("action.use");
+    public string MoreLabel => Loc.T("action.more");
 
     public bool HasPreview => image is not null || rendering;
 

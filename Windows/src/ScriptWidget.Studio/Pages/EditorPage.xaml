@@ -19,7 +19,7 @@
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
-            <Button Click="OnBack" ToolTipService.ToolTip="{s:T Key=action.back}" Padding="8,6">
+            <Button Click="OnBack" ToolTipService.ToolTip="{s:T Key=action.back}" AutomationProperties.Name="{s:T Key=action.back}" Padding="8,6">
                 <FontIcon Glyph="&#xE72B;" FontSize="14" />
             </Button>
             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="0">
@@ -52,7 +52,7 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <TextBlock Text="{s:T Key=editor.files}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Margin="8,0,0,0" />
-                <ListView x:Name="Files" Grid.Row="1" SelectionMode="Single" SelectionChanged="OnFileSelected" />
+                <ListView x:Name="Files" Grid.Row="1" SelectionMode="Single" SelectionChanged="OnFileSelected" AutomationProperties.Name="{s:T Key=editor.files}" />
                 <Button Grid.Row="2" Click="OnNewFile" Content="{s:T Key=action.newFile}" HorizontalAlignment="Stretch" />
             </Grid>
 
@@ -78,16 +78,16 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <TextBlock Text="{s:T Key=editor.preview}" Style="{StaticResource BodyStrongTextBlockStyle}" VerticalAlignment="Center" />
-                    <ComboBox x:Name="Family" Grid.Column="1" MinWidth="110" SelectionChanged="OnPreviewOptionChanged" />
+                    <ComboBox x:Name="Family" Grid.Column="1" MinWidth="110" SelectionChanged="OnPreviewOptionChanged" AutomationProperties.Name="{s:T Key=editor.size}" />
                     <ToggleButton x:Name="Dark" Grid.Column="2" Click="OnPreviewOptionChanged" Content="{s:T Key=editor.dark}" />
                 </Grid>
                 <Grid Grid.Row="1" CornerRadius="10" MinHeight="200" Padding="12" Background="{ThemeResource SolidBackgroundFillColorTertiaryBrush}">
                     <Viewbox Stretch="Uniform" StretchDirection="DownOnly">
-                        <Image x:Name="PreviewImage" Stretch="Fill" />
+                        <Image x:Name="PreviewImage" Stretch="Fill" AutomationProperties.Name="{s:T Key=editor.preview}" />
                     </Viewbox>
                     <ProgressRing x:Name="PreviewBusy" IsActive="False" Width="20" Height="20" HorizontalAlignment="Right" VerticalAlignment="Top" />
                 </Grid>
-                <TextBox x:Name="Parameter" Grid.Row="2" Header="{s:T Key=editor.parameter}" PlaceholderText="{s:T Key=editor.parameter.hint}" TextChanged="OnParameterChanged" />
+                <TextBox x:Name="Parameter" Grid.Row="2" Header="{s:T Key=editor.parameter}" AutomationProperties.Name="{s:T Key=editor.parameter}" PlaceholderText="{s:T Key=editor.parameter.hint}" TextChanged="OnParameterChanged" />
                 <InfoBar x:Name="ErrorBar" Grid.Row="3" Severity="Error" IsClosable="False" IsOpen="False" />
                 <Grid Grid.Row="4" RowSpacing="6">
                     <Grid.RowDefinitions>

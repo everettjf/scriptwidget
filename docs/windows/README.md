@@ -97,6 +97,8 @@ dotnet build ScriptWidget.slnx -c Debug -p:Platform=x64
 dotnet test tests/ScriptWidget.Core.Tests -c Debug
 ```
 
+`powershell -File Windows/scripts/desktop-check.ps1` starts the host with a scratch data folder and checks the desktop behavior that can be checked without looking at the screen: what the widget windows show, their place in the window order, dragging, clicks and system events.
+
 `powershell -File Windows/scripts/package.ps1` builds the MSIX package into `Windows/artifacts`. For a Store submission pass the identity values from Partner Center (`-IdentityName`, `-Publisher`, `-PublisherDisplayName`) and `-FrameworkDependent`.
 
 Run `node Windows/scripts/build-shared-js.mjs` again after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`. Those sources are shared with Android: a change there needs the Android suites as well.

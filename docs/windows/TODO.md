@@ -4,21 +4,19 @@ What is left before and after the first Store release. The plan is in [plan.md](
 
 ## Before the Store preview
 
-Checks that need a person at an unlocked Windows desktop. The whole first night of development ran while the development PC was locked, so none of these could be seen; each has a command or a step.
+Checks that need a person at an unlocked Windows desktop. The first night of development ran while the development PC was locked. `Windows/scripts/desktop-check.ps1` covers what can be checked without looking (window content, window order, drag, clicks, system events) and passes; these are the ones it cannot do.
 
 | Check | How |
 | --- | --- |
-| Widgets look right on the real desktop | Start `ScriptWidget.exe`, look at the clock widget, add two more from the management window |
-| Widgets stay below ordinary windows and keep out of the taskbar and Alt-Tab | Open and move windows over them |
-| Widgets stay visible when the desktop is shown | Press Win+D twice. The detection in `DesktopLayer.cs` follows Rainmeter's approach and has not been seen working; if the widgets disappear while the desktop is shown, it needs adjusting for this Windows version |
-| Dragging, snapping to the screen edges, "Lock positions" | Drag a widget; toggle the lock in the tray menu |
-| Clicks on buttons, toggles and links with a real mouse | Use the Habit Heatmap template ("Check in") and a template with a link |
-| Tray icon, its menu, the widget's right-click menu | Left and right click |
-| The widget returns to its place after signing out and in | Turn on "Start when I sign in", sign out, sign in |
+| Widgets look right against the wallpaper and icons | Start `ScriptWidget.exe` and look |
+| Widgets stay visible when the desktop is shown | Press Win+D twice. The detection in `DesktopLayer.cs` follows the approach Rainmeter uses and has not been seen working. If the widgets disappear while the desktop is shown, it needs adjusting for this Windows version; they should never appear over ordinary windows |
+| Dragging and clicking with a real mouse; the pointer becomes a hand over a button | Drag a widget; use the Habit Heatmap template ("Check in") and a template with a link |
+| Tray icon, its menu, the right-click menu of a widget | Left and right click |
+| The widgets come back after signing out and in | Turn on "Start when I sign in", sign out, sign in |
 | Explorer restart | Restart Explorer in Task Manager; the tray icon and the widgets must come back |
 | Sleep and resume | Sleep the PC for a minute; the clock must be right afterwards |
 | Two displays with different scales | Drag a widget across; unplug and replug the second display |
-| Opening a `.swt` file from Explorer (packaged install) | Double-click an exported file |
+| Typing in the code editor, import and export through the file pickers | Edit the text of a widget and watch the preview and the desktop widget follow |
 | ARM64 | Install and run on an ARM64 PC. ARM64 is compiled in CI and has never run |
 
 `ScriptWidget.exe --selftest-window 30 <log file>` shows one test card for 30 seconds and writes the window order once a second; use it while trying Win+D.

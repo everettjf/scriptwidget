@@ -146,7 +146,7 @@ internal sealed unsafe class DesktopLayer : NativeWindow
             if (!placingProbe) ((Win32.WINDOWPOS*)lParam)->Flags |= Win32.SWP_NOZORDER;
             return null;
         }
-        if (taskbarCreated != 0 && message == taskbarCreated) { Reassert(); TaskbarCreated?.Invoke(); return 0; }
+        if (taskbarCreated != 0 && message == taskbarCreated) { if (Log.Verbose) Log.Write("taskbar created"); Reassert(); TaskbarCreated?.Invoke(); return 0; }
         return null;
     }
 

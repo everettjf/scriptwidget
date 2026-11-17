@@ -24,7 +24,7 @@ dotnet test tests/ScriptWidget.Core.Tests -c Debug
 
 ## 2026-11-17, Dev PC
 
-**The Dev PC was locked for the whole session.** Programs ran and windows were created, but nothing on the desktop could be seen and no real mouse or keyboard input was possible. What that leaves unchecked is listed under "Not run" and in [TODO.md](TODO.md).
+**The Dev PC was locked for the whole session.** Programs ran and windows existed on the desktop, but the screen showed the lock screen and no real mouse or keyboard input was possible. The desktop checks below therefore read what the windows themselves show (`PrintWindow`), read the window order (`GetWindow`), post pointer and system messages to the windows, and drive the management window through UI Automation. What that still leaves unchecked is listed under "Not run" and in [TODO.md](TODO.md).
 
 ### Automated
 
@@ -54,48 +54,61 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 
 ### Desktop host (`ScriptWidget.exe`)
 
-Run with a scratch data folder (`SCRIPTWIDGET_DATA`).
+`powershell -File Windows/scripts/desktop-check.ps1` runs these checks against a scratch data folder and saves pictures of the widget windows. It passed, 22 of 22, with the debug build and with the native AOT build from the package layout.
 
 | Check | Result |
 | --- | --- |
-| First start: installs the clock template and places one widget | Yes; `widgets.json` holds the placement at the top right of the work area |
-| Widget windows exist, are visible to the window manager, and have the size of the widget | Two windows, 494×255 pixels (329×170 points at 150%), layered, tool-window and no-activate styles |
-| Window order, read with `GetWindow` while two widgets were on the desktop | Both widget windows directly above `Progman` (the desktop) and below every other visible window; a window opened afterwards went above them |
-| Requests over the pipe: `list`, `add`, `remove` | Work (`swcli widgets`, `swcli add`) |
-| Import of a `.swt` archive and placing it | Works (`swcli pack`, `swcli install`, `swcli add` with Habit Heatmap) |
-| A click on a button runs its declared action | A click posted to the window at the "Check in" button ran `checkInRead`; the package's storage then held today's date and the widget drew "Done today". The click was a posted window message, not a real mouse click |
+| First start: installs the clock template and places one widget | Yes |
+| What each widget window shows, captured from the window | The rendered widget, 494×255 pixels (329×170 points at 150%), with transparent rounded corners; the clock shows the current time |
+| Window order with two widgets on the desktop | Both widget windows directly above `Progman` (the desktop) and below every other visible window; a window opened afterwards goes above them |
+| Drag (posted pointer messages) | The widget moves by the dragged distance, snaps to the top edge of the screen, and the new place is saved in `widgets.json` |
+| A click on a button (posted pointer messages) | "Check in" on Habit Heatmap ran the declared action `checkInRead`; the package storage then held the date of the day and the widget drew "Done today" |
+| Import of a `.swt` archive and placing it, requests over the pipe | Work (`swcli pack`, `install`, `add`, `widgets`) |
+| Display change, clock change, resume from sleep, session lock and unlock, theme change (the messages posted to the host) | Each is handled and the widgets are redrawn; the widget keeps its place |
+| Explorer restart (the `TaskbarCreated` message posted to the host) | Handled: the window order is applied again and the tray icon is added again. Explorer itself was not restarted |
+| A new widget when another sits at the default place | Lands on the next free step instead of exactly on top (it did land on top before) |
+| Redraw cost after the first render | Layout 3 to 35 ms, paint 1 to 65 ms |
 | Idle cost, native AOT build, two widgets, one of them a clock | 85 MB private memory, 93 MB working set; 0.05 s of processor time in 30 s |
 | Idle cost, native AOT build, one widget without dates | 22 MB private memory, 58 MB working set, 10 threads; 0.00 s of processor time in 30 s |
-| Refresh while the session is locked | Not observed: the session was already locked when the host started, so it never received the lock notification |
+| "Show desktop" | Not checkable while locked: `Shell.Application.ToggleDesktop` changed nothing in the window order |
 
 ### Management window (`ScriptWidgetStudio.exe`)
 
-Checked from pictures the program saves of its own content (`--screenshot`), since the screen could not be seen.
+Driven through UI Automation (the real controls are invoked, with no pointer), and checked from captures of the window.
 
 | Check | Result |
 | --- | --- |
+| Opening the window starts the desktop host | Yes |
 | "My widgets": cards with previews drawn by the desktop renderer, "On desktop" count from the host | Drawn correctly |
-| "Templates": groups, search box, previews | Drawn correctly; 130 templates listed |
-| Editor: file list, code editor with the file loaded and highlighted, preview, output | Drawn correctly; the editor reported ready and returned the file's 8,153 characters |
-| "Settings" | Drawn correctly |
-| Typing, saving, dialogs, file pickers, drag and drop | Not run |
+| "New widget": name dialog, the package is created, the editor opens on it | Works; the starter widget is drawn in the preview |
+| Editor: file list, code editor with the file loaded and highlighted, preview, output | Drawn correctly; the editor reported ready and returned the text of the file |
+| "Add to desktop" with a size from its menu | The host shows one more widget |
+| "Save" | Works |
+| "Templates": groups, search box, previews; "Use this template" | Drawn correctly, 130 templates; the template is installed, placed on the desktop and opened in the editor |
+| "Settings": "Lock positions" | Written to `settings.json` |
+| Accessible names | The back button, the "more actions" button, the switches and the inputs had none; they have now |
+| Typing in the code editor, file pickers (import, export), rename, duplicate, delete | Not run |
 
 ### MSIX package
 
+Both forms were built, registered from their layout folder in Developer Mode, tried, and removed again.
+
 | Check | Result |
 | --- | --- |
-| `package.ps1 -Arch x64` | Builds `ScriptWidget_0.1.0.0_x64.msix`, 74.7 MB, not signed, with the Windows App SDK and the .NET runtime inside |
-| Registered from the layout folder in Developer Mode | Registers; removed again afterwards |
-| The host inside the package | Reports package identity; data in `…\Packages\<family>\LocalState\ScriptWidget`; first start installs and places the clock widget |
-| The management window inside the package | Starts the host, lists the widget with "On desktop: 1" |
-| `-FrameworkDependent` (the Store form) | Not run |
-| Signed install, Start menu launch, `.swt` file association, startup task | Not run |
-| Store submission | Not run: needs the Partner Center account |
+| `package.ps1 -Arch x64` | `ScriptWidget_0.1.0.0_x64.msix`, 74.7 MB, with the Windows App SDK and the .NET runtime inside |
+| `package.ps1 -Arch x64 -FrameworkDependent` (the Store form) | `ScriptWidget_0.1.0.0_x64-store.msix`, 54.3 MB, depends on the Windows App Runtime 1.6 framework package |
+| Store form started the way the Start menu starts it (`shell:AppsFolder\<family>!ScriptWidget`) | The management window opens and starts the host; both have the package identity; data in `…\Packages\<family>\LocalState\ScriptWidget`; the first start installs and places the clock widget |
+| Opening a `.swt` file (file association) | Goes to the running management window, which asks for confirmation; "Import" installs the package |
+| "Start when I sign in" in the packaged app | Turns the startup task on and off. Signing out and in was not done |
+| Signed install, install from the Store, upgrade | Not run: needs the Partner Center identity |
+
+The Store form at first showed "This application could not be started": the bootstrapper for unpackaged programs ran inside the package. It is switched off for that form now.
 
 ### Not run
 
-- Anything that needs to see or touch the desktop: how widgets look in place, window order under other windows, Win+D, dragging and snapping, the tray icon and menus, right-click menus, real clicks.
-- Explorer restart, sleep and resume, sign-out and sign-in, a display change, a second display, a scale change.
-- A full-screen program in front, a dark-theme switch, a clock or time-zone change while running.
+- Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
+- "Show desktop" (Win+D). The detection is conservative: if this Windows version shows the desktop in a way it does not recognize, widgets are covered until the desktop is left; they are never raised over ordinary windows.
+- A real mouse: dragging, clicking, the pointer shape. The tray icon and its menu, the right-click menu of a widget.
+- A real Explorer restart, a real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 on a real machine.
 - The Android suites after the shared-JavaScript refactor.

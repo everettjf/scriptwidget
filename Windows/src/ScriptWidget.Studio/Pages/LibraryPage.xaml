@@ -55,7 +55,7 @@
                             </Grid.ColumnDefinitions>
                             <Button Content="{x:Bind AddLabel}" Click="OnAdd" Style="{StaticResource AccentButtonStyle}" />
                             <Button Grid.Column="1" Content="{x:Bind EditLabel}" Click="OnEdit" HorizontalAlignment="Left" />
-                            <Button Grid.Column="2" Click="OnMore" Padding="8,6">
+                            <Button Grid.Column="2" Click="OnMore" Padding="8,6" AutomationProperties.Name="{x:Bind MoreLabel}" ToolTipService.ToolTip="{x:Bind MoreLabel}">
                                 <FontIcon Glyph="&#xE712;" FontSize="14" />
                             </Button>
                         </Grid>

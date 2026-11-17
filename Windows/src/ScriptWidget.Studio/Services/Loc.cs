@@ -28,6 +28,7 @@ public static class Loc
         ["action.rename"] = ("Rename…", "重命名…"),
         ["action.export"] = ("Export…", "导出…"),
         ["action.delete"] = ("Delete", "删除"),
+        ["action.more"] = ("More actions", "更多操作"),
         ["action.use"] = ("Use this template", "使用此模板"),
         ["action.save"] = ("Save", "保存"),
         ["action.format"] = ("Format", "格式化"),

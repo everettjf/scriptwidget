@@ -13,8 +13,11 @@
 # framework package instead, which the Microsoft Store installs by itself and
 # which makes the package much smaller.
 #
-# Output: Windows/artifacts/ScriptWidget_<version>_<arch>.msix (not signed; the
-# Store signs submissions) and the folder it was packed from.
+# Output: Windows/artifacts/ScriptWidget_<version>_<arch>.msix, or
+# ..._<arch>-store.msix with -FrameworkDependent (not signed; the Store signs
+# submissions), and the layout folder it was packed from. The Store form only
+# runs inside a package: register its layout folder with
+# Add-AppxPackage -Register <layout>AppxManifest.xml (Developer Mode) to try it.
 param(
     [ValidateSet('x64', 'arm64')] [string] $Arch = 'x64',
     [string] $Version = '0.1.0.0',
@@ -30,7 +33,9 @@ $repository = Resolve-Path (Join-Path $windows '..')
 $platform = if ($Arch -eq 'arm64') { 'ARM64' } else { 'x64' }
 $rid = "win-$Arch"
 $artifacts = Join-Path $windows 'artifacts'
-$layout = Join-Path $artifacts "layout-$Arch"
+# The two forms are kept apart: the Store form only runs inside a package.
+$form = if ($FrameworkDependent) { "$Arch-store" } else { $Arch }
+$layout = Join-Path $artifacts "layout-$form"
 
 function Invoke-Checked([scriptblock] $command, [string] $what) {
     & $command
@@ -77,7 +82,7 @@ $manifest = $manifest.Replace('{{Version}}', $Version).Replace('{{Architecture}}
 $kits = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits\10\bin'
 $makeappx = Get-ChildItem $kits -Recurse -Filter makeappx.exe | Where-Object { $_.FullName -match '\\x64\\' } | Sort-Object FullName -Descending | Select-Object -First 1
 if (-not $makeappx) { throw 'makeappx.exe was not found. Install the Windows SDK.' }
-$package = Join-Path $artifacts "ScriptWidget_${Version}_$Arch.msix"
+$package = Join-Path $artifacts "ScriptWidget_${Version}_$form.msix"
 if (Test-Path $package) { Remove-Item $package -Force }
 Invoke-Checked { & $makeappx.FullName pack /d $layout /p $package /o | Out-Null } 'makeappx pack'
 $size = (Get-Item $package).Length / 1MB

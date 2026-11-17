@@ -119,9 +119,8 @@ internal sealed unsafe class WidgetWindow : NativeWindow
             {
                 pressed = true;
                 dragging = false;
-                Win32.POINT cursor;
-                Win32.GetCursorPos(&cursor);
-                pressCursor = cursor;
+                // The pointer position comes from the message, not from the cursor at this instant.
+                pressCursor = new Win32.POINT { X = x + Win32.LowWord(lParam), Y = y + Win32.HighWord(lParam) };
                 pressOrigin = new Win32.POINT { X = x, Y = y };
                 Win32.SetCapture(Handle);
                 return 0;
@@ -130,8 +129,7 @@ internal sealed unsafe class WidgetWindow : NativeWindow
             case Win32.WM_MOUSEMOVE:
             {
                 if (!pressed) return null;
-                Win32.POINT cursor;
-                Win32.GetCursorPos(&cursor);
+                var cursor = new Win32.POINT { X = x + Win32.LowWord(lParam), Y = y + Win32.HighWord(lParam) };
                 var deltaX = cursor.X - pressCursor.X;
                 var deltaY = cursor.Y - pressCursor.Y;
                 if (!dragging && !Locked && (Math.Abs(deltaX) > DragThreshold || Math.Abs(deltaY) > DragThreshold)) dragging = true;
