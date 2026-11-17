@@ -69,7 +69,8 @@ Android was not re-run. The shared-JavaScript build was refactored into `Scripts
 | A click on a button (posted pointer messages) | "Check in" on Habit Heatmap ran the declared action `checkInRead`; the package storage then held the date of the day and the widget drew "Done today" |
 | Import of a `.swt` archive and placing it, requests over the pipe | Work (`swcli pack`, `install`, `add`, `widgets`) |
 | Display change, clock change, resume from sleep, session lock and unlock, theme change (the messages posted to the host) | Each is handled and the widgets are redrawn; the widget keeps its place |
-| Explorer restart (the `TaskbarCreated` message posted to the host) | Handled: the window order is applied again and the tray icon is added again. Explorer itself was not restarted |
+| Explorer restart (the `TaskbarCreated` message posted to the host) | Handled: the window order is applied again and the tray icon is added again |
+| A real Explorer restart on the Dev PC (Explorer ended with the native AOT host running; Windows started it again by itself) | The host kept running, logged the new taskbar and added its tray icon again (Windows accepted it), and the widget window was directly above the new desktop window and still drew its content. Nobody saw the screen |
 | A new widget when another sits at the default place | Lands on the next free step instead of exactly on top (it did land on top before) |
 | Redraw cost after the first render | Layout 3 to 35 ms, paint 1 to 65 ms |
 | Idle cost, native AOT build, two widgets, one of them a clock | 85 MB private memory, 93 MB working set; 0.05 s of processor time in 30 s |
@@ -131,6 +132,6 @@ Run 44077877354 added the ARM64 machine (`windows-11-arm`, image `windows-11-vs2
 - Looking at the desktop: how the widgets look against the wallpaper and icons, and that nothing flickers.
 - The real "Show desktop" (Win+D). Its handling passes with a stand-in desktop window; whether Windows moves the real desktop window the way that stand-in is moved has not been seen. If it does not, widgets are covered until the desktop is left; they are never raised over ordinary windows.
 - A real mouse: dragging, clicking, the pointer shape. The popup menus on screen (their actions were run without showing them).
-- A real Explorer restart, a real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
+- A real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 in a person's hands: it ran on the CI ARM64 machine only.
 - The Android suites after the shared-JavaScript refactor.
