@@ -51,7 +51,7 @@ On 16 November 2026, after the Habit Heatmap template gained a total count, the 
 
 ### After the shared-JavaScript build moved to `Scripts/lib/shared-js.mjs` (`windows` branch)
 
-The build script now calls the library shared with Windows, and `android-apis.js` takes the platform name in its "not supported" message from the host (default: Android). In CI on that branch: the regenerated assets equal the checked-in ones, `:core:testDebugUnitTest` passes (run 44081171658), and the core instrumented suite passes 30 of 30 on an API 35 x86_64 emulator (run 44082647890; start it from Actions > Android > Run workflow). A first emulator run failed one test because Open-Meteo did not answer; it passed on the next run. Not re-run: both instrumented suites on the Pixel 6, and the app suite on any device.
+The build script now calls the library shared with Windows, and `android-apis.js` takes the platform name in its "not supported" message from the host (default: Android). In CI on that branch: the regenerated assets equal the checked-in ones, `:core:testDebugUnitTest` passes (run 44081171658), and on an API 35 x86_64 emulator the core instrumented suite passes 30 of 30 and the app suite (`foss` flavor) 63 of 63 (run 44094364212; start it from Actions > Android > Run workflow). Earlier emulator runs failed for reasons of the job, not of the code: Open-Meteo did not answer once, and with system animations turned off the four widget animation tests fail, because the app shows no animation frames then. Not re-run: both instrumented suites on the Pixel 6.
 
 ## Checked by hand on the Pixel 6
 

@@ -42,7 +42,7 @@ dotnet test tests/ScriptWidget.Core.Tests -c Debug
 | Native AOT: `swcli` published ahead of time, all 140 bundled packages run and drawn at medium size | 137 drawn; 3 hit the 5-second limit waiting for the network; no crash. Two of the three use `api.open-meteo.com`, which this network cannot reach (`curl` times out too); the third (`Daily Quote`) passed on a second run |
 | `node Scripts/validate-doc-links.mjs` | Passes (its repository-boundary check assumed `/` separators and failed on Windows before) |
 
-The shared-JavaScript build was refactored into `Scripts/lib/shared-js.mjs`; regenerating the Android assets with it changes one file, `android-apis.js`, by the two lines that take the platform name from the host. `render.js`, `kernel.js`, `prepare.js` and `contract.json` are byte-identical. After the change, in CI: the Android workflow regenerates the assets and finds no difference from the checked-in ones, and `:core:testDebugUnitTest` passes (run 44081171658). The core instrumented suite, which includes the QuickJS parity with JavaScriptCore and the renderer on the parity corpus, passes 30 of 30 on an API 35 x86_64 emulator (run 44082647890, the hand-started job "Core device tests on an emulator"). Not run: the core and app instrumented suites on a phone, and the app suite anywhere.
+The shared-JavaScript build was refactored into `Scripts/lib/shared-js.mjs`; regenerating the Android assets with it changes one file, `android-apis.js`, by the two lines that take the platform name from the host. `render.js`, `kernel.js`, `prepare.js` and `contract.json` are byte-identical. After the change, in CI: the Android workflow regenerates the assets and finds no difference from the checked-in ones, and `:core:testDebugUnitTest` passes (run 44081171658). The core instrumented suite, which includes the QuickJS parity with JavaScriptCore and the renderer on the parity corpus, passes 30 of 30 on an API 35 x86_64 emulator (run 44094364212, the hand-started job "Device tests on an emulator"), and the app suite (`foss` flavor) passes 63 of 63 there. Not run: the two instrumented suites on a phone.
 
 ### Found and fixed by these runs
 
@@ -134,4 +134,4 @@ Run 44077877354 added the ARM64 machine (`windows-11-arm`, image `windows-11-vs2
 - A real mouse: dragging, clicking, the pointer shape. The popup menus on screen (their actions were run without showing them).
 - A real sleep and resume, signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 in a person's hands: it ran on the CI ARM64 machine only.
-- The Android instrumented suites on a phone, and the app suite, after the shared-JavaScript refactor. The JVM tests and the core suite on an emulator pass in CI.
+- The Android instrumented suites on a phone after the shared-JavaScript refactor. The JVM tests and both suites on an emulator pass in CI.
