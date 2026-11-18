@@ -6,18 +6,24 @@
 // Requires Location permission in the main app.
 //
 
+// The card of the two states without a location. At the small size a row has
+// no room for the icon beside the words, so the icon sits above them.
+const Card = ({ symbol, title, detail }) => {
+  const compact = $getenv("widget-size") === "small";
+  const words = <vstack alignment="leading" spacing="4"><text font="caption" color="#c7d2fe">LOCATION SNAPSHOT</text><text font={compact ? "subheadline" : "title2"} weight="bold" color="white">{title}</text><text font="caption" color="#e0e7ff">{detail}</text></vstack>;
+  return compact
+    ? <vstack frame="max" alignment="leading" background="#312e81" padding="14" spacing="8"><icon systemName={symbol} size="26" color="#a5b4fc"/>{words}</vstack>
+    : <hstack frame="max" background="#312e81" padding="14" spacing="14"><icon systemName={symbol} size="44" color="#a5b4fc"/>{words}</hstack>;
+};
+
 if (!$location.isAvailable()) {
-  $render(
-    <hstack frame="max" background="#312e81" padding="14" spacing="14"><icon systemName="map.fill" size="44" color="#a5b4fc"/><vstack alignment="leading" spacing="4"><text font="caption" color="#c7d2fe">LOCATION SNAPSHOT</text><text font="title2" weight="bold" color="white">Made for iPhone</text><text font="caption" color="#e0e7ff">See coordinates and accuracy on iOS.</text></vstack></hstack>
-  );
+  $render(<Card symbol="map.fill" title="Made for iPhone" detail="See coordinates and accuracy on iOS." />);
 } else {
   const status = $location.authorizationStatus();
   const authorized = status === "authorizedWhenInUse" || status === "authorizedAlways";
 
   if (!authorized) {
-    $render(
-      <hstack frame="max" background="#312e81" padding="14" spacing="14"><icon systemName="location.circle.fill" size="44" color="#a5b4fc"/><vstack alignment="leading" spacing="4"><text font="caption" color="#c7d2fe">LOCATION SNAPSHOT</text><text font="title2" weight="bold" color="white">Enable location</text><text font="caption" color="#e0e7ff">Allow access to reveal your coordinates.</text></vstack></hstack>
-    );
+    $render(<Card symbol="location.circle.fill" title="Enable location" detail="Allow access to reveal your coordinates." />);
   } else {
     let location;
     try {

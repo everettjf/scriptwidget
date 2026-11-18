@@ -7,7 +7,7 @@ $render(
       <text font="caption" color="#657b96">A fresh start</text>
     </hstack>
     <spacer/>
-    <text font="title2" fontWeight="semibold" color="#263e60">Make today yours</text>
+    <text font="headline" fontWeight="semibold" color="#263e60">Make today yours</text>
     <text font="caption" color="#657b96">A little space for your ideas.</text>
   </vstack>
 );

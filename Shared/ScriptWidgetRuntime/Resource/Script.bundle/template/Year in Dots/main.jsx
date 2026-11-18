@@ -83,7 +83,7 @@ if (size === "accessoryCircular") {
     <vstack alignment="leading" spacing="12" padding={wide ? "24" : "16"} background={paper}>
       <Title font={wide ? "largeTitle" : "title"} />
       <spacer />
-      <Dots count={total} first={1} columns={wide ? 31 : 21} dot={wide ? 14 : 6} spacing={wide ? 8 : 5} />
+      <Dots count={total} first={1} columns={wide ? 31 : 21} dot={wide ? 12 : 6} spacing={wide ? 6 : 5} />
       <spacer />
       <text font="caption" color="#8A8273">Day {today} · {total - today} days left</text>
     </vstack>

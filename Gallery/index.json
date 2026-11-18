@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T16:22:21.698Z",
+  "generatedAt": "2026-11-18T13:33:48.300Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -1025,9 +1025,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 3444,
+          "bytes": 3480,
           "path": "main.jsx",
-          "sha256": "c28b645408169b2b794684c015fe2587de62710aaa071f4c0e0e251606b215b3",
+          "sha256": "8cd4403948dc83ed6cd955821657695a69bac3c0f62a672bec3735c676b8a2ab",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/music-playback/main.jsx"
         },
         {
@@ -1061,9 +1061,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 603,
+          "bytes": 605,
           "path": "main.jsx",
-          "sha256": "196ad38a141b5111a253c0687c96736cd1c296dc7d6ecb862ea1d0d57950debc",
+          "sha256": "4c9a60320892baf0870a9d882bdaec1da568961e04fbfaeb8042588a4c6b0519",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/main.jsx"
         },
         {
