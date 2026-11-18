@@ -1,0 +1,19 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=ScriptWidget
+Name[zh_CN]=ScriptWidget
+GenericName=Widget Editor
+GenericName[zh_CN]=小组件编辑器
+Comment=Make desktop widgets with JavaScript and JSX
+Comment[zh_CN]=用 JavaScript 和 JSX 制作桌面小组件
+# %f: one local path. A .swt file is shown first (name, files, network hosts) and imported only when confirmed.
+Exec=scriptwidget-studio %f
+Icon=scriptwidget-studio
+Terminal=false
+Categories=Development;
+Keywords=widget;desktop;javascript;jsx;
+MimeType=application/x-scriptwidget-package;
+# The app_id of the window (Linux/crates/sw-studio/src/ui/mod.rs).
+StartupWMClass=scriptwidget-studio
+StartupNotify=true

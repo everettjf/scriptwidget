@@ -6,7 +6,9 @@
 //
 // Output (not checked in): Linux/assets/scriptwidget/ and the parity corpus
 // in Linux/tests/assets/.
+import fs from "node:fs";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { buildSharedJS, repository } from "../../Scripts/lib/shared-js.mjs";
 
 await buildSharedJS({
@@ -28,3 +30,13 @@ await buildSharedJS({
   bundleDirectory: path.join(repository, "Android"),
   corpusOutput: path.join(repository, "Linux/tests/assets"),
 });
+
+// What the management window's code editor completes from: the metadata the
+// other editors use (Editor/editorfe/src/scriptWidgetAPI.js), as data, the
+// way Windows/scripts/build-shared-js.mjs writes it. Linux/crates/sw-studio
+// builds it into the program (see its build.rs).
+const { scriptWidgetAPI } = await import(pathToFileURL(path.join(repository, "Editor/editorfe/src/scriptWidgetAPI.js")).href);
+fs.writeFileSync(
+  path.join(repository, "Linux/assets/scriptwidget/api-reference.json"),
+  JSON.stringify({ functions: scriptWidgetAPI.functions, components: scriptWidgetAPI.components, globalProperties: scriptWidgetAPI.globalProperties }) + "\n",
+);
