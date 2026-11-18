@@ -58,3 +58,25 @@ export function platformSentence(row) {
   }
   return { yes: yes.join(", "), no: no.join(", ") };
 }
+
+// The same for the JSX components. Android, Windows and Linux draw with one
+// shared renderer, so a component exists on all three or on none; what differs
+// is listed here. The authorities are docs/public-animations.md for the Apple
+// columns and the "Differences" tables of docs/android, docs/windows and
+// docs/linux for the others.
+const lookAlike = "Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder";
+export const componentSupport = [
+  { components: ["<vstack>", "<hstack>", "<zstack>", "<vgrid>", "<hgrid>", "<spacer>", "<divider>"], label: "Layout: `<vstack>`, `<hstack>`, `<zstack>`, `<vgrid>`, `<hgrid>`, `<spacer>`, `<divider>`", ...everywhere },
+  { components: ["<text>", "<label>", "<badge>", "<chip>", "<stat>"], label: "Text: `<text>`, `<label>`, `<badge>`, `<chip>`, `<stat>`", ios: true, macos: true, android: "Yes, in Inter, which is wider than the Apple system font", windows: "Yes, in Inter", linux: "Yes, in Inter" },
+  { components: ["<rect>", "<roundedrect>", "<capsule>", "<ellipse>", "<circle>", "<line>"], label: "Shapes: `<rect>`, `<roundedrect>`, `<capsule>`, `<ellipse>`, `<circle>`, `<line>`", ...everywhere },
+  { components: ["<gauge>", "<progress>", "<ring>", "<chart>"], label: "Values: `<gauge>`, `<progress>`, `<ring>`, `<chart>`", ...everywhere },
+  { components: ["<image>"], ...everywhere },
+  { components: ["<icon>"], label: "`<icon>` and `systemName` images", ios: true, macos: true, android: lookAlike, windows: lookAlike, linux: lookAlike },
+  { components: ["<date>"], ios: true, macos: true, android: "`timer` and a `time` of now tick by themselves; `relative`, `offset` and `date` are redrawn at each refresh", windows: "A timer is redrawn every second and a clock time every minute", linux: "A timer is redrawn every second and a clock time every minute" },
+  { components: ["<gif>"], ios: "Animated in the app's preview; in a widget the system decides and may hold one frame", macos: "The first frame", android: "Up to 24 sampled frames", windows: "The first frame", linux: "Animated on the desktop, at most 60 frames" },
+  { components: ["animation"], label: "The `animation` property (clock hands, swing)", ios: "Moves in the app's preview; in a widget the system schedules it and may hold one frame", macos: "Standard clock hands show the time without moving; the others stay at rest", android: "Standard clock hands are a system clock; swing and custom intervals play as frames", windows: "The first frame", linux: "The first frame" },
+  { components: ["<button>", "<toggle>"], ios: "Yes, from iOS 17", macos: "Yes, from macOS 14", android: true, windows: true, linux: true },
+  { components: ["<link>"], ios: true, macos: true, android: true, windows: "`http`, `https` and `mailto` only", linux: "`http`, `https` and `mailto` only" },
+  { components: ["backgroundMaterial"], label: "The `backgroundMaterial` property", ios: true, macos: true, android: "The opaque `background` fallback", windows: "The opaque `background` fallback", linux: "The opaque `background` fallback" },
+  { components: ["<list>"], label: "Scrolling `<list>`", ios: false, macos: false, android: true, windows: false, linux: false },
+];

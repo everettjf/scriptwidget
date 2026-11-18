@@ -2,6 +2,26 @@
 
 > Generated from Studio's static API metadata (schema v1, runtime 1.6). The native runtime switch is authoritative. Do not edit by hand.
 
+## Which systems each component runs on
+
+Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, except the scrolling `<list>`, which only Android has and which is not in this reference (see [ScriptWidget for Android](android/README.md)). What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.
+
+| Component | iPhone and iPad | Mac | Android | Windows | Linux |
+| --- | --- | --- | --- | --- | --- |
+| Layout: `<vstack>`, `<hstack>`, `<zstack>`, `<vgrid>`, `<hgrid>`, `<spacer>`, `<divider>` | Yes | Yes | Yes | Yes | Yes |
+| Text: `<text>`, `<label>`, `<badge>`, `<chip>`, `<stat>` | Yes | Yes | Yes, in Inter, which is wider than the Apple system font | Yes, in Inter | Yes, in Inter |
+| Shapes: `<rect>`, `<roundedrect>`, `<capsule>`, `<ellipse>`, `<circle>`, `<line>` | Yes | Yes | Yes | Yes | Yes |
+| Values: `<gauge>`, `<progress>`, `<ring>`, `<chart>` | Yes | Yes | Yes | Yes | Yes |
+| `<image>` | Yes | Yes | Yes | Yes | Yes |
+| `<icon>` and `systemName` images | Yes | Yes | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder |
+| `<date>` | Yes | Yes | `timer` and a `time` of now tick by themselves; `relative`, `offset` and `date` are redrawn at each refresh | A timer is redrawn every second and a clock time every minute | A timer is redrawn every second and a clock time every minute |
+| `<gif>` | Animated in the app's preview; in a widget the system decides and may hold one frame | The first frame | Up to 24 sampled frames | The first frame | Animated on the desktop, at most 60 frames |
+| The `animation` property (clock hands, swing) | Moves in the app's preview; in a widget the system schedules it and may hold one frame | Standard clock hands show the time without moving; the others stay at rest | Standard clock hands are a system clock; swing and custom intervals play as frames | The first frame | The first frame |
+| `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
+| `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
+| The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
+| Scrolling `<list>` | No | No | Yes | No | No |
+
 ## Components
 
 ### `<VStack>`

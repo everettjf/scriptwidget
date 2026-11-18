@@ -1,9 +1,11 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component image
-// 
+//
+// Shows a picture that fills the widget, with a label on top of it.
+// The list below shows other ways to write <image>; copy one into $render to try it.
 
 /*
 
@@ -25,8 +27,17 @@
 */
 
 $render(
+  // <zstack> puts its children on top of each other: first the picture, then the text.
   <zstack frame="max" background="#0f172a">
-    <image id="image" mode="fill" frame="max"/>
-    <vstack frame="max,bottomLeading" alignment="leading" padding="14"><spacer/><badge text="LOCAL IMAGE" color="white"/><text font="title2" weight="bold" color="white">Photo spotlight</text></vstack>
-  </zstack>
+    {/* mode="fill" scales the picture until it covers its frame; "fit" shows all of it instead. */}
+    <image id="image" mode="fill" frame="max" />
+    {/* frame="max,bottomLeading" fills the widget and keeps the content at the bottom left. */}
+    <vstack frame="max,bottomLeading" alignment="leading" padding="14">
+      <spacer />
+      <badge text="LOCAL IMAGE" color="white" />
+      <text font="title2" weight="bold" color="white">
+        Photo spotlight
+      </text>
+    </vstack>
+  </zstack>,
 );

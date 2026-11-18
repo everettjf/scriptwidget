@@ -546,6 +546,120 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 仍然没做的：苹果上只画了每个模板设计的那个尺寸，新加的小尺寸、中等尺寸排法没有在苹果上画图。这台 Mac 没有签名、没有授权，所以日历、健康、照片、提醒事项、GitHub、iCloud 这些模板画出来的是"未连接"的样子。Countdown 没设置时的小尺寸标题"Your next mome…"是模板有意把标题截到 14 个字，没改。
 
+## 2026-11-18，示例排版、加注释之后的参考文件
+
+`Script.bundle` 和 `Script.android` 下的 191 个 `.js`、`.jsx` 示例用 Prettier 排了版，又加了给新手看的注释，`Gallery/` 里的副本也同步了。这一节记的是之后的检查：哪些随仓库保存的参考文件依赖示例的原文，重新生成了哪些，以及发现的一个问题（排版面板读不了排过版的代码，后来在面板里修了）。都是在同一台 Mac 上跑的（macOS 27.2，Apple 芯片）。
+
+### "只动了注释和排版"是怎么查的
+
+- 画出来的树一个字节都没变：`cd Web/preview-engine && npm test` 用现在的示例重新算出每棵树，和排版之前在苹果上录的 `native-trees.json` 逐字节比较，199 个测试都通过。这个文件这次没有重新生成。
+- 加注释的几次提交，合并之前逐行核对过只多了注释和空行（这是提交的人做的，这一节没有重做）。
+- 两个坑，改示例时要记住：
+  - 各个运行时是在脚本的文字里找 `$render`、`moment(`、`moment.` 的，注释里不能出现这几个写法。
+  - Prettier 会把 JSX 文字里连着的两个空格并成一个，所以三个动画示例的标题（"LISSAJOUS  7×11"、"ORBITAL  2:3:5"、"PHASE WAVE  Δφ=40°"）现在写成花括号里的字符串。
+
+### 依赖示例原文的参考文件
+
+在 `Tests/ScriptWidgetRuntimeTests`、`Web/preview-engine/test`、`Web/studio/test`、`Editor/editorfe/test`、`Scripts/tests`、`Android/core/src/test`、`Linux/crates/*/tests`、`Windows/tests` 里找了带 `source` 字段、哈希、字节数、行列号或者示例代码片段的地方：
+
+| 文件 | 存了什么 | 结果 |
+| --- | --- | --- |
+| `Web/preview-engine/test/parity/material-study-trees.json` | Material Study 的原文和 48 棵树 | 重新生成了。48 棵树和原来逐字相同，只有 `source` 变了（1207 个字符变成 1902 个） |
+| `Web/preview-engine/test/parity/layout-edit-trees.json` | Layout Starter 的原文、在排版面板里改过之后的原文，以及两棵树 | 面板修好之后重新生成了。两棵树（改之前、改之后）和原来逐字相同，只有两段 `source` 变了 |
+| `theme-edit-trees.json`、`asset-edit-trees.json` | 也有 `source`，但那是测试里自己写的一段代码，不是示例 | 不受影响，没动 |
+| `Gallery/index.json` 里的字节数和 SHA-256 | Gallery 副本的 | 同步时已经更新，`sync-gallery-templates.mjs` 通过 |
+| 其余的 `*-trees.json`、`native-trees.json` | 只有树 | 不受影响，没动 |
+
+`material-study-trees.json` 是在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_MATERIAL_TREES=1` 只跑 `testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures` 生成的；`layout-edit-trees.json` 是用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_LAYOUT_TREES=1` 只跑 `testLayoutStarterEditsRenderWithNativeJavaScriptCore` 生成的，改动是真的编辑器（WKWebView 里的排版面板）做的。面板修好之后 Material Study 的原文没有再变，`material-study-trees.json` 不用再生成。
+
+`layout-edit-trees.json` 里改之后的原文和模板只差两处，都是面板写的：`alignment="leading"` 变成 `alignment={"trailing"}`；占三行的 `<text …>`、`Make today yours`、`</text>` 变成一行 `<text …>{"A calmer day"}</text>`。注释都还在。
+
+### 发现的问题：排版面板打不开排过版的示例（已在面板里修好）
+
+这不是参考文件过期，是行为变了，所以当时没有去改测试的期望值，而是报了出来。
+
+编辑器的排版面板（`Editor/editorfe/src/visualLayout.js`）当时读不了排过版的示例，原因有两个，各自单独就够：
+
+- Prettier 在 `$render(` 的元素后面加了一个逗号（`</vstack>,` 换行 `);`）。面板把它当成"不是直接的 `$render(<元素>)`"，只让在代码里改。
+- 注释写成了 JSX 里的 `{/* … */}`。面板把它当成语法错误，提示"Fix the JavaScript/JSX syntax before using Layout"。
+
+用 `parseVisualLayout` 把 140 个 `main.jsx` 各读一遍：
+
+| 时候 | 面板能打开 | 只能在代码里改 | 报语法错误 |
+| --- | --- | --- | --- |
+| 排版之前 | 136 | 4 | 0 |
+| 只排了版 | 20 | 120 | 0 |
+| 排了版、加了注释，面板修之前 | 8 | 61 | 71 |
+| 面板修好之后 | 136 | 4 | 0 |
+
+修之前 Layout Starter 和 Material Study 都读不了，两个 `VisualLayoutEditorTests`（`testLayoutStarterEditsRenderWithNativeJavaScriptCore`、`testNativeMaterialPropertyEditingPreservesSourceAndHistory`）和 `Web/studio` 的两个测试因此失败，`layout-edit-trees.json` 也生成不出来。
+
+修的是面板，不是示例（提交"Layout panel: read code as a formatter writes it"）：`$render(` 的元素后面的逗号和旁边的注释不再算作参数；`{/* … */}` 这样的注释子节点在解析用的副本里换成等长的 `{0   }`，位置不变，显示和修改读的还是原文；单独占一行的文字和写在一行里的一样可以改。两个平台的 `StudioEditor.bundle` 重新构建了。面板现在能打开的示例是 136 个，和排版之前一样，一个都没少。
+
+### 面板的改动复查
+
+担心的是：解析用的是换过注释的副本，改动却要落在原文上。用现在的 Layout Starter 和 Material Study 各试了改文字、改属性、加图层、删第一个和最后一个子图层、把最后一个移到最前、把第一个移到最后，共 14 次（Material Study 的改属性那一次被面板拒绝，因为那个容器没有这个属性可改，其余 13 次都做了）：
+
+- 每个图层的位置都指在原文的 `<标签` 上、结束在 `>` 上；13 次改出来的代码都能再被面板读出来，都能运行，注释一条没少。没有发现改错位置的情况。
+- 排得不好看的地方，都不影响运行，原因是面板只插入和删除文字、不重新排版：加的和移过去的图层紧贴在前一个图层后面或者收尾标签前面，不另起一行；删掉或移走的地方留下一个只有缩进的空行。
+- 注释不跟着图层走：删掉或移走一个图层，原来写在它上面的注释留在原处，会变成在说下一个图层。
+- 文字图层里如果夹着注释（`<text>{/* 说明 */}Hi</text>`），改文字会把这条注释一起换掉。
+- 还读不了的两种写法，面板会拒绝并保留原文：注释子节点里用的是 `//`（`{` 换行 `// 说明` 换行 `}`）；前面的字符串里有 `{/*`、后面又有注释子节点时，副本会把中间一段当成注释，报语法错误。示例里没有这两种写法。
+
+这些都没有改，只记在这里。
+
+### 结果
+
+面板修好、两个参考文件都重新生成之后：
+
+| 检查 | 结果 |
+| --- | --- |
+| 整个 `ScriptWidgetRuntimeTests`，和 `release-readiness.sh` 一样的写法（`xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=macOS' -derivedDataPath … CODE_SIGNING_ALLOWED=NO test`） | 809 个：777 个通过，32 个跳过，没有失败 |
+| `cd Web/preview-engine && npm test` | 199 个通过 |
+| `cd Web/studio && npm test` | 114 个通过 |
+| `cd Editor/editorfe && npm test` | 59 个通过 |
+| `node Scripts/validate-release.mjs`、`sync-gallery-templates.mjs`、`validate-doc-links.mjs`、`node --test Scripts/tests/*.mjs` | 都通过（最后一个是 7 个测试） |
+| `./Scripts/release-readiness.sh`（`SCRIPTWIDGET_IOS_DESTINATION='platform=iOS Simulator,name=iPhone 18 Pro Max'`，这台机器没有装脚本默认的 iPhone 17） | 跑到最后一行，通过。里面包括：编辑器重新构建后两个 `StudioEditor.bundle` 和仓库里的一样；Web Studio 的浏览器冒烟测试都跑了（没有跳过）；macOS 的测试 809 个里 777 个通过、32 个跳过；macOS 和 iOS 的应用都能构建；iOS 模拟器上整个 `ScriptWidgetRuntimeTests` 820 个里 789 个通过、31 个跳过，没有失败 |
+
+面板修之前的数，留着对照：同一条 macOS 命令是 809 个里 775 个通过、32 个跳过、2 个失败（上面两个 `VisualLayoutEditorTests`）；`Web/studio` 是 114 个里 2 个失败；`Editor/editorfe` 是 55 个通过；`cargo test --locked --workspace` 是 506 个通过、1 个忽略。不加 `CODE_SIGNING_ALLOWED=NO`（签了名的构建）时还多一个失败，`LegacyCutoverProcessTests.testIndependentLegacyWriterStopsBeforeMigrationAndCannotRestartAfterReady`：它不读任何示例（它把应用当子进程启动），只在签了名的构建里失败，为什么没有查。
+
+### 没跑的
+
+- Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑；面板修好之后也没有再跑 `cargo test`（面板的改动不进 Linux 的程序）。
+- 没有用手在真的编辑器里点开排版面板看。原生的两个测试是在 WKWebView 里真的点了面板的按钮；上面"复查"里的 14 次是直接调面板的函数。
+
+### 之后补上的：布局面板改代码时的三处毛糙
+
+上面的复核里列了三处没改的地方，这里改了（`Editor/editorfe/src/visualLayout.js`，两个平台的编辑器包重新生成）：
+
+- 在一层一行的代码里增加或移动图层，新图层自己占一行，缩进和它的新邻居一样；删除或移走图层时连同它占的整行一起去掉，不再留下只有空格的行。写在一行里的代码还是原样拼在一行里。
+- 紧挨在图层上面的注释（中间没有空行）跟着图层一起移动、一起删除。
+- 文字里面带注释时，改文字只替换文字本身，注释留着。
+
+| 检查（Mac） | 结果 |
+| --- | --- |
+| `cd Editor/editorfe && npm test` | 63 个通过；新增 3 个测试，原有 2 个测试里写死的旧结果（留下一行空格、新图层贴在结束标签前）改成了新的结果 |
+| `cd Web/studio && npm test` | 114 个通过，`layout-edit-trees.json` 不用重新生成（面板对 Layout Starter 做的那两处修改结果没有变） |
+
+没做的：没有在真正的面板里用手点；Apple 平台的测试由这个 PR 的 CI 来跑。
+
+## 2026-11-18，第二台测试虚拟机：0.1.4（侧边栏分成四项）
+
+机器同上（Omarchy 4.5，aarch64 虚拟机），真实会话。
+
+管理窗口的"Templates"页原来把模板、组件示例、API 示例三组排在一页里。0.1.4 和 Windows 版一样分成侧边栏的四项：My widgets、Templates、Components、APIs；`--page` 多了 `components` 和 `apis`。
+
+| 检查 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里） | 512 个通过，1 个忽略 |
+| `sh install.sh` 覆盖安装 0.1.4，`scriptwidget doctor` | 通过；外壳重启后桌面上四个小组件都在，没有新的崩溃报告 |
+| `scriptwidget-studio --page components` | 侧边栏四项，Components 高亮，页面只列组件示例；截图在 `images/studio-components.png` |
+| `--page apis`、`--page templates` | 各自只列自己那一组；截图在 `images/studio-apis.png`、`images/studio-templates.png` |
+| `--page template:component/gauge` | 打开的是组件示例，侧边栏高亮的是 Components；代码是排版并加了注释之后的样子 |
+| 虚拟机里的共享脚本（`Linux/assets`） | 虚拟机里没有 esbuild，`build-shared-js.mjs` 在那里跑不了；用的是从 Mac 拷过去的那一份，和 Mac 上这次重新生成的逐个文件比过，校验值相同 |
+
+没做的：四个页面是用 `--page` 直接打开后截图看的，没有用虚拟指针去点侧边栏的四项，也没有点返回键。中文界面没有截图。APIs 页里 console、device、file、scheme 四张卡片画的是"#UI Not Found#"：这四个示例只调用接口、不画界面，这次没改。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

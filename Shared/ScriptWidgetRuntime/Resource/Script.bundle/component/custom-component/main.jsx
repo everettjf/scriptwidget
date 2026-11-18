@@ -1,60 +1,57 @@
-
 //
 // ScriptWidget
 // https://atomsprout.com/scriptwidget
 //
 // Custom Component
 // Thanks for Reina for telling me this good idea
-// 
-
+//
 
 // Custom component is a JavaScript function
 // with one parameter composed with : prop1,prop2... and children
-// As a convention, 
+// As a convention,
 // the first letter of custom component's name must be uppercase.
 // For example : LeftAlign , MyCustomComponent ... etc...
-
 
 // prototype:
 // 1. new style
 // const MyComponent = ({prop1, prop2, children}) => { /* ... */ }
-// 
+//
 // 2. old style
-// const MyComponent = (props) => { 
+// const MyComponent = (props) => {
 //   let prop1 = props.prop1;
 //   let prop2 = props.prop2;
 //   let children = props.children;
 // }
 
+// Puts its children at the left: the <spacer /> takes the rest of the row.
 const LeftAlign = ({ message, children }) => {
-    return (
-        <hstack>
-            {children}
-            <text> ({message}) </text>
-            <spacer />
-        </hstack>
-    )
-}
+  return (
+    <hstack>
+      {children}
+      <text> ({message}) </text>
+      <spacer />
+    </hstack>
+  );
+};
+// The same with the spacer first, so the children end up at the right.
 const RightAlign = ({ message, children }) => {
-    return (
-        <hstack>
-            <spacer />
-            <text> ({message}) </text>
-            {children}
-        </hstack>
-    )
-}
+  return (
+    <hstack>
+      <spacer />
+      <text> ({message}) </text>
+      {children}
+    </hstack>
+  );
+};
+// A component is used like a tag. Its attributes and its children arrive in the
+// parameter of the function. Try writing a component of your own.
 $render(
-    <vstack
-        background="blue"
-        frame="max,center"
-    >
-        <LeftAlign message="L">
-            <text> this text left aligned</text>
-        </LeftAlign>
-        <RightAlign message="R">
-            <text> text right aligned</text>
-        </RightAlign>
-    </vstack>
+  <vstack background="blue" frame="max,center">
+    <LeftAlign message="L">
+      <text> this text left aligned</text>
+    </LeftAlign>
+    <RightAlign message="R">
+      <text> text right aligned</text>
+    </RightAlign>
+  </vstack>,
 );
-

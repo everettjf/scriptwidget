@@ -44,6 +44,8 @@ pub(super) enum Page {
 pub(super) enum Target {
     Library,
     Templates,
+    Components,
+    Apis,
     Settings,
     Template(String),
     Editor(String),
@@ -58,6 +60,8 @@ pub struct StudioWindow {
     pub(super) widgets: Vec<WidgetCard>,
     pub(super) library_error: Option<String>,
     pub(super) template_groups: Vec<TemplateGroup>,
+    /// Which list the Templates page shows: "template", "component" or "api".
+    pub(super) group: &'static str,
     /// Small pictures of widgets ("w/<name>") and templates ("t/<group/name>").
     pub(super) thumbnails: HashMap<String, Shown>,
     thumbnail_run: u64,
@@ -115,6 +119,7 @@ impl StudioWindow {
             widgets: Vec::new(),
             library_error: None,
             template_groups: studio.template_groups(),
+            group: "template",
             thumbnails: HashMap::new(),
             thumbnail_run: 0,
             template: None,
@@ -138,6 +143,8 @@ impl StudioWindow {
                 match page {
                     Some(StartPage::Library) | None => {}
                     Some(StartPage::Templates) => this.go(Target::Templates, window, cx),
+                    Some(StartPage::Components) => this.go(Target::Components, window, cx),
+                    Some(StartPage::Apis) => this.go(Target::Apis, window, cx),
                     Some(StartPage::Settings) => this.go(Target::Settings, window, cx),
                     Some(StartPage::Template(reference)) => this.go(Target::Template(reference), window, cx),
                     Some(StartPage::Editor(name)) => this.go(Target::Editor(name), window, cx),
@@ -186,7 +193,12 @@ impl StudioWindow {
                 self.page = Page::Library;
                 self.reload_library(cx);
             }
-            Target::Templates => {
+            Target::Templates | Target::Components | Target::Apis => {
+                self.group = match target {
+                    Target::Components => "component",
+                    Target::Apis => "api",
+                    _ => "template",
+                };
                 self.page = Page::Templates;
                 self.make_thumbnails(cx);
             }
@@ -241,7 +253,7 @@ impl StudioWindow {
         match self.page {
             Page::Templates => {
                 // A template that asks the network is drawn only when it is opened.
-                for card in self.template_groups.iter().flat_map(|group| &group.templates).filter(|card| !card.network) {
+                for card in self.template_groups.iter().filter(|group| group.group == self.group).flat_map(|group| &group.templates).filter(|card| !card.network) {
                     wanted.push((format!("t/{}", card.reference), request(PreviewSource::Bundled(card.reference.clone()), "medium")));
                 }
             }
@@ -496,9 +508,12 @@ impl StudioWindow {
             Button::new(id).child(h_flex().w_full().gap_2().child(gpui_kit::component::Icon::new(icon)).child(label)).ghost().selected(selected).w_full().on_click(cx.listener(move |this, _, window, cx| this.navigate(target.clone(), window, cx)))
         };
         let library = entry("nav-library", IconName::LayoutDashboard, t("nav.library"), matches!(self.page, Page::Library | Page::Editor), Target::Library, cx);
-        let templates = entry("nav-templates", IconName::GalleryVerticalEnd, t("nav.templates"), matches!(self.page, Page::Templates | Page::Template), Target::Templates, cx);
+        let listing = matches!(self.page, Page::Templates | Page::Template);
+        let templates = entry("nav-templates", IconName::GalleryVerticalEnd, t("nav.templates"), listing && self.group == "template", Target::Templates, cx);
+        let components = entry("nav-components", IconName::Frame, t("nav.components"), listing && self.group == "component", Target::Components, cx);
+        let apis = entry("nav-apis", IconName::SquareTerminal, t("nav.apis"), listing && self.group == "api", Target::Apis, cx);
         let settings = entry("nav-settings", IconName::Settings, t("nav.settings"), self.page == Page::Settings, Target::Settings, cx);
-        v_flex().w(px(208.)).h_full().flex_shrink_0().p_2().gap_1().bg(background).border_r_1().border_color(border).child(library).child(templates).child(div().flex_1()).child(settings)
+        v_flex().w(px(208.)).h_full().flex_shrink_0().p_2().gap_1().bg(background).border_r_1().border_color(border).child(library).child(templates).child(components).child(apis).child(div().flex_1()).child(settings)
     }
 }
 
@@ -545,11 +560,20 @@ impl Render for StudioWindow {
 }
 
 impl StudioWindow {
+    /// The list of one group of bundled packages.
+    pub(super) fn list_of(group: &str) -> Target {
+        match group {
+            "component" => Target::Components,
+            "api" => Target::Apis,
+            _ => Target::Templates,
+        }
+    }
+
     /// The page above the one shown: the list a template or a widget was opened from.
     pub(super) fn back(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         match self.page {
             Page::Editor => self.navigate(Target::Library, window, cx),
-            Page::Template => self.navigate(Target::Templates, window, cx),
+            Page::Template => self.navigate(Self::list_of(self.group), window, cx),
             _ => {}
         }
     }

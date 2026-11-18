@@ -3,6 +3,10 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for api file
+// Reads data.json, a file inside this widget package. Paths start at the package folder.
+// The results go to the Console.
+// Nothing is drawn here, so the widget itself only shows "#UI Not Found#".
+// Runs on iPhone, iPad, Mac, Android, Windows and Linux.
 //
 
 // read as string

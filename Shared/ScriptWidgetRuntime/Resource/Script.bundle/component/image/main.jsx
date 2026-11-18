@@ -1,9 +1,10 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component image
-// 
+// An image from the web (url) and one from the package (id). Try the forms listed below.
+//
 
 /*
 
@@ -26,7 +27,9 @@
 
 $render(
   <vstack>
-    <image url="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" frame="20,20"/>
-    <image id="image" frame="260,60"/>
-  </vstack>
+    {/* url loads the image from the web. */}
+    <image url="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" frame="20,20" />
+    {/* id names a file in the image folder of the package; the extension may be left out. */}
+    <image id="image" frame="260,60" />
+  </vstack>,
 );

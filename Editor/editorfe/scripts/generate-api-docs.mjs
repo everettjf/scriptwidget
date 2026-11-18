@@ -1,7 +1,13 @@
 import { readFile, writeFile } from "node:fs/promises";
 import { scriptWidgetAPI as api } from "../src/scriptWidgetAPI.js";
 import { dataAPICatalog } from "../src/dataAPICatalog.js";
-import { platformCell, platformColumns, platformRow, platformSentence, platformSupport } from "../src/platformSupport.js";
+import { componentSupport, platformCell, platformColumns, platformRow, platformSentence, platformSupport } from "../src/platformSupport.js";
+
+const componentTable = [
+  `| Component | ${platformColumns.map((column) => column.title).join(" | ")} |`,
+  `| --- | ${platformColumns.map(() => "---").join(" | ")} |`,
+  ...componentSupport.map((row) => `| ${row.label ?? row.components.map((name) => `\`${name}\``).join(", ")} | ${platformColumns.map((column) => platformCell(row[column.id])).join(" | ")} |`),
+];
 
 const outputURL = new URL("../../../docs/scriptwidget-runtime-api.md", import.meta.url);
 
@@ -9,6 +15,12 @@ const lines = [
   "# ScriptWidget Runtime API",
   "",
   `> Generated from Studio's static API metadata (schema v${api.schemaVersion}, runtime ${api.runtimeVersion}). The native runtime switch is authoritative. Do not edit by hand.`,
+  "",
+  "## Which systems each component runs on",
+  "",
+  "Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, except the scrolling `<list>`, which only Android has and which is not in this reference (see [ScriptWidget for Android](android/README.md)). What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.",
+  "",
+  ...componentTable,
   "",
   "## Components",
   "",
@@ -80,16 +92,16 @@ function runsOn(apis) {
 }
 
 // Replaces what is between the two markers of a hand-written page.
-async function writeBetweenMarkers(file, content) {
+async function writeBetweenMarkers(file, content, start = "<!-- platforms:start -->", end = "<!-- platforms:end -->") {
   const url = new URL(`../../../docs/${file}`, import.meta.url);
   const text = await readFile(url, "utf8");
-  const start = "<!-- platforms:start -->", end = "<!-- platforms:end -->";
   const from = text.indexOf(start), to = text.indexOf(end);
-  if (from < 0 || to < from) throw new Error(`docs/${file} has no platforms markers`);
+  if (from < 0 || to < from) throw new Error(`docs/${file} has no ${start} marker`);
   await writeFile(url, `${text.slice(0, from + start.length)}\n${content.join("\n")}\n${text.slice(to)}`);
 }
 
 await writeBetweenMarkers("platform-support.md", platformTable);
+await writeBetweenMarkers("platform-support.md", componentTable, "<!-- components:start -->", "<!-- components:end -->");
 await writeBetweenMarkers("runtime-api.md", platformTable);
 for (const [file, apis] of Object.entries({
   "calendar-api.md": ["$calendar"],

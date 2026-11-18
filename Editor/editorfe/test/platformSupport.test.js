@@ -1,7 +1,8 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { dataAPICatalog } from "../src/dataAPICatalog.js";
-import { platformColumns, platformRow, platformSentence, platformSupport } from "../src/platformSupport.js";
+import { componentSupport, platformColumns, platformRow, platformSentence, platformSupport } from "../src/platformSupport.js";
+import { scriptWidgetAPI } from "../src/scriptWidgetAPI.js";
 
 test("every API is in one row and every row answers for every system", () => {
   const names = platformSupport.flatMap((row) => row.apis);
@@ -32,4 +33,18 @@ test("a row reads as a sentence", () => {
     yes: "iPhone and iPad, Mac, Android, Windows, Linux",
     no: "",
   });
+});
+
+test("every component of the reference is in one row of the component table", () => {
+  const names = componentSupport.flatMap((row) => row.components);
+  assert.equal(new Set(names).size, names.length);
+  for (const name of Object.keys(scriptWidgetAPI.components)) {
+    assert.ok(names.includes(`<${name.toLowerCase()}>`), name);
+  }
+  for (const row of componentSupport) {
+    for (const column of platformColumns) {
+      const value = row[column.id];
+      assert.ok(typeof value === "boolean" || (typeof value === "string" && value.length > 0), `${row.components[0]} ${column.id}`);
+    }
+  }
 });

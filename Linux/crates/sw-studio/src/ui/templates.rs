@@ -1,5 +1,5 @@
-//! "Templates": the bundled templates in their groups, and one template
-//! opened with its preview beside its code.
+//! "Templates", "Components" and "APIs": one group of the bundled packages
+//! each, and one of them opened with its preview beside its code.
 
 use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{Editor, EditorState};
@@ -22,12 +22,18 @@ pub(super) struct TemplateSession {
 impl StudioWindow {
     pub(super) fn render_templates(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let muted = cx.theme().muted_foreground;
-        let mut page = v_flex().p_6().gap_5().child(v_flex().gap_1().child(div().text_2xl().font_semibold().child(t("templates.title"))).child(div().text_color(muted).child(t("templates.detail"))));
-        if self.template_groups.is_empty() {
+        let (title, detail) = match self.group {
+            "component" => (t("components.title"), t("components.detail")),
+            "api" => (t("apis.title"), t("apis.detail")),
+            _ => (t("templates.title"), t("templates.detail")),
+        };
+        let mut page = v_flex().p_6().gap_5().child(v_flex().gap_1().child(div().text_2xl().font_semibold().child(title)).child(div().text_color(muted).child(detail)));
+        let shown = || self.template_groups.iter().filter(|group| group.group == self.group);
+        if shown().all(|group| group.templates.is_empty()) {
             page = page.child(div().pt_8().text_color(muted).child(t("templates.none")));
         }
         let mut index = 0;
-        for group in &self.template_groups {
+        for group in shown() {
             let cards: Vec<_> = group
                 .templates
                 .iter()
@@ -36,7 +42,7 @@ impl StudioWindow {
                     self.template_card(index, card, cx)
                 })
                 .collect();
-            page = page.child(v_flex().gap_3().child(div().text_lg().font_semibold().child(t(&format!("templates.group.{}", group.group)))).child(h_flex().flex_wrap().items_start().gap_4().children(cards)));
+            page = page.child(h_flex().flex_wrap().items_start().gap_4().children(cards));
         }
         div().id("templates").size_full().overflow_y_scrollbar().child(page)
     }
@@ -64,6 +70,12 @@ impl StudioWindow {
     }
 
     pub(super) fn open_template(&mut self, reference: &str, window: &mut Window, cx: &mut Context<Self>) {
+        // The list this one belongs to, so the sidebar and the back button agree with it.
+        self.group = match reference.split_once('/').map(|(group, _)| group) {
+            Some("component") => "component",
+            Some("api") => "api",
+            _ => "template",
+        };
         let Some(detail) = self.studio.template(reference) else {
             self.page = Page::Templates;
             return;

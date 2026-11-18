@@ -42,7 +42,7 @@ One JSON object a line, UTF-8, each with a string member `event`. A display igno
 Examples, exactly as printed:
 
 ```
-{"event":"hello","protocol":1,"dark":false,"arrange":false,"peek":false,"service":"0.1.3"}
+{"event":"hello","protocol":1,"dark":false,"arrange":false,"peek":false,"service":"0.1.4"}
 {"event":"widget","id":"5ef2d5c170089ecf","screen":"eDP-1","x":40,"y":40,"width":329,"height":170,"image":"/run/user/1000/scriptwidget/frames/5ef2d5c170089ecf-1d639a55-3.png","version":3,"regions":[{"n":0,"x":16,"y":120,"width":96,"height":34}],"family":"medium","families":["small","medium","large"]}
 {"event":"widget","id":"c45467fe6c9c2b4a","screen":"","x":68,"y":68,"width":170,"height":170,"image":"/run/user/1000/scriptwidget/frames/c45467fe6c9c2b4a-1d639a55-1-0.png","version":1,"regions":[],"frames":[{"image":"/run/user/1000/scriptwidget/frames/c45467fe6c9c2b4a-1d639a55-1-0.png","ms":200},{"image":"/run/user/1000/scriptwidget/frames/c45467fe6c9c2b4a-1d639a55-1-1.png","ms":300}],"family":"small","families":["small","medium","large","extraLarge"]}
 {"event":"remove","id":"5ef2d5c170089ecf"}

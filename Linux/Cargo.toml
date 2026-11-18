@@ -3,7 +3,7 @@ resolver = "3"
 members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli", "crates/sw-host", "crates/sw-studio"]
 
 [workspace.package]
-version = "0.1.3"
+version = "0.1.4"
 edition = "2024"
 license = "Apache-2.0"
 publish = false

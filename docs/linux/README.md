@@ -13,7 +13,7 @@ On other desktops the command line and the management window work, but nothing i
 | Part | What it does |
 | --- | --- |
 | `scriptwidget` | The command line, and the background service (`scriptwidget host run`): it runs the scripts on a schedule, draws the pictures and handles clicks. It opens no window |
-| `scriptwidget-studio` | The management window: your widgets, the templates, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
+| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
 | Omarchy plugin `com.atomsprout.scriptwidget` | Shows the pictures on the desktop layer and adds an entry to the bar. It only shows pictures and forwards numbers and coordinates |
 
 ## Pictures
@@ -23,6 +23,7 @@ The management window on Omarchy 4.5 (screenshots of the real window in the test
 | | |
 | --- | --- |
 | ![My widgets](images/studio-library.png) | ![Templates](images/studio-templates.png) |
+| ![Components](images/studio-components.png) | ![APIs](images/studio-apis.png) |
 | ![A template opened](images/studio-template.png) | ![Editor with live preview](images/studio-editor.png) |
 | ![Settings](images/studio-settings.png) | ![My widgets in Chinese](images/studio-library-zh.png) |
 | ![Typing Chinese with pinyin in the editor](images/studio-pinyin.png) | |
