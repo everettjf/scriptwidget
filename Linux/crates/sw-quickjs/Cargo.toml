@@ -1,0 +1,11 @@
+[package]
+name = "sw-quickjs"
+description = "The QuickJS-NG engine ScriptWidget vendors, behind a safe wrapper"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+links = "swquickjs"
+
+[build-dependencies]
+cc.workspace = true

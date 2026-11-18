@@ -1,0 +1,24 @@
+[workspace]
+resolver = "3"
+members = ["crates/sw-quickjs", "crates/sw-core"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+sw-quickjs = { path = "crates/sw-quickjs" }
+cc = "1"
+pkg-config = "0.3"
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+getrandom = "0.3"
+url = "2"
+
+# QuickJS is compiled with -O2 in every profile (see sw-quickjs/build.rs); the
+# Rust side of a test build is optimized too, so that the parity run measures
+# something close to what ships.
+[profile.test]
+opt-level = 2

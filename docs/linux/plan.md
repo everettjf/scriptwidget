@@ -60,14 +60,14 @@
 | 画笔 | `Android/core/.../render/`（Kotlin）和 `Windows/src/ScriptWidget.Core/Render/`（C#，约 2,700 行） | 不能复用，要移植成 Rust。有两份实现可以对照 |
 | 运行时其余部分（编译、执行、时间线、包存储、压缩包、`fetch`、存储、天气、数据源插件） | `Windows/src/ScriptWidget.Core/`（约 8,400 行） | 作为 Rust 移植的参照。Windows 版是照着 Android 逐文件移植的 |
 | 测试 | `Windows/tests/`（约 239 个）、`Android/core` 的测试 | 逐个移植成 Rust 测试 |
-| 164 棵一致性树 | `Web/preview-engine/test/parity/native-trees.json` | Linux 运行时的验收门槛：每棵树逐字节相同 |
+| 一致性树（164 棵，其中 127 个包不需要实时数据） | `Web/preview-engine/test/parity/native-trees.json` | Linux 运行时的验收门槛：每棵树逐字节相同 |
 | CodeMirror 编辑器 | `Editor/editorfe/` | 管理窗口的编辑器区域复用它 |
 | API 和组件的参考数据 | `Editor/editorfe/src/scriptWidgetAPI.js` | 管理窗口的参考页由它生成，和 Windows 版一样 |
 
 Windows 版已经踩过、Linux 上要留意的两个坑：
 
 - `Intl` 靠 ICU 补。发行版的 ICU 版本不同，输出可能有细微差别，会影响"逐字节一致"。
-- QuickJS 的本地时间在夏令时切换前后算错，Windows 版改为向 ICU 询问那个日期的偏移。Linux 上要先确认有没有同样的问题。**[待验证]**
+- QuickJS 的本地时间在夏令时切换前后算错，Windows 版改为向 ICU 询问那个日期的偏移。Linux 上没有这个问题：QuickJS 向 C 库问每个时刻的偏移，源码不用打补丁。[已核实] 阶段 0，见 [testing.md](testing.md)
 
 ### 2.3 RiftVM
 
@@ -121,7 +121,7 @@ Linux/
 
 按 Windows 版的文件逐个移植：包路径规则、压缩包预检和事务式安装、清单校验（走共用的 JS 校验器）、Babel 编译、执行器、时间线、`$storage`、`$file`、`fetch`、`$http`、`$xml`、`$weather`、`$dataSource`。
 
-- **`Intl`**：链接系统的 ICU（Arch 的 `icu` 在 `core` 里，一定存在），通过一小段 C 垫片调用，垫片用头文件解决符号带版本号后缀的问题。输出要和 164 棵一致性树逐字节相同；如果系统 ICU 的版本差异造成不一致，改为随程序携带固定版本的 ICU 数据。**由阶段 0 决定。**
+- **`Intl`**：链接系统的 ICU（Arch 的 `icu` 在 `core` 里，一定存在），通过一小段 C 垫片调用，垫片用头文件解决符号带版本号后缀的问题。输出要和一致性树逐字节相同。阶段 0 的结果：用系统 ICU（78.3，另在 79.1 上也跑过）127 个包全部相同，所以不随程序带 ICU 数据。[已核实]
 - **网络**：自己解析主机名，拒绝私有、回环、链路本地地址后，只连接检查过的那个地址；重定向手动跟随，每一跳都重新检查；跨源重定向不带脚本设置的 `Authorization` 和 `Cookie`。和 Windows 版相同。
 - **数据目录**：`$XDG_DATA_HOME/scriptwidget`（`Packages`、`Storage`、`Plugins`、`widgets.json`、`settings.json`），缓存在 `$XDG_CACHE_HOME/scriptwidget`。
 
@@ -134,7 +134,7 @@ Linux/
 - Android 的画笔就是画在 Skia 上的，Windows 的画笔也是照着 Android 的 `Canvas` 形状写的。用 Skia 可以近乎逐行移植，保真度风险最小。
 - 画笔用到的透视变换、模糊和阴影、锥形渐变、SVG 亮度蒙版，Skia 都直接支持。纯 Rust 的 `tiny-skia` 没有透视变换和滤镜，要自己补。
 - 文字用 Skia 的段落排版（自带断行、中日韩和表情的字体回退），不用自己写断行。
-- 代价：Skia 是 C++ 库，Rust 通过绑定调用；二进制会增大十几 MB；aarch64 上要确认有预编译包，否则要自己编译（很慢）。**[待验证]**
+- 代价：Skia 是 C++ 库，Rust 通过绑定调用；二进制会增大十几 MB；aarch64 上有预编译包，干净构建 8 秒，程序约 17 MB。[已核实] 阶段 0。中文字体的顺序要自己指定：测试机上系统回退选到了韩文字形的字体。
 
 如果阶段 0 发现 Skia 在 aarch64 上构建或打包走不通，退回纯 Rust 方案（`tiny-skia` 加 `cosmic-text`，缺的效果自己实现）。
 
@@ -147,7 +147,7 @@ Linux/
 - **和显示端通信**：插件用 Quickshell 的 `Process` 运行 `scriptwidget watch`，这条命令连上后台服务，把事件一行一个 JSON 地打印出来；点击和拖动结束时插件运行 `scriptwidget tap <小组件> <编号>`、`scriptwidget move <小组件> <x> <y>`。`Process` 是外壳自己和很多插件都在用的方式。Quickshell 也有 `Socket` 类型，但外壳和我读过的插件都没用它，所以不依赖它。
 - **显示**：插件声明 `service`（`keepLoaded: true`）和 `bar-widget`。`service` 里为每个小组件创建一个 `PanelWindow`，放在 `WlrLayer.Bottom`，里面是一个 `Image`。图片更新时在地址后面加版本号来绕过 Qt 的图片缓存，这是外壳自己的做法。
 - **缩放**：插件把每个显示器的缩放比例告诉后台服务，后台服务按那个比例画图，QML 按逻辑尺寸显示。
-- **提到最上层**：把这些窗口的层从 `Bottom` 改成 `Overlay`，再按一次改回去。由状态栏入口、`scriptwidget peek` 或用户绑定的快捷键触发。Quickshell 文档只写了"命名空间在窗口连接后不能改"，层能不能在运行中改要确认；不能的话，在 `Overlay` 层另建一组窗口。**[待验证]**
+- **提到最上层**：把这些窗口的层从 `Bottom` 改成 `Overlay`，再按一次改回去。由状态栏入口、`scriptwidget peek` 或用户绑定的快捷键触发。Quickshell 文档只写了"命名空间在窗口连接后不能改"，运行中改层是可以的，Quickshell 0.3.2 上实测生效。[已核实] 阶段 0
 - **摆放模式**：平时小组件只响应按钮、开关、链接的点击，其余位置点击穿透到桌面。进入摆放模式后可以拖动，靠近屏幕边缘吸附；右键菜单可以改尺寸、编辑、移除。
 - **点击**：插件只发回一个编号，后台服务从自己保存的动作表里查出动作。链接只允许 `http`、`https`、`mailto`，其他协议拒绝。
 - **刷新**：默认每 15 分钟，时间线切换点，从睡眠恢复后，时钟或主题改变后，以及手动。会话锁定时暂停。睡眠和锁定通过 logind 的 D-Bus 信号得知。
@@ -161,8 +161,8 @@ Linux/
 
 **用 GPUI 加 gpui-component。**
 
-- GPUI 是 Zed 编辑器的界面框架，纯 Rust，Apache-2.0 许可。**[待验证]** 许可是凭记忆，开工前核对。
-- gpui-component 是它上面的一套控件，Apache-2.0，带一个代码编辑器（Tree-sitter 语法高亮，诊断、补全、悬停提示）。项目自己说还在早期，接口会经常变。[已核实] 项目 README
+- GPUI 是 Zed 编辑器的界面框架，纯 Rust，Apache-2.0 许可。[已核实] Zed 仓库里 `crates/gpui/Cargo.toml` 的许可字段
+- gpui-component 是它上面的一套控件，Apache-2.0，带一个代码编辑器（Tree-sitter 语法高亮，诊断、补全、悬停提示）。项目自己说还在早期，接口会经常变。[已核实] 项目 README。它已经搬到 `longbridge/gpui-kit`，发布在 crates.io 上（`gpui-kit`，依赖 `gpui-pre`），不需要钉 Zed 仓库的提交；每周发一个版本，要锁定版本。[已核实] 阶段 0
 - 这样管理窗口从界面到编辑器全部是 Rust，不需要 WebKit，也不需要 GTK。实时预览直接调用 `sw-render`，和桌面上的小组件是同一个画笔。
 
 页面和 Windows 版对应：我的小组件、模板（打开后先看预览和代码，再"使用此模板"）、组件、API 参考、编辑器、设置。界面语言跟随系统，英文和简体中文。补全和参考页的数据来自 `Editor/editorfe/src/scriptWidgetAPI.js`，构建时转成 Rust 能读的数据。
@@ -171,8 +171,8 @@ Linux/
 
 - **图形接口**。GPUI 在 Linux 上的渲染从 2026 年 2 月起改用 wgpu（[提交 46758](https://git.secluded.site/zed/commit/af8ea0d6c26192c45f44f473c0d4a7d6f72ed018)）。RiftVM 只有 OpenGL ES 3.0，Vulkan 是软件渲染。管理窗口在这台虚拟机里能不能跑、流不流畅，要实测。跑不动不代表真机不行，但意味着我没法在这里测它。
 - **版本**。crates.io 上的 GPUI 停在 2025 年 10 月的版本，比 Zed 主线旧很多；新的渲染在 Git 主线上。要固定依赖 Zed 仓库的某个提交。Zed 团队表示 GPUI 只优先做编辑器自己需要的功能。[已核实] 第三方文章，未对照 Zed 仓库
-- **中文输入**。Wayland 下的输入法支持要实测。**[待验证]**
-- **编辑器的补全**。gpui-component 的补全是按语言服务器的方式设计的，我们要把 `scriptWidgetAPI.js` 的数据接进去，接口是否够用要试。**[待验证]**
+- **中文输入**。字符能输入和显示；输入法的组字在虚拟机里没法测（没有中文输入法），要在真实电脑上测。**[待验证]**
+- **编辑器的补全**。gpui-component 的补全是按语言服务器的方式设计的，我们要把 `scriptWidgetAPI.js` 的数据接进去，接口够用：补全接口拿到文本和位置，返回补全项，阶段 0 里接了三项固定数据。[已核实]
 - 编辑器的行为会和 Mac、Windows 上的 CodeMirror 不完全一样（快捷键、补全的细节）。
 
 **退路**：如果 GPUI 在阶段 0 不通过，改用 GTK 4 加 libadwaita，编辑器区域用 WebKitGTK 放现有的 CodeMirror。
@@ -306,10 +306,12 @@ omarchy-plugin/
 
 ### 阶段 0：验证（在 RiftVM 里）
 
+**状态（2026-11-17）：已做完。** 引擎、Skia、QML 显示端、GPUI 都通过；没能测的是中文输入法、真实显卡、高分屏和多显示器；Omarchy 升到了 4.5.0-3，但有一个迁移步骤失败。详细结果在 [testing.md](testing.md)。引擎那部分直接写成了正式代码（`Linux/crates/sw-quickjs`、`Linux/crates/sw-core`），其余三项在 `Linux/spikes/`。
+
 验证用的代码放在 `Linux/spikes/`，每个问题一个小工程，通过后删掉或并入正式代码。按下面的顺序做，前一项不通过不做后一项：
 
 1. 连上虚拟机，装 Rust、cmake、Node；记录 Omarchy、Quickshell、Qt、ICU 的版本。
-2. `spikes/quickjs`：编译仓库里的 QuickJS-NG，跑共用内核，对比 164 棵一致性树。
+2. `spikes/quickjs`：编译仓库里的 QuickJS-NG，跑共用内核，对比一致性树（参考文件 164 棵，其中不需要实时数据的 127 个包参加对比）。
 3. `spikes/skia`：用 `skia-safe` 画文字和 10 个模板。
 4. `spikes/plugin`：一个本地 QML 插件加一个假的 `watch`（只打印写死的事件），验证显示、换图、点击、拖动、换层、GIF 换帧。
 5. `spikes/gpui`：一个带编辑器的 GPUI 窗口。
@@ -319,7 +321,7 @@ omarchy-plugin/
 | 要回答的问题 | 通过标准 |
 | --- | --- |
 | 我能不能从 Mac 的命令行驱动虚拟机 | 通过 SSH 同步代码、编译、运行图形程序、用 `grim` 截图传回，全程不需要你操作 |
-| 引擎结果是否一致 | 164 棵一致性树在 aarch64 上逐字节相同（含 `Intl` 和本地时间） |
+| 引擎结果是否一致 | 不需要实时数据的 127 个包的一致性树在 aarch64 上逐字节相同（含 `Intl` 和本地时间） |
 | Skia 能不能用 | `skia-safe` 在 aarch64 的 Arch 上能构建并画出文字；画 10 个有代表性的模板，和 Windows 版 `swcli` 画的参考图对比，中文、表情、图表各至少一个 |
 | QML 显示端是否可行 | 一个本地插件把一张图显示在 Omarchy 的桌面层，位置正确；文件更新后 1 秒内换图；点击和拖动能通过 `Process` 传回；`peek` 能提到最上层再放回；外壳重启后恢复 |
 | GPUI 能不能用 | 一个 GPUI 窗口在虚拟机里能打开，里面的 gpui-component 编辑器能显示一段 JSX、高亮、弹出我们给的补全、输入中文。不通过就改用退路（4.5） |
@@ -404,7 +406,7 @@ omarchy-plugin/
 - [Omarchy 4.5 发布说明](https://omarchy.org/news/2026/11/omarchy-4-5/)
 - [插件开发](https://plugins.omarchy.org/develop.html)、[插件上架](https://plugins.omarchy.org/publish.html)
 - [Quickshell 0.3.2 文档](https://quickshell.org/docs/v0.3.2/)
-- [gpui-component](https://github.com/longbridge/gpui-component)、[GPUI 改用 wgpu 的提交](https://git.secluded.site/zed/commit/af8ea0d6c26192c45f44f473c0d4a7d6f72ed018)
+- [gpui-component，现名 gpui-kit](https://github.com/longbridge/gpui-kit)、[GPUI 改用 wgpu 的提交](https://git.secluded.site/zed/commit/af8ea0d6c26192c45f44f473c0d4a7d6f72ed018)
 - [AGS](https://github.com/Aylur/ags)（参照对象，本次未重新查证）
 - [Omalauncher](https://github.com/SimonSchubert/omalauncher-omarchy-plugin)、[ai-usagebar](https://github.com/akitaonrails/ai-usagebar)、[omaclock](https://github.com/ubeyidah/omaclock)
 - RiftVM 源码及其 `docs/`

@@ -18,3 +18,8 @@ Tools/ScriptWidgetCLI/**/__pycache__/
 
 # Functional Pages assembly output
 _site/
+
+# Linux app: Cargo build output and generated JavaScript assets
+Linux/target/
+Linux/assets/
+Linux/tests/assets/

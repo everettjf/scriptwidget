@@ -1,0 +1,15 @@
+[package]
+name = "gpui-spike"
+version = "0.0.0"
+edition = "2024"
+publish = false
+
+# Standalone: keep this spike out of any parent workspace.
+[workspace]
+
+[dependencies]
+# gpui-kit 0.10.0 (github.com/longbridge/gpui-kit, tag v0.10.0 = f697c31) re-exports
+# gpui-component 0.10.0 and pins GPUI to gpui-pre =0.3.12 (snapshot of zed@d2a4fb6).
+gpui-kit = { version = "=0.10.0", features = ["tree-sitter-javascript"] }
+lsp-types = { version = "0.97.0", features = ["proposed"] }
+env_logger = "0.11"
