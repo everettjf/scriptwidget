@@ -67,7 +67,7 @@ exec 3<>"$fifo"
 
 protocol=1
 [ -f "$dir/protocol" ] && protocol=$(tr -cd '0-9' < "$dir/protocol")
-arrange=false; peek=false
+arrange=false; peek=false; peek_before=false
 ascreen=""; ax=80; ay=80; aw=329; ah=170; aversion=0; count=0
 bscreen=""; bx=460; by=80; bw=170; bh=170; bversion=0
 colors=("#e64553" "#fe640b" "#40a02b" "#1e66f5")
@@ -153,7 +153,9 @@ while read -r -u 3 verb one two three four; do
       if $peek; then peek=false; else peek=true; fi
       echo "{\"event\":\"mode\",\"arrange\":$arrange,\"peek\":$peek}" ;;
     arrange)
-      if $arrange; then arrange=false; else arrange=true; fi
+      # As the real service does: "on top" is on while arranging, and what it
+      # was before comes back afterwards.
+      if $arrange; then arrange=false; peek=$peek_before; else arrange=true; peek_before=$peek; peek=true; fi
       echo "{\"event\":\"mode\",\"arrange\":$arrange,\"peek\":$peek}" ;;
     raw)
       printf '%s\n' "$one${two:+ $two}${three:+ $three}${four:+ $four}" ;;

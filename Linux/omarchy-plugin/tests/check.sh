@@ -265,7 +265,9 @@ check "menu: the second row sends scriptwidget menu b resize-medium" until_true 
 check "arrange: off again" until_true 3 is arrange false
 sleep 0.5
 DETAIL=$(widget_layers | tr '\n' ';')
-check "arrange: the widget windows are back, where they were dropped" has_layer "1 680 480 329 170"
+# Level 1 is the bottom layer: the stand-in, like the service, has "on top" on
+# while arranging, and a widget must not stay on the overlay layer afterwards.
+check "arrange: the widget windows are back on the bottom layer, where they were dropped" until_true 3 has_layer "1 680 480 329 170"
 check "menu: b now has the medium size" has_layer "1 1000 600 329 170"
 
 # ------------------------------------------------- remove, and bad messages

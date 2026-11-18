@@ -38,7 +38,7 @@ sh install.sh
 
 - **It installs for you only**, without root: programs in `~/.local/bin`, data in `~/.local/share/scriptwidget`, a systemd user unit `scriptwidget.service` that starts with the graphical session, a launcher entry, and on Omarchy the plugin in `~/.config/omarchy/plugins`, enabled.
 - **The archive is not signed.** Each release lists the SHA-256 of its files.
-- **Which archive.** `aarch64` was built and tested on an Omarchy 4.5 machine. `x86_64` is built and tested without a desktop by CI on Arch Linux; nobody has seen it show widgets on a desktop.
+- **Which archive.** `aarch64` was built and tested on an Omarchy 4.5 machine. `x86_64` is built on Arch Linux by CI; it was tested there without a desktop, and on the Omarchy 4.5 test machine through instruction emulation, where it showed and operated widgets. It has not been run on an x86_64 computer.
 - **It is built against ICU 78.** When the distribution moves to a newer ICU the programs stop starting until a new archive is published; see [TODO.md](TODO.md).
 - **Updating.** There is no automatic update. Run `install.sh` of the newer archive; it stops the service, replaces the programs and keeps your widgets.
 - **Removing it.** `sh uninstall.sh` keeps your widgets; `sh uninstall.sh --purge` deletes them too.
