@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**JavaScript、JSX、AI で iPhone、iPad、Mac 向けのネイティブウィジェットを作成**
+**JavaScript、JSX、AI で iPhone、iPad、Mac、Android、Windows、Linux 向けのウィジェットを作成**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -39,7 +39,7 @@ Windows 版と Linux 版はプレビュー版です。[Windows 0.1.0](https://gi
 
 ## ScriptWidget の特長
 
-- 1 つのスクリプトが iOS、iPadOS、macOS で動作し（Android 版はテスト中）、`$getenv("widget-size")` でサイズ別に調整できます。
+- 1 つのパッケージが iPhone、iPad、Mac、Android で動作し、Windows 11 と Linux（Omarchy）ではプレビュー版として動作します。`$getenv("widget-size")` でサイズ別に調整できます。
 - インタラクティブウィジェット、App Intents、Live Activities、Dynamic Island、Control Widgets に対応します。
 - Mac 版 Studio には CodeMirror、補完、診断、コンソール、複数サイズのプレビューがあります。
 - OpenAI 互換モデルで生成・実行・診断・改善でき、API キーは Keychain に保存されます。

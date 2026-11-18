@@ -17,7 +17,7 @@ Keep work in a separate package directory. Preserve the user's existing files an
 
 One package installs on iPhone, iPad, Mac, Android, Windows and Linux, but not every API has something behind it on every system. Before using a data API, read [platform support](references/platform-support.md) and compare its row with the systems the user named; when they named none, ask, or assume all of them and say so.
 
-- `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work on all five. Health, location, music and alarms are not on Mac; no personal-data API (calendar, photos, health, location, music and the like) is on Windows or Linux; reminders and Home are Apple only.
+- `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work on every system. Health, location, music, alarms and Home are not on Mac; no personal-data API (calendar, photos, health, location, music and the like) is on Windows or Linux; reminders are on Apple systems only, and Home is on iPhone and iPad only.
 - An API a system lacks answers `false` from `isAvailable()` and rejects with `[unsupported_platform]`. Check `isAvailable()` first and render a real fallback card. Branch on `$system.platform()` only for what cannot be feature-detected.
 - Tell the user which systems the finished widget shows real data on. Do not describe a widget that needs `$health` as working on Windows or Linux.
 - Android, Windows and Linux draw text in Inter, which is wider than Apple's system font, and cut text that does not fit. Leave room: short labels, and a layout for each declared family chosen with `$getenv("widget-size")`, not one layout scaled down. A render on the Mac does not show the other systems' text widths.

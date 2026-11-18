@@ -1,13 +1,13 @@
 # ScriptWidget Documentation
 
-Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX. The quickest path is [Your first widget](getting-started.md).
+Build widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript and JSX. The quickest path is [Your first widget](getting-started.md).
 
 ## Start here
 
 - [Your first widget](getting-started.md) — create, preview, debug, and install a widget.
 - [Five-minute tutorial](five-minute-tutorial.md) — the built-in first-launch walkthrough and its complete workflow.
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
-- [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
+- [Web Studio in the browser](web-studio-browser.md) — design and preview in any desktop browser, then export a `.swt` for any ScriptWidget app.
 - [Platform support](platform-support.md) — which features and APIs work on iPhone and iPad, Mac, Android, Windows and Linux.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
@@ -36,7 +36,7 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [Widget delivery status](widget-capabilities-status.md) and [TODO](widget-capabilities-todo.md) — implemented scope, authoring work and release acceptance; [original capability plan](widget-capabilities-plan-history.md) is historical reference.
 - [Runtime API contract](scriptwidget-runtime-api.md) — versioning and compatibility policy.
 - [Connected Services API](services-api.md) — authenticated GitHub profiles, per-widget access and editable Web mocks.
-- [Music playback API](music-api.md) — read-only iOS Music app snapshots and editable Web samples.
+- [Music playback API](music-api.md) — read-only playback snapshots (iPhone, iPad and Android) and editable Web samples.
 - [Visual Layout editing](visual-layout.md) — shared native/Web layer editing, properties, dragging and source preservation.
 - [Widget themes](widget-themes.md) — reusable color, font and spacing tokens saved in ordinary source.
 - [Studio assets](studio-assets.md) — package images and original JSX with retained provenance and licenses.
@@ -46,7 +46,7 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
 - [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity (iOS and macOS), sandbox isolation, and known differences. The macOS comparison app lives in `Tools/ScriptWidgetPreview`.
 - [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
-- [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS for the Android app in development.
+- [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS for the Android app (version 1.0.0).
 - [Android distribution](android/distribution.md) — the Play and GitHub build flavors, signing, the release steps, and why IzzyOnDroid was not requested.
 - [Android test notes](android/testing.md) and [Android to-do](android/TODO.md) — what was tested on which devices, and what is left.
 - [Android UI review](android/ui-review.md) — the screen-by-screen review behind build 8 and what it changed.
@@ -54,6 +54,9 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [ScriptWidget for Windows](windows/README.md) — the preview of the Windows desktop app: what it does, how it runs a widget, differences from the other platforms, security notes and build commands.
 - [Windows test notes](windows/testing.md) and [Windows to-do](windows/TODO.md) — what was tested on which machine, and what is left.
 - [Windows plan](windows/plan.md) and [Windows feasibility research](windows/feasibility.md) — the plan the Windows app follows and the research behind it (Chinese).
+- [ScriptWidget for Linux](linux/README.md) — the preview for Omarchy 4.5: installing, the command line, differences from the other platforms, security notes and build commands.
+- [Linux test notes](linux/testing.md) and [Linux to-do](linux/TODO.md) — what was tested on which machine, and what is left.
+- [Linux plan](linux/plan.md) (Chinese) and the [display protocol](linux/protocol.md) — the plan the Linux app follows, and the messages between the service and the display.
 - [Release readiness](release-readiness.md) — platform and quality checklist.
 - [Contributing](../CONTRIBUTING.md) — repository workflow and contribution guide.
 - [Roadmap](../ROADMAP.md), [governance](../GOVERNANCE.md), and [changelog](../CHANGELOG.md) — direction, decisions, and shipped work.

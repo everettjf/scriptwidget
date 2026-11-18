@@ -4,7 +4,7 @@ The display end of ScriptWidget on [Omarchy](https://omarchy.org): an Omarchy sh
 
 The plugin draws nothing itself and runs no widget code. The `scriptwidget` program and its background service do that; the plugin shows the PNG pictures they write and tells them what the pointer did. Without ScriptWidget installed the plugin only shows a bar entry that says so.
 
-Status: in development with the rest of the Linux version. It was tested against the stand-in in `tests/`, not yet against the real background service.
+Status: preview, shipped in the Linux archive (see [ScriptWidget for Linux](../../docs/linux/README.md)). It was tested against the stand-in in `tests/` and, on the Omarchy 4.5 test machine, against the real background service (see the [test notes](../../docs/linux/testing.md)).
 
 ## Files
 

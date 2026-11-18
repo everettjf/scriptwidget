@@ -1,6 +1,6 @@
 # ScriptWidget release readiness
 
-This document is the ship gate for the iOS App/Share on iOS 16+, the iOS Widget extension on iOS 18+, and the macOS App/Widget on macOS 26+. The user confirmed retaining these existing deployment targets on 2026-10-22. A release candidate is ready only when the automated command below passes and every applicable device row has evidence attached to the release issue.
+This document is the ship gate for the iOS App/Share on iOS 16+, the iOS Widget extension on iOS 18+, and the macOS App/Widget on macOS 26+. The user confirmed retaining these existing deployment targets on 2026-10-22. A release candidate is ready only when the automated command below passes and every applicable device row has evidence attached to the release issue. Android, Windows and Linux are not covered by this gate; their checks are recorded in [Android test notes](android/testing.md), [Windows test notes](windows/testing.md) and [Linux test notes](linux/testing.md).
 
 ```sh
 ./Scripts/release-readiness.sh

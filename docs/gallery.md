@@ -1,6 +1,6 @@
 # Widget & Skills Gallery
 
-The Gallery is the shared, GitHub-backed catalog in ScriptWidget for installing community widgets and reusable AI Skills. On Mac, open **Widget & Skills Gallery** from the File menu (`⌘⇧G`) or **Community Gallery** in the sidebar. On iPhone and iPad, open **New Widget → Community Gallery**.
+The Gallery is the shared, GitHub-backed catalog in ScriptWidget for installing community widgets and reusable AI Skills. On Mac, open **Widget & Skills Gallery** from the File menu (`⌘⇧G`) or **Community Gallery** in the sidebar. On iPhone and iPad, open **New Widget → Community Gallery**. The Gallery is in the Mac, iPhone, iPad and Android apps; the Windows and Linux previews do not have it yet.
 
 ## Trust model
 

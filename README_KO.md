@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**JavaScript, JSX, AI로 iPhone, iPad, Mac용 네이티브 위젯을 만드세요**
+**JavaScript, JSX, AI로 iPhone, iPad, Mac, Android, Windows, Linux용 위젯을 만드세요**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -39,7 +39,7 @@ Windows와 Linux 버전은 미리보기 버전입니다. [Windows 0.1.0](https:/
 
 ## ScriptWidget을 선택하는 이유
 
-- 하나의 스크립트가 iOS, iPadOS, macOS와 Android(테스트 중)에서 작동하며 `$getenv("widget-size")`로 크기별 레이아웃을 조정할 수 있습니다.
+- 하나의 패키지가 iPhone, iPad, Mac, Android에서 작동하고 Windows 11과 Linux(Omarchy)에서는 미리보기 버전으로 작동하며, `$getenv("widget-size")`로 크기별 레이아웃을 조정할 수 있습니다.
 - 인터랙티브 위젯, App Intents, Live Activities, Dynamic Island, Control Widgets를 지원합니다.
 - Mac Studio에 CodeMirror, 자동 완성, 진단, 콘솔, 다중 크기 미리보기가 포함됩니다.
 - OpenAI 호환 모델로 위젯을 생성·실행·진단·개선하며 API 키는 Keychain에 보관합니다.

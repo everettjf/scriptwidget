@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**Créez des widgets natifs pour iPhone, iPad et Mac avec JavaScript, JSX et l’IA**
+**Créez des widgets pour iPhone, iPad, Mac, Android, Windows et Linux avec JavaScript, JSX et l’IA**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -39,7 +39,7 @@ Ce sont toutes de vraies captures d’écran. Windows et Linux sont des prévers
 
 ## Pourquoi choisir ScriptWidget
 
-- Un même script fonctionne sur iOS, iPadOS et macOS, ainsi que sur Android (en test), avec des mises en page adaptées via `$getenv("widget-size")`.
+- Un même paquet fonctionne sur iPhone, iPad, Mac et Android, et en préversion sur Windows 11 et Linux (Omarchy), avec des mises en page adaptées via `$getenv("widget-size")`.
 - Prend en charge les widgets interactifs, App Intents, Live Activities, Dynamic Island et Control Widgets.
 - Studio pour Mac intègre CodeMirror, la complétion, les diagnostics, une console et des aperçus multitailles.
 - Génère, exécute, diagnostique et améliore les widgets avec des modèles compatibles OpenAI ; les clés API restent dans le trousseau.

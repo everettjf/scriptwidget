@@ -8,18 +8,18 @@ Website: <https://atomsprout.com/scriptwidget/>
 [![GitHub Forks](https://img.shields.io/github/forks/everettjf/ScriptWidget?style=flat-square)](https://github.com/everettjf/ScriptWidget/network)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Android%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square)](#-platforms)
-[![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
+[![App Store](https://img.shields.io/badge/App%20Store-27.2.6-blue?style=flat-square)](https://apps.apple.com/app/id1555600758)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**Create native widgets for iPhone, iPad, Mac, and Android with JavaScript, JSX, and AI**
+**Create widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript, JSX, and AI**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
 </div>
 
-> ✨ *Build iPhone, iPad, Mac, and Android widgets in ScriptWidget Studio—without writing Swift or Kotlin.*
+> ✨ *One widget package for iPhone, iPad, Mac and Android, and in preview for Windows and Linux—without writing Swift or Kotlin.*
 
-**Get it:** [iPhone and iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0 (APK)](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) · [Web Studio in your browser](https://asp.run/scriptwidget/studio/)
+**Get it:** [iPhone and iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0 (APK)](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) · [Windows 0.1.0 preview (installer)](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) · [Linux 0.1.4 preview for Omarchy (archive)](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) · [Web Studio in your browser](https://asp.run/scriptwidget/studio/)
 
 ## Create with your Agent — scriptwidget-creator
 
@@ -48,11 +48,13 @@ Preview links carry the validated package in a URL fragment and load a separate 
 
 ## 🎯 What is ScriptWidget?
 
-ScriptWidget is an open-source widget development platform for building native widgets with **JavaScript** and **JSX-like syntax**: WidgetKit on iPhone, iPad, and Mac, and App Widgets on Android. Write once, preview on Mac or in the browser, and run the same package on all four—without requiring Swift or Kotlin for widget authoring.
+ScriptWidget is an open-source widget development platform for building native widgets with **JavaScript** and **JSX-like syntax**: WidgetKit on iPhone, iPad, and Mac, App Widgets on Android, and desktop widgets on Windows 11 and Linux (Omarchy), both previews. Write once, preview on Mac or in the browser, and install the same package on all of them—without requiring Swift or Kotlin for widget authoring.
 
-It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple platforms, a QuickJS runtime with its own renderer on Android, a desktop development environment, a browser studio, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
+It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple platforms, a QuickJS-NG runtime with one shared renderer on Android, Windows and Linux, a desktop development environment, a browser studio, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
 
 The Android app (version 1.0.0, Android 15 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout), then [become a tester](https://play.google.com/apps/testing/com.atomsprout.scriptwidget) and install from Google Play. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
+
+The Windows and Linux apps are previews: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) needs Windows 11 (see [ScriptWidget for Windows](docs/windows/README.md)), and [Linux 0.1.4](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) is for [Omarchy](https://omarchy.org) 4.5 (see [ScriptWidget for Linux](docs/linux/README.md)). Both run the same widget packages, without the personal-data APIs such as health, calendar, location and music.
 
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
@@ -62,13 +64,13 @@ The Android app (version 1.0.0, Android 15 or later) is available as an [APK on 
 
 | Feature | Description |
 |---------|-------------|
-| 🖥️ **Cross-Platform** | One widget package for iPhone, iPad, Mac and Android |
+| 🖥️ **Cross-Platform** | One widget package for iPhone, iPad, Mac and Android, and in preview for Windows and Linux |
 | 🎨 **JSX Support** | Declarative UI with JavaScript XML syntax |
-| ⚡ **Native Rendering** | JSX elements are rendered as native SwiftUI views |
-| 🔧 **Versioned Runtime API** | Storage, files, networking, device, location, health, system, and data sources |
+| ⚡ **Native Rendering** | JSX elements are rendered as native SwiftUI views on Apple systems, and by one shared renderer on Android, Windows and Linux |
+| 🔧 **Versioned Runtime API** | Storage, files, networking, device, location, health, system, and data sources; which API runs where is in [Platform support](docs/platform-support.md) |
 | 📱 **Interactive Widgets** | Links, buttons, toggles, App Intents, Live Activities, and Control Widgets |
 | 🎨 **Custom Styling** | Full control over appearance |
-| 📦 **Template Gallery** | Pre-built templates to get started |
+| 📦 **Template Gallery** | 92 bundled templates, 140 examples in all, to get started |
 | 🌐 **Community Gallery** | Verified, one-click Widget and AI Skill installs |
 | 🧰 **ScriptWidget Studio** | Build on Mac with CodeMirror, diagnostics, console, and multi-size preview |
 | ✨ **AI Generation** | Generate, run, diagnose, and refine widgets with an OpenAI-compatible model |
@@ -151,8 +153,10 @@ ScriptWidget/
 │   ├── core/                  # QuickJS runtime, native APIs, renderer, package store
 │   ├── app/                   # Compose app, widget providers, Studio editor
 │   └── play/                  # Google Play listing kit
+├── Windows/                   # Windows 11 app (preview): C# runtime, desktop host, management window
+├── Linux/                     # Linux app (preview, Omarchy): Rust runtime, service, command line, management window
 ├── Web/
-│   ├── preview-engine/        # Browser preview engine; its kernel and renderer also run on Android
+│   ├── preview-engine/        # Browser preview engine; its kernel and renderer also run on Android, Windows and Linux
 │   └── studio/                # Web Studio (React + TypeScript)
 ├── Editor/editorfe/           # Vite + CodeMirror 6 editor frontend
 ├── Gallery/                   # Curated Widget & Skills Gallery index
@@ -281,13 +285,17 @@ sh scripts/device-test.sh app
 
 See [ScriptWidget for Android](docs/android/README.md), its [test notes](docs/android/testing.md) and [to-do](docs/android/TODO.md).
 
+Windows and Linux have their own builds and tests too: see [ScriptWidget for Windows](docs/windows/README.md#building) and [ScriptWidget for Linux](docs/linux/README.md#building).
+
 ### Create Your Own Widget
 
 1. Open **ScriptWidget Studio** on Mac (or ScriptWidget on iPhone/iPad) and create a script from a template, AI prompt, or blank project
 2. Write your widget in `main.jsx` and call `$render(...)` with a JSX tree
 3. Use the live preview to iterate, then add the widget from the Home Screen
 
-Each widget is stored under `Scripts/<PackageName>/` and synced through iCloud/app-group storage. New projects use Package 2.0:
+On Android use the in-app editor; on Windows and Linux use the management window (My widgets, Templates, Components, APIs).
+
+On Apple systems each widget is stored under `Scripts/<PackageName>/` and synced through iCloud/app-group storage. New projects use Package 2.0:
 
 ```text
 My Widget/
@@ -369,7 +377,7 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
 | **Android** | ✅ 1.0.0 | Android 15+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
 | **Windows** | 🧪 Preview 0.1.0 | Windows 11; desktop widgets and a management window. [Installer on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0); see [ScriptWidget for Windows](docs/windows/README.md) |
-| **Linux** | 🧪 Preview | [Omarchy](https://omarchy.org) 4.5; widgets on the desktop, a management window and a command line. [Archives on GitHub Releases](https://github.com/everettjf/scriptwidget/releases); see [ScriptWidget for Linux](docs/linux/README.md) |
+| **Linux** | 🧪 Preview 0.1.4 | [Omarchy](https://omarchy.org) 4.5; widgets on the desktop, a management window and a command line. [Archives on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4); see [ScriptWidget for Linux](docs/linux/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
 
@@ -424,6 +432,7 @@ The ScriptWidget name, logos, screenshots, and App Store marketing materials are
 
 Built with:
 - [JavaScriptCore](https://developer.apple.com/documentation/javascriptcore) - Apple's JavaScript engine
+- [QuickJS-NG](https://github.com/quickjs-ng/quickjs) - the JavaScript engine on Android, Windows and Linux
 - [SwiftUI](https://developer.apple.com/xcode/swiftui/) - Modern UI framework
 - [Xcode Gen](https://github.com/yonaskolb/XcodeGen) - Project generation
 

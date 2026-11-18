@@ -660,6 +660,15 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 没做的：四个页面是用 `--page` 直接打开后截图看的，没有用虚拟指针去点侧边栏的四项，也没有点返回键。中文界面没有截图。APIs 页里 console、device、file、scheme 四张卡片画的是"#UI Not Found#"：这四个示例只调用接口、不画界面，这次没改。
 
+### 0.1.4 的发布包（提交 `44318e19`）
+
+| 文件 | 在哪里构建 | 做了什么检查 |
+| --- | --- | --- |
+| `scriptwidget-0.1.4-linux-aarch64.tar.gz` | 在测试虚拟机上用 `package.sh` 构建 | 构建前全部测试 512 个通过；`install.sh` 覆盖安装后 `doctor` 通过。四个页面的截图是用内容相同、早几个提交构建的包看的（之后的提交只改了编辑器前端和文档，不进 Linux 的包） |
+| `scriptwidget-0.1.4-linux-x86_64.tar.gz` | GitHub Actions 的"Linux release archive"工作流（运行 44376085309，同一个提交），Arch Linux 容器 | 工作流里的测试和解包自检通过。没有在桌面上运行过 |
+
+两个文件下载到 Mac 上用各自的 `.sha256` 核对过（x86_64：`c015be2d22afd6cf6300fb5daac7c07d4d260e30f3bc643a6aff65721dd71af4`）。PR 82 合并的时候 Apple 平台那一项检查还在跑，其余的都通过了；是按用户的要求直接合并的，`main` 上那一项的结果要另外看。标签 `linux-v0.1.4` 打在 `44318e19`。0.1.3 的发布说明里加了"已被 0.1.4 取代"。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

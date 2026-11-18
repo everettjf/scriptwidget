@@ -1,16 +1,17 @@
 # ScriptWidget Roadmap
 
-Last updated: 2026-10-21. This roadmap communicates direction, not a promise of dates. Priorities are decided by user impact, platform relevance, security, reliability, maintainability, and contributor capacity. iOS, iPadOS, and macOS are the supported product boundary. Native watchOS support requires a later feasibility gate; visionOS is outside the current plan.
+Last updated: 2026-11-18. This roadmap communicates direction, not a promise of dates. Priorities are decided by user impact, platform relevance, security, reliability, maintainability, and contributor capacity. ScriptWidget runs on iPhone, iPad, Mac and Android, and as a preview on Windows 11 and Linux (Omarchy); see [Platform support](docs/platform-support.md). Native watchOS support requires a later feasibility gate; visionOS is outside the current plan.
 
 The [Widget capability expansion plan](docs/widget-capabilities-plan.md) turns research across 10 widget apps into 22 tracked capabilities. It sequences existing templates and interactions, real personal data, authenticated services and music, visual creation, shared experiences, and a gated Watch track. Each capability requires native behavior, preview mocks, compatibility, tests, and release evidence before being marked shipped.
 
 ## Product thesis
 
-ScriptWidget aims to be the best open-source way for anyone to build native Apple widgets: approachable like a template tool, expressive like code, and current with WidgetKit. Its differentiator is a JavaScript/JSX authoring model rendered as native SwiftUI, paired with a first-class Mac Studio and a transparent, safe community ecosystem.
+ScriptWidget aims to be the best open-source way for anyone to build their own widgets: approachable like a template tool, expressive like code, and current with WidgetKit. Its differentiator is one JavaScript/JSX package rendered natively on each system, paired with a first-class Mac Studio and a transparent, safe community ecosystem.
 
 ## Shipped foundation
 
 - Native WidgetKit runtime for iPhone, iPad, and Mac, including interactive controls, Live Activity, and Dynamic Island surfaces.
+- Android 1.0.0 (App Widgets, QuickJS-NG) and previews for Windows 11 and Linux (Omarchy 4.5) that run the same Package 2.0 widgets.
 - ScriptWidget Studio on Mac with CodeMirror, completion, diagnostics, Console, multi-family preview, command shortcuts, and first-run tutorial.
 - Versioned native Runtime API 1.2, Package 2.0 manifests, Skills 1.0, secure archive imports, and generated reference documentation.
 - OpenAI-compatible generation with Keychain credentials, structured prompt context, run/diagnose/refine loops, evaluations, and reusable Skills.
@@ -51,6 +52,6 @@ The next release targets M1–M5 together on `codex/release-m1-m2` (PR #62). M1/
 - Running arbitrary native plugins from Gallery packages.
 - Silent telemetry, selling user data, or uploading widget source without explicit action.
 - Pretending AI output is trusted: generated code remains reviewable project source under the same Runtime boundaries.
-- Expanding to more Apple platforms before the three supported platforms are reliable and coherent.
+- Expanding to more Apple platforms before the supported platforms are reliable and coherent.
 
 Proposals belong in a GitHub feature request. Significant Runtime/API changes should describe user need, alternatives, compatibility, security boundaries, tests, documentation, and migration behavior before implementation.
