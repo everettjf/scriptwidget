@@ -272,7 +272,7 @@ GIF 和动画的播放；独立的执行进程加 AppContainer 和作业对象�
 
 ## 12. 不做的事
 
-- Linux 版（已搁置，计划保留在 [docs/linux/plan.md](../linux/plan.md)）。
+- Linux 版。它是单独的 Rust 工程，2026-11-17 起在 `linux` 分支上进行，计划在 [docs/linux/plan.md](../linux/plan.md)。
 - Windows 10。
 - 商店之外的安装包。
 - 第一版里的官方小组件面板、锁屏、内置 AI、Gallery、动画播放。
