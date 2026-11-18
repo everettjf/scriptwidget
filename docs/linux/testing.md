@@ -548,7 +548,7 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 ## 2026-11-18，示例排版、加注释之后的参考文件
 
-`Script.bundle` 和 `Script.android` 下的 191 个 `.js`、`.jsx` 示例用 Prettier 排了版，又加了给新手看的注释，`Gallery/` 里的副本也同步了。这一节记的是之后的检查：哪些随仓库保存的参考文件依赖示例的原文，重新生成了哪个，以及发现的一个没解决的问题。都是在同一台 Mac 上跑的（macOS 27.2，Apple 芯片）。
+`Script.bundle` 和 `Script.android` 下的 191 个 `.js`、`.jsx` 示例用 Prettier 排了版，又加了给新手看的注释，`Gallery/` 里的副本也同步了。这一节记的是之后的检查：哪些随仓库保存的参考文件依赖示例的原文，重新生成了哪些，以及发现的一个问题（排版面板读不了排过版的代码，后来在面板里修了）。都是在同一台 Mac 上跑的（macOS 27.2，Apple 芯片）。
 
 ### "只动了注释和排版"是怎么查的
 
@@ -565,18 +565,20 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 | 文件 | 存了什么 | 结果 |
 | --- | --- | --- |
 | `Web/preview-engine/test/parity/material-study-trees.json` | Material Study 的原文和 48 棵树 | 重新生成了。48 棵树和原来逐字相同，只有 `source` 变了（1207 个字符变成 1902 个） |
-| `Web/preview-engine/test/parity/layout-edit-trees.json` | Layout Starter 的原文、在排版面板里改过之后的原文，以及两棵树 | 没能重新生成，原因见下 |
+| `Web/preview-engine/test/parity/layout-edit-trees.json` | Layout Starter 的原文、在排版面板里改过之后的原文，以及两棵树 | 面板修好之后重新生成了。两棵树（改之前、改之后）和原来逐字相同，只有两段 `source` 变了 |
 | `theme-edit-trees.json`、`asset-edit-trees.json` | 也有 `source`，但那是测试里自己写的一段代码，不是示例 | 不受影响，没动 |
 | `Gallery/index.json` 里的字节数和 SHA-256 | Gallery 副本的 | 同步时已经更新，`sync-gallery-templates.mjs` 通过 |
 | 其余的 `*-trees.json`、`native-trees.json` | 只有树 | 不受影响，没动 |
 
-`material-study-trees.json` 是在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_MATERIAL_TREES=1` 只跑 `testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures` 生成的。
+`material-study-trees.json` 是在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_MATERIAL_TREES=1` 只跑 `testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures` 生成的；`layout-edit-trees.json` 是用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_LAYOUT_TREES=1` 只跑 `testLayoutStarterEditsRenderWithNativeJavaScriptCore` 生成的，改动是真的编辑器（WKWebView 里的排版面板）做的。面板修好之后 Material Study 的原文没有再变，`material-study-trees.json` 不用再生成。
 
-### 没解决的问题：排版面板打不开排过版的示例
+`layout-edit-trees.json` 里改之后的原文和模板只差两处，都是面板写的：`alignment="leading"` 变成 `alignment={"trailing"}`；占三行的 `<text …>`、`Make today yours`、`</text>` 变成一行 `<text …>{"A calmer day"}</text>`。注释都还在。
 
-这不是参考文件过期，是行为变了，所以没有去改测试的期望值。
+### 发现的问题：排版面板打不开排过版的示例（已在面板里修好）
 
-编辑器的排版面板（`Editor/editorfe/src/visualLayout.js`）读不了现在的示例，原因有两个，各自单独就够：
+这不是参考文件过期，是行为变了，所以当时没有去改测试的期望值，而是报了出来。
+
+编辑器的排版面板（`Editor/editorfe/src/visualLayout.js`）当时读不了排过版的示例，原因有两个，各自单独就够：
 
 - Prettier 在 `$render(` 的元素后面加了一个逗号（`</vstack>,` 换行 `);`）。面板把它当成"不是直接的 `$render(<元素>)`"，只让在代码里改。
 - 注释写成了 JSX 里的 `{/* … */}`。面板把它当成语法错误，提示"Fix the JavaScript/JSX syntax before using Layout"。
@@ -587,36 +589,46 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 | --- | --- | --- | --- |
 | 排版之前 | 136 | 4 | 0 |
 | 只排了版 | 20 | 120 | 0 |
-| 现在（排了版、加了注释） | 8 | 61 | 71 |
+| 排了版、加了注释，面板修之前 | 8 | 61 | 71 |
+| 面板修好之后 | 136 | 4 | 0 |
 
-Layout Starter 和 Material Study 都在读不了的里面；把这两处（末尾的逗号、JSX 注释）都去掉，面板又能读出 7 个和 8 个图层。因此下面三个测试失败，`layout-edit-trees.json` 也生成不出来（生成它要先在面板里改 Layout Starter）：
+修之前 Layout Starter 和 Material Study 都读不了，两个 `VisualLayoutEditorTests`（`testLayoutStarterEditsRenderWithNativeJavaScriptCore`、`testNativeMaterialPropertyEditingPreservesSourceAndHistory`）和 `Web/studio` 的两个测试因此失败，`layout-edit-trees.json` 也生成不出来。
 
-- `VisualLayoutEditorTests.testLayoutStarterEditsRenderWithNativeJavaScriptCore`
-- `VisualLayoutEditorTests.testNativeMaterialPropertyEditingPreservesSourceAndHistory`
-- `Web/studio` 的两个测试：Layout Starter 那个停在原文不一致上；Material Study 那个 48 棵树都对上了，停在面板改属性那一步
+修的是面板，不是示例（提交"Layout panel: read code as a formatter writes it"）：`$render(` 的元素后面的逗号和旁边的注释不再算作参数；`{/* … */}` 这样的注释子节点在解析用的副本里换成等长的 `{0   }`，位置不变，显示和修改读的还是原文；单独占一行的文字和写在一行里的一样可以改。两个平台的 `StudioEditor.bundle` 重新构建了。面板现在能打开的示例是 136 个，和排版之前一样，一个都没少。
 
-要么让面板接受末尾的逗号和 JSX 注释，要么示例不用这两种写法；定了之后要再生成一次 `layout-edit-trees.json`（示例再变的话 `material-study-trees.json` 也要再生成）。这次没有做。
+### 面板的改动复查
+
+担心的是：解析用的是换过注释的副本，改动却要落在原文上。用现在的 Layout Starter 和 Material Study 各试了改文字、改属性、加图层、删第一个和最后一个子图层、把最后一个移到最前、把第一个移到最后，共 14 次（Material Study 的改属性那一次被面板拒绝，因为那个容器没有这个属性可改，其余 13 次都做了）：
+
+- 每个图层的位置都指在原文的 `<标签` 上、结束在 `>` 上；13 次改出来的代码都能再被面板读出来，都能运行，注释一条没少。没有发现改错位置的情况。
+- 排得不好看的地方，都不影响运行，原因是面板只插入和删除文字、不重新排版：加的和移过去的图层紧贴在前一个图层后面或者收尾标签前面，不另起一行；删掉或移走的地方留下一个只有缩进的空行。
+- 注释不跟着图层走：删掉或移走一个图层，原来写在它上面的注释留在原处，会变成在说下一个图层。
+- 文字图层里如果夹着注释（`<text>{/* 说明 */}Hi</text>`），改文字会把这条注释一起换掉。
+- 还读不了的两种写法，面板会拒绝并保留原文：注释子节点里用的是 `//`（`{` 换行 `// 说明` 换行 `}`）；前面的字符串里有 `{/*`、后面又有注释子节点时，副本会把中间一段当成注释，报语法错误。示例里没有这两种写法。
+
+这些都没有改，只记在这里。
 
 ### 结果
 
+面板修好、两个参考文件都重新生成之后：
+
 | 检查 | 结果 |
 | --- | --- |
-| 整个 `ScriptWidgetRuntimeTests`，和 `release-readiness.sh` 一样的写法（`xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=macOS' -derivedDataPath … CODE_SIGNING_ALLOWED=NO test`），重新生成之后 | 809 个：775 个通过，32 个跳过，2 个失败，就是上面两个 `VisualLayoutEditorTests` |
-| 同一个测试方案，不加 `CODE_SIGNING_ALLOWED=NO`（签了名的构建），重新生成之前 | 809 个里 32 个跳过，4 个失败：上面两个、`testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures`（原文不一致），以及 `LegacyCutoverProcessTests` 的一个 |
-| 同上，重新生成之后 | 809 个里 32 个跳过，3 个失败：上面两个和 `LegacyCutoverProcessTests.testIndependentLegacyWriterStopsBeforeMigrationAndCannotRestartAfterReady`。最后这个不读任何示例（它把应用当子进程启动），只在签了名的构建里失败，按发布检查的写法跑是通过的；为什么签了名就失败没有查 |
+| 整个 `ScriptWidgetRuntimeTests`，和 `release-readiness.sh` 一样的写法（`xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=macOS' -derivedDataPath … CODE_SIGNING_ALLOWED=NO test`） | 809 个：777 个通过，32 个跳过，没有失败 |
 | `cd Web/preview-engine && npm test` | 199 个通过 |
-| `cd Web/studio && npm test` | 114 个里 112 个通过，2 个失败（见上） |
-| `cd Editor/editorfe && npm test` | 55 个通过 |
-| `cargo test --locked --workspace`（Mac） | 506 个通过，1 个忽略 |
+| `cd Web/studio && npm test` | 114 个通过 |
+| `cd Editor/editorfe && npm test` | 59 个通过 |
 | `node Scripts/validate-release.mjs`、`sync-gallery-templates.mjs`、`validate-doc-links.mjs`、`node --test Scripts/tests/*.mjs` | 都通过（最后一个是 7 个测试） |
+| `./Scripts/release-readiness.sh`（`SCRIPTWIDGET_IOS_DESTINATION='platform=iOS Simulator,name=iPhone 18 Pro Max'`，这台机器没有装脚本默认的 iPhone 17） | 跑到最后一行，通过。里面包括：编辑器重新构建后两个 `StudioEditor.bundle` 和仓库里的一样；Web Studio 的浏览器冒烟测试都跑了（没有跳过）；macOS 的测试 809 个里 777 个通过、32 个跳过；macOS 和 iOS 的应用都能构建；iOS 模拟器上整个 `ScriptWidgetRuntimeTests` 820 个里 789 个通过、31 个跳过，没有失败 |
+
+面板修之前的数，留着对照：同一条 macOS 命令是 809 个里 775 个通过、32 个跳过、2 个失败（上面两个 `VisualLayoutEditorTests`）；`Web/studio` 是 114 个里 2 个失败；`Editor/editorfe` 是 55 个通过；`cargo test --locked --workspace` 是 506 个通过、1 个忽略。不加 `CODE_SIGNING_ALLOWED=NO`（签了名的构建）时还多一个失败，`LegacyCutoverProcessTests.testIndependentLegacyWriterStopsBeforeMigrationAndCannotRestartAfterReady`：它不读任何示例（它把应用当子进程启动），只在签了名的构建里失败，为什么没有查。
 
 ### 没跑的
 
-- `Scripts/release-readiness.sh` 没跑：它里面的 `Web/studio` 测试和上面这条 macOS 测试已经知道会失败，脚本会停在第一个失败上。
-- iOS 模拟器上只跑了生成 `material-study-trees.json` 的那一个测试，没有跑整个测试方案。
-- Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑。
-- 没有在真的编辑器里点开排版面板看；上面的数是用面板的解析函数直接读出来的，两个原生测试的失败和它一致。
+- Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑；面板修好之后也没有再跑 `cargo test`（面板的改动不进 Linux 的程序）。
+- 没有用手在真的编辑器里点开排版面板看。原生的两个测试是在 WKWebView 里真的点了面板的按钮；上面"复查"里的 14 次是直接调面板的函数。
 
+## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。
 - 画笔和其他平台的图片逐像素对比。
