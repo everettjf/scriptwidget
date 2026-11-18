@@ -14,7 +14,11 @@ ScriptWidget for Windows puts the same Package 2.0 widgets that run on iPhone, i
 
 ## Pictures
 
-The management window, as the program drew it on 2026-11-17 (saved by the program itself with `--screenshot`; the editor picture is the window picture with the code editor's own picture laid over the editor area, because a window picture leaves a WebView2 blank). There is no picture of widgets on the desktop yet: see [testing.md](testing.md).
+Widgets on the desktop of the test PC, 17 November 2026 (see [testing.md](testing.md)):
+
+![Widgets on the Windows desktop](images/desktop.png)
+
+The management window, as the program drew it on 2026-11-17 (saved by the program itself with `--screenshot`; the editor picture is the window picture with the code editor's own picture laid over the editor area, because a window picture leaves a WebView2 blank).
 
 | | |
 | --- | --- |

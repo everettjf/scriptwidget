@@ -24,7 +24,7 @@ The browser preview in [Web Studio](web-studio-browser.md) is a design tool, not
 | Live Activities and the Dynamic Island | Yes | No | A Live Update notification; the JSX layout is not drawn | No | No |
 | Control Widgets | Yes | No | Quick Settings tiles | No | No |
 | Siri and Shortcuts actions | Yes | Yes | App shortcuts and the automation entry point; no voice | No | No |
-| Push-triggered refresh | On system versions that support it | On system versions that support it | Yes, through Firebase Cloud Messaging | No | No |
+| Push-triggered refresh | On system versions that support it | On system versions that support it | The Google Play build only, through Firebase Cloud Messaging; the APK on GitHub has none | No | No |
 | Scrolling `<list>` | No, shows as an unknown tag | No | Yes | No | No |
 | Wallpaper colors (`material.<role>`) | No, the color is ignored | No | Yes | No | No |
 | Automation entry point for other apps | No | No | Yes | No | No |

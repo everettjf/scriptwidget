@@ -8,7 +8,7 @@ Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). Maintain
 
 - Search existing issues and discussions before opening a duplicate.
 - Use an issue for behavior changes that need product or API agreement.
-- Keep the current platform scope to iOS, iPadOS, and macOS.
+- Keep the platform scope to the supported systems: iPhone, iPad, Mac, Android, Windows 11 and Linux (Omarchy). watchOS and visionOS are out of scope.
 - Treat execution, network access, imported packages, iCloud, and app-group storage as security boundaries.
 
 ## Development setup
@@ -17,6 +17,7 @@ Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). Maintain
 2. Open `iOS/ScriptWidget.xcodeproj` or `macOS/ScriptWidgetMac.xcodeproj` in Xcode.
 3. Configure `iCloud.ScriptWidget` and `group.everettjf.scriptwidget` for storage testing.
 4. In `Editor/editorfe`, run `npm ci`, `npm test`, and `npm run build`.
+5. For Android, Windows and Linux, use the build and test commands in [ScriptWidget for Android](docs/android/README.md), [ScriptWidget for Windows](docs/windows/README.md) and [ScriptWidget for Linux](docs/linux/README.md).
 
 ## Pull requests
 
@@ -27,7 +28,7 @@ Participation is governed by the [Code of Conduct](CODE_OF_CONDUCT.md). Maintain
 - Include screenshots or a short recording for visible UI changes.
 - State the Xcode schemes and commands you verified.
 
-Before submitting, run `./Scripts/release-readiness.sh` on a compatible Mac. Live AI and real iCloud tests are opt-in because they require credentials or signed-in devices.
+Before submitting, run `./Scripts/release-readiness.sh` on a compatible Mac. It does not cover Android, Windows or Linux: run that platform's own tests when you touch it or the shared `Web/preview-engine`. Live AI and real iCloud tests are opt-in because they require credentials or signed-in devices.
 
 ## Adding a template
 

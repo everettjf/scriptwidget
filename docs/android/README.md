@@ -1,6 +1,6 @@
 # ScriptWidget for Android
 
-Status: version 1.0.0 (version code 1; called 1.2.0, builds 6 to 8, while it was in development), merged into `main`, not yet on Google Play (see the [to-do](TODO.md)). The application ID is `com.atomsprout.scriptwidget`; the Kotlin namespace is `com.everettjf.scriptwidget`. Verified on a Pixel 6 running Android 17 and on Android 15 and Android 16 emulators. Other vendors' launchers and background limits have not been tested. See [Android test notes](testing.md).
+Status: version 1.0.0 (version code 1; called 1.2.0, builds 6 to 8, while it was in development). The APK is on [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0); on Google Play it is in a closed test, open to members of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout) (see the [to-do](TODO.md)). The application ID is `com.atomsprout.scriptwidget`; the Kotlin namespace is `com.everettjf.scriptwidget`. Verified on a Pixel 6 running Android 17 and on Android 15 and Android 16 emulators. Other vendors' launchers and background limits have not been tested. See [Android test notes](testing.md).
 
 The Android app runs the same Package 2.0 widgets as iPhone, iPad and Mac. The plan and its decisions are in [Android port research and plan](android-port-research-and-plan.md).
 

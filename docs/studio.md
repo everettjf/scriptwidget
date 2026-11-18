@@ -55,7 +55,7 @@ On iPhone and iPad, external keyboards support **Command-S** to save, **Command-
 
 ## Platform scope
 
-ScriptWidget currently targets iOS, iPadOS, and macOS. watchOS and visionOS are not part of the current product roadmap.
+ScriptWidget Studio is the Mac app; iPhone, iPad and Android have an in-app editor, and Windows and Linux have a management window with a code editor and a live preview. See [Platform support](platform-support.md). watchOS and visionOS are not part of the current product roadmap.
 
 ## Sync model
 

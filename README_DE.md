@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**Erstelle native Widgets für iPhone, iPad und Mac mit JavaScript, JSX und KI**
+**Erstelle Widgets für iPhone, iPad, Mac, Android, Windows und Linux mit JavaScript, JSX und KI**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -39,7 +39,7 @@ Alles echte Screenshots. Windows und Linux sind Vorschauversionen.
 
 ## Warum ScriptWidget?
 
-- Ein Skript läuft auf iOS, iPadOS und macOS sowie auf Android (im Test); Layouts lassen sich mit `$getenv("widget-size")` anpassen.
+- Ein Widget-Paket läuft auf iPhone, iPad, Mac und Android sowie als Vorschau unter Windows 11 und Linux (Omarchy); Layouts lassen sich mit `$getenv("widget-size")` anpassen.
 - Unterstützt interaktive Widgets, App Intents, Live Activities, Dynamic Island und Control Widgets.
 - Studio für Mac bietet CodeMirror, Autovervollständigung, Diagnosen, Konsole und Vorschauen in mehreren Größen.
 - Widgets lassen sich mit OpenAI-kompatiblen Modellen erzeugen, ausführen, diagnostizieren und verbessern; API-Schlüssel bleiben im Schlüsselbund.

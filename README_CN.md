@@ -6,7 +6,9 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**使用 JavaScript、JSX 和 AI，为 iPhone、iPad、Mac 与 Android 创建原生 Widget**
+**使用 JavaScript、JSX 和 AI，为 iPhone、iPad、Mac、Android、Windows 与 Linux 创建 Widget**
+
+**下载：** [iPhone 和 iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0（APK）](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) · [Windows 0.1.0 预览版（安装程序）](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) · [Linux 0.1.4 预览版（Omarchy，压缩包）](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) · [浏览器里的 Web Studio](https://asp.run/scriptwidget/studio/)
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -31,7 +33,7 @@ ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要�
 
 Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
-Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；Linux 版目前支持 [Omarchy](https://omarchy.org) 4.5，安装包在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位、音乐等设备数据 API。
+Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux 0.1.4](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位、音乐等设备数据 API。
 
 ### 各平台截图
 
@@ -53,12 +55,12 @@ Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everet
 
 ## 为什么选择 ScriptWidget
 
-- 一份脚本适配 iOS、iPadOS 与 macOS，以及 Android，多尺寸布局可通过 `$getenv("widget-size")` 调整。
+- 同一个小组件包可在 iPhone、iPad、Mac 和 Android 上运行，并以预览版运行于 Windows 11 和 Linux（Omarchy）；多尺寸布局可通过 `$getenv("widget-size")` 调整。
 - 支持交互式 Widget、App Intents、Live Activity、灵动岛与 Control Widget。
 - Mac Studio 内置 CodeMirror 编辑器、补全、诊断、Console 和多尺寸预览。
 - 可用 OpenAI 兼容模型生成、运行、诊断并迭代 Widget；API Key 保存在 Keychain。
 - Widget & Skills Gallery 支持经过索引、大小、路径与 SHA-256 验证的一键安装和离线缓存。
-- 70 个内置模板、版本化 Runtime API、Package 2.0 与 Skills 1.0 均有自动测试和发布门禁。
+- 92 个内置模板（连同组件与 API 示例共 140 个）、版本化 Runtime API、Package 2.0 与 Skills 1.0 均有自动测试和发布门禁。
 
 ## 五分钟开始
 
@@ -100,7 +102,7 @@ $render(
 
 ## 参与贡献
 
-欢迎提交 Runtime、Mac/iOS 体验、模板、Gallery Widget、AI Skill、测试与文档。请先阅读[贡献指南](CONTRIBUTING.md)、[治理规则](GOVERNANCE.md)和[行为准则](CODE_OF_CONDUCT.md)，并在提交前运行：
+欢迎提交 Runtime、各平台体验、模板、Gallery Widget、AI Skill、测试与文档。请先阅读[贡献指南](CONTRIBUTING.md)、[治理规则](GOVERNANCE.md)和[行为准则](CODE_OF_CONDUCT.md)，并在提交前运行：
 
 ```bash
 ./Scripts/release-readiness.sh
@@ -116,6 +118,8 @@ sh scripts/device-test.sh app
 ```
 
 详见 [Android 版 ScriptWidget](docs/android/README.md)、[测试说明](docs/android/testing.md)和[待办事项](docs/android/TODO.md)。
+
+Windows 版和 Linux 版同样有独立的构建和测试，见 [Windows 版 ScriptWidget](docs/windows/README.md#building) 和 [Linux 版 ScriptWidget](docs/linux/README.md#building)。
 
 安全问题请按照[安全政策](SECURITY.md)私下报告，不要在公开 Issue 中披露利用细节或个人数据。
 

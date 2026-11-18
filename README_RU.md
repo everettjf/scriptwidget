@@ -6,7 +6,7 @@
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
-**Создавайте нативные виджеты для iPhone, iPad и Mac с помощью JavaScript, JSX и ИИ**
+**Создавайте виджеты для iPhone, iPad, Mac, Android, Windows и Linux с помощью JavaScript, JSX и ИИ**
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -39,7 +39,7 @@ ScriptWidget — это открытая платформа для создан�
 
 ## Почему ScriptWidget
 
-- Один скрипт работает в iOS, iPadOS, macOS и в Android (тестируется), а макеты адаптируются через `$getenv("widget-size")`.
+- Один пакет работает на iPhone, iPad, Mac и Android, а также в предварительной версии в Windows 11 и Linux (Omarchy); макеты адаптируются через `$getenv("widget-size")`.
 - Поддерживает интерактивные виджеты, App Intents, Live Activities, Dynamic Island и Control Widgets.
 - Studio для Mac включает CodeMirror, автодополнение, диагностику, консоль и предпросмотр в разных размерах.
 - Модели, совместимые с OpenAI, позволяют создавать, запускать, диагностировать и улучшать виджеты; API-ключи хранятся в Keychain.

@@ -1,7 +1,8 @@
 # Web Studio in the browser
 
 Design ScriptWidget widgets on Windows, macOS, Linux, or iPad in any modern
-browser, see an instant preview, and install the result on iPhone. No Mac,
+browser, see an instant preview, and export a `.swt` package that ScriptWidget
+opens on iPhone, iPad, Mac, Android, Windows and Linux. No Mac,
 Xcode, or connected device is needed while you work.
 
 Open it from the ScriptWidget site (`/studio/`) or run it locally:
@@ -64,8 +65,8 @@ the browser and previews them itself.
 The browser preview is fast feedback, not a pixel-perfect WidgetKit render.
 On Windows and Linux the Studio uses the bundled Inter font in place of SF
 Pro, so text can wrap slightly differently, and WidgetKit controls the final
-look, refresh, and interactions. Always check the widget on iPhone before
-sharing it. See [browser preview coverage](browser-preview-coverage.md) for
+look, refresh, and interactions. Always check the widget on the device it is
+for before sharing it. See [browser preview coverage](browser-preview-coverage.md) for
 what is supported, approximated, or not yet rendered.
 
 ## Install on iPhone
@@ -80,6 +81,11 @@ what is supported, approximated, or not yet rendered.
 3. Review the permissions, then add the widget to the Home Screen.
 
 **Export .swt** downloads the same file without the instructions.
+
+The `.swt` file is not only for iPhone: ScriptWidget on iPad, Mac, Android,
+Windows and Linux opens the same file. The **Install on iPhone** button only
+adds the iPhone steps. Which features and APIs each system has is in
+[Platform support](platform-support.md).
 
 ## For coding agents
 

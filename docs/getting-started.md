@@ -2,6 +2,8 @@
 
 This tutorial creates a widget in ScriptWidget Studio on Mac and makes it available on iPhone, iPad, and Mac through the existing ScriptWidget sync model.
 
+On Android use the in-app editor, and on Windows or Linux the management window: open a template under Templates and choose "Use this template". See [ScriptWidget for Android](android/README.md), [Windows](windows/README.md#using-it) and [Linux](linux/README.md#using-it).
+
 ## 1. Create
 
 Open ScriptWidget Studio and choose **Blank Widget**. Give it a short unique name. Every widget is a package whose entry point is `main.jsx`.
