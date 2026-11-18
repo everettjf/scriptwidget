@@ -15,6 +15,8 @@ pub const TEXT: &[(&str, &str, &str)] = &[
     ("app.title", "ScriptWidget", "ScriptWidget"),
     ("nav.library", "My widgets", "我的小组件"),
     ("nav.templates", "Templates", "模板"),
+    ("nav.components", "Components", "组件"),
+    ("nav.apis", "APIs", "API"),
     ("nav.settings", "Settings", "设置"),
     //
     ("library.title", "My widgets", "我的小组件"),
@@ -41,9 +43,10 @@ pub const TEXT: &[(&str, &str, &str)] = &[
     ("templates.title", "Templates", "模板"),
     ("templates.detail", "Ready-made widgets. Open one to see what it shows and how it is written, then make it yours.", "现成的小组件。点开可以看它的效果和代码，再变成你自己的。"),
     ("templates.none", "No templates are installed with this program.", "这个程序没有附带模板。"),
-    ("templates.group.template", "Widgets", "小组件"),
-    ("templates.group.component", "Component examples", "组件示例"),
-    ("templates.group.api", "API examples", "API 示例"),
+    ("components.title", "Components", "组件"),
+    ("components.detail", "What a widget is built from. Open one to see an example of it and how it is written.", "小组件由这些组件搭成。点开可以看它的示例和写法。"),
+    ("apis.title", "APIs", "API"),
+    ("apis.detail", "What a widget's code can call. Open one to see an example that uses it.", "小组件代码可以调用的接口。点开可以看用到它的示例。"),
     ("templates.network", "Uses the network", "会访问网络"),
     //
     ("detail.code", "Code", "代码"),
@@ -296,7 +299,7 @@ mod tests {
         }
         assert!(used.len() > 40, "the scan found only {} keys", used.len());
         // Keys that are built at run time or used by this module.
-        let indirect = |key: &str| key.starts_with("size.") || key.starts_with("bytes.") || key.starts_with("templates.group.") || ["settings.hour", "settings.hours", "settings.minutes"].contains(&key);
+        let indirect = |key: &str| key.starts_with("size.") || key.starts_with("bytes.") || ["settings.hour", "settings.hours", "settings.minutes"].contains(&key);
         let unused: Vec<&str> = TEXT.iter().map(|(key, _, _)| *key).filter(|key| !used.contains(*key) && !indirect(key)).collect();
         assert!(unused.is_empty(), "texts nothing shows: {unused:?}");
     }

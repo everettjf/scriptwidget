@@ -13,7 +13,7 @@ On other desktops the command line and the management window work, but nothing i
 | Part | What it does |
 | --- | --- |
 | `scriptwidget` | The command line, and the background service (`scriptwidget host run`): it runs the scripts on a schedule, draws the pictures and handles clicks. It opens no window |
-| `scriptwidget-studio` | The management window: your widgets, the templates, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
+| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
 | Omarchy plugin `com.atomsprout.scriptwidget` | Shows the pictures on the desktop layer and adds an entry to the bar. It only shows pictures and forwards numbers and coordinates |
 
 ## Pictures

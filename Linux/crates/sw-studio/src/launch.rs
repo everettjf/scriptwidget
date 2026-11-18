@@ -14,7 +14,7 @@ usage: scriptwidget-studio [options] [file.swt]
   --help               print this text
 
 For development:
-  --page <page>        start on library, templates, settings, template:<group/name> or editor:<widget>
+  --page <page>        start on library, templates, components, apis, settings, template:<group/name> or editor:<widget>
   --no-single-instance always open a window of its own
 ";
 
@@ -23,6 +23,8 @@ For development:
 pub enum StartPage {
     Library,
     Templates,
+    Components,
+    Apis,
     Settings,
     Template(String),
     Editor(String),
@@ -75,6 +77,8 @@ pub fn parse(arguments: &[String], current: Option<&std::path::Path>) -> Result<
                 launch.page = Some(match (page.as_str(), page.split_once(':')) {
                     ("library", _) => StartPage::Library,
                     ("templates", _) => StartPage::Templates,
+                    ("components", _) => StartPage::Components,
+                    ("apis", _) => StartPage::Apis,
                     ("settings", _) => StartPage::Settings,
                     (_, Some(("template", reference))) if !reference.is_empty() => StartPage::Template(reference.to_owned()),
                     (_, Some(("editor", name))) if !name.is_empty() => StartPage::Editor(name.to_owned()),
@@ -115,6 +119,8 @@ mod tests {
         assert_eq!((launch.data, launch.page, launch.single_instance), (Some("/tmp/data".into()), Some(StartPage::Template("template/Clock".into())), false));
         assert_eq!(run(&["--page", "editor:Clock"]).unwrap().page, Some(StartPage::Editor("Clock".into())));
         assert_eq!(run(&["--page", "settings"]).unwrap().page, Some(StartPage::Settings));
+        assert_eq!(run(&["--page", "components"]).unwrap().page, Some(StartPage::Components));
+        assert_eq!(run(&["--page", "apis"]).unwrap().page, Some(StartPage::Apis));
     }
 
     #[test]
