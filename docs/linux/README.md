@@ -47,8 +47,11 @@ sh install.sh
 ## Using it
 
 - **Add a widget.** Open ScriptWidget from the launcher or the bar entry, open a template, choose "Use this template", then "Add to desktop". From a terminal: `scriptwidget install <folder or .swt>`, then `scriptwidget add <name> --family medium`.
-- **Move a widget.** Right-click the ScriptWidget entry in the bar and turn on "Arrange widgets" (or run `scriptwidget arrange`). Drag widgets; they snap to the screen edges and stay out of the bar and the dock. Turn it off when done. Outside this mode only buttons, toggles and links react; clicks anywhere else on a widget go through to the desktop.
-- **Change its size, edit or remove it.** In arrange mode, right-click the widget.
+- **Change its size, edit, refresh or remove it.** Right-click the widget.
+
+  ![The menu of a widget](images/widget-menu.png)
+- **Move a widget.** Right-click it and choose "Move widgets…" (or turn on "Arrange widgets" in the bar entry, or run `scriptwidget arrange`). Drag widgets; they snap to the screen edges and stay out of the bar and the dock. Right-click and choose "Done moving" when done.
+- **Click.** A left click works on buttons, toggles and links; elsewhere on a widget it does nothing.
 - **See widgets above your windows.** "Show widgets on top" in the bar entry, or `scriptwidget peek`; once more puts them back.
 - **Edit.** The preview next to the code is drawn by the same painter as the desktop widget. `scriptwidget dev <folder>` watches a folder and refreshes the placed widgets of that package on save.
 - **Move a widget to another device.** Export it as a `.swt` file and open that file in ScriptWidget on the other device; a `.swt` from another device is imported the same way.

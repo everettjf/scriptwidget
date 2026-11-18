@@ -29,7 +29,14 @@ PanelWindow {
   // does not come up on the display it is given next. Hiding it for a moment
   // and showing it again does bring it up there.
   property bool moving: false
-  onScreenChanged: { moving = true; remap.restart() }
+  // The trigger is the set of displays changing, not this window's own
+  // "screen changed": the shell reports that one also while it is showing the
+  // window, and reacting to it hid the window again. With a display added or
+  // removed, every widget window is shown again, also one that stays where it is.
+  Connections {
+    target: Quickshell
+    function onScreensChanged() { if (!panel.moving) { panel.moving = true; remap.restart() } }
+  }
   Timer { id: remap; interval: 200; onTriggered: panel.moving = false }
   anchors { top: true; left: true }
   margins { left: widget.x; top: widget.y }
@@ -60,33 +67,10 @@ PanelWindow {
   }
   Timer { id: layerSync; interval: 350; onTriggered: panel.syncLayer() }
 
-  // The input region: the tap regions and nothing else.
-  mask: Region { regions: panel.tapRegions }
-
-  property list<Region> tapRegions
-
-  function collectRegions() {
-    var found = []
-    for (var index = 0; index < regionMaker.count; index++) {
-      var region = regionMaker.objectAt(index)
-      if (region) found.push(region)
-    }
-    tapRegions = found
-  }
-
-  Instantiator {
-    id: regionMaker
-    model: panel.widget.regions
-    delegate: Region {
-      required property var modelData
-      x: modelData.x
-      y: modelData.y
-      width: modelData.width
-      height: modelData.height
-    }
-    onObjectAdded: panel.collectRegions()
-    onObjectRemoved: panel.collectRegions()
-  }
+  // The whole widget takes the pointer: a left click on a tap region is a tap,
+  // and a right click anywhere on it opens the widget's menu. (Earlier only
+  // the tap regions took input and the menu existed in arrange mode alone,
+  // which made a widget look as if it ignored the mouse.)
 
   onFramesChanged: if (frame >= frames.length) frame = 0
 
@@ -103,19 +87,34 @@ PanelWindow {
   }
 
   MouseArea {
+    id: pointer
     anchors.fill: parent
-    cursorShape: Qt.PointingHandCursor
+    acceptedButtons: Qt.LeftButton | Qt.RightButton
+    hoverEnabled: true
+    cursorShape: overRegion ? Qt.PointingHandCursor : Qt.ArrowCursor
 
-    onClicked: function (mouse) {
-      // Where regions overlap, the one named last is on top.
+    property bool overRegion: false
+
+    // The tap region at a point, or null. Where regions overlap, the one named last is on top.
+    function regionAt(x, y) {
       var regions = panel.widget.regions
       for (var index = regions.length - 1; index >= 0; index--) {
         var region = regions[index]
-        if (mouse.x >= region.x && mouse.x < region.x + region.width && mouse.y >= region.y && mouse.y < region.y + region.height) {
-          panel.service.tap(panel.modelData, region.n)
-          return
-        }
+        if (x >= region.x && x < region.x + region.width && y >= region.y && y < region.y + region.height) return region
       }
+      return null
+    }
+
+    onPositionChanged: function (mouse) { overRegion = regionAt(mouse.x, mouse.y) !== null }
+    onExited: overRegion = false
+
+    onClicked: function (mouse) {
+      if (mouse.button === Qt.RightButton) {
+        panel.service.openMenu(panel.modelData, panel.screen, panel.widget.x + mouse.x, panel.widget.y + mouse.y)
+        return
+      }
+      var region = regionAt(mouse.x, mouse.y)
+      if (region) panel.service.tap(panel.modelData, region.n)
     }
   }
 }

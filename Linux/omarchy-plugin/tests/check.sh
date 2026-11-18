@@ -191,15 +191,25 @@ if [ -n "$catcher_pid" ] && until_true 5 test -e "$T/clicks"; then
   check "peek: the widgets move to the overlay layer" until_true 3 has_layer "3 460 80 170 170"
   shot "0,0 1000x420" "$out/2-peek-over-window.png"
 
-  before=$(received); click 545 165
-  check "pass through: a click on a widget without regions reaches the window below" [ "$(received)" -gt "$before" ]
+  # A widget takes the pointer over its whole area (so that a right click on
+  # it can open its menu); a click on it never reaches a window below.
+  before=$(received); clear_log; click 545 165
+  check "on top: a click on a widget without regions stays with the widget" [ "$(received)" = "$before" ]
   before=$(received); click 120 100
-  check "pass through: a click beside the region reaches the window below" [ "$(received)" -gt "$before" ]
+  check "on top: a click beside the region stays with the widget" [ "$(received)" = "$before" ]
+  no_tap() { ! logged 'command tap'; }
+  check "on top: and is not a tap" no_tap
+  right_click 545 165
+  check "menu: a right click on a widget opens its menu outside arrange mode" until_true 3 is menu true
+  check "menu: over the whole screen" until_true 3 count_is scriptwidget-menu 1
+  click 1500 900
+  check "menu: a click elsewhere closes it" until_true 3 is menu false
+  no_menu_word() { ! logged 'command menu'; }
+  check "menu: and sends nothing" no_menu_word
   before=$(received); clear_log; click 244 207
   check "pass through: a click in the region is a tap" until_true 3 logged 'command tap a 1$'
   check "pass through: and does not reach the window below" [ "$(received)" = "$before" ]
 
-  # The other way round, so the three checks above can be seen to fail.
   "$sw" arrange; until_true 3 is arrange true; sleep 0.5
   before=$(received); click 545 165
   check "pass through: in arrange mode the click stays with the widget" [ "$(received)" = "$before" ]
@@ -269,6 +279,33 @@ DETAIL=$(widget_layers | tr '\n' ';')
 # while arranging, and a widget must not stay on the overlay layer afterwards.
 check "arrange: the widget windows are back on the bottom layer, where they were dropped" until_true 3 has_layer "1 680 480 329 170"
 check "menu: b now has the medium size" has_layer "1 1000 600 329 170"
+
+# ------------------------------------------------- a display comes and goes
+
+# An earlier version of the plugin made the shell crash here.
+shell_now() { pgrep -f 'quickshell -n -p' | head -1; }
+crash_count() { ls "$HOME/.cache/quickshell/crashes" 2>/dev/null | wc -l; }
+monitor_count_is() { [ "$(hyprctl -j monitors | jq length)" = "$1" ]; }
+on_display() { hyprctl -j layers | jq -e --arg m "$1" '.[$m].levels | to_entries[] | .value[] | select(.namespace == "scriptwidget")' >/dev/null; }
+shell_before=$(shell_now); crashes_before=$(crash_count)
+hyprctl output create headless >/dev/null
+if until_true 6 monitor_count_is 2; then
+  second=$(hyprctl -j monitors | jq -r --arg s "$screen" '.[] | select(.name != $s) | .name' | head -1)
+  sleep 1
+  "$sw" move a "$second" 100 100
+  check "displays: a widget moved to a second display is shown there" until_true 6 on_display "$second"
+  hyprctl output remove "$second" >/dev/null
+  until_true 6 monitor_count_is 1
+  check "displays: when that display goes away the widget shows on the first one" until_true 8 has_layer "1 100 100 329 170"
+  "$sw" move a "$screen" 680 480
+  check "displays: and it can be moved back" until_true 6 has_layer "1 680 480 329 170"
+  same_shell() { [ "$(shell_now)" = "$shell_before" ]; }
+  no_new_crash() { [ "$(crash_count)" = "$crashes_before" ]; }
+  check "displays: the shell is still the same process" same_shell
+  check "displays: and wrote no crash report" no_new_crash
+else
+  skip "displays" "could not add a headless display"
+fi
 
 # ------------------------------------------------- remove, and bad messages
 
