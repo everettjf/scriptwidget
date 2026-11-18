@@ -8,9 +8,10 @@
 // 
 
 var today = new Date();
-var lastDay = new Date(today.getFullYear(), 12, 31);
+// Whole days from today's date to 31 December: 0 on the last day of the year.
+// Both are counted as calendar dates, so the time of day does not matter.
 var perDay = 1000 * 60 * 60 * 24;
-var leftDays = Math.ceil((lastDay.getTime() - today.getTime()) / perDay);
+var leftDays = Math.round((Date.UTC(today.getFullYear(), 11, 31) - Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())) / perDay);
 
 $render(
   <hstack background="#9f1239" frame="max" spacing="4" padding="14">
