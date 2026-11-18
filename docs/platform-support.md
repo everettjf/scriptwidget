@@ -29,6 +29,28 @@ The browser preview in [Web Studio](web-studio-browser.md) is a design tool, not
 | Wallpaper colors (`material.<role>`) | No, the color is ignored | No | Yes | No | No |
 | Automation entry point for other apps | No | No | Yes | No | No |
 
+## Components
+
+What a script draws with. Android, Windows and Linux use one shared renderer, so a component is on all three or on none; the rows say what a system draws differently. Each component's properties are in the [runtime API reference](scriptwidget-runtime-api.md).
+
+<!-- components:start -->
+| Component | iPhone and iPad | Mac | Android | Windows | Linux |
+| --- | --- | --- | --- | --- | --- |
+| Layout: `<vstack>`, `<hstack>`, `<zstack>`, `<vgrid>`, `<hgrid>`, `<spacer>`, `<divider>` | Yes | Yes | Yes | Yes | Yes |
+| Text: `<text>`, `<label>`, `<badge>`, `<chip>`, `<stat>` | Yes | Yes | Yes, in Inter, which is wider than the Apple system font | Yes, in Inter | Yes, in Inter |
+| Shapes: `<rect>`, `<roundedrect>`, `<capsule>`, `<ellipse>`, `<circle>`, `<line>` | Yes | Yes | Yes | Yes | Yes |
+| Values: `<gauge>`, `<progress>`, `<ring>`, `<chart>` | Yes | Yes | Yes | Yes | Yes |
+| `<image>` | Yes | Yes | Yes | Yes | Yes |
+| `<icon>` and `systemName` images | Yes | Yes | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder |
+| `<date>` | Yes | Yes | `timer` and a `time` of now tick by themselves; `relative`, `offset` and `date` are redrawn at each refresh | A timer is redrawn every second and a clock time every minute | A timer is redrawn every second and a clock time every minute |
+| `<gif>` | Animated in the app's preview; in a widget the system decides and may hold one frame | The first frame | Up to 24 sampled frames | The first frame | Animated on the desktop, at most 60 frames |
+| The `animation` property (clock hands, swing) | Moves in the app's preview; in a widget the system schedules it and may hold one frame | Standard clock hands show the time without moving; the others stay at rest | Standard clock hands are a system clock; swing and custom intervals play as frames | The first frame | The first frame |
+| `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
+| `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
+| The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
+| Scrolling `<list>` | No | No | Yes | No | No |
+<!-- components:end -->
+
 ## Data APIs
 
 <!-- platforms:start -->

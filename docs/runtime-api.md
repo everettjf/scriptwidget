@@ -16,7 +16,7 @@ Removing or changing the meaning of a 1.0 global requires a new major API versio
 
 ### Which systems each API runs on
 
-A widget package installs on every system, but not every API has something behind it everywhere. An API a system lacks answers `false` from `isAvailable()` and rejects its calls with `[unsupported_platform]`; `$system.platform()` tells a script where it runs. [Platform support](platform-support.md) explains each limit and lists the widget features by system; each API's own page repeats its line of this table.
+A widget package installs on every system, but not every API has something behind it everywhere. An API a system lacks answers `false` from `isAvailable()` and rejects its calls with `[unsupported_platform]`; `$system.platform()` tells a script where it runs. [Platform support](platform-support.md) explains each limit and lists the widget features by system; each API's own page repeats its line of this table. The same for the JSX components is at the top of the [component reference](scriptwidget-runtime-api.md).
 
 <!-- platforms:start -->
 | API | iPhone and iPad | Mac | Android | Windows | Linux |
