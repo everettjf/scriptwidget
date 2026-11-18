@@ -359,7 +359,11 @@ PR 79 的检查全部通过后合并。0.1.1 的发布说明里加了"已被 0.1
 
 ### 仍然没跑的
 
-- **中文输入法的组字。** 拼音引擎（`fcitx5-chinese-addons`）已经装上，虚拟键盘的脚本也写了（`Linux/omarchy-plugin/tests/keyboard.py`，通过 `/dev/uinput`，按键会经过合成器和输入法）。但睡眠测试之后真实会话锁屏了，解锁要输密码。在无屏的 sway 里用 `wtype` 试过：输入法切到了拼音，但 `wtype` 的按键不经过输入法，进编辑器的是拉丁字母。所以组字还是没有测到。
+- **中文输入法的组字。** 拼音引擎（`fcitx5-chinese-addons`）已经装上，虚拟键盘的脚本也写了（`Linux/omarchy-plugin/tests/keyboard.py`，通过 `/dev/uinput`，按键会经过合成器和输入法）。但睡眠测试之后真实会话锁屏了，解锁要输密码。在无屏的 sway 里又试了几轮，查到的是：
+  - 管理窗口确实使用输入法协议：用 `WAYLAND_DEBUG=1` 看到它创建了 `zwp_text_input_v3`，并发了 `enable`、`set_content_type`、`set_cursor_rectangle`、`commit`。
+  - 要先停掉真实会话的 `omarchy-fcitx5.service`，否则它两秒内就把 fcitx5 抢回真实会话；把 fcitx5 接到 sway 上并切到拼音之后，合成器给窗口发了 `enter` 和 `done`（有一次要切换一下焦点才发）。
+  - 但是 `wtype` 发的按键没有被输入法截住，直接以按键事件到了窗口，窗口没有收到 `preedit_string` 或 `commit_string`。`wtype` 用的是虚拟键盘协议，这在预料之中；无屏的 sway 里又没有能接 `/dev/uinput` 的输入后端。
+  所以结论是：窗口这一侧接入输入法的部分是通的，从按键到候选字再到上屏的那一段没有测到。这一段要在真实会话里用上面的虚拟键盘脚本测。
 - **电脑重启后服务自启。** 重启后停在登录界面，要输密码才有图形会话。单元是启用状态，`graphical-session.target` 起来时会拉起它，但没有实际重启验证。
 - 真实显卡；真实的 x86_64 电脑。这台 Mac 上做不到。
 
