@@ -128,14 +128,24 @@ impl StudioWindow {
             _tasks: vec![preview_task, request_task],
         };
         this.reload_library(cx);
-        match page {
-            Some(StartPage::Library) | None => {}
-            Some(StartPage::Templates) => this.go(Target::Templates, window, cx),
-            Some(StartPage::Settings) => this.go(Target::Settings, window, cx),
-            Some(StartPage::Template(reference)) => this.go(Target::Template(reference), window, cx),
-            Some(StartPage::Editor(name)) => this.go(Target::Editor(name), window, cx),
-        }
-        this.handle_request(first, window, cx);
+        // Where the program was asked to start. Not done here but once the
+        // window exists: a start that fails (a widget that is not installed, a
+        // file that cannot be read) shows a message, and a message needs the
+        // window's own state, which is only there after this function returns.
+        // Doing it here made `--edit <unknown name>` end the program.
+        let start = cx.spawn_in(window, async move |this, cx| {
+            let _ = this.update_in(cx, |this, window, cx| {
+                match page {
+                    Some(StartPage::Library) | None => {}
+                    Some(StartPage::Templates) => this.go(Target::Templates, window, cx),
+                    Some(StartPage::Settings) => this.go(Target::Settings, window, cx),
+                    Some(StartPage::Template(reference)) => this.go(Target::Template(reference), window, cx),
+                    Some(StartPage::Editor(name)) => this.go(Target::Editor(name), window, cx),
+                }
+                this.handle_request(first, window, cx);
+            });
+        });
+        this._tasks.push(start);
         this
     }
 

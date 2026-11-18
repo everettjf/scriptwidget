@@ -24,7 +24,13 @@ PanelWindow {
   readonly property bool animating: visible && frames.length > 1 && !covered && service.status === "running"
 
   screen: service.screenFor(widget.screen)
-  visible: widget.width > 0 && !service.arranging
+  visible: widget.width > 0 && !service.arranging && !moving
+  // When the display a widget is on goes away, its window goes with it and
+  // does not come up on the display it is given next. Hiding it for a moment
+  // and showing it again does bring it up there.
+  property bool moving: false
+  onScreenChanged: { moving = true; remap.restart() }
+  Timer { id: remap; interval: 200; onTriggered: panel.moving = false }
   anchors { top: true; left: true }
   margins { left: widget.x; top: widget.y }
   implicitWidth: Math.max(1, widget.width)

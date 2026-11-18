@@ -190,6 +190,7 @@ Item {
       sweep.restart()
       reportedScreens = ({})
       for (var index = 0; index < screenReports.instances.length; index++) screenReports.instances[index].send()
+      monitorsSoon.restart()
       reportTheme()
       return
     }
@@ -428,6 +429,37 @@ Item {
     stdout: StdioCollector { onStreamFinished: root.readLayers(text) }
   }
 
+  // The compositor's own word on each monitor. The shell's screen objects
+  // above did not follow a scale change made while the shell was running, and
+  // a widget was then drawn at the old scale and looked blurred. Read at
+  // start, after every reconnect, when the compositor says a monitor or its
+  // configuration changed, and now and then in case it did not say.
+  function readMonitors(text) {
+    var list
+    try { list = JSON.parse(text) } catch (error) { return }
+    if (!Array.isArray(list)) return
+    for (var index = 0; index < list.length && index < 16; index++) {
+      var monitor = list[index]
+      if (!monitor || typeof monitor.name !== "string" || monitor.disabled === true || !(monitor.scale > 0)) continue
+      var turned = monitor.transform % 2 === 1
+      var width = Math.round((turned ? monitor.height : monitor.width) / monitor.scale)
+      var height = Math.round((turned ? monitor.width : monitor.height) / monitor.scale)
+      reportScreen(monitor.name, monitor.scale, width, height)
+    }
+  }
+  function askMonitors() { if (status === "running" && !monitors.running) monitors.running = true }
+  Process {
+    id: monitors
+    command: ["hyprctl", "-j", "monitors"]
+    stdout: StdioCollector { onStreamFinished: root.readMonitors(text) }
+  }
+  Connections {
+    target: Hyprland
+    function onRawEvent(event) { if (/monitor|configreloaded/.test(event.name)) monitorsSoon.restart() }
+  }
+  Timer { id: monitorsSoon; interval: 500; onTriggered: root.askMonitors() }
+  Timer { interval: 30000; repeat: true; running: root.status === "running"; onTriggered: root.askMonitors() }
+
   Variants {
     id: screenReports
     model: Quickshell.screens
@@ -437,7 +469,9 @@ Item {
       readonly property var monitor: Hyprland.monitorFor(modelData)
       readonly property real scale: monitor && monitor.scale > 0 ? monitor.scale : modelData.devicePixelRatio
       readonly property string figures: modelData.name + " " + scale + " " + modelData.width + " " + modelData.height
-      function send() { root.reportScreen(modelData.name, scale, modelData.width, modelData.height) }
+      // These figures only say that something changed; they can be the ones
+      // from before the change. What is reported is what the compositor says.
+      function send() { monitorsSoon.restart() }
       onFiguresChanged: send()
     }
   }
