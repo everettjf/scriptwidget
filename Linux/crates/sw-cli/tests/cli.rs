@@ -116,7 +116,19 @@ impl Sandbox {
 }
 
 fn finish(command: &mut Command) -> Outcome {
-    let output = command.output().expect("the program starts");
+    // A test that has just copied the program can find it "busy": while the copy
+    // was being written another test started a child, and that child still holds
+    // the file open for writing for a moment. Wait for it instead of failing.
+    let mut tries = 0;
+    let output = loop {
+        match command.output() {
+            Err(error) if error.kind() == std::io::ErrorKind::ExecutableFileBusy && tries < 200 => {
+                tries += 1;
+                std::thread::sleep(std::time::Duration::from_millis(10));
+            }
+            result => break result.expect("the program starts"),
+        }
+    };
     Outcome { code: output.status.code().expect("the program exits by itself"), stdout: String::from_utf8(output.stdout).expect("UTF-8 output"), stderr: String::from_utf8(output.stderr).expect("UTF-8 errors") }
 }
 
