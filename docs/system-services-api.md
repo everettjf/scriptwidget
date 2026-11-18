@@ -1,5 +1,18 @@
 # System services (Runtime 1.6)
 
+<!-- platforms:start -->
+> **Runs on**
+>
+> - `$weather`: iPhone and iPad, Mac, Android, Windows, Linux.
+> - `$alarms`: iPhone and iPad, Android (inexact, no system alarm UI). **Not on:** Mac, Windows, Linux.
+> - `$contacts`, `$documents`: iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+> - `$maps`: iPhone and iPad, Mac, Android (Geocoding and place search; no `snapshot`). **Not on:** Windows, Linux.
+> - `$home`: iPhone and iPad. **Not on:** Mac, Android, Windows, Linux.
+> - `$notifications`: iPhone and iPad, Mac, Android (delivery is inexact). **Not on:** Windows, Linux.
+>
+> Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 These APIs extend existing Calendar, HealthKit, network and App Intent capabilities. They use Apple's frameworks and the existing bounded HTTP transport; no third-party SDK, inference server or application server is added. Weather currently uses MET Norway rather than WeatherKit.
 
 ## Install and authorize

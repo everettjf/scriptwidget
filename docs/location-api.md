@@ -1,5 +1,9 @@
 # Location and widget authorization
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Android (widgets see the position saved while the app was open). **Not on:** Mac, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 `$location` is available on iOS/iPadOS. macOS returns `isAvailable() === false`, `authorizationStatus() === "unavailable"`, and rejected location promises. Package 2.0 must declare `location` in `permissions`; a present invalid manifest fails closed. Genuine legacy packages retain their existing behavior. Mock data does not grant package permission.
 
 ## Authorization

@@ -1,5 +1,9 @@
 # Calendar API
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android (for calendars selected in the app). **Not on:** Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 Native Runtime 1.3 adds read-only EventKit access on iOS, iPadOS and macOS. The browser preview engine simulates these methods with editable Mock Data. This is the current source contract; the previously uploaded 27.1.2 (27012) build does not include it.
 
 ## Package and system access

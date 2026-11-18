@@ -1,5 +1,9 @@
 # Package storage and atomic updates
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 `$storage` stores local values under the current package namespace. It does not sync records through iCloud. Local record APIs remain available for legacy compatibility, including packages with an empty permissions list. String and JSON keys cannot exceed 256 UTF-8 bytes, and each stored value cannot exceed 256 KiB. Reads return an empty string/object for a missing key; writes return a Boolean that the script must check.
 
 - `getString(key)` / `setString(key, value)` read and write strings.

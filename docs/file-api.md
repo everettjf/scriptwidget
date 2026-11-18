@@ -1,5 +1,9 @@
 # Package files
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 `$file` reads only the currently executing package. In installation-bound execution it uses the frozen package snapshot. It does not expose device directories, another widget, system photo albums or account credentials.
 
 - `$file.read(path)` reads UTF-8 text; missing/unreadable text returns an empty string.

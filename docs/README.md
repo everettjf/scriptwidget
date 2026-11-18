@@ -8,14 +8,14 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 - [Five-minute tutorial](five-minute-tutorial.md) — the built-in first-launch walkthrough and its complete workflow.
 - [ScriptWidget Studio](studio.md) — Mac editor, multi-size preview, Copilot, and Skills.
 - [Web Studio in the browser](web-studio-browser.md) — design and preview on Windows, macOS, or Linux, then install on iPhone.
-- [Platform support](platform-support.md) — which features and APIs work on iPhone and iPad, Mac, and Android.
+- [Platform support](platform-support.md) — which features and APIs work on iPhone and iPad, Mac, Android, Windows and Linux.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
 - [Reminders API](reminders-api.md) — selected-list reads, bounded windows and explicit user actions with write receipts.
 - [Calendar API](calendar-api.md) — real read-only events, package permission, bounded queries, and cache behavior.
 - [Location API](location-api.md) — app/widget authorization, precision-aware snapshots, and revocation.
 - [Scheduled widget states](timeline-api.md) — daily transitions, planned dates, read-only future entries and preview.
-- [Data API capability catalog](data-api-catalog.md) — native platforms, authorization, sync/async behavior, and editable preview samples.
+- [Data API capability catalog](data-api-catalog.md) — which systems each API runs on, authorization, sync/async behavior, and editable preview samples.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
 - [AI quality testing](ai-quality-testing.md) — bounded live generation, native snapshots, offline replay, and visual review.
 - [Apple PCC AI plan](apple-pcc-ai-plan.md) — feasibility, constraints, architecture, and zero-key rollout.
@@ -60,7 +60,7 @@ Build native widgets for iPhone, iPad, Mac, and Android with JavaScript and JSX.
 
 ## Supported platforms
 
-ScriptWidget runs on iOS, iPadOS and macOS, and on Android (in testing, not yet on Google Play). [Platform support](platform-support.md) lists every feature and API by platform. A single `main.jsx` can adapt its layout with `$getenv("widget-size")` and branch on `$system.platform()`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.
+ScriptWidget runs on iOS, iPadOS, macOS and Android, and as a preview on Windows 11 and Linux (Omarchy). [Platform support](platform-support.md) lists every feature and API by platform, and each API's page says at the top which systems it runs on. A single `main.jsx` can adapt its layout with `$getenv("widget-size")` and branch on `$system.platform()`. Native watchOS is unsupported and outside the current [A/B scope](widget-capabilities-plan.md). visionOS is outside this plan.
 
 - [Opt-in iCloud JSON API](icloud-json-api.md) — native grants, immutable revisions, conflicts and Web mocks.
 
