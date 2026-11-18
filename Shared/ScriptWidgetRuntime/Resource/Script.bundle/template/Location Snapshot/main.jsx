@@ -5,10 +5,16 @@
 // Location Snapshot
 // Requires Location permission in the main app.
 //
+// Shows the latitude, longitude and accuracy of your position.
+// Try changing the colors, or the number of decimals in toFixed(4).
+// $location runs on iPhone and iPad, and on Android (widgets see the position saved
+// while the app was open); not on Mac, Windows or Linux.
+// widget.json must declare the permission "location".
 
 // The card of the two states without a location. At the small size a row has
 // no room for the icon beside the words, so the icon sits above them.
 const Card = ({ symbol, title, detail }) => {
+  // $getenv("widget-size") is the size being drawn, such as "small" or "medium".
   const compact = $getenv("widget-size") === "small";
   const words = (
     <vstack alignment="leading" spacing="4">
@@ -36,6 +42,7 @@ const Card = ({ symbol, title, detail }) => {
   );
 };
 
+// isAvailable() is false on a system without the Location API.
 if (!$location.isAvailable()) {
   $render(
     <Card
@@ -45,6 +52,7 @@ if (!$location.isAvailable()) {
     />,
   );
 } else {
+  // Has the user allowed ScriptWidget to use the location?
   const status = $location.authorizationStatus();
   const authorized = status === "authorizedWhenInUse" || status === "authorizedAlways";
 
@@ -59,8 +67,10 @@ if (!$location.isAvailable()) {
   } else {
     let location;
     try {
+      // Accept a position up to one hour old (maxAge is in seconds). `await` waits for it.
       location = await $location.current({ maxAge: 3600 });
     } catch (error) {
+      // No position. The error text tells whether widgets still have to be allowed.
       const message = String(error);
       const needsWidgetAccess = message.includes("widget_not_authorized");
       const compactLocation = $getenv("widget-size") === "small";
@@ -88,12 +98,15 @@ if (!$location.isAvailable()) {
           </text>
         </vstack>,
       );
+      // Stop here: the message above is the widget.
       return;
     }
+    // Four decimals are about 11 metres. `accuracy` is in metres.
     const lat = location.latitude.toFixed(4);
     const lon = location.longitude.toFixed(4);
     const accuracy = Math.max(0, Math.round(location.accuracy));
 
+    // frame="max" lets the stack fill the whole widget.
     $render(
       <vstack frame="max" background="#111827" spacing="6">
         <text font="caption" color="#94a3b8">
@@ -105,6 +118,7 @@ if (!$location.isAvailable()) {
         <text font="caption" color="#94a3b8">
           Accuracy: {accuracy}m
         </text>
+        {/* A saved position shows its age (location.age is in seconds), a fresh one its time. */}
         <text font="caption2" color="#94a3b8">
           {location.isStale
             ? "Saved · " + Math.round(location.age / 60) + "m ago"

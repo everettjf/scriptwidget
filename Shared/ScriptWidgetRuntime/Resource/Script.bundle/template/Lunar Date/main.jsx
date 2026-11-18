@@ -3,10 +3,15 @@
 // https://atomsprout.com/scriptwidget
 //
 //
+// Shows today in the Chinese lunar calendar: zodiac animal, month, day and festival.
+// Try changing the gradient colors, or show another field such as today.gzYear.
+// Most of this file is a calendar library; the widget itself is at the very end.
 
 var getLunarData = (function () {
+  // A converter from the Gregorian to the Chinese lunar calendar, for 1900 to 2100.
   //公历农历转换
   var calendar = {
+    // One number per lunar year from 1900. Its bits hold the month lengths and the leap month.
     lunarInfo: [
       0x04bd8, 0x04ae0, 0x0a570, 0x054d5, 0x0d260, 0x0d950, 0x16554, 0x056a0, 0x09ad0, 0x055d2,
       0x04ae0, 0x0a5b6, 0x0a4d0, 0x0d250, 0x1d255, 0x0b540, 0x0d6a0, 0x0ada2, 0x095b0, 0x14977,
@@ -30,7 +35,9 @@ var getLunarData = (function () {
       0x0e968, 0x0d520, 0x0daa0, 0x16aa6, 0x056d0, 0x04ae0, 0x0a9d4, 0x0a2d0, 0x0d150, 0x0f252,
       0x0d520,
     ],
+    // Days in each Gregorian month of a common year.
     solarMonth: [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31],
+    // The ten heavenly stems, written as Unicode escapes.
     Gan: [
       "\u7532",
       "\u4e59",
@@ -43,6 +50,7 @@ var getLunarData = (function () {
       "\u58ec",
       "\u7678",
     ],
+    // The twelve earthly branches.
     Zhi: [
       "\u5b50",
       "\u4e11",
@@ -57,6 +65,7 @@ var getLunarData = (function () {
       "\u620c",
       "\u4ea5",
     ],
+    // The twelve zodiac animals.
     Animals: [
       "\u9f20",
       "\u725b",
@@ -71,6 +80,7 @@ var getLunarData = (function () {
       "\u72d7",
       "\u732a",
     ],
+    // The names of the 24 solar terms.
     solarTerm: [
       "\u5c0f\u5bd2",
       "\u5927\u5bd2",
@@ -97,6 +107,7 @@ var getLunarData = (function () {
       "\u5927\u96ea",
       "\u51ac\u81f3",
     ],
+    // The dates of the solar terms of each year from 1900, in a packed form.
     sTermInfo: [
       "9778397bd097c36b0b6fc9274c91aa",
       "97b6b97bd19801ec9210c965cc920e",
@@ -328,6 +339,7 @@ var getLunarData = (function () {
       "\u51ac",
       "\u814a",
     ],
+    // Days in lunar year y.
     lYearDays: function (y) {
       var i,
         sum = 348;
@@ -336,21 +348,25 @@ var getLunarData = (function () {
       }
       return sum + calendar.leapDays(y);
     },
+    // The leap month of lunar year y (1 to 12), or 0 when it has none.
     leapMonth: function (y) {
       return calendar.lunarInfo[y - 1900] & 0xf;
     },
+    // Days in that leap month, or 0.
     leapDays: function (y) {
       if (calendar.leapMonth(y)) {
         return calendar.lunarInfo[y - 1900] & 0x10000 ? 30 : 29;
       }
       return 0;
     },
+    // Days in month m of lunar year y: 29 or 30.
     monthDays: function (y, m) {
       if (m > 12 || m < 1) {
         return -1;
       }
       return calendar.lunarInfo[y - 1900] & (0x10000 >> m) ? 30 : 29;
     },
+    // Days in month m of Gregorian year y.
     solarDays: function (y, m) {
       if (m > 12 || m < 1) {
         return -1;
@@ -362,9 +378,11 @@ var getLunarData = (function () {
         return calendar.solarMonth[ms];
       }
     },
+    // The stem-branch name for a position in the cycle of 60.
     toGanZhi: function (offset) {
       return calendar.Gan[offset % 10] + calendar.Zhi[offset % 12];
     },
+    // The day of the month on which solar term n (1 to 24) of year y falls.
     getTerm: function (y, n) {
       if (y < 1900 || y > 2100) {
         return -1;
@@ -409,6 +427,7 @@ var getLunarData = (function () {
       ];
       return parseInt(_calday[n - 1]);
     },
+    // A lunar month as Chinese text.
     toChinaMonth: function (m) {
       if (m > 12 || m < 1) {
         return -1;
@@ -417,6 +436,7 @@ var getLunarData = (function () {
       s += "\u6708";
       return s;
     },
+    // A lunar day as Chinese text.
     toChinaDay: function (d) {
       var s;
       switch (d) {
@@ -435,9 +455,11 @@ var getLunarData = (function () {
       }
       return s;
     },
+    // The zodiac animal of a year.
     getAnimal: function (y) {
       return calendar.Animals[(y - 4) % 12];
     },
+    // Convert a Gregorian date. A sample of the result is near the end of this file.
     solar2lunar: function (y, m, d) {
       if (y < 1900 || y > 2100) {
         return -1;
@@ -456,10 +478,12 @@ var getLunarData = (function () {
       var y = objDate.getFullYear(),
         m = objDate.getMonth() + 1,
         d = objDate.getDate();
+      // Days from 31 January 1900, the first day of lunar year 1900, to the date.
       var offset =
         (Date.UTC(objDate.getFullYear(), objDate.getMonth(), objDate.getDate()) -
           Date.UTC(1900, 0, 31)) /
         86400000;
+      // Take off whole lunar years, then whole lunar months; what is left is the day.
       for (i = 1900; i < 2101 && offset > 0; i++) {
         temp = calendar.lYearDays(i);
         offset -= temp;
@@ -556,6 +580,7 @@ var getLunarData = (function () {
       };
     },
   };
+  // Festivals on a fixed Gregorian date. The key is month and day (MMDD).
   //公历节日
   var _festival1 = {
     "0101": "元旦节",
@@ -650,6 +675,8 @@ var getLunarData = (function () {
     1225: "圣诞节",
     1226: "毛泽东诞辰纪念日",
   };
+  // Festivals on a certain weekday of a month. The key is the month, the number of the
+  // week (5 = the last one) and the weekday (0 = Sunday).
   //某月的第几个星期几,第3位为5表示最后一星期
   var _festival2 = {
     "0110": "黑人日",
@@ -669,6 +696,7 @@ var getLunarData = (function () {
     1144: "感恩节",
     1220: "国际儿童电视广播日",
   };
+  // Festivals on a lunar date. The key is the lunar month and day (MMDD).
   //农历节日
   var _festival3 = {
     "0101": "春节",
@@ -686,6 +714,7 @@ var getLunarData = (function () {
     1223: "小年",
     "0100": "除夕",
   };
+  // Holiday arrangements per year, by MMDD: 1 = day off, 0 = working day.
   //假日安排数据
   var _holiday = {
     2011: {
@@ -1008,6 +1037,7 @@ var getLunarData = (function () {
       1012: 0,
     },
   };
+  // A date as { year, month, day, week }; `week` is the weekday, 0 = Sunday. Default: today.
   //获取日期数据
   var getDateObj = function (year, month, day) {
     var date = arguments.length && year ? new Date(year, month - 1, day) : new Date();
@@ -1020,6 +1050,7 @@ var getLunarData = (function () {
   };
   //当天
   var _today = getDateObj();
+  // Days in the Gregorian month of a date.
   //获取当月天数
   var getMonthDays = function (obj) {
     var day = new Date(obj.year, obj.month, 0);
@@ -1030,6 +1061,7 @@ var getLunarData = (function () {
       return this.replace(/^\s+|\s+$/g, "");
     };
   }
+  // Everything about one day: the lunar date, plus `festival` and `sign`.
   //获取某天日期信息
   var getDateInfo = function (obj) {
     var info = calendar.solar2lunar(obj.year, obj.month, obj.day);
@@ -1072,6 +1104,8 @@ var getLunarData = (function () {
     }
     return info;
   };
+  // This function becomes getLunarData. It returns `date`, the info of the given day, and
+  // `data`, the days of its month padded to full weeks.
   //获取日历信息
   return function (date) {
     var date = date || _today;
@@ -1113,6 +1147,7 @@ var getLunarData = (function () {
   };
 })();
 
+// Read the data: the lunar info of today.
 var d = new Date();
 
 var lunarInfo = getLunarData({
@@ -1123,6 +1158,7 @@ var lunarInfo = getLunarData({
 
 // console.log(JSON.stringify(lunarInfo, 2));
 
+// What lunarInfo.date looks like:
 /*
 "date": {
     "lYear": 2022,
@@ -1151,6 +1187,7 @@ var lunarInfo = getLunarData({
 
 let today = lunarInfo.date;
 
+// A background that runs from red at the top to yellow at the bottom.
 let linearGradient = {
   type: "linear",
   colors: ["red", "yellow"],
@@ -1158,6 +1195,8 @@ let linearGradient = {
   endPoint: "bottom",
 };
 
+// $render draws the widget. $gradient(…) turns the description above into a background.
+// frame="max,center" fills the widget and centers the content.
 $render(
   <vstack background={$gradient(linearGradient)} frame="max,center">
     <hstack>
@@ -1169,6 +1208,7 @@ $render(
       </vstack>
     </hstack>
 
+    {/* Empty when today is no festival. */}
     <text font="caption">{today.festival}</text>
   </vstack>,
 );

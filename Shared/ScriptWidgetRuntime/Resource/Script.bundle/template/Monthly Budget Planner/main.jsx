@@ -1,15 +1,22 @@
 // Designed for the large widget; the small and medium sizes show the essentials. widget-param: budget,spent,housing,food,fun
+// Shows a monthly budget: what is left, what is spent, and three categories.
+// Try your own numbers in the widget parameter, or change the categories below.
+// $getenv("widget-param") is the optional widget parameter, a text you set on each widget.
 const values = ($getenv("widget-param") || "4200,2675,1450,620,280").split(",").map(Number);
+// A missing or unreadable number falls back to a default.
 const budget = values[0] || 4200;
 const spent = Math.max(0, values[1] || 0);
 const remaining = Math.max(0, budget - spent);
+// `cap` is the most a category should use: a share of the budget.
 const categories = [
   { name: "Housing", value: values[2] || 0, cap: budget * 0.4, color: "#818cf8" },
   { name: "Food", value: values[3] || 0, cap: budget * 0.2, color: "#34d399" },
   { name: "Flexible", value: values[4] || 0, cap: budget * 0.15, color: "#fb7185" },
 ];
+// An amount rounded to whole dollars, such as "$2,675".
 const money = (value) => `$${Math.round(value).toLocaleString()}`;
 
+// One category: name, value / cap, and a bar. <progress> fills value / total of its width.
 const Category = ({ item }) => (
   <vstack alignment="leading" spacing="4">
     <hstack>
@@ -31,7 +38,9 @@ const Category = ({ item }) => (
   </vstack>
 );
 
+// $getenv("widget-size") is the size being drawn, such as "small" or "accessoryInline".
 const size = $getenv("widget-size");
+// The share of the budget that is spent, in percent.
 const used = `${Math.round((spent / budget) * 100)}% USED`;
 if (size === "small") {
   // Small: what is left of the budget.
@@ -113,8 +122,10 @@ if (size === "small") {
     </hstack>,
   );
 } else {
+  // Large and extra large widgets: two cards on top, the categories below.
   $render(
     <vstack frame="max" alignment="leading" spacing="10" padding="16" background="#065f46">
+      {/* The title row. <date date="now" style="date" /> shows today's date. */}
       <hstack>
         <vstack alignment="leading" spacing="2">
           <text font="title2" weight="bold" color="white">

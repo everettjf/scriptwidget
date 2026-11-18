@@ -1,9 +1,17 @@
 // Local state supplied by ScriptWidget's Live Activities screen. Rendering never polls.
 // Optional JSON: title, detail, progress+total, endsAt (ISO date). The app updates this state.
+// Shows a Live Activity: a title, a detail line, and a countdown or a progress bar.
+// Try starting it from the Live Activities screen of the app with a state such as
+// {"title":"Tea","detail":"Steeping","endsAt":"2026-03-08T12:05:00Z"}.
+
+// $getenv("live-activity-state") is the state text the app gave this activity. When it
+// is empty, the widget parameter is used instead.
 const raw = $getenv("live-activity-state") || $getenv("widget-param") || "",
   now = Date.now();
 let data = {},
   invalid = false;
+// Check the state: only the five known keys, each of the right type and size.
+// Anything else makes the state invalid, and the widget says so.
 try {
   if (raw) {
     if (typeof raw !== "string" || raw.length > 4096) throw new Error();
@@ -25,6 +33,7 @@ try {
     throw new Error();
   if (data.detail !== undefined && (typeof data.detail !== "string" || data.detail.length > 80))
     throw new Error();
+  // progress and total come together: whole numbers with 0 ≤ progress ≤ total.
   if (data.progress !== undefined || data.total !== undefined) {
     if (
       !Number.isInteger(data.progress) ||
@@ -36,6 +45,7 @@ try {
     )
       throw new Error();
   }
+  // endsAt is an ISO date with a time zone, such as 2026-03-08T12:05:00Z.
   if (
     data.endsAt !== undefined &&
     (typeof data.endsAt !== "string" ||
@@ -47,9 +57,12 @@ try {
   invalid = true;
   data = {};
 }
+// `deadline` is the end time in milliseconds, or null without one.
+// "live-activity-is-stale" is "true" when the system marks the activity as stale.
 const deadline = data.endsAt === undefined ? null : Date.parse(data.endsAt),
   expired = deadline !== null && deadline <= now,
   stale = $getenv("live-activity-is-stale") === "true";
+// The texts to show, with a fallback for every case.
 const title = invalid
     ? "Invalid activity state"
     : data.title || (raw ? "Live activity" : "Ready to start"),
@@ -71,6 +84,8 @@ const hasProgress = data.progress !== undefined,
           : raw
             ? "Active"
             : "Ready";
+// A timer while the deadline lies ahead, else the summary text.
+// <date style="timer"> shows the time left and keeps counting on its own.
 const Countdown = () =>
   deadline !== null && !expired && !invalid ? (
     <date date={deadline} style="timer" font="title2" color="#1e3a8a" />
@@ -105,6 +120,7 @@ if ($getenv("widget-size") === "small")
     </vstack>,
   );
 else
+  // Other sizes, and the Lock Screen view of the Live Activity: icon, texts, countdown.
   $render(
     <hstack frame="max" spacing="14" padding="16" background="#eff6ff">
       <icon
@@ -129,6 +145,8 @@ else
       <Countdown />
     </hstack>,
   );
+// $dynamic_island gives the views for the Dynamic Island: four regions of the expanded
+// form, the two sides of the compact form, and the minimal form.
 $dynamic_island({
   expanded: {
     leading: (
