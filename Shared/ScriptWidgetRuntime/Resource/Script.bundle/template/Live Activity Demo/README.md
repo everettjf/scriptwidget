@@ -10,6 +10,6 @@ Alternatively, provide `endsAt` as a timezone-qualified ISO date for a native ti
 
 Supported optional fields: `title`, `detail`, integer `progress` and `total`, and `endsAt`. The package requires no network, location or storage permission. Activity attributes and state together must fit the system's 4 KiB budget.
 
-Ordinary Home Screen preview is supported at medium size. Web preview is a layout preview; actual ActivityKit and Dynamic Island presentation require a supported iPhone. System scheduling controls display and timer/stale transitions. Remote updates and interactive Island buttons are not included.
+Ordinary Home Screen preview is supported at small and medium size; the small widget shows the state and the title. Web preview is a layout preview; actual ActivityKit and Dynamic Island presentation require a supported iPhone. System scheduling controls display and timer/stale transitions. Remote updates and interactive Island buttons are not included.
 
 See [local Live Activities](../../../../../../../docs/live-activities.md) for lifecycle, installation binding, data constraints and verification limits.

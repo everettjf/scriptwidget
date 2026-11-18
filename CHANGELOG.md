@@ -16,6 +16,8 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Fix native Promise callback ownership so completed and abandoned executions release their JavaScript VM and snapshot.
 - Serialize native runtime subscription, result delivery and cancellation to prevent intermittent empty results and reference-lifetime crashes.
 - Fix bundled templates whose text was cut off or pushed out of the widget, most visibly with the wider font of Android, Windows and Linux: Month Calendar (long month names, six-week months), the Daily Command Center, Family Command Board, Travel Day and Wellness dashboards, World Clock Faces and Year in Dots at the extra-large size, and fifteen smaller templates.
+- Give 21 bundled templates that had one layout a small-widget layout showing their essential content (clocks, battery, focus, reading, sleep, system and the five dashboards), give the Daily Command Center, Family Command Board, Monthly Budget, Travel Day and Wellness dashboards a medium layout, and fix the overlapping rows of the large Monthly Budget Planner and the cut-off header of the medium Personal Dashboard.
+- Fix Text Year Days Left, which counted to 31 January of the next year and so showed 31 days too many.
 - Continue expanded personal-data APIs, authenticated services/music and visual editing on the same release branch; M3–M5 remain in progress.
 
 ## Unreleased

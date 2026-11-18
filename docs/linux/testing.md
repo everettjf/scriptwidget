@@ -476,7 +476,7 @@ node Linux/scripts/find-truncated-text.mjs --pictures <目录> --json <文件>
 
 ### 留下没改的候选
 
-- 只有一种排法、截图是中等或大尺寸的模板，在小尺寸上放不下：Animation Clock、Battery & Brightness、Daily Command Center、Datetime Current、Datetime Timezone、Device Battery Percent、Family Command Board、Live Activity Demo、Monthly Budget Planner、Open Link、Personal Dashboard、Pomodoro Focus、Reading Goal、Shape、Sleep Schedule、Sunrise & Sunset、System Insights、Text Today Week、Travel Day Dashboard、Weekly Planner、Wellness Dashboard；大尺寸的 Travel Day Dashboard 和 Wellness Dashboard 在中等尺寸上也放不下。这不是字体的问题：用苹果的系统字体量同一段文字，绝大多数也放不下。要给它们各做一个小尺寸的排法，这次没做。
+- 只有一种排法、截图是中等或大尺寸的模板，在小尺寸上放不下：Animation Clock、Battery & Brightness、Daily Command Center、Datetime Current、Datetime Timezone、Device Battery Percent、Family Command Board、Live Activity Demo、Monthly Budget Planner、Open Link、Personal Dashboard、Pomodoro Focus、Reading Goal、Shape、Sleep Schedule、Sunrise & Sunset、System Insights、Text Today Week、Travel Day Dashboard、Weekly Planner、Wellness Dashboard；大尺寸的 Travel Day Dashboard 和 Wellness Dashboard 在中等尺寸上也放不下。这不是字体的问题：用苹果的系统字体量同一段文字，绝大多数也放不下。这一节没做；后来做了，见下一节"模板的小尺寸排法"。
 - `api/` 下的示例（health、location、storage、system）：逐行列出数值的示例，`api/system` 有 14 行，中等尺寸放不下，大尺寸放得下；另外三个只是标题在小尺寸折成两行。
 - New Episode Tracker：节目名画在固定 200 点宽的框里，长名字被省略是有意的，而且内容来自网络。
 - Now Playing 特大尺寸的"Midnight Drive"、Image Basic Usage 小尺寸的"Photo spotlight"：两个词在空格处折成两行，没有被截断。
@@ -487,7 +487,44 @@ node Linux/scripts/find-truncated-text.mjs --pictures <目录> --json <文件>
 - 要联网的模板在这台 Mac 上能跑的都跑了，但内容取决于当时的网络；Daily Quote 每次都没有画出来（返回的不是 JSON），Stock Snapshot、New Episode Tracker、Weather Display 各有一轮超过 5 秒没有画出来。
 - 没有在苹果的系统上把改过的模板画成图来看：`Tools/ScriptWidgetPreview` 现在编不过（工程里缺新加的存储源文件）。"在苹果上不变差"是按排版规则和用系统字体量出的宽度判断的，不是看图。
 - Windows 的测试、Android 的真机测试、`Scripts/release-readiness.sh`、Web Studio 的浏览器冒烟测试都没跑。
-- Text Year Days Left 算的是到下一年 1 月 31 日的天数（`new Date(year, 12, 31)`），比"今年还剩"多 31 天；这次没改。
+
+## 2026-11-18，模板的小尺寸排法
+
+上一节留下两件事：只有一种排法的模板在小尺寸上放不下；Text Year Days Left 多算 31 天。这一节把这两件做了。还是在同一台 Mac 上跑的（macOS 27.2，Apple 芯片），没有在虚拟机或真实的 Linux 上跑。检查的办法和上一节一样。
+
+### 改了什么
+
+- 21 个模板加了小尺寸的排法，用 `$getenv("widget-size") === "small"` 分支，原来的排法放在 `else` 里：Animation Clock、Battery & Brightness、Daily Command Center、Datetime Current、Datetime Timezone、Device Battery Percent、Family Command Board、Live Activity Demo、Monthly Budget Planner、Open Link、Personal Dashboard、Pomodoro Focus、Reading Goal、Shape、Sleep Schedule、Sunrise & Sunset、System Insights、Text Today Week、Travel Day Dashboard、Weekly Planner、Wellness Dashboard。小尺寸只画模板最要紧的内容（一个时间、一个百分比、下一件事），不是把原来的排法缩小；颜色不变。上一节写的是"22 个"，实际列出来、脚本也只报出来的是这 21 个。
+- 五个为大尺寸设计的模板（Daily Command Center、Family Command Board、Monthly Budget Planner、Travel Day Dashboard、Wellness Dashboard）还加了中等尺寸的排法。脚本在中等尺寸只报了后两个，但看图五个都不对：卡片叠在一起，或者下半截被切掉。
+- 模板原来设计的那个尺寸的排法没有动，两处例外，都是看图发现本来就是坏的，脚本没报：
+  - Monthly Budget Planner 大尺寸：三行分类的文字和进度条叠在一起，上面两张卡片挤在中间。现在各行有自己的高度，分类名用小一号的字，两张卡片撑满一行。
+  - Personal Dashboard 中等尺寸：内容比小组件高，标题顶到上边、日期压在分隔线上。现在间距从 12 改成 8，去掉了"Keep it simple"这一行。
+- Live Activity Demo 的 `widget.json` 原来只声明中等尺寸，现在加了 `systemSmall`，说明文件也改了。小尺寸画状态和标题，不画说明文字。
+- Text Year Days Left：原来用 `new Date(year, 12, 31)`，那是下一年的 1 月 31 日。现在用今天和 12 月 31 日两个日历日期相减，和几点钟无关。Text Days to End Of Year 和 Text Days To End Of Month 用的是 `moment().endOf(...)` 再取整天数，查过没有这个问题，没改。
+- 这些模板在 `Gallery/` 里都没有副本，`sync-gallery-templates.mjs` 不用 `--write` 就通过。
+
+### 结果
+
+| 检查 | 结果 |
+| --- | --- |
+| `find-truncated-text.mjs`，改之前 | 140 个包，2800 次运行里 2780 次排了版；29 个包有候选 |
+| `find-truncated-text.mjs`，改之后 | 140 个包，2800 次运行里 2777 次排了版；8 个包有候选，都是上一节说明过、有意留下的：`api/health`、`api/location`、`api/storage`、`api/system`、New Episode Tracker、Now Playing、Image Basic Usage、Hydration Goal iCloud。没排版的 23 次是 Daily Quote 和 Stock Snapshot（要联网，返回的不是 JSON 或者超过 5 秒） |
+| 看图 | 改过的 22 个模板（上面 21 个加 Text Year Days Left）在四个尺寸、五个时间各画了一张，共 440 张；小尺寸的 22 个看了三个时间（9 月 16 日、12 月 30 日、1 月 1 日），中等尺寸的 22 个和五个大尺寸模板的大尺寸看了 9 月 16 日，Monthly Budget Planner 的特大尺寸也看了。其余的图没有逐张看，靠的是脚本没有报 |
+| 三个"还剩几天"的模板 | 用命令行在 America/Los_Angeles 时区、13 个时间各运行一次：12 月 31 日 00:00 和 23:59 都是 0，12 月 30 日 00:00、12:00、23:59 都是 1，2026 年 1 月 1 日是 364，2028 年（闰年）1 月 1 日是 365，3 月 7 日（跨夏令时）是 299；Text Year Days Left 和 Text Days to End Of Year 13 个数都相同。月份的那个：2 月 28 日是 0，2 月 1 日是 27，11 月 18 日是 12 |
+| 苹果的参考树 | 在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 `TEST_RUNNER_SCRIPTWIDGET_UPDATE_PARITY=1` 重新生成了 `native-trees.json`，变了 7 项，只有树变了：五个大尺寸模板（参考树是中等尺寸的，现在走新的排法）、Personal Dashboard、Text Year Days Left。其余 14 个改过的模板的中等尺寸的树一个字都没变。`music-playback-trees.json` 和 `layout-edit-trees.json` 对应的模板没改，没有重新生成。之后在 macOS 上不带生成开关跑了 `BrowserPreviewParityTests`、`MusicRuntimeTests`、`VisualLayoutEditorTests`、`RuntimeExecutionTests`：154 个里 11 个跳过（都是要开关才导出的测试），没有失败 |
+| `cd Web/preview-engine && npm test` | 199 个通过 |
+| `cd Web/studio && npm test`、`cd Editor/editorfe && npm test` | 114 个通过、52 个通过 |
+| `cargo test --locked --workspace`（Mac） | 506 个通过，1 个忽略 |
+| `./gradlew :core:testDebugUnitTest --rerun`（Mac，Android Studio 自带的 JDK 25） | 482 个通过 |
+| `node Scripts/validate-release.mjs`、`validate-doc-links.mjs`、`sync-gallery-templates.mjs`、`node --test Scripts/tests/*.mjs` | 都通过（最后一个是 7 个测试） |
+
+### 没跑的
+
+- 没有在苹果的系统上把新排法画成图来看，原因和上一节一样（`Tools/ScriptWidgetPreview` 编不过）。新排法只用了别的模板已经在用的组件和属性；苹果的小尺寸最窄是 155 点，比这里量的 170 点窄，文字宽度是按 127 点左右留的余量，但没有在 155 点上实际排过。
+- 没有在 Android 或 Windows 上画图。Android 小组件的大小随桌面而变，没有量过。
+- Sunrise & Sunset 要联网，画出来的时间取决于当时的网络；断网时它本来就不画，这次没改这一点。
+- Live Activity Demo 只看了没有状态时的小尺寸图（"Ready"）；有进度、有倒计时、状态不合法这几种没有画图，只按字宽估过。
+- Windows 的测试、Android 的真机测试、`Scripts/release-readiness.sh`、Web Studio 的浏览器冒烟测试、Linux 的 `asan-test.sh` 都没跑。
 
 ## 没跑的（汇总）
 

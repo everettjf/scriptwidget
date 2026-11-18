@@ -1,4 +1,4 @@
-// Large widget. widget-param: Focus task|09:00 Stand-up,11:30 Deep work,15:00 Review|Email Alex,Book dentist,Walk 20 min
+// Designed for the large widget; the small and medium sizes show the essentials. widget-param: Focus task|09:00 Stand-up,11:30 Deep work,15:00 Review|Email Alex,Book dentist,Walk 20 min
 const parts = ($getenv("widget-param") || "Ship the weekly update|09:00 Stand-up,11:30 Deep work,15:00 Review|Reply to Sam,Book dentist,Walk 20 min").split("|");
 const focus = (parts[0] || "Choose one meaningful outcome").trim();
 const schedule = (parts[1] || "").split(",").filter(Boolean).slice(0, 3);
@@ -13,26 +13,54 @@ const Row = ({ text, index }) => (
   </hstack>
 );
 
-$render(
-  <vstack frame="max" alignment="leading" spacing="12" padding="18" background="#172554">
-    <hstack>
-      <vstack alignment="leading" spacing="2"><text font="title2" weight="bold" color="white">Today</text><date date="now" style="date" font="caption" color="#94a3b8"/></vstack>
-      <spacer/><badge text="COMMAND CENTER" color="#93c5fd"/>
-    </hstack>
-    <vstack frame="max,76,leading" alignment="leading" spacing="5" padding="12" background="#1d4ed8" corner="14">
-      <text font="caption2" weight="bold" color="#93c5fd">PRIMARY OUTCOME</text>
-      <text font="title3" weight="bold" color="white">{focus}</text>
+const size = $getenv("widget-size");
+if (size === "small") {
+  // Small: the primary outcome, the day's progress and the next entry of the schedule.
+  $render(
+    <vstack frame="max" alignment="leading" spacing="8" padding="14" background="#172554">
+      <hstack><text font="caption2" weight="bold" color="#93c5fd">PRIMARY OUTCOME</text><spacer/></hstack>
+      <text font="headline" weight="bold" color="white">{focus}</text>
       <progress value={progress} total="1" thickness="5" color="#60a5fa" trackColor="#1e3a8a"/>
+      {schedule.length ? <hstack spacing="7"><circle frame="7,7" color="#60a5fa"/><text font="caption" color="#cbd5e1">{schedule[0].trim()}</text></hstack> : null}
     </vstack>
-    <hstack frame="max" spacing="12">
-      <vstack frame="max,146,topLeading" alignment="leading" spacing="9" padding="12" background="#111827" corner="14">
+  );
+} else if (size === "medium") {
+  // Medium: the primary outcome beside the schedule.
+  $render(
+    <hstack frame="max" spacing="10" padding="14" background="#172554">
+      <vstack frame="max,142,topLeading" alignment="leading" spacing="6" padding="12" background="#1d4ed8" corner="14">
+        <text font="caption2" weight="bold" color="#93c5fd">PRIMARY OUTCOME</text>
+        <text font="headline" weight="bold" color="white">{focus}</text>
+        <progress value={progress} total="1" thickness="5" color="#60a5fa" trackColor="#1e3a8a"/>
+      </vstack>
+      <vstack frame="max,142,topLeading" alignment="leading" spacing="9" padding="12" background="#111827" corner="14">
         <hstack frame="max"><text font="caption" weight="bold" color="#a5b4fc">SCHEDULE</text><spacer/><icon systemName="clock.fill" size="14" color="#818cf8"/></hstack>
         {schedule.map((item, i) => <Row text={item} index={i}/>)}
       </vstack>
-      <vstack frame="max,146,topLeading" alignment="leading" spacing="9" padding="12" background="#111827" corner="14">
-        <hstack frame="max"><text font="caption" weight="bold" color="#6ee7b7">QUICK TASKS</text><spacer/><icon systemName="checkmark.circle.fill" size="14" color="#34d399"/></hstack>
-        {tasks.map((item, i) => <Row text={item} index={i}/>)}
-      </vstack>
     </hstack>
-  </vstack>
-);
+  );
+} else {
+  $render(
+    <vstack frame="max" alignment="leading" spacing="12" padding="18" background="#172554">
+      <hstack>
+        <vstack alignment="leading" spacing="2"><text font="title2" weight="bold" color="white">Today</text><date date="now" style="date" font="caption" color="#94a3b8"/></vstack>
+        <spacer/><badge text="COMMAND CENTER" color="#93c5fd"/>
+      </hstack>
+      <vstack frame="max,76,leading" alignment="leading" spacing="5" padding="12" background="#1d4ed8" corner="14">
+        <text font="caption2" weight="bold" color="#93c5fd">PRIMARY OUTCOME</text>
+        <text font="title3" weight="bold" color="white">{focus}</text>
+        <progress value={progress} total="1" thickness="5" color="#60a5fa" trackColor="#1e3a8a"/>
+      </vstack>
+      <hstack frame="max" spacing="12">
+        <vstack frame="max,146,topLeading" alignment="leading" spacing="9" padding="12" background="#111827" corner="14">
+          <hstack frame="max"><text font="caption" weight="bold" color="#a5b4fc">SCHEDULE</text><spacer/><icon systemName="clock.fill" size="14" color="#818cf8"/></hstack>
+          {schedule.map((item, i) => <Row text={item} index={i}/>)}
+        </vstack>
+        <vstack frame="max,146,topLeading" alignment="leading" spacing="9" padding="12" background="#111827" corner="14">
+          <hstack frame="max"><text font="caption" weight="bold" color="#6ee7b7">QUICK TASKS</text><spacer/><icon systemName="checkmark.circle.fill" size="14" color="#34d399"/></hstack>
+          {tasks.map((item, i) => <Row text={item} index={i}/>)}
+        </vstack>
+      </hstack>
+    </vstack>
+  );
+}
