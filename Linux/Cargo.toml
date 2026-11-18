@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli", "crates/sw-host"]
+members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli", "crates/sw-host", "crates/sw-studio"]
 
 [workspace.package]
 version = "0.1.0"

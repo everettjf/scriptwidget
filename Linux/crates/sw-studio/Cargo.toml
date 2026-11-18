@@ -1,0 +1,45 @@
+[package]
+name = "sw-studio"
+description = "The ScriptWidget management window for Linux: your widgets, the templates, the editor with a live preview, and the settings"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+# The window itself is behind the `ui` feature, which is off by default:
+#
+#   cargo build --locked --release -p sw-studio --features ui
+#
+# GPUI needs a Linux graphical stack to build and brings several hundred
+# crates. Without the feature the crate is the window's logic only (library
+# listing, template copies, saving, previews, the single-instance handshake,
+# the strings), so `cargo test --workspace` stays quick and works on a Mac
+# and in CI.
+[features]
+ui = ["dep:gpui-kit", "dep:lsp-types", "dep:futures", "dep:image", "dep:smallvec"]
+
+[[bin]]
+name = "scriptwidget-studio"
+path = "src/main.rs"
+required-features = ["ui"]
+
+[dependencies]
+sw-core.workspace = true
+sw-render.workspace = true
+serde_json.workspace = true
+libc.workspace = true
+getrandom.workspace = true
+
+# gpui-kit (github.com/longbridge/gpui-kit, Apache-2.0) is released weekly and
+# its interfaces move, so the version is exact. 0.10.0 re-exports
+# gpui-component 0.10.0 and pins GPUI to the crates.io snapshot gpui-pre 0.3.12.
+gpui-kit = { version = "=0.10.0", features = ["tree-sitter-javascript"], optional = true }
+# The types of the editor's completion interface; the version gpui-base 0.10.0 uses.
+lsp-types = { version = "0.97.0", features = ["proposed"], optional = true }
+# All three are already in GPUI's tree. futures: the channel that carries
+# results from worker threads to the window. image and smallvec: the types
+# GPUI takes rendered pixels in, so a preview is shown without encoding it.
+futures = { version = "0.3", optional = true }
+image = { version = "0.25", default-features = false, optional = true }
+smallvec = { version = "1", optional = true }
+
