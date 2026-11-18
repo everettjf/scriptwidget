@@ -1,16 +1,24 @@
-// Designed for the large widget; the small and medium sizes show the essentials. widget-param: Family name|events comma-separated|chores comma-separated|dinner
+// Designed for the large widget; the small and medium sizes show the essentials.
+// widget-param: Family name|events comma-separated|chores comma-separated|dinner
+// Try changing the default text below, or the colors.
+//
+// $getenv("widget-param") is the parameter set for this widget; the default is used when
+// it is empty.
 const parts = (
   $getenv("widget-param") ||
   "The Parkers|08:15 School drop-off,17:30 Soccer practice,19:00 Call Grandma|Mia · Feed Mochi,Noah · Recycling,All · Tidy kitchen|Taco bowls · 18:30"
 ).split("|");
+// Take the four parts. filter(Boolean) drops empty entries; slice(0, 3) keeps three.
 const family = (parts[0] || "Our Family").trim();
 const events = (parts[1] || "").split(",").filter(Boolean).slice(0, 3);
 const chores = (parts[2] || "").split(",").filter(Boolean).slice(0, 3);
 const dinner = (parts[3] || "Plan dinner together").trim();
+// One bar color for each of the three events.
 const colors = ["#fb7185", "#fbbf24", "#60a5fa"];
 
 // "08:15 School drop-off" is drawn as the time above the title, so both fit the half-width card.
 const Event = ({ text, index }) => {
+  // The first word is the time, when the text has more than one word.
   const words = text.trim().split(" ");
   const time = words.length > 1 ? words[0] : "";
   return (
@@ -30,6 +38,7 @@ const Event = ({ text, index }) => {
   );
 };
 
+// Choose a layout for the widget size. `today` is a short date such as "Nov 18".
 const size = $getenv("widget-size");
 const today = new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" });
 if (size === "small") {
@@ -47,6 +56,8 @@ if (size === "small") {
         </text>
       </hstack>
       {events.length ? <Event text={events[0]} index={0} /> : null}
+      {/* A card: its own background with rounded corners (`corner`, in points). */}
+      {/* frame="max,52,leading" is full width, 52 points high, content on the left. */}
       <vstack
         frame="max,52,leading"
         alignment="leading"
@@ -106,6 +117,7 @@ if (size === "small") {
               CHORES
             </text>
             <spacer />
+            {/* The badge counts all chores; this size lists only the first one. */}
             <badge text={`${chores.length} LEFT`} color="#fbbf24" />
           </hstack>
           {chores.length ? (
@@ -139,6 +151,7 @@ if (size === "small") {
     </hstack>,
   );
 } else {
+  // Large and bigger: a header, events and chores side by side, dinner at the bottom.
   $render(
     <vstack frame="max" alignment="leading" spacing="12" padding="18" background="#831843">
       <hstack>

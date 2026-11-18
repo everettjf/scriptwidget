@@ -4,10 +4,16 @@
 //
 // Battery Percent Template
 //
+// Shows the battery level as a number and a ring. Try changing the colors or the
+// thickness of the ring.
+//
 
+// $device.battery().level goes from 0 to 1. Turn it into a whole-number percentage;
+// toFixed returns text, for example "80".
 var percent = $device.battery().level * 100;
 percent = percent.toFixed(0);
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 if ($getenv("widget-size") === "small") {
   // Small: the percentage inside the ring.
   $render(
@@ -16,6 +22,7 @@ if ($getenv("widget-size") === "small") {
         DEVICE BATTERY
       </text>
       <zstack frame="100,100">
+        {/* <ring> takes a value from 0 to 1. The <zstack> draws the text on top of it. */}
         <ring
           value={Number(percent) / 100}
           thickness="10"
@@ -30,6 +37,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Medium and larger: the number on the left, the ring on the right.
   $render(
     <hstack background="#0f766e" frame="max" spacing="16" padding="14">
       <vstack alignment="leading" spacing="4">

@@ -1,14 +1,23 @@
-// Designed for the large widget; the small and medium sizes show the essentials. widget-param: Focus task|09:00 Stand-up,11:30 Deep work,15:00 Review|Email Alex,Book dentist,Walk 20 min
+// Designed for the large widget; the small and medium sizes show the essentials.
+// widget-param: Focus task|09:00 Stand-up,11:30 Deep work,15:00 Review|Email Alex,Book dentist,Walk 20 min
+// The parameter has three parts separated by "|": the focus, the schedule and the tasks.
+// Try changing the default text below, or the colors.
+//
+// $getenv("widget-param") is the parameter set for this widget; the default is used when
+// it is empty.
 const parts = (
   $getenv("widget-param") ||
   "Ship the weekly update|09:00 Stand-up,11:30 Deep work,15:00 Review|Reply to Sam,Book dentist,Walk 20 min"
 ).split("|");
+// Take the three parts. filter(Boolean) drops empty entries; slice(0, 3) keeps three.
 const focus = (parts[0] || "Choose one meaningful outcome").trim();
 const schedule = (parts[1] || "").split(",").filter(Boolean).slice(0, 3);
 const tasks = (parts[2] || "").split(",").filter(Boolean).slice(0, 3);
 const now = new Date();
+// The share of the day that has passed, from 0 to 1. A day has 1440 minutes.
 const progress = (now.getHours() * 60 + now.getMinutes()) / 1440;
 
+// One line of a list. The first entry gets a brighter dot and text.
 const Row = ({ text, index }) => (
   <hstack frame="max,leading" spacing="9">
     <circle frame="7,7" color={index === 0 ? "#60a5fa" : "#334155"} />
@@ -18,6 +27,7 @@ const Row = ({ text, index }) => (
   </hstack>
 );
 
+// Choose a layout for the widget size.
 const size = $getenv("widget-size");
 if (size === "small") {
   // Small: the primary outcome, the day's progress and the next entry of the schedule.
@@ -32,6 +42,7 @@ if (size === "small") {
       <text font="headline" weight="bold" color="white">
         {focus}
       </text>
+      {/* The bar shows how much of the day has passed. */}
       <progress value={progress} total="1" thickness="5" color="#60a5fa" trackColor="#1e3a8a" />
       {schedule.length ? (
         <hstack spacing="7">
@@ -47,6 +58,8 @@ if (size === "small") {
   // Medium: the primary outcome beside the schedule.
   $render(
     <hstack frame="max" spacing="10" padding="14" background="#172554">
+      {/* A card: its own background with rounded corners (`corner`, in points). */}
+      {/* frame="max,142,topLeading" is full width, 142 points high, content at the top left. */}
       <vstack
         frame="max,142,topLeading"
         alignment="leading"
@@ -85,6 +98,7 @@ if (size === "small") {
     </hstack>,
   );
 } else {
+  // Large and bigger: a header, the outcome card, then schedule and tasks side by side.
   $render(
     <vstack frame="max" alignment="leading" spacing="12" padding="18" background="#172554">
       <hstack>
