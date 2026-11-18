@@ -86,3 +86,77 @@ test("the bundled examples open in Layout as often as before they were formatted
   assert.ok(total >= 140, `${total} examples`);
   assert.ok(opened >= total - 4, `only ${opened} of ${total} open; refused: ${refused.join(", ")}`);
 });
+
+const commented = `$render(
+  <vstack frame="max">
+    {/* The title. */}
+    <text font="headline">
+      Hello
+    </text>
+
+    {/* Two lines
+        about the row. */}
+    <hstack spacing="4">
+      <text font="caption">{/* unit */}km</text>
+      <spacer />
+    </hstack>
+    <spacer />
+  </vstack>,
+);
+`;
+
+// Every layer is selected where the edit says it is.
+function selected(source, edit) {
+  const next = apply(source, edit), model = parseVisualLayout(next);
+  assert.equal(model.issue, "");
+  assert.ok(model.nodes.some(node => node.from === edit.selectedFrom), "the selection is not a layer");
+  return next;
+}
+
+test("a moved or removed layer takes the comment above it and its lines", () => {
+  const model = parseVisualLayout(commented), [stack, title, row, unit, innerSpacer, lastSpacer] = model.nodes;
+  assert.deepEqual([title.outerFrom < title.from, row.outerFrom < row.from, lastSpacer.outerFrom === lastSpacer.from], [true, true, true]);
+
+  const removed = apply(commented, editVisualLayout(model, commented, { type: "remove", id: title.id }));
+  assert.equal(removed.includes("The title."), false);
+  assert.equal(removed, commented.replace('    {/* The title. */}\n    <text font="headline">\n      Hello\n    </text>\n', ""));
+
+  // The row and its two-line comment go above the title, one layer a line.
+  const moved = selected(commented, editVisualLayout(model, commented, { type: "move", id: row.id, parentID: stack.id, index: 0 }));
+  assert.ok(moved.indexOf("about the row.") < moved.indexOf("The title."));
+  assert.ok(moved.indexOf("about the row.") < moved.indexOf("<hstack"));
+  assert.match(moved, /about the row\. \*\/\}\n    <hstack spacing="4">\n/);
+  assert.match(moved, /    <\/hstack>\n    \{\/\* The title\. \*\/\}\n    <text font="headline">/);
+  assert.equal(/\n[ \t]+\n/.test(moved), false, "a line of only spaces was left");
+
+  // To the end: on its own line before the closing tag.
+  const toEnd = selected(commented, editVisualLayout(model, commented, { type: "move", id: title.id, parentID: stack.id, index: 2 }));
+  assert.match(toEnd, /    <spacer \/>\n    \{\/\* The title\. \*\/\}\n    <text font="headline">\n      Hello\n    <\/text>\n  <\/vstack>,/);
+
+  // Into a deeper container: the lines are indented for their new place.
+  const deeper = selected(commented, editVisualLayout(model, commented, { type: "move", id: title.id, parentID: row.id, index: 1 }));
+  assert.match(deeper, /      \{\/\* The title\. \*\/\}\n      <text font="headline">\n        Hello\n      <\/text>\n      <spacer \/>\n    <\/hstack>/);
+
+  // Moving a layer to where it already is changes nothing.
+  assert.deepEqual(editVisualLayout(model, commented, { type: "move", id: row.id, parentID: stack.id, index: 1 }).changes, []);
+});
+
+test("a new layer gets a line of its own, and code on one line stays on one line", () => {
+  const model = parseVisualLayout(commented), [stack, , row] = model.nodes;
+  const added = selected(commented, editVisualLayout(model, commented, { type: "add", id: row.id, kind: "spacer" }));
+  assert.match(added, /      <spacer \/>\n      <spacer\/>\n    <\/hstack>/);
+  const outer = selected(commented, editVisualLayout(model, commented, { type: "add", id: stack.id, kind: "text" }));
+  assert.match(outer, /    <spacer \/>\n    <text font="headline">New text<\/text>\n  <\/vstack>,/);
+
+  const oneLine = "$render(<vstack><text>Hi</text></vstack>);";
+  const flat = parseVisualLayout(oneLine);
+  assert.equal(apply(oneLine, editVisualLayout(flat, oneLine, { type: "add", id: flat.nodes[0].id, kind: "spacer" })), "$render(<vstack><text>Hi</text><spacer/></vstack>);");
+});
+
+test("editing a text keeps a comment written inside it", () => {
+  const model = parseVisualLayout(commented), unit = model.nodes.find(node => node.text === "km");
+  assert.equal(unit.textEditable, true);
+  const next = apply(commented, editVisualLayout(model, commented, { type: "text", id: unit.id, value: "mi" }));
+  assert.match(next, /<text font="caption">\{\/\* unit \*\/\}\{"mi"\}<\/text>/);
+  assert.equal(parseVisualLayout(next).nodes.find(node => node.text === "mi").textEditable, true);
+});

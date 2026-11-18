@@ -43,7 +43,8 @@ test("reordering and moving layers preserve literal source and stay in the same 
   let model = parseVisualLayout(source);
   const first = model.nodes[1], stack = model.nodes[2], dynamic = model.nodes[3];
   const moved = apply(model,{type:"move",id:first.id,parentID:stack.id,index:1});
-  assert.equal(moved,source.replace('<text color="#abc">Hello &amp; world</text>','').replace('<spacer/>','<text color="#abc">Hello &amp; world</text><spacer/>'));
+  // The moved layer's own line goes with it; no line of spaces is left behind.
+  assert.equal(moved,source.replace('    <text color="#abc">Hello &amp; world</text>\n','').replace('<spacer/>','<text color="#abc">Hello &amp; world</text><spacer/>'));
   assert.ok(moved.includes('<text>{value}</text>'));
   assert.throws(()=>apply(model,{type:"move",id:stack.id,parentID:stack.id,index:0}),/outside/);
   const reordered = apply(model,{type:"move",id:stack.id,parentID:model.roots[0],index:0});
@@ -55,7 +56,8 @@ test("reordering and moving layers preserve literal source and stay in the same 
 test("add and remove are explicit, bounded operations and retain outside JavaScript", () => {
   const model = parseVisualLayout(source), root = model.roots[0];
   const added = apply(model,{type:"add",id:root,kind:"text"});
-  assert.equal(added,source.replace('  </vstack>','  <text font="headline">New text</text></vstack>'));
+  // In code with a layer a line, the new layer gets a line at its neighbours' indentation.
+  assert.equal(added,source.replace('  </vstack>','    <text font="headline">New text</text>\n  </vstack>'));
   const next = parseVisualLayout(added), last = next.nodes.at(-1);
   assert.equal(apply(next,{type:"remove",id:last.id}),source);
   assert.throws(()=>apply(model,{type:"add",id:root,kind:'<script>alert(1)</script>'}),/Unsupported/);

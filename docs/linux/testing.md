@@ -628,6 +628,21 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 - Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑；面板修好之后也没有再跑 `cargo test`（面板的改动不进 Linux 的程序）。
 - 没有用手在真的编辑器里点开排版面板看。原生的两个测试是在 WKWebView 里真的点了面板的按钮；上面"复查"里的 14 次是直接调面板的函数。
 
+### 之后补上的：布局面板改代码时的三处毛糙
+
+上面的复核里列了三处没改的地方，这里改了（`Editor/editorfe/src/visualLayout.js`，两个平台的编辑器包重新生成）：
+
+- 在一层一行的代码里增加或移动图层，新图层自己占一行，缩进和它的新邻居一样；删除或移走图层时连同它占的整行一起去掉，不再留下只有空格的行。写在一行里的代码还是原样拼在一行里。
+- 紧挨在图层上面的注释（中间没有空行）跟着图层一起移动、一起删除。
+- 文字里面带注释时，改文字只替换文字本身，注释留着。
+
+| 检查（Mac） | 结果 |
+| --- | --- |
+| `cd Editor/editorfe && npm test` | 63 个通过；新增 3 个测试，原有 2 个测试里写死的旧结果（留下一行空格、新图层贴在结束标签前）改成了新的结果 |
+| `cd Web/studio && npm test` | 114 个通过，`layout-edit-trees.json` 不用重新生成（面板对 Layout Starter 做的那两处修改结果没有变） |
+
+没做的：没有在真正的面板里用手点；Apple 平台的测试由这个 PR 的 CI 来跑。
+
 ## 2026-11-18，第二台测试虚拟机：0.1.4（侧边栏分成四项）
 
 机器同上（Omarchy 4.5，aarch64 虚拟机），真实会话。
