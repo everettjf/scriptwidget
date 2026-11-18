@@ -546,7 +546,77 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 仍然没做的：苹果上只画了每个模板设计的那个尺寸，新加的小尺寸、中等尺寸排法没有在苹果上画图。这台 Mac 没有签名、没有授权，所以日历、健康、照片、提醒事项、GitHub、iCloud 这些模板画出来的是"未连接"的样子。Countdown 没设置时的小尺寸标题"Your next mome…"是模板有意把标题截到 14 个字，没改。
 
-## 没跑的（汇总）
+## 2026-11-18，示例排版、加注释之后的参考文件
+
+`Script.bundle` 和 `Script.android` 下的 191 个 `.js`、`.jsx` 示例用 Prettier 排了版，又加了给新手看的注释，`Gallery/` 里的副本也同步了。这一节记的是之后的检查：哪些随仓库保存的参考文件依赖示例的原文，重新生成了哪个，以及发现的一个没解决的问题。都是在同一台 Mac 上跑的（macOS 27.2，Apple 芯片）。
+
+### "只动了注释和排版"是怎么查的
+
+- 画出来的树一个字节都没变：`cd Web/preview-engine && npm test` 用现在的示例重新算出每棵树，和排版之前在苹果上录的 `native-trees.json` 逐字节比较，199 个测试都通过。这个文件这次没有重新生成。
+- 加注释的几次提交，合并之前逐行核对过只多了注释和空行（这是提交的人做的，这一节没有重做）。
+- 两个坑，改示例时要记住：
+  - 各个运行时是在脚本的文字里找 `$render`、`moment(`、`moment.` 的，注释里不能出现这几个写法。
+  - Prettier 会把 JSX 文字里连着的两个空格并成一个，所以三个动画示例的标题（"LISSAJOUS  7×11"、"ORBITAL  2:3:5"、"PHASE WAVE  Δφ=40°"）现在写成花括号里的字符串。
+
+### 依赖示例原文的参考文件
+
+在 `Tests/ScriptWidgetRuntimeTests`、`Web/preview-engine/test`、`Web/studio/test`、`Editor/editorfe/test`、`Scripts/tests`、`Android/core/src/test`、`Linux/crates/*/tests`、`Windows/tests` 里找了带 `source` 字段、哈希、字节数、行列号或者示例代码片段的地方：
+
+| 文件 | 存了什么 | 结果 |
+| --- | --- | --- |
+| `Web/preview-engine/test/parity/material-study-trees.json` | Material Study 的原文和 48 棵树 | 重新生成了。48 棵树和原来逐字相同，只有 `source` 变了（1207 个字符变成 1902 个） |
+| `Web/preview-engine/test/parity/layout-edit-trees.json` | Layout Starter 的原文、在排版面板里改过之后的原文，以及两棵树 | 没能重新生成，原因见下 |
+| `theme-edit-trees.json`、`asset-edit-trees.json` | 也有 `source`，但那是测试里自己写的一段代码，不是示例 | 不受影响，没动 |
+| `Gallery/index.json` 里的字节数和 SHA-256 | Gallery 副本的 | 同步时已经更新，`sync-gallery-templates.mjs` 通过 |
+| 其余的 `*-trees.json`、`native-trees.json` | 只有树 | 不受影响，没动 |
+
+`material-study-trees.json` 是在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 `TEST_RUNNER_SCRIPTWIDGET_EXPORT_MATERIAL_TREES=1` 只跑 `testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures` 生成的。
+
+### 没解决的问题：排版面板打不开排过版的示例
+
+这不是参考文件过期，是行为变了，所以没有去改测试的期望值。
+
+编辑器的排版面板（`Editor/editorfe/src/visualLayout.js`）读不了现在的示例，原因有两个，各自单独就够：
+
+- Prettier 在 `$render(` 的元素后面加了一个逗号（`</vstack>,` 换行 `);`）。面板把它当成"不是直接的 `$render(<元素>)`"，只让在代码里改。
+- 注释写成了 JSX 里的 `{/* … */}`。面板把它当成语法错误，提示"Fix the JavaScript/JSX syntax before using Layout"。
+
+用 `parseVisualLayout` 把 140 个 `main.jsx` 各读一遍：
+
+| 时候 | 面板能打开 | 只能在代码里改 | 报语法错误 |
+| --- | --- | --- | --- |
+| 排版之前 | 136 | 4 | 0 |
+| 只排了版 | 20 | 120 | 0 |
+| 现在（排了版、加了注释） | 8 | 61 | 71 |
+
+Layout Starter 和 Material Study 都在读不了的里面；把这两处（末尾的逗号、JSX 注释）都去掉，面板又能读出 7 个和 8 个图层。因此下面三个测试失败，`layout-edit-trees.json` 也生成不出来（生成它要先在面板里改 Layout Starter）：
+
+- `VisualLayoutEditorTests.testLayoutStarterEditsRenderWithNativeJavaScriptCore`
+- `VisualLayoutEditorTests.testNativeMaterialPropertyEditingPreservesSourceAndHistory`
+- `Web/studio` 的两个测试：Layout Starter 那个停在原文不一致上；Material Study 那个 48 棵树都对上了，停在面板改属性那一步
+
+要么让面板接受末尾的逗号和 JSX 注释，要么示例不用这两种写法；定了之后要再生成一次 `layout-edit-trees.json`（示例再变的话 `material-study-trees.json` 也要再生成）。这次没有做。
+
+### 结果
+
+| 检查 | 结果 |
+| --- | --- |
+| 整个 `ScriptWidgetRuntimeTests`，和 `release-readiness.sh` 一样的写法（`xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests -destination 'platform=macOS' -derivedDataPath … CODE_SIGNING_ALLOWED=NO test`），重新生成之后 | 809 个：775 个通过，32 个跳过，2 个失败，就是上面两个 `VisualLayoutEditorTests` |
+| 同一个测试方案，不加 `CODE_SIGNING_ALLOWED=NO`（签了名的构建），重新生成之前 | 809 个里 32 个跳过，4 个失败：上面两个、`testMaterialStudyCanonicalTreesAndStaticAccessibilityCaptures`（原文不一致），以及 `LegacyCutoverProcessTests` 的一个 |
+| 同上，重新生成之后 | 809 个里 32 个跳过，3 个失败：上面两个和 `LegacyCutoverProcessTests.testIndependentLegacyWriterStopsBeforeMigrationAndCannotRestartAfterReady`。最后这个不读任何示例（它把应用当子进程启动），只在签了名的构建里失败，按发布检查的写法跑是通过的；为什么签了名就失败没有查 |
+| `cd Web/preview-engine && npm test` | 199 个通过 |
+| `cd Web/studio && npm test` | 114 个里 112 个通过，2 个失败（见上） |
+| `cd Editor/editorfe && npm test` | 55 个通过 |
+| `cargo test --locked --workspace`（Mac） | 506 个通过，1 个忽略 |
+| `node Scripts/validate-release.mjs`、`sync-gallery-templates.mjs`、`validate-doc-links.mjs`、`node --test Scripts/tests/*.mjs` | 都通过（最后一个是 7 个测试） |
+
+### 没跑的
+
+- `Scripts/release-readiness.sh` 没跑：它里面的 `Web/studio` 测试和上面这条 macOS 测试已经知道会失败，脚本会停在第一个失败上。
+- iOS 模拟器上只跑了生成 `material-study-trees.json` 的那一个测试，没有跑整个测试方案。
+- Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑。
+- 没有在真的编辑器里点开排版面板看；上面的数是用面板的解析函数直接读出来的，两个原生测试的失败和它一致。
+
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。
 - 画笔和其他平台的图片逐像素对比。
