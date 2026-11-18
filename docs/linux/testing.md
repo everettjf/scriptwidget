@@ -251,6 +251,15 @@ cargo test --locked -p sw-core --test parity -- --nocapture   # 只跑一致性�
 - x86_64 的安装包在桌面上的任何表现。
 - 管理窗口的读屏和 Tab 键导航；从文件管理器双击 `.swt`。
 
+### 发布包（提交 `469350d2`）
+
+| 包 | 怎么来的 | 检查 |
+| --- | --- | --- |
+| `scriptwidget-0.1.0-linux-aarch64.tar.gz` | 在这台测试虚拟机上用 `package.sh` 构建 | 构建前全部测试 512 个通过；解压、`install.sh` 重装后 `doctor` 全过，四个小组件回到桌面 |
+| `scriptwidget-0.1.0-linux-x86_64.tar.gz` | GitHub Actions 的"Linux release archive"工作流（运行 44265856469），在 `archlinux:latest` 容器里构建，ICU 78.3 | 全部测试通过；解压后清空环境变量运行 `doctor` 和 `render`（画出日历模板，图不为空），`scriptwidget-studio --version` 能运行，包里没有字体文件。没有图形会话，没有人看过它在桌面上的表现 |
+
+这个工作流第一次运行失败过：一个画笔测试靠"系统字体和 Inter 的宽度不同"来判断用了哪种字体，而 Arch 上的 Noto Sans 和 Inter 在那段文字上只差不到半个像素。测试改成按字体的族名判断后通过。
+
 阶段 0 的验证工程（`Linux/spikes`）在这之后从仓库里删掉了，它们在提交 `9846e47` 及更早的历史里。
 
 ## 没跑的（汇总）
