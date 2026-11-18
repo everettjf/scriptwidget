@@ -1,0 +1,25 @@
+{
+  "schemaVersion": 1,
+  "id": "com.atomsprout.scriptwidget",
+  "name": "ScriptWidget",
+  "version": "0.1.0",
+  "author": "AtomSprout",
+  "description": "Shows the widgets ScriptWidget draws on the desktop layer and passes clicks back to it",
+  "license": "Apache-2.0",
+  "kinds": [
+    "service",
+    "bar-widget"
+  ],
+  "keepLoaded": true,
+  "entryPoints": {
+    "service": "Service.qml",
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "ScriptWidget",
+    "description": "Opens ScriptWidget; shows widgets on top or arranges them",
+    "category": "Status",
+    "allowMultiple": false,
+    "defaultSection": "right"
+  }
+}
