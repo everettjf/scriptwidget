@@ -13,6 +13,12 @@ serde_json.workspace = true
 sha2.workspace = true
 getrandom.workspace = true
 url.workspace = true
+rustix.workspace = true
+flate2.workspace = true
+unicode-normalization.workspace = true
+unicode-segmentation.workspace = true
+unicode-properties.workspace = true
+serde.workspace = true
 
 [build-dependencies]
 cc.workspace = true
