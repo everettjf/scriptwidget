@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T17:43:55.995Z",
+  "generatedAt": "2026-11-18T17:57:37.972Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -68,15 +68,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 6067,
+          "bytes": 8031,
           "path": "lib/countdown.js",
-          "sha256": "d43ec4f7f1f6c05bb5d75d4259d8eb942f2b2860949ed042a6f79d5dc4441964",
+          "sha256": "31c7b237f5de7d793a4eb7ccadb0ddda9eb709af551aac16891d21eac01f66f9",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/lib/countdown.js"
         },
         {
-          "bytes": 3938,
+          "bytes": 5238,
           "path": "main.jsx",
-          "sha256": "b2aefc5fb8d1d47b0951f05b95c526f9e4443efc501cfcec835d4ff6cc5a0bde",
+          "sha256": "e9fab78e0945d1cfd108d9d60fbfd4d1ceedf451d8bd5c12ae83d8937b199b9c",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/countdown/main.jsx"
         },
         {
@@ -122,15 +122,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 12521,
+          "bytes": 15755,
           "path": "lib/repository.js",
-          "sha256": "b6623faf61b61f8753e5d2024e1e80e8ce99aea6b95063f2a994a83523cf9214",
+          "sha256": "e76828ad19edb4b2adb6f6323e850b10e86a843a2e07fa59b332e8a1aff31faf",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/lib/repository.js"
         },
         {
-          "bytes": 5692,
+          "bytes": 7290,
           "path": "main.jsx",
-          "sha256": "44d1e5bd368893a175a948704881592f88ce150696b0f50440032932685d98c0",
+          "sha256": "aa748935cdc030e28f0b20f36519bf886b354dc5ea0a01862f35984117607d54",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/main.jsx"
         },
         {
@@ -178,15 +178,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/lib/records.js"
         },
         {
-          "bytes": 8748,
+          "bytes": 11197,
           "path": "main.jsx",
-          "sha256": "cc470e191785ee7d1c4fb4b04bf621eac5409b49b4bf5525bc30cda18cf10b04",
+          "sha256": "210d1611481f9132f070744b4278f87df489b2d19d0e5c92178a3b09c0bf84a6",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-heatmap/main.jsx"
         },
         {
@@ -226,15 +226,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/lib/records.js"
         },
         {
-          "bytes": 4463,
+          "bytes": 6197,
           "path": "main.jsx",
-          "sha256": "f7d80e3592ccd31ea260b9095b8a2e163342e1c3f08d10db9abb1917eca3c4d0",
+          "sha256": "cde1013992fc8140adf962aef49865331837a0769a49d9f870868035c3eb7a8f",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/habit-streak/main.jsx"
         },
         {
@@ -281,15 +281,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 5720,
+          "bytes": 7170,
           "path": "lib/health.js",
-          "sha256": "a5e5f902a8d196050da1233a70333fa6c539975aca5976531a98d5ff93114edf",
+          "sha256": "c9820ad46b488e209e8e0c1f23829a860666a6166e8ef291010135c194cf1962",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/lib/health.js"
         },
         {
-          "bytes": 4994,
+          "bytes": 6532,
           "path": "main.jsx",
-          "sha256": "7392950a0c41a2c7c3d08147f8c45b1b4fd6f5b8b8fe81d9731afc3a6b11c0fd",
+          "sha256": "ba86dfaf4a2cd3ccc9d1ea4209fcf3eeb2159b36e75ae858ef386b7776de2962",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-card/main.jsx"
         },
         {
@@ -338,15 +338,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/lib/records.js"
         },
         {
-          "bytes": 5409,
+          "bytes": 7100,
           "path": "main.jsx",
-          "sha256": "43b2087e7576963ddadfdc74009aa624a3b5ea5ac0ac882440b723dafc5333d8",
+          "sha256": "dc0d919f2d65f01b89eb13e1ad6e728e9d129ce40d5cf27a5a09a6c1f38be90f",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal/main.jsx"
         },
         {
@@ -389,15 +389,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 18498,
+          "bytes": 21959,
           "path": "lib/weather.js",
-          "sha256": "6d643916d03e5361ebe1fde02e7b39658ff458c98ceec4cc857654428680984e",
+          "sha256": "c1d1fc15d5dc7f178464fc224f71dcd91da50bcd56a35205c733deadf469d0c4",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/lib/weather.js"
         },
         {
-          "bytes": 5677,
+          "bytes": 7178,
           "path": "main.jsx",
-          "sha256": "6b1a34b85379be9292f1164cdbb55cfb7a6f4380b9b1e9c50261ff6881515316",
+          "sha256": "fe44ac57b9bed06e1a4dd0561599f56c92484164ae24a5269edc85d1b7949fb3",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/local-weather/main.jsx"
         },
         {
@@ -445,15 +445,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/lib/records.js"
         },
         {
-          "bytes": 4588,
+          "bytes": 6118,
           "path": "main.jsx",
-          "sha256": "671b5640f41b9ad15f35ae6ce64177f554965d429d6e7741de686c552cdc17d2",
+          "sha256": "7be497e2439ac95d454ad411ccb4c3e6f003a247af14a990a031d8392d0a4549",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/mood-check-in/main.jsx"
         },
         {
@@ -495,15 +495,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/lib/records.js"
         },
         {
-          "bytes": 5265,
+          "bytes": 6851,
           "path": "main.jsx",
-          "sha256": "3959b691e7083b9e1ee7be79d9b9a0bfa8a6e67ef3c0510e881560d985d3c534",
+          "sha256": "40f85d45afcced3d0f5e7206cc02518e694fa24ec58ae8d21fca8253cac3966d",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/packing-checklist/main.jsx"
         },
         {
@@ -545,15 +545,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 2359,
+          "bytes": 3452,
           "path": "lib/configuration.js",
-          "sha256": "42e082cd2ab21ee306246cf0024508880b9014464c0904615752408a8f57cc44",
+          "sha256": "2fda3a58c1ff948994e67401fac4912e3e23aaa4d23df74031ce4096f2b4c1d7",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/lib/configuration.js"
         },
         {
-          "bytes": 3522,
+          "bytes": 5043,
           "path": "main.jsx",
-          "sha256": "0defefcdb02e08cfb88d2ae93e39a008fbe2e88eb39294899b68f1cf8cad6e1f",
+          "sha256": "8af25ad342c6c28151020e8eefb3cab612db1329770faefc6eead62f58bede59",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-card/main.jsx"
         },
         {
@@ -601,15 +601,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/lib/records.js"
         },
         {
-          "bytes": 5188,
+          "bytes": 7477,
           "path": "main.jsx",
-          "sha256": "4e682b26c461c2a73f6b2c86b69014820414b682d22c7c0ce4c0b33015c30169",
+          "sha256": "3fb2fcd754ed69159fdefa8e5e66cae256b56374d40d5fb492eee8c2bd3973ca",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/plant-care/main.jsx"
         },
         {
@@ -657,15 +657,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7744,
+          "bytes": 10404,
           "path": "lib/records.js",
-          "sha256": "90d44d628d3bcb738a7ec3bd8dd74388e583cec9bcd5028b531698b51421203a",
+          "sha256": "a718ac7621a84a29c2397668a267ce1a9d42c4103a6b0440f5ab30a4ab07a640",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/lib/records.js"
         },
         {
-          "bytes": 6651,
+          "bytes": 8828,
           "path": "main.jsx",
-          "sha256": "9d1b32f4ffe85a063d4cdee69dcae73630ca7bdb2ad590fcf81a45e3ccb26610",
+          "sha256": "f5ef84c855d15bf7d45bf9f840230fa9c623cf586846aba33cad30314b981c4c",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/pocket-pet/main.jsx"
         },
         {
@@ -713,15 +713,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 5313,
+          "bytes": 6873,
           "path": "lib/launcher.js",
-          "sha256": "528771e4a38fa07bfe16118c11fa8c6dfcf7af5c484d65a4edc850602014ecd5",
+          "sha256": "ee1f27c0f2d86cab085bfe48ccc7ef71234e89965232365a7ae48a94aee7f629",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/lib/launcher.js"
         },
         {
-          "bytes": 2715,
+          "bytes": 3882,
           "path": "main.jsx",
-          "sha256": "38ef47128fb85248595e2df8084cefef1ef7962dc335a12d90d615507e10b471",
+          "sha256": "277168fac82ab67f9437f4e958457f846456a28cb5da3d06844caf010249d061",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/quick-launcher/main.jsx"
         },
         {
@@ -769,15 +769,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 2968,
+          "bytes": 3897,
           "path": "lib/configuration.js",
-          "sha256": "dcb6d528e59746f60a89f0adef253cc47a278c3aa9bc273d2d3f6e12f6d039c1",
+          "sha256": "319d32210ee88e872d21bbfadc6f4de2edab9ced6f8e24fe266d53e8eed591a3",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/lib/configuration.js"
         },
         {
-          "bytes": 3494,
+          "bytes": 4945,
           "path": "main.jsx",
-          "sha256": "f420805fc9547fca65d4776f2ab2a39247127379c0da540770b414d942c0b6fc",
+          "sha256": "c08803016e54082d9b204121153e9fdb4f7eaabf021a14e535a28d07829581c5",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/wallpaper-match/main.jsx"
         },
         {
@@ -825,15 +825,15 @@
       "featured": true,
       "files": [
         {
-          "bytes": 18498,
+          "bytes": 21959,
           "path": "lib/weather.js",
-          "sha256": "6d643916d03e5361ebe1fde02e7b39658ff458c98ceec4cc857654428680984e",
+          "sha256": "c1d1fc15d5dc7f178464fc224f71dcd91da50bcd56a35205c733deadf469d0c4",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/lib/weather.js"
         },
         {
-          "bytes": 5677,
+          "bytes": 7065,
           "path": "main.jsx",
-          "sha256": "6b1a34b85379be9292f1164cdbb55cfb7a6f4380b9b1e9c50261ff6881515316",
+          "sha256": "3163103561c8584bf39b85aecad44227c56d551d09e3697a4e379a8a8fecffc0",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/weather-now/main.jsx"
         },
         {
@@ -881,9 +881,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 3608,
+          "bytes": 5157,
           "path": "main.jsx",
-          "sha256": "04c72fcd516ffd04e72cc0286bf85d0c820b7c99af68f0664732176160b8d7f0",
+          "sha256": "7f9812e0915ad12062c4b8fc572263302ad329a426c6a826d66f779c33383026",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/photo-album-rotator/main.jsx"
         },
         {
@@ -917,9 +917,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 7209,
+          "bytes": 9809,
           "path": "main.jsx",
-          "sha256": "9ebf4adb8d887efade8f96727471a9269dddd2592e9fae1aa8dec9d084e2b11b",
+          "sha256": "b58fb007d9da1bae91f27c64c3654f97f69824edf0d31afae9554f324efea027",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/main.jsx"
         },
         {
@@ -953,9 +953,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 12132,
+          "bytes": 14444,
           "path": "main.jsx",
-          "sha256": "6d4ec371b9e8c3e7405a42bf592aa944e8c20cad2ff7b71a9bc8a32ef82570cb",
+          "sha256": "b9acaa4dab06b9ecdc2f0e2f304e6e90075e7333c0854aef839db809495f0e7b",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/health-overview/main.jsx"
         },
         {
@@ -989,9 +989,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 4840,
+          "bytes": 6350,
           "path": "main.jsx",
-          "sha256": "72fc3ef2ad38ac05c4c5bf6f6506ea5e5391c7beee716c07b0f857a97f5ef4f3",
+          "sha256": "5b8aba31fe2eec2953eeefc7ab82a79a93f1617af5b553574a5155533ea4185a",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-profile/main.jsx"
         },
         {
@@ -1025,9 +1025,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 4044,
+          "bytes": 5515,
           "path": "main.jsx",
-          "sha256": "4014d3bb89f3ec3e900d50a517b374143b75faba1ffd9e9fb0dfdf417cbdcad9",
+          "sha256": "a92b3ec88648382cdfcd8d130436f00353fd18fc336b105dd4caba6088311631",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/music-playback/main.jsx"
         },
         {
@@ -1061,9 +1061,9 @@
       "featured": true,
       "files": [
         {
-          "bytes": 648,
+          "bytes": 1121,
           "path": "main.jsx",
-          "sha256": "07bde7d0aa7c577a5d0a8aa76fc23b5ace9881a807a5d319509f1802d1f908f6",
+          "sha256": "08973166d669a07bb1eb8a8f2f3d44301e12af5f4a8fc3f7bafa97699b38d4ba",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/layout-starter/main.jsx"
         },
         {
@@ -1103,9 +1103,9 @@
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/LICENSE.txt"
         },
         {
-          "bytes": 1310,
+          "bytes": 1902,
           "path": "main.jsx",
-          "sha256": "4b37abc71e97921998d3dabd7986621f6545006ad8abf9837ee08fee20526b85",
+          "sha256": "15304290eb9f0fa0191e7a369f6a3806256c15259e543214dbd18b910f9af8cc",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/material-study/main.jsx"
         },
         {
@@ -1139,15 +1139,15 @@
       "featured": false,
       "files": [
         {
-          "bytes": 6576,
+          "bytes": 8310,
           "path": "lib/cloud-hydration.js",
-          "sha256": "e58f9417236b1d3466aa3ac710eadfb5386fde16ca7218a56e14f7c2fd4cfbf2",
+          "sha256": "72dbe296af66df54ba4414bbabb5b408487c12167364b0279518aaea7f4e0393",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/lib/cloud-hydration.js"
         },
         {
-          "bytes": 5033,
+          "bytes": 6685,
           "path": "main.jsx",
-          "sha256": "bb525ae4227ae2d08573f498c37b8f1753d3db2c225cef07c49809f1daaf2b48",
+          "sha256": "9a112ef8567b1427cf537e07ee4278946f9718d5538cb13d7f28fb10c3d8fac7",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/hydration-goal-icloud/main.jsx"
         },
         {

@@ -1,23 +1,37 @@
 // Real read-only HealthKit summaries. Declare health; review access in app Settings.
 // Parameter: overview (default), sleep, activity or workouts. Nothing is saved.
 // Web Studio supplies editable samples; native widgets never seed Health data.
+// Shows the sleep of the last 24 hours, today's activity rings and recent workouts.
+// Try the widget parameter (sleep, activity or workouts), or change `colors`.
+// $health runs on iPhone and iPad, and on Android through Health Connect (no ring goals
+// or stand time); not on Mac, Windows or Linux.
+// widget.json must declare the permission "health".
+
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large",
+// "extraLarge", or a Lock Screen size whose name starts with "accessory".
 const family = $getenv("widget-size"),
   small = family === "small";
 const accessory = family.startsWith("accessory"),
   dark = $device.isdarkmode();
+// $getenv("widget-param") is the optional widget parameter, a text you set on each widget.
 const mode = $getenv("widget-param").trim() || "overview";
+// Lock Screen sizes get a clear background and the system's own text colors.
 const background = accessory ? "clear" : dark ? "#17242b" : "#f2f8f8";
 const foreground = accessory ? "primary" : dark ? "#eaf4f4" : "#23444b";
 const secondary = accessory ? "secondary" : dark ? "#a6bec4" : "#58737c";
+// The ring colors: move, exercise, stand.
 const colors = ["#e67f92", "#70b58b", "#6aadd3"];
+// Read the data. A part stays null when it is not asked for or cannot be read.
 let sleep = null,
   activity = null,
   workouts = null,
   errors = 0;
+// isAvailable() is false on a system without Health data; the calls below would fail there.
 const supported = $health.isAvailable();
 if (!["overview", "sleep", "activity", "workouts"].includes(mode))
   throw new Error("Use overview, sleep, activity or workouts as the widget parameter.");
 if (supported) {
+  // `await` waits for the answer. A failed read is counted and the rest still shows.
   if (mode === "overview" || mode === "sleep") {
     try {
       sleep = await $health.sleepSummary();
@@ -40,10 +54,13 @@ if (supported) {
     }
   }
 }
+// Seconds as text: 27000 becomes "7h 30m".
 function duration(seconds) {
   const minutes = Math.round(seconds / 60);
   return `${Math.floor(minutes / 60)}h ${String(minutes % 60).padStart(2, "0")}m`;
 }
+// The text for each value, or a dash. hasSamples is false when Health returned nothing,
+// which can also mean that the data was not shared with ScriptWidget.
 const sleeping = sleep?.hasSamples && sleep.totalSleepSeconds > 0;
 const sleepValue = sleeping ? duration(sleep.totalSleepSeconds) : "—";
 const move = activity?.hasSamples ? activity.move : null;
@@ -58,9 +75,12 @@ const title =
       : mode === "workouts"
         ? "Recent workouts"
         : "Health overview";
+// The three activity rings. progress(index) is value / goal, kept between 0 and 1.
 const rings = activity?.hasSamples ? [activity.move, activity.exercise, activity.stand] : [];
 const progress = (index) =>
   rings[index]?.goal > 0 ? Math.min(1, Math.max(0, rings[index].value / rings[index].goal)) : 0;
+// Three rings inside each other; `side` is the outer size in points.
+// <zstack> puts its children on top of each other.
 const Rings = ({ side }) => (
   <zstack frame={`${side},${side}`}>
     <ring
@@ -86,6 +106,7 @@ const Rings = ({ side }) => (
     />
   </zstack>
 );
+// A reusable piece of layout: a small label with its value under it.
 const Metric = ({ label, value }) => (
   <vstack alignment="leading" spacing="1">
     <text font="caption2" color={secondary}>
@@ -96,6 +117,7 @@ const Metric = ({ label, value }) => (
     </text>
   </vstack>
 );
+// Nothing to show: there is no Health data on this system, or nothing could be read.
 if (!supported || (!sleep && !activity && !workouts)) {
   const message = !supported ? "Use a Health-capable device." : "Review access in app Settings.";
   $render(
@@ -122,6 +144,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     ),
   );
 } else if (family === "accessoryInline") {
+  // Lock Screen, inline: one line of text.
   $render(
     <text>
       {mode === "activity"
@@ -132,6 +155,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </text>,
   );
 } else if (family === "accessoryCircular") {
+  // Lock Screen, circular: an icon and one value.
   $render(
     <vstack spacing="2">
       <icon
@@ -150,6 +174,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (accessory) {
+  // Lock Screen, rectangular: a title and one value.
   $render(
     <vstack alignment="leading" spacing="3">
       <text font="headline">{title}</text>
@@ -163,6 +188,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (mode === "sleep" && family === "medium") {
+  // Sleep, medium widget: the total on the left, the sleep stages on the right.
   $render(
     <hstack frame="max" padding="14" spacing="18" background={background}>
       <vstack alignment="leading" spacing="5">
@@ -194,6 +220,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </hstack>,
   );
 } else if (mode === "sleep") {
+  // Sleep, other sizes.
   $render(
     <vstack frame="max" padding="14" spacing="7" alignment="leading" background={background}>
       <text font="caption" color={secondary}>
@@ -212,6 +239,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
               ? "Known sleep intervals"
               : "No shared sleep stages"}
       </text>
+      {/* Larger sizes also list the stages. Each one is a number of seconds. */}
       {!small && sleeping && (
         <hstack spacing="14">
           {["core", "deep", "rem"].map((stage) => (
@@ -226,6 +254,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (mode === "activity" && family === "medium") {
+  // Activity, medium widget: the rings on the left, the numbers on the right.
   $render(
     <hstack frame="max" padding="14" spacing="18" background={background}>
       <Rings side={96} />
@@ -251,6 +280,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </hstack>,
   );
 } else if (mode === "activity") {
+  // Activity, other sizes.
   $render(
     <vstack frame="max" padding="14" spacing="6" background={background}>
       <text font="caption" color={secondary}>
@@ -275,6 +305,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (mode === "workouts") {
+  // Workouts: the first one in the list. Its duration is in seconds.
   $render(
     <vstack frame="max" padding="14" spacing="7" alignment="leading" background={background}>
       <text font="caption" color={secondary}>
@@ -287,6 +318,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
       <text font="headline" color={foreground}>
         {recent ? `${Math.round(recent.duration / 60)} min` : "None shared"}
       </text>
+      {/* Distance and energy are null when a workout has none; filter(Boolean) drops them. */}
       {!small && recent && (
         <text font="caption" color={secondary}>
           {[
@@ -312,6 +344,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (small) {
+  // Overview, small widget: sleep and move only.
   $render(
     <vstack frame="max" padding="14" spacing="6" alignment="leading" background={background}>
       <text font="caption" color={secondary}>
@@ -334,6 +367,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else if (family === "medium") {
+  // Overview, medium widget: the rings and three values.
   $render(
     <vstack frame="max" padding="14" spacing="8" alignment="leading" background={background}>
       <text font="caption" color={secondary}>
@@ -351,6 +385,7 @@ if (!supported || (!sleep && !activity && !workouts)) {
     </vstack>,
   );
 } else {
+  // Overview, large and extra large widgets.
   $render(
     <vstack frame="max" padding="18" spacing="12" background={background}>
       <text font="headline" color={foreground}>

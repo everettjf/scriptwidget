@@ -1,27 +1,45 @@
 // A local virtual companion. Only explicit daily care changes its journal.
+//
+// This template shows several buttons that each save a different action for today, and
+// a face drawn from shapes that changes with the saved state. Try changing the status
+// texts or the colors.
+
+// $import runs lib/records.js from this package and returns false when that fails. The
+// file defines localRecords: a diary with one entry per calendar day, kept in package storage
+// (widget.json declares the "storage" permission).
 if (!$import("lib/records.js")) throw new Error("Install the complete Pocket Pet template.");
+// The pet's name is the widget parameter (the parameter text set for this widget), or
+// else the name from the saved settings.
 const config = localRecords.configuration("pocketPet"),
   title = ($getenv("widget-param") || config.title).trim(),
   order = ["feed", "play", "rest"];
 if (!title || title.length > 40) throw new Error("Use a pet name of 1–40 characters.");
+// A day's value is a list of one to three different actions, for example ["feed", "rest"].
 const valid = (value) =>
   Array.isArray(value) &&
   value.length >= 1 &&
   value.length <= 3 &&
   new Set(value).size === value.length &&
   value.every((action) => order.includes(action));
+// Open the diary stored under the key "pocketPet.v1"; [] stands for a day without care.
+// "timeline-date" is the moment this entry is drawn for, which is later than now when the
+// system prepares the widget in advance.
 const log = localRecords.create(
   "pocketPet.v1",
   valid,
   [],
   new Date($getenv("timeline-date") || Date.now()),
 );
+// Adds one action to today's list, keeping the order feed, play, rest. edit() returns
+// false when nothing changed.
 function care(action) {
   const changed = log.edit((value) =>
     order.filter((item) => value.includes(item) || item === action),
   );
   $render(<text>{changed ? "Care saved" : "Already done today"}</text>);
 }
+// The functions below are the actions listed in widget.json; a button with
+// actionID="feedPet" runs feedPet().
 function feedPet() {
   care("feed");
 }
@@ -39,12 +57,14 @@ function resetToday() {
   log.reset();
   $render(<text>Today cleared; Undo can restore it</text>);
 }
+// Read the diary (reading never writes) and work out what to show.
 const state = log.read(),
   today = log.value(state),
   days = state.entries.filter((entry) => entry.date <= log.today),
   careDays = days.length,
   rested = today.includes("rest"),
   complete = today.length === 3;
+// The latest care date, and a helper that turns "YYYY-MM-DD" into a day number.
 const last = days
     .map((entry) => entry.date)
     .sort()
@@ -53,6 +73,7 @@ const last = days
     const [y, m, d] = key.split("-").map(Number);
     return Date.UTC(y, m - 1, d) / 86400000;
   };
+// gap: days since the last care. status and level are the two sentences in the widget.
 const gap = last ? ordinal(log.today) - ordinal(last) : null,
   status = complete
     ? "A lovely day"
@@ -64,12 +85,15 @@ const gap = last ? ordinal(log.today) - ordinal(last) : null,
           ? "Ready to reconnect"
           : "Ready for care",
   level = careDays >= 30 ? "Close companions" : careDays >= 7 ? "Good friends" : "New friends";
+// Colors for light and dark mode, and the size being drawn ("small", "medium", …).
 const dark = $device.isdarkmode(),
   background = dark ? "#302443" : "#faf5ff",
   ink = dark ? "#f3e8ff" : "#581c87",
   muted = dark ? "#d8b4fe" : "#7e22ce",
   family = $getenv("widget-size");
 // Original JSX geometry; static artwork works without animation or network resources.
+// Two ears above a face. The eyes close after rest, and the mouth changes when all three
+// actions are done. frame is "width,height" in points; rotation is in degrees.
 const Pet = () => (
   <vstack spacing="0">
     <hstack spacing={family === "small" ? "16" : "24"}>
@@ -102,6 +126,7 @@ const Pet = () => (
     </zstack>
   </vstack>
 );
+// A button for one action. Its text tells whether the action is already done today.
 const CareButton = ({ action }) => (
   <button actionID={action + "Pet"}>
     <text font="caption" color={muted}>
@@ -126,8 +151,11 @@ const UndoButton = () => (
     </text>
   </button>
 );
+// While a button or a Shortcuts action runs, widget-size is "function" or "action". The
+// function above then renders its own message, so nothing is drawn here.
 if (family === "function" || family === "action") {
 } else if (family === "accessoryInline") {
+  // Lock Screen sizes (iPhone and iPad only).
   $render(<text>{`${title} · ${today.length}/3 care`}</text>);
 } else if (family === "accessoryCircular") {
   $render(
@@ -144,6 +172,8 @@ if (family === "function" || family === "action") {
     </vstack>,
   );
 } else {
+  // Home Screen sizes. frame="max" fills the widget; padding is the space around the
+  // content, in points. The small widget gets less of both.
   $render(
     <vstack
       frame="max"
@@ -174,6 +204,7 @@ if (family === "function" || family === "action") {
           )}
         </vstack>
       </hstack>
+      {/* Buttons: two rows in the small widget, one row in the others. */}
       {family === "small" ? (
         <vstack spacing="4">
           <hstack spacing="8">
@@ -193,6 +224,7 @@ if (family === "function" || family === "action") {
           <UndoButton />
         </hstack>
       )}
+      {/* Large sizes only: the last seven days. */}
       {!["small", "medium"].includes(family) && (
         <vstack alignment="leading" spacing="4">
           <text font="caption" color={muted}>
