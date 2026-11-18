@@ -30,9 +30,9 @@ The installer on GitHub Releases:
 
 Decisions and accounts:
 
-- **Partner Center.** Reserve the app name, then build with `package.ps1 -IdentityName … -Publisher … -PublisherDisplayName … -FrameworkDependent`. The default identity is for local testing only.
-- **Store policy 10.2.2.** Ask Microsoft whether an app that runs user-written widget scripts needs anything beyond saying so in its description.
-- **Store listing.** Screenshots, description in English and Chinese, privacy policy link.
+- **Partner Center.** The name is reserved and submission `1152921505702441674` for Store ID `9MVR97B9C938` entered certification on 18 November 2026. Check its result and handle any certification feedback. Build future Store packages with the identity recorded in [testing.md](testing.md); the script's defaults remain for local testing only.
+- **Store policy 10.2.2.** The submitted descriptions explicitly disclose user-written/imported JavaScript and JSX widgets; certification notes explain the interpreter, permissions and limitations. Microsoft's policy assessment is pending.
+- **Store listing.** English and Simplified Chinese text, four screenshots per language, native app icons and the privacy link were submitted. Verify the live listings and the Store-signed install after approval. Add a Windows-specific privacy section covering local package data and user-selected network services.
 
 Known gaps in the code:
 

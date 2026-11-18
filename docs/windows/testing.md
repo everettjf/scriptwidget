@@ -12,6 +12,28 @@ Every entry says what ran, on which machine, and what the result was. A check th
 
 ARM64 runs on the CI ARM64 machine only; no ARM64 PC was available to a person, and the MSVC ARM64 tools are not installed on the Dev PC.
 
+## 2026-11-18, first Microsoft Store submission (Dev PC)
+
+Built from commit `97d4d51` on the Dev PC (Windows 11 build 26200, x64). No runtime source changes were made for this submission.
+
+| Check | Result |
+| --- | --- |
+| `powershell -NoProfile -File Windows/scripts/package.ps1 -Arch x64 -Version 0.1.0.0 -FrameworkDependent -IdentityName '20370everettjf.ScriptWidget' -Publisher 'CN=560214DD-F83C-484D-87A6-0E0454EE64B0' -PublisherDisplayName 'AtomSprout'` | Pass; rebuilt shared JavaScript, native engine, host and Studio; produced the unsigned Store package, 57,302,627 bytes |
+| `dotnet test tests/ScriptWidget.Core.Tests -c Release -p:Platform=x64 --nologo -v minimal` from `Windows` | 239 passed, 0 failed, 0 skipped |
+| Partner Center package processing | `ScriptWidget_0.1.0.0_x64-store.msix`, version `0.1.0.0`, X64, minimum OS `10.0.22000.0`: **Validated** |
+| Required submission sections | Pricing, properties, age ratings, packages and Store listings all showed **Complete** before submission |
+| Final submission | Partner Center showed **In certification**, with **Submission: Complete**, **Pre-processing: In progress**, and certification/publishing not started |
+
+Package SHA-256: `08A41C495DACB500FB00B94B404D982354213AD5AACC0DA4849F8990457F25C2`.
+
+Store ID: `9MVR97B9C938`; package family: `20370everettjf.ScriptWidget_93hpgtfr9gyfj`; submission ID: `1152921505702441674`. Review the submission in [Partner Center](https://partner.microsoft.com/en-us/dashboard/products/9MVR97B9C938/overview). The public [Store link](https://apps.microsoft.com/detail/9MVR97B9C938) is reserved; successful submission is not evidence that the listing is live.
+
+The submission is free, publicly discoverable, and configured for all 240 markets and publication as soon as certification passes. It targets Windows Desktop only; future device-family availability was disabled. English (United States) and Chinese (China) listings each contain a localized description, six feature bullets, seven keywords, four existing Windows screenshots with localized captions, and the native 300-by-300 app icon. The privacy URL is `https://atomsprout.com/scriptwidget/privacy/` (HTTP 200 checked on this PC). The IARC questionnaire was saved after the owner explicitly accepted its terms and confirmed adulthood; the preview returned ESRB Everyone, PEGI 3 and Microsoft 3+.
+
+Certification notes were saved and verified after reloading. They explain offline testing without credentials, the `runFullTrust` and `internetClient` uses, the opt-in startup task, bounded in-process QuickJS execution, permissions and platform limitations. No AI-generation or external-purchase capability was declared for the Windows preview.
+
+Not run for this submission: ARM64 packaging, installation of the Store-signed package, a fresh desktop smoke suite, and the cross-platform release-readiness gate. Microsoft certification and public availability were still pending when this entry was written. Existing build warnings were emitted by QuickJS C wrappers, Studio C# code and the test analyzer; the build and tests nevertheless exited successfully.
+
 ## How to run the automated checks
 
 ```
