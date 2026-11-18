@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/sw-quickjs", "crates/sw-core"]
+members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render"]
 
 [workspace.package]
 version = "0.1.0"
@@ -16,6 +16,9 @@ serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"
 getrandom = "0.3"
 url = "2"
+sw-core = { path = "crates/sw-core" }
+# The version and features the phase 0 check built: a prebuilt Skia is downloaded, nothing is compiled from source.
+skia-safe = { version = "0.157.0", features = ["textlayout"] }
 
 # QuickJS is compiled with -O2 in every profile (see sw-quickjs/build.rs); the
 # Rust side of a test build is optimized too, so that the parity run measures
