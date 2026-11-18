@@ -23,3 +23,5 @@ _site/
 Linux/target/
 Linux/assets/
 Linux/tests/assets/
+# Pictures the painter tests write for review
+Linux/crates/sw-render/tests/out/

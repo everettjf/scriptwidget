@@ -1,0 +1,15 @@
+[package]
+name = "sw-render"
+description = "The ScriptWidget painter for Linux: element tree to bitmap and tap regions, on Skia"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sw-core.workspace = true
+sw-quickjs.workspace = true
+# The recorded element tree nests deeper than serde_json reads by default.
+serde_json = { workspace = true, features = ["unbounded_depth"] }
+serde = "1"
+skia-safe.workspace = true
