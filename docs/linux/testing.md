@@ -167,10 +167,45 @@ cargo test --locked -p sw-core --test parity -- --nocapture   # 只跑一致性�
 - 系统字体按名字向 Skia 要不一定给对（要等宽字体得到了无衬线字体），改为用 fontconfig 自己的匹配结果。
 - Skia 的段落排版有三处要绕开：行的位置按 UTF-16 单位计数；比容器宽的单词；布局宽度被向下取整导致刚好放得下的一行被截断。各有回归测试。
 
+## 2026-11-17，第二台测试虚拟机：干净的 Omarchy 4.5
+
+第一台虚拟机是从 4.0.6 升上来的，而且升级后没有重启。这一台是用 RiftVM 新建的，装好就是 Omarchy 4.5.0-3：Hyprland 0.57.2，Quickshell 0.3.2，Qt 6.12.0，ICU 78.3，fontconfig 2.18.3，内核 7.3.5，aarch64，6 核、16 GB，1920×1080、缩放 1。这台机器上 `pacman` 能正常装包，Rust（经 rustup）、CMake、Ninja、clang 都是用它装的。
+
+| 检查 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`，没有 `DISPLAY` 和 `WAYLAND_DISPLAY` | 418 个通过，0 个失败，1 个忽略 |
+| 引擎绑定测试带 AddressSanitizer | 15 个里 15 个通过 |
+| 显示端验证插件（`Linux/spikes/plugin`）：校验、启用、显示在 `bottom` 层 | 通过 |
+| 点击、拖动（虚拟指针） | 通过：后台收到 `tap a 1` 和 `move a 580 400` |
+| GIF 换帧 | 通过：相隔 0.3 秒的两张截图不同 |
+| 运行中换层 | 通过：`overlay` 再回到 `bottom` |
+| 外壳重启后恢复 | 通过 |
+| 4.5 的浮动布局（工作区布局切到 `floating`） | 小组件照常显示，点击有效；截图在 `Linux/spikes/plugin/out/omarchy-4.5-floating-layout.png` |
+
+在 4.5 上看到的、阶段 2 要考虑的：
+
+- 浮动布局下 Omarchy 自己有一个程序坞（`omarchy.dock`），在 `top` 层，占屏幕底部约 207 像素高的一条。小组件放在那一条里会被它盖住，摆放时要避开。
+- 这个 aarch64 镜像里没有装 `omarchy-hyprland-titlebars`（浮动窗口的标题栏），和第一台虚拟机升级时装不上是同一个包。不影响小组件。
+
+没跑：大于 1 的缩放、多显示器、真人操作鼠标。
+
+## 2026-11-17，GitHub Actions：PR 77 的第一次运行
+
+工作流 `.github/workflows/linux.yml`，运行 44242201617，提交 `eb9d75b`。
+
+| 机器 | 结果 |
+| --- | --- |
+| `ubuntu-24.04`（x86_64） | 通过：构建、全部测试（含被忽略的那个）、带 AddressSanitizer 的引擎绑定测试、clippy |
+| `ubuntu-24.04-arm`（aarch64） | 通过，同上 |
+
+这是 x86_64 和 Ubuntu 自带的 ICU 第一次跑这套测试；一致性对比是测试的一部分，所以在这两台机器上也是 127 个相同。Ubuntu 24.04 的 ICU 版本没有从日志里读出来核对（发行版自带的是 74）。两台机器都没有图形会话。
+
+没有人看过 CI 上画出来的图，CI 只检查没有出错、没有空图。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、x86_64、Omarchy 以外的桌面。
 - 画笔和其他平台的图片逐像素对比。
 - 后台服务、显示端插件、管理窗口的正式代码：都还没写。
 - 中文输入法、高分屏缩放、多显示器。
-- GitHub Actions 里的 Linux 任务：加了，还没运行过。
+- x86_64 上的窗口和显示：只有 CI 里的无界面测试。

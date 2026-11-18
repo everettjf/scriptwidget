@@ -4,7 +4,6 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 
 ## Before anything is released
 
-- **CI has not run.** `.github/workflows/linux.yml` (x86_64 and aarch64, Ubuntu 24.04) starts on a pull request or a push to `main`; neither has happened. x86_64 and Ubuntu's ICU 74 are therefore untested, including whether parity is still 127 of 127 there.
 - **Licences of the six display fonts.** The repository records the licence of Inter only (`OFL-Inter.txt`). The six display fonts under `Android/core/src/main/assets/fonts` are built into the Linux program and need their licence files recorded before a release.
 - **A real Linux computer.** Everything ran in one virtual machine with a virtual GPU. Not tested: a real GPU, an input method, display scales above 1, several displays, sleep and wake.
 
