@@ -13,6 +13,13 @@ serde_json.workspace = true
 sha2.workspace = true
 getrandom.workspace = true
 url.workspace = true
+libc.workspace = true
+flate2.workspace = true
+httparse.workspace = true
+icu_normalizer.workspace = true
+unicode-segmentation.workspace = true
+rustls.workspace = true
+rustls-native-certs.workspace = true
 
 [build-dependencies]
 cc.workspace = true

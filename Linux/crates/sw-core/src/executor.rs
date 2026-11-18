@@ -100,6 +100,11 @@ impl ExecutionSession {
     pub fn finished(&self) -> bool {
         self.finished.load(Ordering::SeqCst)
     }
+
+    /// Ends the session: results of native work that is still in flight are dropped.
+    pub fn finish(&self) {
+        self.finished.store(true, Ordering::SeqCst);
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -134,6 +139,14 @@ pub struct Completion {
 }
 
 impl Completion {
+    /// A completion outside an execution, for hosts and tests that call a
+    /// module directly: the answer (operation id 0, success, JSON text)
+    /// arrives on the returned channel, unless `session` has finished.
+    pub fn detached(session: Arc<ExecutionSession>) -> (Self, mpsc::Receiver<(i64, bool, Option<String>)>) {
+        let (delivery, answers) = mpsc::channel();
+        (Self { id: 0, delivery: Some(delivery), session }, answers)
+    }
+
     /// `json` is the JSON text of the value, or of the rejection reason.
     pub fn complete(mut self, ok: bool, json: Option<String>) {
         self.deliver(ok, json);
@@ -209,6 +222,7 @@ impl ScriptExecutor {
                 "package.import" => Ok(compiled_import(request, payload)),
                 "package.read" => Ok(normalize_package_path(payload).and_then(|path| request.files.read_text(&path))),
                 "package.exists" => Ok(Some(if normalize_package_path(payload).is_some_and(|path| request.files.exists(&path)) { "1" } else { "0" }.into())),
+                "xml.parse" => Ok(Some(crate::xml::parse(payload.unwrap_or("")))),
                 "support.script" => Ok(self.scripts.support_script(payload.unwrap_or("")).map(|text| text.to_string())),
                 "session.appearance" => {
                     request.session.read_appearance.store(true, Ordering::SeqCst);
@@ -298,11 +312,16 @@ impl ScriptExecutor {
                 if error.interrupted {
                     timeout_failure()
                 } else if error.message.to_lowercase().contains("out of memory") {
-                    failure("resourceLimit", "Script exceeded the runtime memory budget")
+                    failure("resourceLimit", MEMORY_BUDGET_MESSAGE)
                 } else {
                     failure("internalError", if error.message.is_empty() { "Execution failed" } else { &error.message })
                 }
             });
+        } else if finished.borrow().as_deref().is_some_and(reports_exhausted_heap) {
+            // The kernel caught what the engine threw when the heap ran out, and reported it as the
+            // script's own exception. Which of the two paths a script takes depends on where the
+            // failing allocation falls; both are the same failure.
+            *finished.borrow_mut() = Some(failure("resourceLimit", MEMORY_BUDGET_MESSAGE));
         }
         let result_text = finished.into_inner().unwrap_or_else(|| failure("internalError", "Execution failed"));
         decode(&result_text, native_logs.into_inner())
@@ -357,6 +376,19 @@ fn random_token() -> Result<String, JsError> {
         token.push_str(&format!("{byte:02x}"));
         token
     }))
+}
+
+const MEMORY_BUDGET_MESSAGE: &str = "Script exceeded the runtime memory budget";
+
+/// True for a kernel result whose error is the engine's "out of memory", or
+/// the null QuickJS throws when it cannot even allocate that error. A script
+/// that throws null itself is indistinguishable from the latter here; telling
+/// them apart needs a flag from the engine's allocator.
+fn reports_exhausted_heap(result_text: &str) -> bool {
+    parse_object(result_text).ok().and_then(|result| result.opt_object("error").cloned()).is_some_and(|error| {
+        let message = error.opt_string("message");
+        error.opt_string("kind") == "scriptException" && (message == "null" || message.to_lowercase().contains("out of memory"))
+    })
 }
 
 fn timeout_failure() -> String {

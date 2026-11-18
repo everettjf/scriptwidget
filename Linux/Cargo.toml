@@ -16,6 +16,28 @@ serde_json = { version = "1", features = ["preserve_order"] }
 sha2 = "0.10"
 getrandom = "0.3"
 url = "2"
+libc = "0.2"
+flate2 = "1"
+httparse = "1"
+icu_normalizer = "2"
+unicode-segmentation = "1"
+# The HTTP stack of fetch, $http, $weather and Data Source Plugins is a small
+# HTTP/1.1 client in sw-core (api/http.rs) over std sockets and rustls, not a
+# client library. Reasons: the request must go to the very address that was
+# resolved and checked (never a second lookup inside a library), TLS must still
+# be verified against the host name, redirects are followed by hand so every
+# hop is checked again, each wait has its own timeout inside a total deadline,
+# and the executor is synchronous, so a blocking client on worker threads fits.
+# Client libraries that allow all of this (own resolver, no redirects, no
+# proxy) do so through unstable hooks or bring an async runtime and a larger
+# dependency tree. rustls with the ring provider needs only a C compiler (no
+# OpenSSL, and no cmake as aws-lc-rs does); certificates are checked against
+# the system's certificate store (rustls-native-certs), as a distribution
+# package is expected to. httparse reads response heads; flate2 (pure Rust
+# backend) decodes gzip and deflate bodies and reads and writes .swplugin
+# archives.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-native-certs = "0.8"
 
 # QuickJS is compiled with -O2 in every profile (see sw-quickjs/build.rs); the
 # Rust side of a test build is optimized too, so that the parity run measures

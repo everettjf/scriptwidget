@@ -104,16 +104,36 @@ pub fn host_matches<'a>(host: &str, declarations: impl IntoIterator<Item = &'a s
 /// Package 2.0: `network` permission and a matching `networkDomains` entry.
 /// Legacy packages without a manifest are allowed.
 pub fn package_allows_host(request: &ExecutionRequest<'_>, host: &str) -> bool {
-    if !request.prepared.has_manifest {
-        return true;
+    NetworkDeclaration::of(request).allows_host(host)
+}
+
+/// What a package declared about the network, detached from the request so
+/// that worker threads can apply the same rule to redirect targets.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct NetworkDeclaration {
+    has_manifest: bool,
+    /// `None` when the manifest is missing, lacks the `network` permission or has no `networkDomains`.
+    domains: Option<Vec<String>>,
+}
+
+impl NetworkDeclaration {
+    pub fn of(request: &ExecutionRequest<'_>) -> Self {
+        let domains = request
+            .prepared
+            .manifest
+            .as_ref()
+            .filter(|_| has_permission(request, "network"))
+            .and_then(|manifest| manifest.opt_array("networkDomains"))
+            .map(|domains| domains.iter().map(|item| as_text(item).unwrap_or_default()).collect());
+        Self { has_manifest: request.prepared.has_manifest, domains }
     }
-    let Some(manifest) = &request.prepared.manifest else { return false };
-    if !has_permission(request, "network") {
-        return false;
+
+    pub fn allows_host(&self, host: &str) -> bool {
+        if !self.has_manifest {
+            return true;
+        }
+        self.domains.as_ref().is_some_and(|domains| host_matches(host, domains.iter().map(String::as_str)))
     }
-    let Some(domains) = manifest.opt_array("networkDomains") else { return false };
-    let domains: Vec<String> = domains.iter().map(|item| as_text(item).unwrap_or_default()).collect();
-    host_matches(host, domains.iter().map(String::as_str))
 }
 
 #[cfg(test)]
