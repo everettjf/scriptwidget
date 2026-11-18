@@ -12,11 +12,14 @@ pub mod compiler;
 pub mod executor;
 pub mod intl;
 pub mod json;
+pub mod library;
 pub mod package_files;
 pub mod shared_scripts;
 pub mod data_paths;
 pub mod packages;
 pub mod plugins;
+pub mod resources;
+pub mod runtime;
 pub mod timeline;
 pub mod xml;
 
@@ -26,4 +29,7 @@ pub use package_files::{MemoryPackageFiles, PackageFiles, normalize_package_path
 pub use shared_scripts::SharedScripts;
 pub use data_paths::DataPaths;
 pub use packages::{ArchiveLimits, DiskPackageFiles, PackageError, PackageInfo, PackageStore};
+pub use library::{BundledPackage, InstalledPackage, Library};
+pub use resources::Resources;
+pub use runtime::{RunRequest, RunResult, WidgetRuntime};
 pub use timeline::{TimelinePlanner, TimelineState};

@@ -331,6 +331,8 @@ omarchy-plugin/
 
 ### 阶段 1：运行时和命令行
 
+**状态（2026-11-17）：代码做完，CI 还没跑过。** 四个 crate 都在，测试虚拟机上 418 个测试通过，`scriptwidget render` 在没有图形会话的情况下画出了 116 个不需要联网的内置模板。通过标准里"在 CI 的两种架构上通过"还没满足：工作流写好了，要等提 PR 或合并到 `main` 才会运行。详见 [testing.md](testing.md) 和 [TODO.md](TODO.md)；用法见 [README.md](README.md)。
+
 `sw-quickjs`、`sw-core`、`sw-render`、`sw-cli`。移植 Windows 版的测试。GitHub Actions 加 Linux 任务（x86_64 和 aarch64）。
 
 通过标准：`scriptwidget render` 在没有图形会话的机器上画出所有不依赖系统数据的内置模板；一致性树、包和压缩包的安全测试、网络策略测试在 CI 的两种架构上通过。

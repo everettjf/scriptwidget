@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use std::io;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use crate::json::{Object, parse_object};
@@ -24,7 +24,7 @@ impl SharedScripts {
         if !directory.join("kernel.js").is_file() {
             return Err(io::Error::new(
                 io::ErrorKind::NotFound,
-                format!("ScriptWidget runtime assets are missing in {}. Run node Linux/scripts/build-shared-js.mjs.", directory.display()),
+                format!("ScriptWidget runtime assets are missing in {}. In a checkout, run node Linux/scripts/build-shared-js.mjs.", directory.display()),
             ));
         }
         // host.js defines the registry the API files add themselves to.
@@ -42,10 +42,9 @@ impl SharedScripts {
         Ok(Self { contract: member("contract")?, error_categories: member("errorCategories")?, directory, cache: Mutex::new(HashMap::new()), host_files })
     }
 
-    /// The assets next to the program: `assets/scriptwidget` beside the executable.
+    /// The assets of this installation: see [`crate::resources`] for where they are looked for.
     pub fn default_directory() -> io::Result<PathBuf> {
-        let program = std::env::current_exe()?;
-        Ok(program.parent().unwrap_or(Path::new(".")).join("assets").join("scriptwidget"))
+        Ok(crate::resources::Resources::locate()?.runtime)
     }
 
     /// Text of one asset. `name` is a file name chosen by the host, never by a package.

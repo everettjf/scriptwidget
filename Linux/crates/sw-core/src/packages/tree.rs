@@ -20,13 +20,29 @@ pub fn validate_tree(root: &Path, limits: &ArchiveLimits) -> Result<(), PackageE
     if !safe_files::real_directory(root) {
         return Err(fail(codes::UNSAFE_FILE, "Package directory could not be verified."));
     }
-    visit(root, 1, &mut State { limits, count: 0, total: 0 })
+    visit(root, 1, &mut State { limits, count: 0, total: 0, authored_only: false })
+}
+
+/// [`validate_tree`] for a directory an author works in, before it is
+/// compiled, run, packed or installed from where it lies. Dot-files and the
+/// generated `__Build` cache are not part of the authored package (they are
+/// neither listed, read nor exported), so they are not looked at; everything
+/// else must pass the same rules, and a link, hard link or special file among
+/// the authored files fails the whole package instead of being left out
+/// silently.
+pub fn validate_source_tree(root: &Path, limits: &ArchiveLimits) -> Result<(), PackageError> {
+    if !safe_files::real_directory(root) {
+        return Err(fail(codes::UNSAFE_FILE, "Package directory could not be verified."));
+    }
+    visit(root, 1, &mut State { limits, count: 0, total: 0, authored_only: true })
 }
 
 struct State<'a> {
     limits: &'a ArchiveLimits,
     count: usize,
     total: u64,
+    /// Skip what [`path_rules::is_excluded`] names.
+    authored_only: bool,
 }
 
 fn visit(directory: &Path, depth: usize, state: &mut State<'_>) -> Result<(), PackageError> {
@@ -35,6 +51,9 @@ fn visit(directory: &Path, depth: usize, state: &mut State<'_>) -> Result<(), Pa
         return Err(fail(codes::INVALID_PATH, "Invalid package path."));
     }
     for name in &listing.names {
+        if state.authored_only && path_rules::is_excluded(name) {
+            continue;
+        }
         if depth > state.limits.maximum_path_depth || !path_rules::valid_component(name) {
             return Err(fail(codes::INVALID_PATH, "Invalid package path."));
         }

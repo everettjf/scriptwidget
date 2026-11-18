@@ -1,0 +1,60 @@
+name: Linux
+on:
+  pull_request:
+    paths: ['Linux/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Android/core/src/main/assets/fonts/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/linux.yml']
+  push:
+    branches: [main]
+    paths: ['Linux/**', 'Web/preview-engine/**', 'Android/core/src/main/js/**', 'Android/core/src/main/cpp/quickjs/**', 'Android/core/src/main/assets/fonts/**', 'Scripts/lib/shared-js.mjs', 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**', '.github/workflows/linux.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: linux-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  test:
+    name: Build and test (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {name: x86_64, runner: ubuntu-24.04}
+          - {name: aarch64, runner: ubuntu-24.04-arm}
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with: {node-version: 24}
+      # ICU for Intl, fontconfig and FreeType for the painter. The CJK and emoji fonts are what a
+      # desktop has; without them the font tests that need them report themselves as skipped.
+      - name: System libraries and fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential pkg-config libicu-dev libfontconfig1-dev libfreetype-dev fonts-noto-cjk fonts-noto-color-emoji zip unzip
+      - name: Rust
+        run: |
+          rustup toolchain install stable --profile minimal --component clippy
+          rustup default stable
+          rustc -vV
+          pkg-config --modversion icu-i18n fontconfig
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - name: Shared JavaScript
+        run: node Linux/scripts/build-shared-js.mjs
+      - name: Build
+        working-directory: Linux
+        run: cargo build --locked --workspace --all-targets
+      # No graphical session: the painter draws on a CPU surface.
+      - name: Test
+        working-directory: Linux
+        env:
+          DISPLAY: ''
+          WAYLAND_DISPLAY: ''
+        run: cargo test --locked --workspace -- --include-ignored
+      - name: Engine binding tests with AddressSanitizer in QuickJS
+        run: sh Linux/scripts/asan-test.sh
+      - name: Clippy
+        working-directory: Linux
+        run: cargo clippy --locked --workspace --all-targets

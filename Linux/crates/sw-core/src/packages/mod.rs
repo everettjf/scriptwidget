@@ -44,5 +44,5 @@ pub use archive::ExtractedPackage;
 pub use disk_files::DiskPackageFiles;
 pub use error::{PackageError, codes};
 pub use limits::ArchiveLimits;
-pub use store::{ImportValidator, PackageInfo, PackageStore};
-pub use tree::validate_tree;
+pub use store::{ImportValidator, PackageInfo, PackageStore, export_directory, manifest_present};
+pub use tree::{validate_source_tree, validate_tree};

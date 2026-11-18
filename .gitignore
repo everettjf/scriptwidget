@@ -25,3 +25,5 @@ Linux/assets/
 Linux/tests/assets/
 # Pictures the painter tests write for review
 Linux/crates/sw-render/tests/out/
+# Pictures the command line tests and reviews write
+Linux/crates/sw-cli/tests/out/

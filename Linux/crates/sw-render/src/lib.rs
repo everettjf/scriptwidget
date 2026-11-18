@@ -23,12 +23,14 @@ mod renderer;
 pub mod rounded_corners;
 mod svg;
 mod text;
+pub mod widget;
 
 use serde_json::{Map, Value};
 
 pub use fonts::{CjkRegion, cjk_region_order};
 pub use images::{MAXIMUM_IMAGE_BYTES, MAXIMUM_IMAGE_PIXELS};
 pub use renderer::{FontReport, RenderError, RenderOutput, RenderRequest, WidgetRenderer, encode_png};
+pub use widget::{Presentation, RenderedRun, render_run, render_tree};
 
 /// The widget sizes in points; a display multiplies them by its scale.
 /// The same as on Mac and Windows; there are no lock screen sizes.

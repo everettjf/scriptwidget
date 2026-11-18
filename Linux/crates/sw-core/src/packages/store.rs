@@ -210,18 +210,7 @@ impl PackageStore {
     /// `widget.json` (the installed package is not modified); a package whose
     /// present manifest is unreadable is not exported.
     pub fn export_archive(&self, name: &str, output: &mut dyn Write) -> Result<(), PackageError> {
-        let directory = self.existing(name)?;
-        let files = DiskPackageFiles::new(&directory);
-        let mut extras = BTreeMap::new();
-        if manifest_present(&directory)? {
-            read_manifest(&files)?;
-        } else {
-            if !files.exists(manifests::LEGACY_ENTRY) {
-                return Err(PackageError::new(codes::MISSING_ENTRY, "Entry file main.jsx does not exist."));
-            }
-            extras.insert(manifests::FILE_NAME.to_owned(), manifests::encode(&legacy_manifest(name, &files)));
-        }
-        archive::export(&directory, name, output, &extras, &self.limits)
+        export_directory(&self.existing(name)?, name, output, &self.limits)
     }
 
     /// Copies a package to a new `"<name> Remix"` package (made unique like
@@ -353,6 +342,24 @@ impl PackageStore {
     }
 }
 
+/// Exports the package in `directory` as a `.swt` archive under one top-level
+/// directory named `name`, under the rules of [`PackageStore::export_archive`].
+/// The directory need not be in a library: the command line packs a package
+/// from where its author keeps it.
+pub fn export_directory(directory: &Path, name: &str, output: &mut dyn Write, limits: &ArchiveLimits) -> Result<(), PackageError> {
+    let files = DiskPackageFiles::new(directory);
+    let mut extras = BTreeMap::new();
+    if manifest_present(directory)? {
+        read_manifest(&files)?;
+    } else {
+        if !files.exists(manifests::LEGACY_ENTRY) {
+            return Err(PackageError::new(codes::MISSING_ENTRY, "Entry file main.jsx does not exist."));
+        }
+        extras.insert(manifests::FILE_NAME.to_owned(), manifests::encode(&legacy_manifest(name, &files)));
+    }
+    archive::export(directory, name, output, &extras, limits)
+}
+
 fn require_valid(name: &str) -> Result<(), PackageError> {
     if names::is_valid(name) { Ok(()) } else { Err(PackageError::new(codes::INVALID_NAME, "Invalid package name.")) }
 }
@@ -365,7 +372,7 @@ fn is_entry_file(path: &str) -> bool {
 /// True when the package has a manifest. Any other spelling of `widget.json`
 /// is an error: on a case-insensitive platform it would be the manifest, so
 /// it must not be skipped as legacy.
-fn manifest_present(directory: &Path) -> Result<bool, PackageError> {
+pub fn manifest_present(directory: &Path) -> Result<bool, PackageError> {
     let listing = safe_files::names(directory).ok_or_else(|| PackageError::new(codes::UNSAFE_FILE, "Package directory could not be verified."))?;
     let mut present = false;
     for name in listing.names.iter().filter(|name| name.to_lowercase() == manifests::FILE_NAME) {

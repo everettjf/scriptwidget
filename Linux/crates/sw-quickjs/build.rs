@@ -31,12 +31,15 @@ fn main() {
     for name in sources {
         build.file(quickjs.join(name));
     }
-    // SW_QUICKJS_ASAN=1 builds the C side with AddressSanitizer; the test
-    // binary must then be linked with it too (RUSTFLAGS=-Zsanitizer=address
-    // on a nightly toolchain).
+    // SW_QUICKJS_ASAN=1 builds the C side with AddressSanitizer and links its
+    // runtime. Rust itself is not instrumented (that needs a nightly
+    // toolchain), so the runtime is not first in the library list: run the
+    // tests with LD_PRELOAD set to the path `cc -print-file-name=libasan.so`
+    // prints. Linux only.
     println!("cargo:rerun-if-env-changed=SW_QUICKJS_ASAN");
     if std::env::var_os("SW_QUICKJS_ASAN").is_some_and(|value| value == "1") {
         build.flag("-fsanitize=address").flag("-fno-omit-frame-pointer");
+        println!("cargo:rustc-link-lib=asan");
     }
     build.compile("swquickjs");
 

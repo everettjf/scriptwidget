@@ -1,0 +1,26 @@
+[package]
+name = "sw-cli"
+description = "The ScriptWidget command line for Linux: create, check, run, render, pack and install widget packages"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[[bin]]
+name = "scriptwidget"
+path = "src/main.rs"
+
+[dependencies]
+sw-core.workspace = true
+sw-render.workspace = true
+# The element tree of a report nests deeper than serde_json reads by default.
+serde_json = { workspace = true, features = ["unbounded_depth"] }
+serde.workspace = true
+sha2.workspace = true
+getrandom.workspace = true
+libc.workspace = true
+
+[dev-dependencies]
+# The hand-written archives of sw-core's package tests (tests/packages_support) are reused here.
+flate2.workspace = true
+serde_json.workspace = true
