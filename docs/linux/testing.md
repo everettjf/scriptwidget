@@ -628,6 +628,23 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 - Android 的测试（`:core:testDebugUnitTest`）、Windows 的测试这一节没跑；面板修好之后也没有再跑 `cargo test`（面板的改动不进 Linux 的程序）。
 - 没有用手在真的编辑器里点开排版面板看。原生的两个测试是在 WKWebView 里真的点了面板的按钮；上面"复查"里的 14 次是直接调面板的函数。
 
+## 2026-11-18，第二台测试虚拟机：0.1.4（侧边栏分成四项）
+
+机器同上（Omarchy 4.5，aarch64 虚拟机），真实会话。
+
+管理窗口的"Templates"页原来把模板、组件示例、API 示例三组排在一页里。0.1.4 和 Windows 版一样分成侧边栏的四项：My widgets、Templates、Components、APIs；`--page` 多了 `components` 和 `apis`。
+
+| 检查 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里） | 512 个通过，1 个忽略 |
+| `sh install.sh` 覆盖安装 0.1.4，`scriptwidget doctor` | 通过；外壳重启后桌面上四个小组件都在，没有新的崩溃报告 |
+| `scriptwidget-studio --page components` | 侧边栏四项，Components 高亮，页面只列组件示例；截图在 `images/studio-components.png` |
+| `--page apis`、`--page templates` | 各自只列自己那一组；截图在 `images/studio-apis.png`、`images/studio-templates.png` |
+| `--page template:component/gauge` | 打开的是组件示例，侧边栏高亮的是 Components；代码是排版并加了注释之后的样子 |
+| 虚拟机里的共享脚本（`Linux/assets`） | 虚拟机里没有 esbuild，`build-shared-js.mjs` 在那里跑不了；用的是从 Mac 拷过去的那一份，和 Mac 上这次重新生成的逐个文件比过，校验值相同 |
+
+没做的：四个页面是用 `--page` 直接打开后截图看的，没有用虚拟指针去点侧边栏的四项，也没有点返回键。中文界面没有截图。APIs 页里 console、device、file、scheme 四张卡片画的是"#UI Not Found#"：这四个示例只调用接口、不画界面，这次没改。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。
