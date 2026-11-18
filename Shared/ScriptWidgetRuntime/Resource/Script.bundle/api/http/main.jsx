@@ -3,10 +3,14 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for api $http
+// Calls $http.get and $http.post in several forms and prints each answer to the Console.
+// A Package 2.0 widget needs the "network" permission in widget.json, and the host
+// of the URL in networkDomains.
+// Runs on iPhone, iPad, Mac, Android, Windows and Linux.
 //
 
 // $http.get
-// $http.get is identity to $fetch or fetch api
+// $http.get works like fetch and $fetch: it gives back the body of the response as text.
 const get_result = await $http.get("https://jsonplaceholder.typicode.com/todos/1");
 console.log(get_result);
 
@@ -20,6 +24,7 @@ const get_with_header_result = await $http.get("https://api.github.com/users/eve
 console.log(get_with_header_result);
 
 // $http.post
+// The body here is an object.
 const post_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {
   body: {
     userId: 1,
@@ -29,6 +34,7 @@ const post_result = await $http.post("https://jsonplaceholder.typicode.com/posts
 });
 console.log(post_result);
 
+// A POST request with a header.
 const post_with_header_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {
   headers: {
     Accept: "application/vnd.github.inertia-preview+json",
@@ -41,6 +47,7 @@ const post_with_header_result = await $http.post("https://jsonplaceholder.typico
 });
 console.log(post_with_header_result);
 
+// The body can also be text, here form fields.
 const post_string_with_header_result = await $http.post(
   "https://jsonplaceholder.typicode.com/posts",
   {
@@ -70,6 +77,7 @@ console.log(post_string_with_header_result);
 //   <image url={`data:image/jpeg;base64,${base64}`} mode="fit" frame="340,340" />
 // );
 
+// Draw something, so the widget is not empty. The results are in the Console.
 $render(
   <vstack>
     <text>$http example</text>

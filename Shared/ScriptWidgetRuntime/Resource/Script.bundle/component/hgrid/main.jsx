@@ -3,6 +3,8 @@
 // https://atomsprout.com/scriptwidget
 //
 // grid component
+// <hgrid> fills column after column. Its "columns" prop describes the rows.
+// Try the other descriptions below, or more circles.
 //
 
 /*
@@ -32,8 +34,10 @@ macOS
 //     { type: "fixed", value: "30"},
 // ]
 
+// One adaptive entry: as many rows as fit, each from 70 to 100 points.
 let columns = [{ type: "adaptive", min: "70", max: "100" }];
 
+// $json(columns) is short for JSON.stringify(columns): the prop takes JSON text.
 $render(
   <vstack frame="max">
     <hgrid columns={$json(columns)}>

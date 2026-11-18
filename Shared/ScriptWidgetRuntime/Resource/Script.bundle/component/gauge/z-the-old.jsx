@@ -2,9 +2,12 @@
 // ScriptWidget
 // https://atomsprout.com/scriptwidget
 //
-// Usage for component guage
+// Usage for component gauge
+// The older gauge, drawn by ScriptWidget itself: a dial with a needle and colored
+// sections. Leave type out, or set type="original", to get it.
 //
 
+// The colored parts of the dial, in order. The four values add up to 1.
 let gaugeSections = [
   { color: "yellow", value: 0.1 },
   { color: "blue", value: 0.2 },
@@ -12,6 +15,7 @@ let gaugeSections = [
   { color: "green", value: 0.4 },
 ];
 
+// $json(gaugeSections) is short for JSON.stringify: the prop takes JSON text.
 $render(
   <vstack frame="max">
     <gauge

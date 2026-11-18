@@ -3,6 +3,7 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for component image
+// An image can be written into the script itself as a data URL. url and src are the same prop.
 //
 
 /*
@@ -11,6 +12,7 @@ data:image/png;base64,
 data:image/jpeg;base64,
 */
 
+// frame="50,50" shows each image 50 by 50 points.
 $render(
   <vstack>
     <image

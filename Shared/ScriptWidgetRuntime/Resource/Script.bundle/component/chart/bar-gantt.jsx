@@ -3,8 +3,10 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for component chart
+// A Gantt chart: a bar from start to end for every entry, in the row of its job.
 //
 
+// start and end are positions on the x axis. Entries with the same job share a row.
 let data = [
   { job: "Job 1", start: 0, end: 15 },
   { job: "Job 2", start: 5, end: 25 },
@@ -14,6 +16,7 @@ let data = [
   { job: "Job 2", start: 30, end: 60 },
 ];
 
+// $json(data) is short for JSON.stringify(data): the chart takes its data as JSON text.
 $render(
   <vstack frame="max">
     <chart

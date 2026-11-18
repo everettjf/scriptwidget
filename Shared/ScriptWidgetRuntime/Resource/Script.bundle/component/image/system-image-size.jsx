@@ -7,6 +7,7 @@
 // Description: image with systemName is special.
 //      Attribute frame does not work with image with systemName.
 //      But it's sizes can be set by attribute font with a number size.
+// Try other symbol names from Apple's SF Symbols, and other sizes.
 //
 
 $render(

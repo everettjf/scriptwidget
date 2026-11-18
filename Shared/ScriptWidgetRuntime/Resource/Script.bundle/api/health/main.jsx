@@ -5,8 +5,13 @@
 // Usage for api health
 // Note: HealthKit requires main app permission and capability.
 // This API reads health data only (no write).
+// Shows today's steps, today's active energy and the latest heart rate.
+// Runs on iPhone and iPad, and on Android through Health Connect.
+// Not on Mac, Windows or Linux: check isAvailable() first.
+// A Package 2.0 widget must list "health" under permissions in widget.json.
 //
 
+// Fallback for a system without health data.
 if (!$health.isAvailable()) {
   $render(
     <vstack frame="max" background="#0f172a">
@@ -19,8 +24,10 @@ if (!$health.isAvailable()) {
     </vstack>,
   );
 } else {
+  // Ask for read access. Do this while the script runs in the app.
   const granted = await $health.requestAuthorization();
 
+  // Fallback when the request did not succeed.
   if (!granted) {
     $render(
       <vstack frame="max" background="#0f172a">
@@ -33,10 +40,13 @@ if (!$health.isAvailable()) {
       </vstack>,
     );
   } else {
+    // Each reading is an object. Its value is a number: a count of steps, kcal, and
+    // beats per minute.
     const steps = await $health.stepCountToday();
     const energy = await $health.activeEnergyToday();
     const heart = await $health.heartRateLatest();
 
+    // toFixed(0) rounds the number and drops the decimals.
     $render(
       <vstack frame="max" background="#0f172a">
         <text font="caption" color="#94a3b8">

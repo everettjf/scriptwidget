@@ -3,6 +3,7 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for component vstack
+// <vstack> puts its children below each other. Try spacing="12", or more children.
 //
 
 $render(

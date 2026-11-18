@@ -3,6 +3,7 @@
 // https://atomsprout.com/scriptwidget
 //
 // component: roundedrect
+// A rectangle with rounded corners. radius is the corner radius. Try a larger one.
 //
 
 $render(

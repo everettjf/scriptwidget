@@ -23,6 +23,7 @@
 //   let children = props.children;
 // }
 
+// Puts its children at the left: the <spacer /> takes the rest of the row.
 const LeftAlign = ({ message, children }) => {
   return (
     <hstack>
@@ -32,6 +33,7 @@ const LeftAlign = ({ message, children }) => {
     </hstack>
   );
 };
+// The same with the spacer first, so the children end up at the right.
 const RightAlign = ({ message, children }) => {
   return (
     <hstack>
@@ -41,6 +43,8 @@ const RightAlign = ({ message, children }) => {
     </hstack>
   );
 };
+// A component is used like a tag. Its attributes and its children arrive in the
+// parameter of the function. Try writing a component of your own.
 $render(
   <vstack background="blue" frame="max,center">
     <LeftAlign message="L">

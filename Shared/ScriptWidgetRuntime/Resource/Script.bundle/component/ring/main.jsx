@@ -3,6 +3,8 @@
 // https://atomsprout.com/scriptwidget
 //
 // component: ring
+// A ring filled up to value, from 0 to 1. trackColor is the color of the unfilled part.
+// frame="72" makes it 72 by 72 points. Try another value or thickness.
 //
 
 $render(

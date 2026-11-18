@@ -3,8 +3,12 @@
 // https://atomsprout.com/scriptwidget
 //
 // Swing Sample
+// type "swing" moves a view back and forth. $animation(...) turns the description
+// object into a value for the animation prop. Try another duration or distance.
 //
 
+// distance: how far the view moves to each side of its place, in points.
+// duration: seconds for one way and back to the middle; a full swing takes twice that.
 let animationHorizontalDefinition = {
   type: "swing",
   duration: 2,
@@ -19,6 +23,7 @@ let animationVerticalDefinition = {
   distance: 100,
 };
 
+// Each circle has its own animation: one moves sideways, one up and down.
 $render(
   <vstack frame="max">
     <circle

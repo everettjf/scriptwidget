@@ -1,6 +1,8 @@
 // A list that scrolls inside the widget, which only Android can do.
 // Every row is a toggle that keeps its own state in package storage.
 // iPhone widgets cannot scroll, so the first rows are shown there.
+// $storage needs the "storage" permission, which widget.json lists.
+// Try: change the texts in items, or the number of rows shown without a list.
 const items = [
   "Water the plants",
   "Reply to Sam",
@@ -23,11 +25,15 @@ const items = [
   "Review the notes",
   "Stretch for ten minutes",
 ];
+// $system.platform() says where the script runs. Only "android" has <list>.
 const android = $system.platform() === "android";
 const size = $getenv("widget-size");
+// One stored value per row: the text "true" when the row is checked.
 const done = items.map((_, index) => $storage.getString("check." + index) === "true");
 const count = done.filter(Boolean).length;
 
+// One row. stateKey is the $storage key that holds the state of this toggle.
+// A checked row gets the quieter text color.
 const row = (title, index) => (
   <toggle stateKey={"check." + index} on={done[index]} padding="4,2,4,2">
     <text
@@ -39,6 +45,8 @@ const row = (title, index) => (
   </toggle>
 );
 
+// Android: every row, in a list that scrolls. Elsewhere <list> is unknown, so show the
+// first 7 rows in a large widget and the first 2 in the other sizes.
 const rows = android ? (
   <list spacing="2">{items.map(row)}</list>
 ) : (
@@ -47,6 +55,7 @@ const rows = android ? (
   </vstack>
 );
 
+// frame="max,topLeading" fills the widget and puts the content in the top left corner.
 $render(
   <vstack
     frame="max,topLeading"
@@ -55,6 +64,7 @@ $render(
     padding="14"
     background="material.surfaceContainer"
   >
+    {/* The title on the left and "3 of 20" on the right; <spacer /> pushes them apart. */}
     <hstack>
       <text font="headline" color="material.onSurface">
         Checklist

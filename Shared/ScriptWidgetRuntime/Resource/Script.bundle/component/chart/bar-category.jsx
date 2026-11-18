@@ -3,8 +3,11 @@
 // https://atomsprout.com/scriptwidget
 //
 // Usage for component chart
+// A bar chart with colored groups. category={true} colors the bars by their category.
 //
 
+// Three labels with three entries each. Entries with the same label share one place
+// on the x axis; category decides the color.
 let data = [
   { label: "Production", value: 4000, category: "Gizmos" },
   { label: "Production", value: 5000, category: "Gadgets" },
@@ -17,6 +20,7 @@ let data = [
   { label: "Finance", value: 5000, category: "Widgets" },
 ];
 
+// $json(data) is short for JSON.stringify(data): the chart takes its data as JSON text.
 $render(
   <vstack frame="max">
     <chart
