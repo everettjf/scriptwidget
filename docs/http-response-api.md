@@ -1,5 +1,9 @@
 # HTTP response metadata
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 Native API 1.3 adds `$http.getResponse(url, options?)`. It returns a Promise of `{status, body, headers}`. `body` is a string, using the same decoding options as `$http.get`; existing HTTP methods keep their string return values. HTTP error statuses resolve with their response; transport and policy failures reject.
 
 Only these response headers are exposed, lowercased: `content-type`, `cache-control`, `expires`, `last-modified`, `date`, and `retry-after`. Each is limited to 2,048 UTF-8 bytes. Cookies, credentials and arbitrary response headers are excluded. The existing response-byte budget, public-host restrictions, declared network permission/domains, redirect checks and execution-session checks still apply. This method grants no additional access.

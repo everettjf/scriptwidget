@@ -14,6 +14,31 @@ Version 1.1 adds `$xml` to the 1.0 globals: `$component`, `$console`, `$dataSour
 
 Removing or changing the meaning of a 1.0 global requires a new major API version. Additive properties may ship in a minor version.
 
+### Which systems each API runs on
+
+A widget package installs on every system, but not every API has something behind it everywhere. An API a system lacks answers `false` from `isAvailable()` and rejects its calls with `[unsupported_platform]`; `$system.platform()` tells a script where it runs. [Platform support](platform-support.md) explains each limit and lists the widget features by system; each API's own page repeats its line of this table.
+
+<!-- platforms:start -->
+| API | iPhone and iPad | Mac | Android | Windows | Linux |
+| --- | --- | --- | --- | --- | --- |
+| `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml` | Yes | Yes | Yes | Yes | Yes |
+| `$dataSource` (Data Source Plugins) | Yes | Yes | Yes | Yes | Yes |
+| `$weather` | Yes | Yes | Yes | Yes | Yes |
+| `$calendar` | Yes | Yes | Yes, for calendars selected in the app | No | No |
+| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | No |
+| `$contacts`, `$documents` | Yes | Yes | Yes, for items picked in the app | No | No |
+| `$maps` | Yes | Yes | Geocoding and place search; no `snapshot` | No | No |
+| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | No |
+| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | No |
+| `$icloud` | Yes | Yes | A sync folder the user picks; cannot exchange data with an iPhone | No | No |
+| `$location` | Yes | No | Yes; widgets see the position saved while the app was open | No | No |
+| `$health` | Yes | No | Health Connect; no ring goals or stand time | No | No |
+| `$music` | Yes | No | The active media session of any app | No | No |
+| `$alarms` | Yes | No | Yes, inexact, no system alarm UI | No | No |
+| `$reminders` | Yes | Yes | No | No | No |
+| `$home` | Yes | No | No | No | No |
+<!-- platforms:end -->
+
 ### Built-in text and data handling
 
 JavaScript already provides `String.prototype.includes`, `indexOf`, `match`, and `replace` for text search, plus `JSON.parse` and `JSON.stringify` for JSON. `$json(value)` remains a shorthand for `JSON.stringify(value)` when a JSX property needs a JSON string.

@@ -1,5 +1,9 @@
 # Reminders API
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac. **Not on:** Android, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 Runtime API 1.4 adds `$reminders` on iOS/iPadOS and macOS. Package 2.0 must declare `"reminders"` in `permissions`. A malformed manifest or missing permission cannot be overridden by Web mocks.
 
 The native app asks for system Reminders access in **Settings → Reminders**. Apple grants full access. Reads require `reminders`; creating, updating and setting completion additionally require `remindersWrite` and a user-triggered declared action. Ordinary rendering, uninstalled previews, future timeline entries and Live Activity presentations cannot write. Deletion is not exposed.

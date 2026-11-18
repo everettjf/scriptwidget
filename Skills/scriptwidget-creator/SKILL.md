@@ -9,9 +9,21 @@ Use the user's Coding Agent and model. ScriptWidget supplies the runtime contrac
 
 ## Before editing
 
-Read [authoring](references/authoring.md) for the JSX dialect and a working starting point. For a specific tag or API, search [runtime API](references/runtime-api.md); read only the relevant section. Read [package format](references/package-format.md) when changing manifests, permissions, imports or resources. The included references target runtime API 1.4.
+Read [authoring](references/authoring.md) for the JSX dialect and a working starting point. For a specific tag or API, search [runtime API](references/runtime-api.md); read only the relevant section. Read [package format](references/package-format.md) when changing manifests, permissions, imports or resources. The included references target runtime API 1.6.
 
 Keep work in a separate package directory. Preserve the user's existing files and package identity when editing. Prefer `widget.json` and `main.jsx` for new work. Never replace an invalid present manifest with a legacy package.
+
+## Target systems
+
+One package installs on iPhone, iPad, Mac, Android, Windows and Linux, but not every API has something behind it on every system. Before using a data API, read [platform support](references/platform-support.md) and compare its row with the systems the user named; when they named none, ask, or assume all of them and say so.
+
+- `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work on all five. Health, location, music and alarms are not on Mac; no personal-data API (calendar, photos, health, location, music and the like) is on Windows or Linux; reminders and Home are Apple only.
+- An API a system lacks answers `false` from `isAvailable()` and rejects with `[unsupported_platform]`. Check `isAvailable()` first and render a real fallback card. Branch on `$system.platform()` only for what cannot be feature-detected.
+- Tell the user which systems the finished widget shows real data on. Do not describe a widget that needs `$health` as working on Windows or Linux.
+- Android, Windows and Linux draw text in Inter, which is wider than Apple's system font, and cut text that does not fit. Leave room: short labels, and a layout for each declared family chosen with `$getenv("widget-size")`, not one layout scaled down. A render on the Mac does not show the other systems' text widths.
+- Lock Screen families, Live Activities, Control Widgets and `backgroundMaterial` are system-specific; the same page lists them.
+
+The steps below use the Mac command line. The Linux app installs a command of the same name with its own options (`check`, `run`, `render --output`, `pack`; no Web Studio handoff): read `scriptwidget --help` there instead of assuming the Mac flags. Windows installs no command line.
 
 ## Generate, check, preview, repair
 

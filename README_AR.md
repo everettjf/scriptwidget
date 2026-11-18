@@ -20,6 +20,25 @@ ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنش
 
 تطبيق Android (الإصدار 1.0.0، يتطلب Android 15 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
 
+نسختا Windows وLinux تجريبيتان: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) يتطلب Windows 11، راجع [ScriptWidget لنظام Windows](docs/windows/README.md)؛ ونسخة Linux تعمل حاليًا على [Omarchy](https://omarchy.org) 4.5، والأرشيفات متاحة على [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)، راجع [ScriptWidget لنظام Linux](docs/linux/README.md). تشغّل النسختان حزم الأدوات المصغّرة نفسها، لكن لا تتوفر فيهما واجهات بيانات الجهاز مثل الصحة والتقويم والموقع والموسيقى.
+
+### لقطات شاشة من كل منصة
+
+جميعها لقطات شاشة حقيقية. نسختا Windows وLinux تجريبيتان.
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![معرض القوالب على iPhone](docs/images/platforms/iphone-templates.webp) | ![المحرر على iPad](docs/images/platforms/ipad-editor.webp) | ![ScriptWidget Studio على Mac](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![أدوات مصغّرة على شاشة Android الرئيسية](docs/images/platforms/android-widgets.webp) | ![أدوات مصغّرة على سطح مكتب Windows](docs/images/platforms/windows-desktop.webp) | ![أدوات مصغّرة على سطح مكتب Omarchy](docs/images/platforms/linux-desktop.webp) |
+| ![المحرر على Android](docs/images/platforms/android-editor.webp) | ![المحرر على Windows](docs/images/platforms/windows-editor.webp) | ![المحرر على Linux](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![Web Studio في المتصفح](docs/images/platforms/web-studio.webp) |
+
 ## لماذا ScriptWidget؟
 
 - يعمل السكربت نفسه على iOS وiPadOS وmacOS، وكذلك على Android (قيد الاختبار)، مع تخطيطات متكيفة عبر `$getenv("widget-size")`.

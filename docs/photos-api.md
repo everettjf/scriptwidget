@@ -1,5 +1,9 @@
 # Photos API (Runtime 1.4)
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android (Individual photos picked in the app, no albums). **Not on:** Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 Declare `photos` in Package 2.0. Scripts never receive unrestricted library access. In **ScriptWidget Settings → Photos**, explicitly select up to 24 photos and eight albums. No sources are selected by default, even with full system authorization. The chooser lists at most 64 recent available photos and 32 albums. Limited system access is supported; albums may be unavailable in that mode. Change the system selection in Photos privacy settings and reload the native selection panel.
 
 - `$photos.isAvailable()` reports whether the installed execution can use this API.

@@ -1,5 +1,9 @@
 # Health readings
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Android (Health Connect; no ring goals or stand time). **Not on:** Mac, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 `$health` exposes read-only HealthKit access through the iOS/iPadOS adapter when `HKHealthStore.isHealthDataAvailable()` is true. macOS is not a supported native data platform for this contract. Package 2.0 must declare `health`; native uninstalled previews and future timeline projections cannot read it. Query cancellation, execution identity and data-query budgets apply. Request authorization through the main app; widgets cannot present the system consent sheet.
 
 `authorizationStatus()` reports `notDisclosed` when HealthKit is available and the package can use it. It does not return a per-type read grant. Apple deliberately does not disclose read denial: [authorizing access to health data](https://developer.apple.com/documentation/healthkit/authorizing-access-to-health-data). Consent-sheet completion is not evidence that all read types were granted.

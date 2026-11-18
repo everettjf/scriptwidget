@@ -26,4 +26,6 @@ $render(
 
 For meaningful example previews use clearly synthetic values. For real behavior, read records and handle empty/missing data rather than silently treating demonstration records as the user's history. Denied HealthKit reads and no readable samples must not be conflated. Mock success cannot grant a manifest permission or prove real authorization.
 
+A data API may be missing on the system the widget runs on (see [platform support](platform-support.md)): guard it with `isAvailable()` and draw a fallback, for example `if (!$health.isAvailable()) { $render(<text>Health is not available here</text>); } else { … }`.
+
 Prefer a working subset of the user's request over invented APIs. Explain unsupported interaction or platform capabilities, and show the relevant report diagnostic.

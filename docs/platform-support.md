@@ -31,9 +31,10 @@ The browser preview in [Web Studio](web-studio-browser.md) is a design tool, not
 
 ## Data APIs
 
+<!-- platforms:start -->
 | API | iPhone and iPad | Mac | Android | Windows | Linux |
 | --- | --- | --- | --- | --- | --- |
-| `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http` | Yes | Yes | Yes | Yes | Yes |
+| `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml` | Yes | Yes | Yes | Yes | Yes |
 | `$dataSource` (Data Source Plugins) | Yes | Yes | Yes | Yes | Yes |
 | `$weather` | Yes | Yes | Yes | Yes | Yes |
 | `$calendar` | Yes | Yes | Yes, for calendars selected in the app | No | No |
@@ -49,8 +50,9 @@ The browser preview in [Web Studio](web-studio-browser.md) is a design tool, not
 | `$alarms` | Yes | No | Yes, inexact, no system alarm UI | No | No |
 | `$reminders` | Yes | Yes | No | No | No |
 | `$home` | Yes | No | No | No | No |
+<!-- platforms:end -->
 
-The Apple columns follow the generated [data API catalog](data-api-catalog.md), which stays the authority for each method. The Android column follows [ScriptWidget for Android](android/README.md), which explains every difference and what was tested on which device. The Windows column follows [ScriptWidget for Windows](windows/README.md), and the Linux column [ScriptWidget for Linux](linux/README.md).
+This table is written by `npm run docs` in `Editor/editorfe` from `src/platformSupport.js`, which also puts each API's line at the top of that API's page; change it there. The Apple columns follow the generated [data API catalog](data-api-catalog.md), which stays the authority for each method. The Android column follows [ScriptWidget for Android](android/README.md), which explains every difference and what was tested on which device. The Windows column follows [ScriptWidget for Windows](windows/README.md), and the Linux column [ScriptWidget for Linux](linux/README.md).
 
 ## Authoring tools
 

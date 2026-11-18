@@ -1,10 +1,35 @@
 # Data API capability catalog
 
-> Generated from `Editor/editorfe/src/dataAPICatalog.js`. Native JSExport protocols remain authoritative. This catalog is descriptive and grants no permissions.
+> Generated from `Editor/editorfe/src/dataAPICatalog.js` and `Editor/editorfe/src/platformSupport.js`. Native JSExport protocols remain authoritative. This catalog is descriptive and grants no permissions.
 
 This covers device, system, health, location, calendar, reminders, photos and connected-service data methods. Files, network, storage, rendering and runtime configuration retain their own contracts. Platforms list intended real-data support, not mocked browser execution; hardware and OS authorization still determine availability.
 
 Existing data-method return formats are unchanged. Present manifests now undergo package and minimum-version validation before execution. In particular, HealthKit does not expose individual read-denial status, and location cache presence is not proof that permission is still granted. Default mock values are illustrative, never measurements from the current device.
+
+## Which systems each API runs on
+
+"Native platforms" in the method table below means the Apple systems. Android, Windows and Linux run the same scripts on another engine; what they support is per API, not per method, and [Platform support](platform-support.md) explains each limit. An API a system lacks answers `false` from `isAvailable()` and rejects with `[unsupported_platform]`.
+
+| API | iPhone and iPad | Mac | Android | Windows | Linux |
+| --- | --- | --- | --- | --- | --- |
+| `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml` | Yes | Yes | Yes | Yes | Yes |
+| `$dataSource` (Data Source Plugins) | Yes | Yes | Yes | Yes | Yes |
+| `$weather` | Yes | Yes | Yes | Yes | Yes |
+| `$calendar` | Yes | Yes | Yes, for calendars selected in the app | No | No |
+| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | No |
+| `$contacts`, `$documents` | Yes | Yes | Yes, for items picked in the app | No | No |
+| `$maps` | Yes | Yes | Geocoding and place search; no `snapshot` | No | No |
+| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | No |
+| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | No |
+| `$icloud` | Yes | Yes | A sync folder the user picks; cannot exchange data with an iPhone | No | No |
+| `$location` | Yes | No | Yes; widgets see the position saved while the app was open | No | No |
+| `$health` | Yes | No | Health Connect; no ring goals or stand time | No | No |
+| `$music` | Yes | No | The active media session of any app | No | No |
+| `$alarms` | Yes | No | Yes, inexact, no system alarm UI | No | No |
+| `$reminders` | Yes | Yes | No | No | No |
+| `$home` | Yes | No | No | No | No |
+
+## Methods
 
 | API | Minimum native API | Native platforms | Execution | Authorization | Operation |
 | --- | --- | --- | --- | --- | --- |
@@ -102,6 +127,8 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 
 Runtime 1.4. Read-only Music app playback, not every audio player. Requires an installed owner, music permission and Music library approval in native Settings. current() is asynchronous and returns provider, state, hasItem, nullable title/artist/album/duration/position and capturedAt. State may be playing while details are absent (Home Sharing). Native player access is main-thread-only: synchronous hosts prepare one snapshot before JSC waits; background previews capture on the main queue. No playback/queue mutation, scans, artwork, credential or subscription inference. No live queries in future entries/Live Activities. Main system-player API is unavailable on macOS; Web supplies editable samples, never actual device access.
 
+**Runs on:** iPhone and iPad, Android (The active media session of any app). **Not on:** Mac, Windows, Linux.
+
 ### `$music.isAvailable`
 
 Default editable preview sample:
@@ -140,6 +167,8 @@ Default editable preview sample:
 
 Runtime 1.4: status(service) and profile(service) are asynchronous. Only provider: github. Unknown providers reject with service_operation. Requires an installed owner and services permission. profile additionally requires network and api.github.com in networkDomains, a native connected GitHub account and explicit owner grant. Native Settings handles credentials; scripts cannot log in or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following (missing values are null). No live queries in future entries or Live Activities. Eight shared data queries; native requests also share the eight concurrent/32 total network budget, while Web uses its existing preview network budget. Web uses editable best-state samples only; it never authenticates or sends these requests.
 
+**Runs on:** iPhone and iPad, Mac, Android (With a fine-grained token, no OAuth sign-in). **Not on:** Windows, Linux.
+
 ### `$services.status`
 
 Default editable preview sample:
@@ -168,6 +197,8 @@ Default editable preview sample:
 ## device
 
 Device values depend on hardware. Some legacy Mac values are placeholders; inspect the API documentation before using them as measurements.
+
+**Runs on:** iPhone and iPad, Mac, Android, Windows, Linux.
 
 ### `$device.screen`
 
@@ -251,6 +282,8 @@ Default editable preview sample:
 ## system
 
 System metadata, not whole-device CPU, FPS or network traffic monitoring. Hardware-specific values may be unavailable.
+
+**Runs on:** iPhone and iPad, Mac, Android, Windows, Linux.
 
 ### `$system.appInfo`
 
@@ -417,6 +450,8 @@ Default editable preview sample:
 
 Requires photos permission and explicit native photo/album selection (none by default). Limited Photos authorization is supported. items({limit:1..4,offset:0..63,maxAgeSeconds:0..86400}) returns bounded, metadata-stripped JPEG thumbnails as image data URLs. Four 768px / 128KiB thumbnails at most; private snapshots expire after 24h and are rechecked against current access, selected sources and asset revisions. Cloud-only items report unavailableCount; download them in Photos first. Future timeline/Live Activity presentations read matching snapshots only. Web uses editable sample data and photosSelection IDs; no actual library access.
 
+**Runs on:** iPhone and iPad, Mac, Android (Individual photos picked in the app, no albums). **Not on:** Windows, Linux.
+
 ### `$photos.isAvailable`
 
 Default editable preview sample:
@@ -484,6 +519,8 @@ Default editable preview sample:
 ## calendar
 
 Requires calendar in widget.json and full system Calendar access. The user's native Settings source selection limits metadata, events and cached snapshots; scripts cannot enlarge it. Use calendars() for permitted IDs and show setup when no sources are selected. Queries are read-only, limited to 31 days and 50 items. Preview calendarSelection simulates this scope without granting package permission.
+
+**Runs on:** iPhone and iPad, Mac, Android (for calendars selected in the app). **Not on:** Windows, Linux.
 
 ### `$calendar.isAvailable`
 
@@ -575,6 +612,8 @@ Default editable preview sample:
 ## reminders
 
 Requires reminders in widget.json and full system Reminders access. Reads require native Settings selected lists. create/update/setCompleted additionally require remindersWrite and a native declared action, stable requestID, durable replay receipts and an unchanged selected list. Web writes update preview-only items/receipts; receipt identities are derived from that state, with configurable API errors. Use lists() for IDs. items() selects pending due dates or completed completion dates in a positive window of at most 31 days, up to 50 items. Undated pending reminders are excluded. remindersSelection mocks the user scope without granting permission.
+
+**Runs on:** iPhone and iPad, Mac. **Not on:** Android, Windows, Linux.
 
 ### `$reminders.isAvailable`
 
@@ -681,6 +720,8 @@ Default editable preview sample:
 ## health
 
 Read-only HealthKit. Request access in the app. Runtime 1.4 adds sleepSummary (up to 7 days / 256 samples, union with explicit stage-conflict precedence), activitySummary (one local Gregorian day including active-energy or move-time mode and optional goals), and workouts (up to 31 days / 50 fully-contained summaries, optional kcal/meters). These require an explicit health manifest; all share the query budget and cannot run in future/Live Activity presentations. No Health readings are persisted by the API. Authorization completion does not reveal whether individual read types were granted; empty results must not be labelled permission denied. API 1.3 readings add hasSamples: false means no readable samples, never a read-denial verdict. Existing value/unit/start/end fields remain.
+
+**Runs on:** iPhone and iPad, Android (Health Connect; no ring goals or stand time). **Not on:** Mac, Windows, Linux.
 
 ### `$health.authorizationStatus`
 
@@ -851,6 +892,8 @@ Default editable preview sample:
 
 Package 2.0 requires location permission. Request system access in the app. Widgets also require isAuthorizedForWidgetUpdates. Cache is rechecked against authorization and precision, discarded after 24 hours or revocation, and reports age/isStale.
 
+**Runs on:** iPhone and iPad, Android (widgets see the position saved while the app was open). **Not on:** Mac, Windows, Linux.
+
 ### `$location.isAvailable`
 
 Default editable preview sample:
@@ -907,6 +950,8 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
+**Runs on:** iPhone and iPad, Mac, Android (delivery is inexact). **Not on:** Windows, Linux.
+
 ### `$notifications.status`
 
 Default editable preview sample:
@@ -951,6 +996,8 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
+**Runs on:** iPhone and iPad, Mac, Android, Windows, Linux.
+
 ### `$weather.forecast`
 
 Default editable preview sample:
@@ -981,6 +1028,8 @@ Default editable preview sample:
 ## alarms
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+**Runs on:** iPhone and iPad, Android (inexact, no system alarm UI). **Not on:** Mac, Windows, Linux.
 
 ### `$alarms.status`
 
@@ -1060,6 +1109,8 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
+**Runs on:** iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+
 ### `$documents.list`
 
 Default editable preview sample:
@@ -1120,6 +1171,8 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
+**Runs on:** iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+
 ### `$contacts.selected`
 
 Default editable preview sample:
@@ -1143,6 +1196,8 @@ Default editable preview sample:
 ## maps
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+**Runs on:** iPhone and iPad, Mac, Android (Geocoding and place search; no `snapshot`). **Not on:** Windows, Linux.
 
 ### `$maps.search`
 
@@ -1205,6 +1260,8 @@ Default editable preview sample:
 ## home
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
+
+**Runs on:** iPhone and iPad. **Not on:** Mac, Android, Windows, Linux.
 
 ### `$home.items`
 

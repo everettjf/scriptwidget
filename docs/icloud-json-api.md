@@ -1,5 +1,9 @@
 # iCloud JSON API (Runtime 1.5)
 
+<!-- platforms:start -->
+> **Runs on:** iPhone and iPad, Mac, Android (A sync folder the user picks; cannot exchange data with an iPhone). **Not on:** Windows, Linux. Details and limits: [Platform support](platform-support.md).
+<!-- platforms:end -->
+
 `$icloud` is an opt-in JSON revision store in the existing `iCloud.ScriptWidget` iCloud Drive container. It adds no third-party SDK or application server. `$storage` remains local; existing records are never automatically moved. Web Studio uses mocks; native CLI/template previews cannot access real iCloud.
 
 ## Explicit native connection

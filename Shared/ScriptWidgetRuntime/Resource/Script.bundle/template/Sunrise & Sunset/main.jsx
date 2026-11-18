@@ -32,12 +32,23 @@ const formatTime = (date) => {
   return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 };
 
-$render(
-  <vstack frame="max" background="#1e293b">
-    <text font="caption" color="#94a3b8">Sunrise & Sunset</text>
-    <hstack spacing="12">
+if ($getenv("widget-size") === "small") {
+  // Small: the two times under each other.
+  $render(
+    <vstack frame="max" spacing="10" padding="12" background="#1e293b">
+      <text font="caption" color="#94a3b8">Sunrise & Sunset</text>
       <label title={formatTime(sunrise)} systemName="sunrise.fill" color="#f59e0b" />
       <label title={formatTime(sunset)} systemName="sunset.fill" color="#f97316" />
-    </hstack>
-  </vstack>
-);
+    </vstack>
+  );
+} else {
+  $render(
+    <vstack frame="max" background="#1e293b">
+      <text font="caption" color="#94a3b8">Sunrise & Sunset</text>
+      <hstack spacing="12">
+        <label title={formatTime(sunrise)} systemName="sunrise.fill" color="#f59e0b" />
+        <label title={formatTime(sunset)} systemName="sunset.fill" color="#f97316" />
+      </hstack>
+    </vstack>
+  );
+}
