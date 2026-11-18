@@ -25,6 +25,7 @@ The management window on Omarchy 4.5 (screenshots of the real window in the test
 | ![My widgets](images/studio-library.png) | ![Templates](images/studio-templates.png) |
 | ![A template opened](images/studio-template.png) | ![Editor with live preview](images/studio-editor.png) |
 | ![Settings](images/studio-settings.png) | ![My widgets in Chinese](images/studio-library-zh.png) |
+| ![Typing Chinese with pinyin in the editor](images/studio-pinyin.png) | |
 
 The interface follows the system language when it is English or Simplified Chinese, and is English otherwise.
 
