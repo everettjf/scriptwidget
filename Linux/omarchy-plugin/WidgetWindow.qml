@@ -33,7 +33,26 @@ PanelWindow {
   exclusionMode: ExclusionMode.Ignore
   WlrLayershell.namespace: "scriptwidget"
   WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
-  WlrLayershell.layer: service.peek ? WlrLayer.Overlay : WlrLayer.Bottom
+  // Arrange mode hides these windows and the service turns "on top" on for
+  // its duration. A window that was told to change layer around the time it
+  // was hidden came back on the wrong layer, and stayed there. So "on top"
+  // only counts outside arrange mode (the arrange canvas has its own layer),
+  // the layer is only set while the window is shown, and it is set once more
+  // a moment after the window is shown again.
+  property int shownLayer: WlrLayer.Bottom
+  function syncLayer() {
+    if (visible && !service.arrange && !service.arranging) shownLayer = service.peek ? WlrLayer.Overlay : WlrLayer.Bottom
+  }
+  WlrLayershell.layer: shownLayer
+  onVisibleChanged: layerSync.restart()
+  Component.onCompleted: syncLayer()
+  Connections {
+    target: service
+    // Later, so that "arrange" from the same event is already in place.
+    function onPeekChanged() { Qt.callLater(panel.syncLayer) }
+    function onArrangeChanged() { layerSync.restart() }
+  }
+  Timer { id: layerSync; interval: 350; onTriggered: panel.syncLayer() }
 
   // The input region: the tap regions and nothing else.
   mask: Region { regions: panel.tapRegions }

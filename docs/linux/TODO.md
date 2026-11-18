@@ -4,8 +4,8 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 
 ## Known limits of the preview
 
-- **Tested on one machine.** Everything a person can see was tested in one aarch64 Omarchy 4.5 virtual machine with a virtual GPU, one 1920×1080 display at scale 1, and a virtual pointer instead of a hand. Not tested: a real computer, a real GPU, display scales above 1, several displays, a light theme, sleep and wake, a restart of the computer with the service enabled, an input method.
-- **The x86_64 archive** is built and tested without a desktop by CI on Arch Linux. Nobody has seen it show widgets.
+- **Tested on one machine.** Everything a person can see was tested in one aarch64 Omarchy 4.5 virtual machine with a virtual GPU, one 1920×1080 display at scale 1, and a virtual pointer instead of a hand. Not tested: a real computer, a real GPU, display scales above 1, several displays, a light theme, sleep and wake, a restart of the computer with the service enabled (the unit is enabled, the restart was not tried), an input method.
+- **The x86_64 archive** was never run on an x86_64 computer. Besides the CI run without a desktop, its programs were run through instruction emulation inside the aarch64 Omarchy 4.5 test machine, against the real desktop there (see [testing.md](testing.md)); that shows the archive is complete and works, not how it behaves on real x86_64 hardware and drivers.
 - **ICU.** The programs link the system's ICU 78 by its versioned name. When Arch and Omarchy move to ICU 79 they stop starting until a new archive is built. Fix: link ICU statically, or publish an AUR source package that is rebuilt on the user's machine.
 - **Display fonts.** The six display fonts of the other platforms (Apple ][, Larabiefont Free, Monofonto, White Rabbit, OneSlot, Unispace) are not shipped: the repository records no licence for them, and the notice inside `Unispace.ttf` forbids redistribution. Text that asks for one is drawn with Inter. The same files ship in the iPhone, Android and Windows apps; their licences need to be settled there too.
 - **The archive is not signed**, and its third-party notices are a hand-written summary, not a generated list of every crate licence.
@@ -18,7 +18,7 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 - **Time zone changes** are not noticed until the next refresh.
 - **Management window:** closing it with unsaved changes does not ask (moving to another page does); no "new file" button; the components and API reference pages of the Windows app are missing; changing the refresh interval writes the setting but does not tell the running service; in the test machine the editor's blinking cursor costs a quarter of a core under software rendering.
 - **Plugin:** frames do not pause behind ordinary windows or on the lock screen; the bar entry starts `scriptwidget-studio` without checking that it exists; widgets are not moved when the dock appears later; the Chinese strings were not seen on screen.
-- **Service:** real suspend and resume, timeline transitions end to end, and the path that drops a slow display were not exercised; `doctor` does not ask the plugin for its status.
+- **Service:** real suspend and resume and the path that drops a slow display were not exercised; `doctor` does not ask the plugin for its status.
 - `docs/platform-support.md`, the website and Web Studio list Linux; the root README files do not yet.
 
 ## Runtime

@@ -6164,7 +6164,7 @@ dependencies = [
 
 [[package]]
 name = "sw-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "flate2",
  "getrandom 0.3.4",
@@ -6179,7 +6179,7 @@ dependencies = [
 
 [[package]]
 name = "sw-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
  "flate2",
@@ -6203,7 +6203,7 @@ dependencies = [
 
 [[package]]
 name = "sw-host"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "getrandom 0.3.4",
  "libc",
@@ -6217,14 +6217,14 @@ dependencies = [
 
 [[package]]
 name = "sw-quickjs"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cc",
 ]
 
 [[package]]
 name = "sw-render"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -6235,7 +6235,7 @@ dependencies = [
 
 [[package]]
 name = "sw-studio"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "futures",
  "getrandom 0.3.4",
