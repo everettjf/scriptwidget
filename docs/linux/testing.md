@@ -526,6 +526,26 @@ node Linux/scripts/find-truncated-text.mjs --pictures <目录> --json <文件>
 - Live Activity Demo 只看了没有状态时的小尺寸图（"Ready"）；有进度、有倒计时、状态不合法这几种没有画图，只按字宽估过。
 - Windows 的测试、Android 的真机测试、`Scripts/release-readiness.sh`、Web Studio 的浏览器冒烟测试、Linux 的 `asan-test.sh` 都没跑。
 
+### 之后补上的：在苹果上画图，并重截了演示截图
+
+`Tools/ScriptWidgetPreview` 仍然编不过，但 Mac 应用本身带一个批量画模板的开关，用它画了：
+
+```sh
+xcodebuild -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetMac -configuration Debug -derivedDataPath <目录> CODE_SIGNING_ALLOWED=NO build
+<目录>/Build/Products/Debug/ScriptWidget.app/Contents/MacOS/ScriptWidget --render-template-previews <输出目录>
+swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemoScreenshots
+```
+
+| 检查（同一台 Mac，macOS 27.2，不签名的调试版） | 结果 |
+| --- | --- |
+| 92 个模板各画一张，尺寸是模板原来设计的那个 | 两轮；第一轮 Daily Quote 和 Stock Snapshot 超过 5 秒没画出来，第二轮只有 Stock Snapshot |
+| 看图：这一节和上一节改过的模板，在苹果的系统字体下 | 设计尺寸的图都正常；Monthly Budget Planner 大尺寸不再重叠，Text Year Days Left 在 11 月 18 日是 43 天 |
+| `Resource/WidgetDemoScreenshots` | 87 张换成新图（原来 70 张，缺 22 个模板的图），拼图从 4 张变成 5 张；删掉了已改名模板的旧图 Weather Now (Open-Meteo) |
+
+没换、留着旧图的 5 张：Stock Snapshot（请求超时）；Battery & Brightness、Device Battery Percent、Gauge Battery、System Status Panel（这台 Mac 没有电池，画出来是 0%）。这几个模板在设计尺寸上的排法没有变。
+
+仍然没做的：苹果上只画了每个模板设计的那个尺寸，新加的小尺寸、中等尺寸排法没有在苹果上画图。这台 Mac 没有签名、没有授权，所以日历、健康、照片、提醒事项、GitHub、iCloud 这些模板画出来的是"未连接"的样子。Countdown 没设置时的小尺寸标题"Your next mome…"是模板有意把标题截到 14 个字，没改。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

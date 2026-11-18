@@ -1,1 +1,7 @@
-OK
+Rendered 2026-11-18 by the Mac app (--render-template-previews), unsigned debug build, macOS 27.2.
+Kept from the earlier set, because this Mac has no battery or the request timed out:
+- Battery & Brightness
+- Device Battery Percent
+- Gauge Battery
+- Stock Snapshot
+- System Status Panel
