@@ -14,5 +14,7 @@
   "menu.resize-extraLarge": "Extra large",
   "menu.edit": "Edit",
   "menu.refresh": "Refresh",
-  "menu.remove": "Remove"
+  "menu.remove": "Remove",
+  "menu.arrange": "Move widgets…",
+  "menu.arrange.done": "Done moving"
 }

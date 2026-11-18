@@ -15,6 +15,7 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Add bounded sleep, activity-ring and workout summaries, a Health Overview template and editable Web sample data.
 - Fix native Promise callback ownership so completed and abandoned executions release their JavaScript VM and snapshot.
 - Serialize native runtime subscription, result delivery and cancellation to prevent intermittent empty results and reference-lifetime crashes.
+- Fix bundled templates whose text was cut off or pushed out of the widget, most visibly with the wider font of Android, Windows and Linux: Month Calendar (long month names, six-week months), the Daily Command Center, Family Command Board, Travel Day and Wellness dashboards, World Clock Faces and Year in Dots at the extra-large size, and fifteen smaller templates.
 - Continue expanded personal-data APIs, authenticated services/music and visual editing on the same release branch; M3–M5 remain in progress.
 
 ## Unreleased

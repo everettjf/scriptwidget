@@ -393,6 +393,90 @@ Omarchy 的空闲锁屏在这台机器上是关着的（`omarchy-toggle-idle` �
 
 所以"重启电脑 → 登录 → 小组件自己回到桌面"这一整条通过。之前试过用会话管理器（`uwsm`）在 SSH 里起一个无屏会话来代替登录，它的环境预加载步骤失败了，没有成。
 
+## 2026-11-18，第二台测试虚拟机：0.1.3（右键菜单，以及一个会让外壳崩溃的问题）
+
+机器同上，会话是重启后用户登录的真实会话。
+
+### 用户反馈：小组件点了没反应，右键也没反应
+
+属实。0.1.2 及之前：只有按钮、开关、链接的区域接收鼠标，其余地方的点击穿透到桌面；右键菜单只在摆放模式里有。桌面上四个小组件里三个没有按钮，所以怎么点都没有反应。
+
+0.1.3 改成：整个小组件都接收鼠标；左键点在按钮区域是点击，点在别处什么都不做；右键点在小组件任何位置都弹出菜单（改尺寸、编辑、刷新、移除），菜单里多一项"Move widgets…"进入摆放模式，摆放模式里这一项变成"Done moving"。代价是小组件提到最上层时，它下面的窗口不再能透过小组件被点到。
+
+| 检查（真实会话，虚拟指针） | 结果 |
+| --- | --- |
+| 在日历（没有按钮）上右键 | 菜单出现，八项；截图在 `images/widget-menu.png` |
+| 选一个尺寸 | 日历变成那个尺寸，菜单关闭 |
+| 在心情小组件的按钮上左键 | 脚本重新运行 |
+| 右键选"Move widgets…" | 进入摆放模式；拖动时钟，位置保存 |
+| 摆放模式里右键选"Done moving" | 退出摆放模式，四个窗口回到 `bottom` 层 |
+
+### 发现：0.1.2 在显示器增减时会让 Omarchy 外壳崩溃
+
+检查脚本因为"工作区不是空的"拒绝运行，一看是六个"Quickshell has crashed"的报告窗口。`~/.cache/quickshell/crashes` 里一共七份崩溃报告：两份在 02:58:49 和 02:59:09，五份在 05:14:07 到 05:14:42，都是段错误，栈里是 QML 绑定更新，起点是读子进程的输出。时间都对得上我在增减虚拟显示器的时候。
+
+原因：0.1.2 为了"显示器断开后小组件回到主屏"，在小组件窗口的"屏幕变了"信号里把窗口藏一下再显示。但外壳在显示窗口的过程中也会报这个信号，于是在绑定更新的中途又改了窗口的可见性，Quickshell 在这里崩溃。外壳崩溃后 Omarchy 会自动把它重新拉起来，所以 0.1.2 当时的测试结果看上去是通过的；崩溃报告窗口开在别的工作区，没被看到。前两份崩溃报告就是 0.1.2 的这段代码产生的。
+
+0.1.3 的做法：不再理会窗口自己的"屏幕变了"，改为在显示器列表变化（`Quickshell.screens` 变了）时把每个小组件窗口藏一下再显示。
+
+| 检查 | 结果 |
+| --- | --- |
+| 六轮：加一块虚拟显示器、把两个小组件移过去、拔掉显示器 | 每轮四个窗口都在，拔掉后回到主屏；外壳的进程号没变；没有新的崩溃报告 |
+| 缩放 2、1.5、1 | 都跟上，没有新的崩溃报告 |
+| 外壳启动时的"Binding loop"警告 | 0.1.2 的写法每个窗口一条，0.1.3 没有 |
+| 插件的检查脚本，新增"显示器增减"一组五项（含外壳进程号不变、没有新的崩溃报告），并按新的鼠标行为改了三项、加了四项 | 74 项里 74 项通过 |
+
+教训记在这里：外壳崩溃后会被自动重启，光看"小组件还在"发现不了崩溃。检查脚本现在比对外壳的进程号和崩溃报告的数量。
+## 2026-11-18，模板里放不下的文字
+
+Linux、Windows 和 Android 用 Inter 画字，比苹果的系统字体宽一点；共用的排版放不下的字会被截掉并加上"…"。在 Linux 上看到的是 Month Calendar 的大尺寸把"November"画成"Novem…"。这一轮把随应用带的模板都查了一遍，改的是模板本身，所以每个平台都受益。
+
+这些都是在 Mac 上跑的（macOS 27.2，Apple 芯片，Rust 1.98.1，Node 24.21.0，ICU 79.1），没有在虚拟机或真实的 Linux 上跑。Mac 上没有 Linux 的系统字体，但 Inter 是程序自带的，这里要查的正是它。
+
+### 检查的办法
+
+```sh
+node Linux/scripts/build-shared-js.mjs
+cd Linux && cargo build --release -p sw-cli && cargo build --release -p sw-render --example layout_tree
+node Linux/scripts/find-truncated-text.mjs --pictures <目录> --json <文件>
+```
+
+（Mac 上的 `cargo` 要加 `PKG_CONFIG_PATH="$(brew --prefix icu4c)/lib/pkgconfig"`。）
+
+脚本把 `Script.bundle` 里的每个包复制一份，在每个源文件前面放一个固定时间的 `Date`，用命令行在四个桌面尺寸各运行一次，再用新加的 `layout_tree` 例子只排版、不画，然后在排好的元素里找四种情况：被截断（以"…"结尾）、被框裁掉、一两个词的短文字被折成多行、文字的框超出小组件。时间选了五个：9 月 16 日周三 12:59（"September"、"Wednesday"、"12:59 PM"、一年的第 259 天还剩 106 天）、11 月 18 日周三 20:48、8 月 29 日周六 22:48（跨六周的月份）、12 月 30 日 23:59、1 月 1 日 00:00。找到的只是候选，每一个都看了画出来的图再判断。
+
+### 结果
+
+| 检查 | 结果 |
+| --- | --- |
+| 改之前 | 140 个包，2800 次运行里 2766 次排了版；45 个包有候选 |
+| 改之后 | 140 个包，2800 次运行里 2778 次排了版；29 个包有候选，都不在模板自己支持的尺寸上，或者是有意的省略，见下 |
+| 改了的模板（22 个） | Month Calendar、Daily Command Center、Family Command Board、Travel Day Dashboard、Wellness Dashboard、World Clock Faces、Year in Dots、An Empty Widget、Birthday Countdown、Check Is Friday Today、Check Is Working Day Today、Condition Content、Daily Affirmation、Datetime Timezone、Layout Starter、Location Snapshot、Meal Planner、Music Playback、System Insights、Text Days To End Of Month、Text Days to End Of Year、Text Year Days Left。`scriptwidget new` 的起始模板和 An Empty Widget 是同一个样子，也一起改了 |
+| Month Calendar，大尺寸，11 月的周三 | 改之前标题是"Novem… 2026 Wednesday"，改之后是"November 2026 Wed"；跨六周的月份（2026 年 8 月）改之前日程的最后一行超出小组件，改之后格子变小、整体不超出 |
+| 苹果的参考树 | 在 iOS 27.2 模拟器（iPhone 18 Pro Max）上用 JavaScriptCore 重新生成了 `native-trees.json`、`music-playback-trees.json`、`layout-edit-trees.json`；`native-trees.json` 变了 18 项，只有树变了。macOS 的测试程序在沙盒里，写不了仓库里的文件，所以生成用的是模拟器；之后在 macOS 上不带生成开关跑了 `BrowserPreviewParityTests`、`MusicRuntimeTests`、`VisualLayoutEditorTests`、`RuntimeExecutionTests`：154 个里 11 个跳过（都是要开关才导出的测试），没有失败 |
+| `cd Web/preview-engine && npm test` | 199 个通过 |
+| `cd Web/studio && npm test`、`cd Editor/editorfe && npm test` | 114 个通过、52 个通过 |
+| `cargo test --locked --workspace`（Mac） | 506 个通过，1 个忽略；与 JavaScriptCore 的树对比 127/127 相同 |
+| `./gradlew :core:testDebugUnitTest --rerun`（Mac，JDK 21） | 482 个通过 |
+| `node Scripts/validate-release.mjs`、`validate-doc-links.mjs`、`sync-gallery-templates.mjs`、`node --test Scripts/tests/*.mjs` | 都通过（Gallery 里的 Layout Starter 和 Music Playback 用 `--write` 同步过） |
+
+哪个尺寸算"模板支持的"：模板读了 `widget-size` 并按尺寸分支的，每个尺寸都算；只有一种排法的模板，按 `Resource/WidgetDemoScreenshots` 里它的截图的尺寸算（有 `widget.json` 的按它声明的算）。
+
+### 留下没改的候选
+
+- 只有一种排法、截图是中等或大尺寸的模板，在小尺寸上放不下：Animation Clock、Battery & Brightness、Daily Command Center、Datetime Current、Datetime Timezone、Device Battery Percent、Family Command Board、Live Activity Demo、Monthly Budget Planner、Open Link、Personal Dashboard、Pomodoro Focus、Reading Goal、Shape、Sleep Schedule、Sunrise & Sunset、System Insights、Text Today Week、Travel Day Dashboard、Weekly Planner、Wellness Dashboard；大尺寸的 Travel Day Dashboard 和 Wellness Dashboard 在中等尺寸上也放不下。这不是字体的问题：用苹果的系统字体量同一段文字，绝大多数也放不下。要给它们各做一个小尺寸的排法，这次没做。
+- `api/` 下的示例（health、location、storage、system）：逐行列出数值的示例，`api/system` 有 14 行，中等尺寸放不下，大尺寸放得下；另外三个只是标题在小尺寸折成两行。
+- New Episode Tracker：节目名画在固定 200 点宽的框里，长名字被省略是有意的，而且内容来自网络。
+- Now Playing 特大尺寸的"Midnight Drive"、Image Basic Usage 小尺寸的"Photo spotlight"：两个词在空格处折成两行，没有被截断。
+- Hydration Goal iCloud：Linux 没有 iCloud，画的是出错时的卡片，里面是任意长的错误信息，小尺寸上被省略。
+
+### 没跑的
+
+- 要联网的模板在这台 Mac 上能跑的都跑了，但内容取决于当时的网络；Daily Quote 每次都没有画出来（返回的不是 JSON），Stock Snapshot、New Episode Tracker、Weather Display 各有一轮超过 5 秒没有画出来。
+- 没有在苹果的系统上把改过的模板画成图来看：`Tools/ScriptWidgetPreview` 现在编不过（工程里缺新加的存储源文件）。"在苹果上不变差"是按排版规则和用系统字体量出的宽度判断的，不是看图。
+- Windows 的测试、Android 的真机测试、`Scripts/release-readiness.sh`、Web Studio 的浏览器冒烟测试都没跑。
+- Text Year Days Left 算的是到下一年 1 月 31 日的天数（`new Date(year, 12, 31)`），比"今年还剩"多 31 天；这次没改。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

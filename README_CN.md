@@ -31,6 +31,26 @@ ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要�
 
 Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
+Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；Linux 版目前支持 [Omarchy](https://omarchy.org) 4.5，安装包在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位、音乐等设备数据 API。
+
+### 各平台截图
+
+都是真实截图。Windows 和 Linux 是预览版。
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![iPhone 上的模板库](docs/images/platforms/iphone-templates.webp) | ![iPad 上的编辑器](docs/images/platforms/ipad-editor.webp) | ![Mac 上的 ScriptWidget Studio](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux（Omarchy） |
+| --- | --- | --- |
+| ![Android 桌面上的小组件](docs/images/platforms/android-widgets.webp) | ![Windows 桌面上的小组件](docs/images/platforms/windows-desktop.webp) | ![Omarchy 桌面上的小组件](docs/images/platforms/linux-desktop.webp) |
+| ![Android 上的编辑器](docs/images/platforms/android-editor.webp) | ![Windows 上的编辑器](docs/images/platforms/windows-editor.webp) | ![Linux 上的编辑器](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![浏览器里的 Web Studio](docs/images/platforms/web-studio.webp) |
+
+
 ## 为什么选择 ScriptWidget
 
 - 一份脚本适配 iOS、iPadOS 与 macOS，以及 Android，多尺寸布局可通过 `$getenv("widget-size")` 调整。

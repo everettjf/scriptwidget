@@ -19,9 +19,9 @@ $render(
     </vstack>
     <spacer/>
     <vstack alignment="leading" spacing="7">
-      <stat title="CPU" value={`${activeCpu} / ${cpuCount}`} subtitle="active" color="#38bdf8"/>
-      <stat title="MEMORY" value={`${(memory.physical / 1024 / 1024 / 1024).toFixed(1)} GB`} subtitle="physical" color="#a78bfa"/>
-      <stat title="UPTIME" value={`${uptimeHours}h`} subtitle="since boot" color="#34d399"/>
+      <stat title="ACTIVE CPU" value={`${activeCpu} / ${cpuCount}`} color="#38bdf8"/>
+      <stat title="MEMORY" value={`${(memory.physical / 1024 / 1024 / 1024).toFixed(1)} GB`} color="#a78bfa"/>
+      <stat title="UPTIME" value={`${uptimeHours}h`} color="#34d399"/>
     </vstack>
   </hstack>
 );

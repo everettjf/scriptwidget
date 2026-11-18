@@ -209,9 +209,11 @@ Item {
     } else if (event.event === "remove") {
       if (validId(event.id)) drop([event.id])
     } else if (event.event === "mode") {
+      var arranging = arrange
       arrange = event.arrange === true
       peek = event.peek === true
-      if (!arrange) closeMenu()
+      // A menu opened in arrange mode goes with it; one opened outside it stays.
+      if (arranging && !arrange) closeMenu()
     } else if (event.event === "bye") {
       // The pictures stay; the retry below finds the service again.
       greeted = false
@@ -365,7 +367,7 @@ Item {
   }
 
   function openMenu(id, screen, x, y) {
-    if (!arrange || !widgets[id]) return
+    if (!widgets[id]) return
     menuScreen = screen
     menuX = x
     menuY = y
@@ -504,8 +506,8 @@ Item {
     }
   }
 
-  // The menu of a widget in arrange mode: one window over the whole screen,
-  // so a click anywhere else closes it.
+  // The menu of a widget, opened by a right click on it (in arrange mode or
+  // not): one window over the whole screen, so a click anywhere else closes it.
   PanelWindow {
     id: menu
 
@@ -573,6 +575,35 @@ Item {
               cursorShape: Qt.PointingHandCursor
               onClicked: root.choose(row.modelData)
             }
+          }
+        }
+
+        // Not a word for the service: switches arrange mode, where widgets are dragged.
+        Rectangle {
+          id: arrangeRow
+          width: rows.width
+          height: Commons.Style.spacing.popupRowHeight
+          radius: Math.max(0, card.radius - Commons.Style.spacing.sm)
+          color: arrangeHover.containsMouse ? Commons.Style.hoverFill : "transparent"
+
+          Text {
+            anchors.verticalCenter: parent.verticalCenter
+            x: Commons.Style.spacing.controlPaddingX
+            width: parent.width - 2 * x
+            textFormat: Text.PlainText
+            text: strings.t(root.arrange ? "menu.arrange.done" : "menu.arrange")
+            color: Commons.Color.popups.text
+            font.family: Commons.Style.font.family
+            font.pixelSize: Commons.Style.font.body
+            elide: Text.ElideRight
+          }
+
+          MouseArea {
+            id: arrangeHover
+            anchors.fill: parent
+            hoverEnabled: true
+            cursorShape: Qt.PointingHandCursor
+            onClicked: { root.closeMenu(); root.toggleArrange() }
           }
         }
       }

@@ -7,7 +7,7 @@ Website: <https://atomsprout.com/scriptwidget/>
 [![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/everettjf/ScriptWidget?style=flat-square)](https://github.com/everettjf/ScriptWidget/network)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Android-lightgrey?style=flat-square)](#-platforms)
+[![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Android%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square)](#-platforms)
 [![Version](https://img.shields.io/badge/Version-3.0-blue?style=flat-square)](https://github.com/everettjf/ScriptWidget/releases)
 [![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
 
@@ -368,10 +368,30 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
 | **Android** | ✅ 1.0.0 | Android 15+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
+| **Windows** | 🧪 Preview 0.1.0 | Windows 11; desktop widgets and a management window. [Installer on GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0); see [ScriptWidget for Windows](docs/windows/README.md) |
+| **Linux** | 🧪 Preview | [Omarchy](https://omarchy.org) 4.5; widgets on the desktop, a management window and a command line. [Archives on GitHub Releases](https://github.com/everettjf/scriptwidget/releases); see [ScriptWidget for Linux](docs/linux/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |
 
 Feature-by-feature support is in [Platform support](docs/platform-support.md).
+
+### Screenshots
+
+Real screenshots of each platform. Windows and Linux are previews.
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![The template gallery on iPhone](docs/images/platforms/iphone-templates.webp) | ![The editor on iPad](docs/images/platforms/ipad-editor.webp) | ![ScriptWidget Studio on Mac](docs/images/platforms/mac-studio.webp) |
+| ![The editor on iPhone](docs/images/platforms/iphone-editor.webp) | | |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![Widgets on the Android home screen](docs/images/platforms/android-widgets.webp) | ![Widgets on the Windows desktop](docs/images/platforms/windows-desktop.webp) | ![Widgets on the Omarchy desktop](docs/images/platforms/linux-desktop.webp) |
+| ![The editor on Android](docs/images/platforms/android-editor.webp) | ![The editor on Windows](docs/images/platforms/windows-editor.webp) | ![The editor on Linux](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![Web Studio in a browser](docs/images/platforms/web-studio.webp) |
 
 ---
 

@@ -29,9 +29,9 @@ if (family === "accessoryInline") {
   $render(<vstack alignment="leading" spacing="2"><text font="headline">{title}</text><text font="caption2">{`${status} · ${playback ? playback.artist || "Music app" : "Open ScriptWidget"}`}</text></vstack>);
 } else {
   $render(<vstack frame="max" alignment="leading" spacing={compact || family === "medium" ? "8" : "16"} padding="16" background={background}>
-    <hstack spacing="8"><image systemName={symbol} font="title2" color={primary}/><text font="caption" color={secondary}>{status}</text><spacer/><text font="caption2" color={secondary}>Music</text></hstack>
+    <hstack spacing="8"><image systemName={symbol} font="title2" color={primary}/><text font="caption" color={secondary}>{compact && !playback ? "Setup" : status}</text><spacer/><text font="caption2" color={secondary}>Music</text></hstack>
     <spacer/>
-    <text font={compact ? "headline" : "title2"} fontWeight="semibold" color={primary}>{title}</text>
+    <text font={compact ? "subheadline" : "title2"} fontWeight="semibold" color={primary}>{title}</text>
     <text font="caption" color={secondary}>{subtitle}</text>
     {progress !== null && <vstack spacing="4"><progress value={String(progress)} color={primary}/><hstack><text font="caption2" color={secondary}>{time(playback.position)}</text><spacer/><text font="caption2" color={secondary}>{time(playback.duration)}</text></hstack></vstack>}
     {!compact && family !== "medium" && <><spacer/><text font="caption2" color={secondary}>A playback snapshot. Refresh to update.</text></>}
