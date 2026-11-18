@@ -1,0 +1,25 @@
+ScriptWidget for Linux contains or links these third-party works. The exact
+versions of the Rust crates are in Linux/Cargo.lock of the source repository,
+https://github.com/everettjf/scriptwidget; each crate's licence text is in its
+own source distribution on crates.io.
+
+Built into the programs
+- QuickJS-NG (MIT) - JavaScript engine
+- Skia, through skia-safe and skia-bindings (BSD-3-Clause, MIT) - drawing and text layout
+- GPUI (gpui-pre) and gpui-kit / gpui-component (Apache-2.0) - management window
+- Lucide icons (ISC) - management window icons
+- rustls, ring, rustls-native-certs, webpki (Apache-2.0 / ISC / MIT, ring: see its LICENSE) - TLS
+- serde, serde_json, url, sha2, flate2, miniz_oxide, rustix, libc, httparse,
+  unicode-* and the other crates listed in Cargo.lock (MIT and/or Apache-2.0
+  unless their own files say otherwise)
+- Inter (SIL Open Font License 1.1, see OFL-Inter.txt)
+
+Shipped as files (share/scriptwidget/runtime)
+- Babel standalone (MIT) - JSX compiler
+- Moment.js (MIT)
+
+Used from your system, not shipped
+- ICU, fontconfig, FreeType, Vulkan loader and drivers, system fonts
+
+The full machine-generated list of every crate licence is not part of this
+preview archive.

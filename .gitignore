@@ -27,3 +27,4 @@ Linux/tests/assets/
 Linux/crates/sw-render/tests/out/
 # Pictures the command line tests and reviews write
 Linux/crates/sw-cli/tests/out/
+Linux/artifacts/

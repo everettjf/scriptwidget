@@ -414,7 +414,9 @@ Item {
 
   Timer {
     id: sweep
-    interval: 3000
+    // A widget whose script is still running after a service restart has no
+    // picture yet and is named late: wait longer than a script may take.
+    interval: 12000
     onTriggered: root.drop(root.ids.filter(function (id) { return !root.announced[id] }))
   }
 
