@@ -1,4 +1,10 @@
 // Designed for the large widget; the small and medium sizes show the essentials. widget-param: flight|origin|destination|departure|gate|weather|essentials comma-separated
+//
+// This template shows a dashboard filled only from the widget parameter: fields
+// separated by "|". Try changing the sample text below or the colors.
+
+// $getenv("widget-param") is the parameter text set for this widget. An empty parameter
+// uses the sample, and a missing field falls back to its own default.
 const parts = (
   $getenv("widget-param") ||
   "SW 218|SFO|SEA|10:40 AM|B12|58° · Light rain|Passport,Headphones,Charger"
@@ -9,11 +15,14 @@ const destination = parts[2] || "SEA";
 const departure = parts[3] || "10:40 AM";
 const gate = parts[4] || "B12";
 const weather = parts[5] || "58° · Light rain";
+// The last field is a list separated by commas; at most three items are shown.
 const essentials = (parts[6] || "Passport,Headphones,Charger").split(",").slice(0, 3);
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 const size = $getenv("widget-size");
 if (size === "small") {
   // Small: the route, the departure time and the gate.
+  // frame="max" fills the widget; padding is the space around the content, in points.
   $render(
     <vstack frame="max" alignment="leading" spacing="8" padding="14" background="#075985">
       <hstack>
@@ -24,6 +33,8 @@ if (size === "small") {
       <text font="title3" weight="bold" color="white">
         {origin} → {destination}
       </text>
+      {/* A card. frame="max,52,leading": as wide as possible, 52 points high, content kept */}
+      {/* to the leading side. corner rounds the background. */}
       <vstack
         frame="max,52,leading"
         alignment="leading"
@@ -48,6 +59,7 @@ if (size === "small") {
   // Medium: the route above the departure, the gate and the weather.
   $render(
     <vstack frame="max" alignment="leading" spacing="8" padding="14" background="#075985">
+      {/* The route: origin, flight number, destination. */}
       <hstack spacing="8" padding="10" background="#0369a1" corner="15">
         <vstack alignment="leading" spacing="2">
           <text font="title2" weight="bold" color="white">
@@ -72,6 +84,7 @@ if (size === "small") {
           </text>
         </vstack>
       </hstack>
+      {/* Three cards of equal width. */}
       <hstack spacing="8">
         <vstack
           frame="max,56,leading"
@@ -125,6 +138,7 @@ if (size === "small") {
     </vstack>,
   );
 } else {
+  // Large and extra large: a title, the route, the three cards and the packing list.
   $render(
     <vstack frame="max" alignment="leading" spacing="10" padding="16" background="#075985">
       <hstack>
@@ -213,6 +227,7 @@ if (size === "small") {
           </text>
         </vstack>
       </hstack>
+      {/* One row for each item of the packing list. */}
       <vstack alignment="leading" spacing="5" padding="11" background="#10253a" corner="14">
         <hstack>
           <text font="caption" weight="bold" color="#bae6fd">

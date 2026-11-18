@@ -1,11 +1,20 @@
 // Designed for the large widget; the small and medium sizes show the essentials. widget-param: sleepHours,waterGlasses,steps,mood
+//
+// This template shows a score computed from the widget parameter, with a ring, progress
+// bars and cards. Try changing the sample numbers or the weights of the score.
+
+// $getenv("widget-param") is the parameter text set for this widget, split at the commas.
 const values = ($getenv("widget-param") || "7.5,6,6840,Calm").split(",");
+// A missing or non-numeric number counts as 0; the mood falls back to "Steady".
 const sleep = Number(values[0]) || 0;
 const water = Number(values[1]) || 0;
 const steps = Number(values[2]) || 0;
 const mood = (values[3] || "Steady").trim();
+// A score of at most 100: sleep gives 35 points at 8 hours, water 25 at 8 glasses and
+// steps 40 at 10,000 steps.
 const score = Math.round(Math.min(100, (sleep / 8) * 35 + (water / 8) * 25 + (steps / 10000) * 40));
 
+// A card with an icon, a title, a value and a progress bar, used in the large layout.
 const Metric = ({ icon, title, value, detail, color, progress, total }) => (
   <vstack
     frame="max,74,leading"
@@ -35,14 +44,17 @@ const Metric = ({ icon, title, value, detail, color, progress, total }) => (
   </vstack>
 );
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 const size = $getenv("widget-size");
 if (size === "small") {
   // Small: the balance score.
+  // frame="max" fills the widget; padding is the space around the content, in points.
   $render(
     <vstack frame="max" spacing="8" padding="14" background="#312e81">
       <text font="caption" weight="bold" color="#c4b5fd">
         DAILY BALANCE
       </text>
+      {/* A <zstack> puts the number on top of the ring. <ring> takes a value from 0 to 1. */}
       <zstack frame="84,84">
         <ring
           value={score / 100}
@@ -60,6 +72,7 @@ if (size === "small") {
   );
 } else if (size === "medium") {
   // Medium: the balance score above the three numbers.
+  // A smaller card without a bar, defined here because only this layout uses it.
   const Figure = ({ icon, title, value, color }) => (
     <vstack
       frame="max,56,leading"
@@ -119,6 +132,7 @@ if (size === "small") {
     </vstack>,
   );
 } else {
+  // Large and extra large: a title, the score, and the three cards with their bars.
   $render(
     <vstack frame="max" alignment="leading" spacing="10" padding="16" background="#312e81">
       <hstack>
@@ -134,6 +148,7 @@ if (size === "small") {
         <badge text={mood.toUpperCase()} color="#c4b5fd" />
       </hstack>
       <hstack spacing="12" padding="12" background="#5b21b6" corner="15">
+        {/* <progress style="circular"> is a ring with a label; value is out of total. */}
         <progress
           style="circular"
           frame="52"

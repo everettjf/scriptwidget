@@ -2,19 +2,36 @@
 // Optional instance parameter: latitude,longitude,City or JSON weather settings.
 // Forecast data: MET Norway (CC BY 4.0). No API key; Expires/conditional requests
 // and a bounded four-place cache reduce traffic. No exact refresh guarantee.
+//
+// The location API runs on iPhone and iPad, and on Android, where widgets see the position
+// saved while the app was open. It does not run on Mac, Windows or Linux; there the saved
+// city is used.
+// This template shows a widget that downloads data, keeps a cache and explains every
+// failure. That work is in lib/weather.js; try changing the layouts and colors here.
+// widget.json declares the "location", "network" and "storage" permissions, and the host
+// api.met.no in networkDomains.
+
+// $import runs lib/weather.js from this package and returns false when that fails.
+// The file defines localWeather.
 if (!$import("lib/weather.js"))
   throw new Error("Install the complete weather template, including lib/weather.js.");
+// The settings: those saved in $storage, changed by the widget parameter (the parameter
+// text set for this widget) when there is one.
 const config = localWeather.options(
   $storage.getString("recordTemplate.config.v1"),
   $getenv("widget-param"),
 );
+// Load the forecast. The third argument is true when the system draws a future timeline
+// entry in advance; such an entry only reads the cache.
 const weather = await localWeather.load(
   config,
   Date.now(),
   $getenv("timeline-is-projection") === "true",
 );
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 const size = $getenv("widget-size"),
   compact = size === "small";
+// No forecast to show: a title and a hint, in a form that fits each size.
 if (!weather.available) {
   if (size === "accessoryInline") $render(<text>{weather.title}</text>);
   else if (size === "accessoryCircular") $render(<icon systemName="cloud" size="25" />);
@@ -38,6 +55,7 @@ if (!weather.available) {
       </vstack>,
     );
 } else if (size === "accessoryInline") {
+  // Lock Screen sizes (iPhone and iPad only).
   $render(<text>{weather.temperature + " · " + weather.condition.title}</text>);
 } else if (size === "accessoryCircular") {
   $render(
@@ -59,6 +77,8 @@ if (!weather.available) {
     </hstack>,
   );
 } else if (compact) {
+  // Small: place, temperature, condition and how fresh the data is. The forecast is
+  // licensed CC BY 4.0, so the Home Screen layouts name the source.
   $render(
     <vstack frame="max" alignment="leading" padding="12" spacing="4" background="#eff6ff">
       <text font="caption2" weight="semibold" color="#1e3a8a">
@@ -86,6 +106,7 @@ if (!weather.available) {
     </vstack>,
   );
 } else if (size === "medium") {
+  // Medium: icon, place and temperature in one row.
   $render(
     <vstack frame="max" padding="16" spacing="7" background="#eff6ff">
       <hstack frame="max" spacing="14">
@@ -118,6 +139,7 @@ if (!weather.available) {
     </vstack>,
   );
 } else {
+  // Large and extra large add wind, humidity and the next forecast points.
   $render(
     <vstack frame="max" padding="16" spacing="8" background="#eff6ff">
       <hstack frame="max">
