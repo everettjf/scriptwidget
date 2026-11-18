@@ -12,8 +12,14 @@ const quote = data && data.length ? data[0] : { q: "Stay inspired", a: "ScriptWi
 
 $render(
   <vstack frame="max" background="#b45309">
-    <text font="caption" color="#fde68a">Daily Quote</text>
-    <text font="caption" color="#fff7ed">"{quote.q}"</text>
-    <text font="caption2" color="#fed7aa">- {quote.a}</text>
-  </vstack>
+    <text font="caption" color="#fde68a">
+      Daily Quote
+    </text>
+    <text font="caption" color="#fff7ed">
+      "{quote.q}"
+    </text>
+    <text font="caption2" color="#fed7aa">
+      - {quote.a}
+    </text>
+  </vstack>,
 );

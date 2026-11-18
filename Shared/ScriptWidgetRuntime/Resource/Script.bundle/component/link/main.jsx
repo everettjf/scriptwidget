@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component link
-// 
+//
 
 $render(
   <vstack frame="max" linkurl="https://atomsprout.com/scriptwidget">
@@ -22,6 +22,5 @@ $render(
         <text>Bing</text>
       </vstack>
     </link>
-  </vstack>
+  </vstack>,
 );
-

@@ -20,8 +20,12 @@ const timeText = `${mm.toString().padStart(2, "0")}:${ss.toString().padStart(2, 
 
 $render(
   <vstack frame="max" background="#1e293b">
-    <text font="caption" color="#94a3b8">Focus Timer</text>
-    <text font="title2" color="#e2e8f0">{timeText}</text>
+    <text font="caption" color="#94a3b8">
+      Focus Timer
+    </text>
+    <text font="title2" color="#e2e8f0">
+      {timeText}
+    </text>
     <gauge
       angle="260"
       value={progress}
@@ -31,6 +35,8 @@ $render(
       title="Session"
       titleFont="caption"
     />
-    <text font="caption2" color="#94a3b8">Cycle: {cycleMinutes} min</text>
-  </vstack>
+    <text font="caption2" color="#94a3b8">
+      Cycle: {cycleMinutes} min
+    </text>
+  </vstack>,
 );

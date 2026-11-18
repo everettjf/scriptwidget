@@ -1,5 +1,15 @@
 const phases = [0, 40, 80, 120, 160, 200, 240, 280, 320];
-const colors = ["#38bdf8", "#22d3ee", "#2dd4bf", "#a3e635", "#fde047", "#fb923c", "#fb7185", "#c084fc", "#818cf8"];
+const colors = [
+  "#38bdf8",
+  "#22d3ee",
+  "#2dd4bf",
+  "#a3e635",
+  "#fde047",
+  "#fb923c",
+  "#fb7185",
+  "#c084fc",
+  "#818cf8",
+];
 
 const oscillator = (phase, index) => (
   <zstack frame="24,92" animation={`clockCustom,${12 + index * 0.17}`} rotation={phase}>
@@ -20,8 +30,10 @@ $render(
     </hstack>
     <circle frame="11,11" color="#f8fafc" />
     <vstack frame="max" alignment="leading" padding="12">
-      <text font="caption" weight="bold" color="#bae6fd">PHASE WAVE  Δφ=40°</text>
+      <text font="caption" weight="bold" color="#bae6fd">
+        {"PHASE WAVE  Δφ=40°"}
+      </text>
       <spacer />
     </vstack>
-  </zstack>
+  </zstack>,
 );

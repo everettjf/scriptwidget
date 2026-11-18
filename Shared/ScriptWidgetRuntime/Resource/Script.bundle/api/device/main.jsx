@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $device
-// 
+//
 
 console.log($device.name());
 console.log($device.model());

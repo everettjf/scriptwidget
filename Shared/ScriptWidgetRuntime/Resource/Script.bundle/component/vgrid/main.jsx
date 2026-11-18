@@ -1,10 +1,9 @@
-
 //
 // ScriptWidget
 // https://atomsprout.com/scriptwidget
 //
 // grid component
-// 
+//
 
 /*
 iOS
@@ -33,22 +32,20 @@ macOS
 //     { type: "fixed", value: "30"},
 // ]
 
-let columns = [
-    { type: "adaptive", min: "70", max: "100"},
-]
+let columns = [{ type: "adaptive", min: "70", max: "100" }];
 
 $render(
   <vstack frame="max">
     <vgrid columns={$json(columns)}>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
-        <circle color="red"/>
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
+      <circle color="red" />
     </vgrid>
-  </vstack>
+  </vstack>,
 );

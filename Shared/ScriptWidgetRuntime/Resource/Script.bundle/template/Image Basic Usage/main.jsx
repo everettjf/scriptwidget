@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component image
-// 
+//
 
 /*
 
@@ -26,7 +26,13 @@
 
 $render(
   <zstack frame="max" background="#0f172a">
-    <image id="image" mode="fill" frame="max"/>
-    <vstack frame="max,bottomLeading" alignment="leading" padding="14"><spacer/><badge text="LOCAL IMAGE" color="white"/><text font="title2" weight="bold" color="white">Photo spotlight</text></vstack>
-  </zstack>
+    <image id="image" mode="fill" frame="max" />
+    <vstack frame="max,bottomLeading" alignment="leading" padding="14">
+      <spacer />
+      <badge text="LOCAL IMAGE" color="white" />
+      <text font="title2" weight="bold" color="white">
+        Photo spotlight
+      </text>
+    </vstack>
+  </zstack>,
 );

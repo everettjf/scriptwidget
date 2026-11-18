@@ -14,9 +14,13 @@ $render(
     </zstack>
     <circle frame="5,5" color="#67e8f9" />
     <vstack frame="max" alignment="leading" padding="12">
-      <text font="caption" weight="bold" color="#e9d5ff">LISSAJOUS  7×11</text>
+      <text font="caption" weight="bold" color="#e9d5ff">
+        {"LISSAJOUS  7×11"}
+      </text>
       <spacer />
-      <text font="caption2" color="#a78bfa">orthogonal phase space</text>
+      <text font="caption2" color="#a78bfa">
+        orthogonal phase space
+      </text>
     </vstack>
-  </zstack>
+  </zstack>,
 );

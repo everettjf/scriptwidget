@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $fetch
-// 
+//
 
 // query json example
 // https://jsonplaceholder.typicode.com/
@@ -17,5 +17,5 @@ const model = JSON.parse(result);
 $render(
   <vstack>
     <text font="title">receive title: {model.title}</text>
-  </vstack>
+  </vstack>,
 );

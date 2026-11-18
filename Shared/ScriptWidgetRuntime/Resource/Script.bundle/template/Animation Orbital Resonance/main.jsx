@@ -18,8 +18,10 @@ $render(
     <circle frame="30,30" color="#fef3c7" />
     <circle frame="16,16" color="#f59e0b" />
     <vstack frame="max" alignment="leading" padding="12">
-      <text font="caption" weight="bold" color="#a5f3fc">ORBITAL  2:3:5</text>
+      <text font="caption" weight="bold" color="#a5f3fc">
+        {"ORBITAL  2:3:5"}
+      </text>
       <spacer />
     </vstack>
-  </zstack>
+  </zstack>,
 );

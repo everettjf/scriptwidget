@@ -19,9 +19,13 @@ $render(
     </zstack>
     <circle frame="14,14" color="#ecfeff" />
     <vstack frame="max" alignment="leading" padding="12">
-      <text font="caption" weight="bold" color="#99f6e4">HYPOTROCHOID</text>
+      <text font="caption" weight="bold" color="#99f6e4">
+        HYPOTROCHOID
+      </text>
       <spacer />
-      <text font="caption2" color="#5eead4">24 : −9 : 15 : −6</text>
+      <text font="caption2" color="#5eead4">
+        24 : −9 : 15 : −6
+      </text>
     </vstack>
-  </zstack>
+  </zstack>,
 );

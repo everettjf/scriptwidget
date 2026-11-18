@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $http
-// 
+//
 
 // $http.get
 // $http.get is identity to $fetch or fetch api
@@ -19,18 +19,17 @@ const get_with_header_result = await $http.get("https://api.github.com/users/eve
 });
 console.log(get_with_header_result);
 
-
 // $http.post
 const post_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {
   body: {
     userId: 1,
     id: 1,
     title: "Hello ScriptWidget",
-  }
+  },
 });
 console.log(post_result);
 
-const post_with_header_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {  
+const post_with_header_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {
   headers: {
     Accept: "application/vnd.github.inertia-preview+json",
   },
@@ -38,16 +37,19 @@ const post_with_header_result = await $http.post("https://jsonplaceholder.typico
     userId: 1,
     id: 1,
     title: "Hello ScriptWidget",
-  }
+  },
 });
 console.log(post_with_header_result);
 
-const post_string_with_header_result = await $http.post("https://jsonplaceholder.typicode.com/posts", {  
-  headers: {
-    Accept: "application/vnd.github.inertia-preview+json",
+const post_string_with_header_result = await $http.post(
+  "https://jsonplaceholder.typicode.com/posts",
+  {
+    headers: {
+      Accept: "application/vnd.github.inertia-preview+json",
+    },
+    body: "password=123&name=321",
   },
-  body: "password=123&name=321"
-});
+);
 console.log(post_string_with_header_result);
 
 // $http.put (same to post)
@@ -71,5 +73,5 @@ console.log(post_string_with_header_result);
 $render(
   <vstack>
     <text>$http example</text>
-  </vstack>
+  </vstack>,
 );

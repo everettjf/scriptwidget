@@ -7,10 +7,8 @@
 // Description: Shape Example
 //
 
-
-
 $render(
   <vstack>
     <gif file="cat" />
-  </vstack>
+  </vstack>,
 );

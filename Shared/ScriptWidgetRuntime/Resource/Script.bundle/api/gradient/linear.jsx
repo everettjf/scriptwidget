@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $gradient
-// 
+//
 
 let linearGradient = {
   type: "linear",
@@ -15,5 +15,5 @@ let linearGradient = {
 $render(
   <vstack background={$gradient(linearGradient)} frame="max">
     <text font="title">LinearGradient</text>
-  </vstack>
+  </vstack>,
 );

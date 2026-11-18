@@ -1,13 +1,10 @@
-
 //
 // ScriptWidget
 // https://atomsprout.com/scriptwidget
 //
 //
 
-
-
-const foo = null ?? 'default string';
+const foo = null ?? "default string";
 console.log(foo);
 // expected output: "default string"
 
@@ -27,5 +24,5 @@ console.log(thisWillBeUndefined);
 $render(
   <vstack frame="max">
     <text font="title">Hello ES2020</text>
-  </vstack>
+  </vstack>,
 );

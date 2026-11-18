@@ -9,5 +9,5 @@ $render(
   <vstack>
     <text>First</text>
     <text>Second</text>
-  </vstack>
+  </vstack>,
 );

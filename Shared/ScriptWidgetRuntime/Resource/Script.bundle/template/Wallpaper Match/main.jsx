@@ -1,33 +1,102 @@
 // Import and calibrate your own background in Records & Configuration.
 // Crops match one Home Screen size, position and light/dark appearance.
-if (!$import("lib/configuration.js")) throw new Error("Install the complete Wallpaper Match template.");
+if (!$import("lib/configuration.js"))
+  throw new Error("Install the complete Wallpaper Match template.");
 const options = wallpaperConfiguration.load();
-const family = $getenv("widget-size"), appearance = $device.isdarkmode() ? "dark" : "light";
-const color = options.ink === "light" || (options.ink === "adaptive" && appearance === "dark") ? "#ffffff" : "#111827";
+const family = $getenv("widget-size"),
+  appearance = $device.isdarkmode() ? "dark" : "light";
+const color =
+  options.ink === "light" || (options.ink === "adaptive" && appearance === "dark")
+    ? "#ffffff"
+    : "#111827";
 const referenceDate = new Date($getenv("timeline-date") || Date.now());
 if (family === "accessoryInline") {
-  $render(options.content === "date" ? <date date={referenceDate.getTime()} style="date"/> : <text>{options.title || "Wallpaper Match"}</text>);
+  $render(
+    options.content === "date" ? (
+      <date date={referenceDate.getTime()} style="date" />
+    ) : (
+      <text>{options.title || "Wallpaper Match"}</text>
+    ),
+  );
 } else if (family === "accessoryCircular") {
-  $render(<vstack spacing="2"><icon systemName="photo"/><text font="caption2">{options.content === "date" ? String(referenceDate.getDate()) : "Match"}</text></vstack>);
+  $render(
+    <vstack spacing="2">
+      <icon systemName="photo" />
+      <text font="caption2">
+        {options.content === "date" ? String(referenceDate.getDate()) : "Match"}
+      </text>
+    </vstack>,
+  );
 } else if (family === "accessoryRectangular") {
-  $render(<vstack alignment="leading" spacing="3"><text font="headline">{options.title || "Wallpaper Match"}</text>{options.content === "date" ? <date date={referenceDate.getTime()} style="date" font="caption"/> : <text font="caption">{options.caption || "Backgrounds apply on the Home Screen"}</text>}</vstack>);
+  $render(
+    <vstack alignment="leading" spacing="3">
+      <text font="headline">{options.title || "Wallpaper Match"}</text>
+      {options.content === "date" ? (
+        <date date={referenceDate.getTime()} style="date" font="caption" />
+      ) : (
+        <text font="caption">{options.caption || "Backgrounds apply on the Home Screen"}</text>
+      )}
+    </vstack>,
+  );
 } else {
-  const asset = options.backgrounds.find((item) => item.family === family && item.appearance === appearance);
+  const asset = options.backgrounds.find(
+    (item) => item.family === family && item.appearance === appearance,
+  );
   const available = asset && $file.exists("image/" + asset.image + ".png");
   if (!available) {
-    $render(<vstack frame="max" padding="14" spacing="8" background={appearance === "dark" ? "#1e293b" : "#f1f5f9"}>
-      <icon systemName="photo.on.rectangle" size="26"/>
-      <text font="headline">{asset ? "Restore this crop" : "Match your wallpaper"}</text>
-      <text font="caption2">{asset ? "The selected image file is unavailable." : `Add a ${appearance} crop for this size in Records & Configuration.`}</text>
-    </vstack>);
+    $render(
+      <vstack
+        frame="max"
+        padding="14"
+        spacing="8"
+        background={appearance === "dark" ? "#1e293b" : "#f1f5f9"}
+      >
+        <icon systemName="photo.on.rectangle" size="26" />
+        <text font="headline">{asset ? "Restore this crop" : "Match your wallpaper"}</text>
+        <text font="caption2">
+          {asset
+            ? "The selected image file is unavailable."
+            : `Add a ${appearance} crop for this size in Records & Configuration.`}
+        </text>
+      </vstack>,
+    );
   } else {
-    $render(<zstack frame="max">
-      <image name={asset.image} mode="fill" frame="max" clip="rect" accentedRenderingMode="fullColor"/>
-      {options.content !== "none" && <vstack frame="max" alignment="leading" padding="16" spacing="7">
-        {options.content === "date" && <date date={referenceDate.getTime()} style="date" font={family === "small" ? "caption" : "title2"} color={color}/>}
-        {options.title && <text font="headline" color={color}>{family === "small" ? Array.from(options.title.replace(/\s+/g, " ")).slice(0, 16).join("") : options.title}</text>}
-        {options.caption && <text font="caption" color={color}>{family === "small" ? Array.from(options.caption.replace(/\s+/g, " ")).slice(0, 24).join("") : options.caption}</text>}
-      </vstack>}
-    </zstack>);
+    $render(
+      <zstack frame="max">
+        <image
+          name={asset.image}
+          mode="fill"
+          frame="max"
+          clip="rect"
+          accentedRenderingMode="fullColor"
+        />
+        {options.content !== "none" && (
+          <vstack frame="max" alignment="leading" padding="16" spacing="7">
+            {options.content === "date" && (
+              <date
+                date={referenceDate.getTime()}
+                style="date"
+                font={family === "small" ? "caption" : "title2"}
+                color={color}
+              />
+            )}
+            {options.title && (
+              <text font="headline" color={color}>
+                {family === "small"
+                  ? Array.from(options.title.replace(/\s+/g, " ")).slice(0, 16).join("")
+                  : options.title}
+              </text>
+            )}
+            {options.caption && (
+              <text font="caption" color={color}>
+                {family === "small"
+                  ? Array.from(options.caption.replace(/\s+/g, " ")).slice(0, 24).join("")
+                  : options.caption}
+              </text>
+            )}
+          </vstack>
+        )}
+      </zstack>,
+    );
   }
 }

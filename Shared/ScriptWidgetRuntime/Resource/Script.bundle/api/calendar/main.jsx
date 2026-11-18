@@ -9,7 +9,13 @@ if ($calendar.isAvailable() && $calendar.authorizationStatus() === "authorized")
     const result = await $calendar.events({ limit: 5, maxAgeSeconds: 60 });
     // Optional: calendarIDs: [calendars[0].id], start/end ISO-8601 timestamps.
     // Limit: 1–50 events, 31-day window, 1–16 selected calendar IDs.
-    message = result.items.map(event => event.title).join(" · ") || "No events today";
-  } catch (error) { message = "Calendar unavailable. Check access in the app."; }
+    message = result.items.map((event) => event.title).join(" · ") || "No events today";
+  } catch (error) {
+    message = "Calendar unavailable. Check access in the app.";
+  }
 }
-$render(<vstack padding="12"><text>{message}</text></vstack>);
+$render(
+  <vstack padding="12">
+    <text>{message}</text>
+  </vstack>,
+);

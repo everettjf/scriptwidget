@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component image
-// 
+//
 
 /*
 
@@ -26,7 +26,7 @@
 
 $render(
   <vstack>
-    <image url="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" frame="20,20"/>
-    <image id="image" frame="260,60"/>
-  </vstack>
+    <image url="https://zos.alipayobjects.com/rmsportal/ODTLcjxAfvqbxHnVXCYX.png" frame="20,20" />
+    <image id="image" frame="260,60" />
+  </vstack>,
 );

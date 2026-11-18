@@ -12,5 +12,5 @@ $render(
     <text font="title">test</text>
     {textItems}
     <text font="title">{sum(1, 2)}</text>
-  </vstack>
+  </vstack>,
 );

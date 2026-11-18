@@ -1,3 +1,27 @@
 // widget-param: name,MM-DD (optional), e.g. Alex,12-18
-const p = ($getenv("widget-param") || "Alex,12-18").split(","); const name=p[0].trim(); const md=(p[1]||"12-18").split("-").map(Number); const now=new Date(); let next=new Date(now.getFullYear(),md[0]-1,md[1]); if(next<now) next=new Date(now.getFullYear()+1,md[0]-1,md[1]); const days=Math.ceil((next-now)/86400000);
-$render(<vstack frame="max" spacing="7" padding="14" background="#be185d"><hstack><icon systemName="birthday.cake.fill" size="22" color="#fbcfe8"/><spacer/><text font="caption" color="#fce7f3">{name}</text></hstack><vstack frame="max" spacing="7"><text font="largeTitle" weight="bold" color="white">{days}</text><text font="callout" color="#fdf2f8">days until the celebration</text></vstack></vstack>);
+const p = ($getenv("widget-param") || "Alex,12-18").split(",");
+const name = p[0].trim();
+const md = (p[1] || "12-18").split("-").map(Number);
+const now = new Date();
+let next = new Date(now.getFullYear(), md[0] - 1, md[1]);
+if (next < now) next = new Date(now.getFullYear() + 1, md[0] - 1, md[1]);
+const days = Math.ceil((next - now) / 86400000);
+$render(
+  <vstack frame="max" spacing="7" padding="14" background="#be185d">
+    <hstack>
+      <icon systemName="birthday.cake.fill" size="22" color="#fbcfe8" />
+      <spacer />
+      <text font="caption" color="#fce7f3">
+        {name}
+      </text>
+    </hstack>
+    <vstack frame="max" spacing="7">
+      <text font="largeTitle" weight="bold" color="white">
+        {days}
+      </text>
+      <text font="callout" color="#fdf2f8">
+        days until the celebration
+      </text>
+    </vstack>
+  </vstack>,
+);

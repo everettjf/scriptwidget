@@ -28,9 +28,13 @@ $render(
     <circle frame="28,28" color="#fbbf24" />
     <circle frame="12,12" color="#fff7ed" />
     <vstack frame="max" alignment="leading" padding="12">
-      <text font="caption" weight="bold" color="#fce7f3">GOLDEN BLOOM</text>
+      <text font="caption" weight="bold" color="#fce7f3">
+        GOLDEN BLOOM
+      </text>
       <spacer />
-      <text font="caption2" color="#f9a8d4">φ · 137.507764°</text>
+      <text font="caption2" color="#f9a8d4">
+        φ · 137.507764°
+      </text>
     </vstack>
-  </zstack>
+  </zstack>,
 );

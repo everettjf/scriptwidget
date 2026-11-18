@@ -12,5 +12,5 @@ $render(
       <line axis="vertical" length="24" thickness="2" color="#f59e0b" />
       <text font="caption">Vertical line</text>
     </hstack>
-  </vstack>
+  </vstack>,
 );

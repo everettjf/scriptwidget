@@ -15,5 +15,5 @@ $render(
     <image systemName="battery.100.bolt" font="20" />
     <image systemName="battery.100.bolt" font="30" />
     <image systemName="battery.100.bolt" font="40" />
-  </vstack>
+  </vstack>,
 );

@@ -70,7 +70,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 
 - Swift: 4-space indentation, Xcode defaults, `UpperCamelCase` types and `lowerCamelCase` members. Prefer small SwiftUI views, modern Observation for new state models where deployment allows, stable `ForEach` identity, and accessibility labels for icon-only controls.
 - JavaScript/React: 2-space indentation, `UpperCamelCase` components and `lowerCamelCase` functions. Match surrounding formatting; avoid unrelated whole-file rewrites.
-- Runtime examples: keep `main.jsx` UTF-8, deterministic, within runtime budgets, and compatible with their declared permissions/hosts/plugins.
+- Runtime examples: keep `main.jsx` UTF-8, deterministic, within runtime budgets, and compatible with their declared permissions/hosts/plugins. They are formatted with Prettier (`Editor/editorfe/node_modules/.bin/prettier --no-config --print-width 100`) and commented for a reader who is new to ScriptWidget; a text with two spaces in a row must be written as a string in braces, because the formatter joins them.
 - Xcode projects use explicit file references. When adding shared Swift sources, add them to every app/widget/test target that compiles or references them, then lint both `.pbxproj` files with `plutil -lint`.
 - Preserve user-authored or unrelated dirty-worktree changes. Generated editor bundles are the exception only when deliberately rebuilt from matching frontend source.
 

@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component $getenv
-// 
+//
 
 /*
  widget-size
@@ -22,5 +22,5 @@ $render(
   <vstack frame="max">
     <text font="title">Widget Size : {widget_size}</text>
     <text font="caption">Widget Parameter : {widget_param}</text>
-  </vstack>
+  </vstack>,
 );

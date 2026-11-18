@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component text
-// 
+//
 
 $render(
   <vstack frame="max">
@@ -14,5 +14,5 @@ $render(
     <text font="caption" background="blue" color="white">
       Hello ScriptWidget
     </text>
-  </vstack>
+  </vstack>,
 );

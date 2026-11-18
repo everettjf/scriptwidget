@@ -15,12 +15,14 @@ const batteryRatio = battery.level || 0;
 const gaugeSections = [
   { color: "#22c55e", value: 0.4 },
   { color: "#fbbf24", value: 0.3 },
-  { color: "#ef4444", value: 0.3 }
+  { color: "#ef4444", value: 0.3 },
 ];
 
 $render(
   <vstack frame="max" background="#111827">
-    <text font="caption" color="#9ca3af">System Status</text>
+    <text font="caption" color="#9ca3af">
+      System Status
+    </text>
     <hstack spacing="12">
       <vstack>
         <gauge
@@ -47,7 +49,11 @@ $render(
         />
       </vstack>
     </hstack>
-    <text font="caption2" color="#9ca3af">Low Power: {$system.lowPowerMode() ? "On" : "Off"}</text>
-    <text font="caption2" color="#9ca3af">Thermal: {$system.thermalState()}</text>
-  </vstack>
+    <text font="caption2" color="#9ca3af">
+      Low Power: {$system.lowPowerMode() ? "On" : "Off"}
+    </text>
+    <text font="caption2" color="#9ca3af">
+      Thermal: {$system.thermalState()}
+    </text>
+  </vstack>,
 );

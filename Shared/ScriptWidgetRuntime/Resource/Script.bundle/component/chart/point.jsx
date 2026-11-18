@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component chart
-// 
+//
 
 let data = [
   { label: "jan/22", value: 5 },
@@ -13,16 +13,15 @@ let data = [
   { label: "may/22", value: 14 },
   { label: "jun/22", value: 27 },
   { label: "jul/22", value: 27 },
-]
+];
 
 $render(
   <vstack frame="max">
-    <chart 
+    <chart
       type="point" // required
       data={$json(data)} // required
       color="red" // optional , default black
       padding="20" // optional , general
-      >
-    </chart>
-  </vstack>
+    ></chart>
+  </vstack>,
 );

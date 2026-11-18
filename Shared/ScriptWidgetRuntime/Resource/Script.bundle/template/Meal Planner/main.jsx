@@ -1,3 +1,25 @@
 // widget-param: breakfast,lunch,dinner (optional)
-const meals=($getenv("widget-param")||"Oatmeal,Grain bowl,Pasta").split(","); const labels=["Morning","Lunch","Dinner"];
-$render(<vstack frame="max" alignment="leading" spacing="7" padding="14" background="#c2410c"><hstack frame="max" spacing="0"><text font="headline" weight="bold" color="white">Today's menu</text><spacer/><icon systemName="fork.knife" size="16" color="#ffedd5"/></hstack>{labels.map((label,i)=><hstack frame="max"><text font="caption" color="#fed7aa">{label}</text><spacer/><text font="callout" weight="semibold" color="white">{(meals[i]||"Flexible").trim()}</text></hstack>)}</vstack>);
+const meals = ($getenv("widget-param") || "Oatmeal,Grain bowl,Pasta").split(",");
+const labels = ["Morning", "Lunch", "Dinner"];
+$render(
+  <vstack frame="max" alignment="leading" spacing="7" padding="14" background="#c2410c">
+    <hstack frame="max" spacing="0">
+      <text font="headline" weight="bold" color="white">
+        Today's menu
+      </text>
+      <spacer />
+      <icon systemName="fork.knife" size="16" color="#ffedd5" />
+    </hstack>
+    {labels.map((label, i) => (
+      <hstack frame="max">
+        <text font="caption" color="#fed7aa">
+          {label}
+        </text>
+        <spacer />
+        <text font="callout" weight="semibold" color="white">
+          {(meals[i] || "Flexible").trim()}
+        </text>
+      </hstack>
+    ))}
+  </vstack>,
+);

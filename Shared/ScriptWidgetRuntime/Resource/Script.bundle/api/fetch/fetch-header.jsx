@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $fetch
-// 
+//
 
 // query json example with header
 // https://docs.github.com/en/rest/reference/projects
@@ -21,5 +21,5 @@ const models = JSON.parse(result);
 $render(
   <vstack>
     <text font="caption">Org Description: {models[2].description}</text>
-  </vstack>
+  </vstack>,
 );

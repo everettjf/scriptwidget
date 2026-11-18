@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $gradient
-// 
+//
 
 let radialGradient = {
   type: "radial",
@@ -16,5 +16,5 @@ let radialGradient = {
 $render(
   <vstack background={$gradient(radialGradient)} frame="max">
     <text font="title">RadialGradient</text>
-  </vstack>
+  </vstack>,
 );

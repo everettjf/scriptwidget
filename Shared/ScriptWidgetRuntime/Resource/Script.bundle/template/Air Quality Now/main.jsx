@@ -28,17 +28,29 @@ const current = data.current || {};
 
 $render(
   <vstack frame="max" background="#155e75">
-    <text font="caption" color="#94a3b8">Air Quality</text>
-    <text font="title2" color="#e2e8f0">AQI {current.us_aqi ?? "-"}</text>
+    <text font="caption" color="#94a3b8">
+      Air Quality
+    </text>
+    <text font="title2" color="#e2e8f0">
+      AQI {current.us_aqi ?? "-"}
+    </text>
     <hstack spacing="12">
       <vstack alignment="leading">
-        <text font="caption2" color="#94a3b8">PM2.5</text>
-        <text font="caption" color="#e2e8f0">{current.pm2_5 ?? "-"}</text>
+        <text font="caption2" color="#94a3b8">
+          PM2.5
+        </text>
+        <text font="caption" color="#e2e8f0">
+          {current.pm2_5 ?? "-"}
+        </text>
       </vstack>
       <vstack alignment="leading">
-        <text font="caption2" color="#94a3b8">PM10</text>
-        <text font="caption" color="#e2e8f0">{current.pm10 ?? "-"}</text>
+        <text font="caption2" color="#94a3b8">
+          PM10
+        </text>
+        <text font="caption" color="#e2e8f0">
+          {current.pm10 ?? "-"}
+        </text>
       </vstack>
     </hstack>
-  </vstack>
+  </vstack>,
 );

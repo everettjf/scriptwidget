@@ -10,20 +10,37 @@ if ($getenv("widget-size") === "small") {
   // Small: how much of today has passed, under a two-line greeting.
   $render(
     <vstack frame="max" background="#18181b" alignment="leading" spacing="6" padding="14">
-      <hstack><vstack alignment="leading" spacing="1"><text font="caption" color="#a1a1aa">{greeting},</text><text font="subheadline" weight="bold" color="#fafafa">{name}</text></vstack><spacer /><icon systemName="sparkles" size="18" color="#a78bfa" /></hstack>
+      <hstack>
+        <vstack alignment="leading" spacing="1">
+          <text font="caption" color="#a1a1aa">
+            {greeting},
+          </text>
+          <text font="subheadline" weight="bold" color="#fafafa">
+            {name}
+          </text>
+        </vstack>
+        <spacer />
+        <icon systemName="sparkles" size="18" color="#a78bfa" />
+      </hstack>
       <vstack frame="max,bottomLeading" alignment="leading" spacing="6">
-        <text font="title" weight="bold" color="#a78bfa">{Math.round(dayProgress * 100)}%</text>
+        <text font="title" weight="bold" color="#a78bfa">
+          {Math.round(dayProgress * 100)}%
+        </text>
         <progress value={dayProgress} total="1" color="#8b5cf6" />
-        <text font="caption2" color="#71717a">of today complete</text>
+        <text font="caption2" color="#71717a">
+          of today complete
+        </text>
       </vstack>
-    </vstack>
+    </vstack>,
   );
 } else {
   $render(
     <vstack frame="max" background="#18181b" spacing="8" padding="14">
       <hstack frame="max">
         <vstack alignment="leading" spacing="2">
-          <text font="title3" weight="bold" color="#fafafa">{greeting}, {name}</text>
+          <text font="title3" weight="bold" color="#fafafa">
+            {greeting}, {name}
+          </text>
           <date date="now" style="date" font="caption" color="#a1a1aa" />
         </vstack>
         <spacer />
@@ -32,7 +49,9 @@ if ($getenv("widget-size") === "small") {
       <divider color="#3f3f46" />
       <stat title="Focus" value="1 thing" color="#a78bfa" />
       <progress value={dayProgress} total="1" color="#8b5cf6" />
-      <text font="caption2" color="#71717a">{Math.round(dayProgress * 100)}% of today complete</text>
-    </vstack>
+      <text font="caption2" color="#71717a">
+        {Math.round(dayProgress * 100)}% of today complete
+      </text>
+    </vstack>,
   );
 }

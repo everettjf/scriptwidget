@@ -1,9 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for api $gradient
-// 
+//
 
 let angularGradient = {
   type: "angular",
@@ -14,5 +14,5 @@ let angularGradient = {
 $render(
   <vstack background={$gradient(angularGradient)} frame="max">
     <text font="title">AngularGradient</text>
-  </vstack>
+  </vstack>,
 );

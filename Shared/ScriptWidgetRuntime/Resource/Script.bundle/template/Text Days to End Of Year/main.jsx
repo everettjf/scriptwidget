@@ -1,18 +1,30 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 
 var d = new Date();
 var n = d.getDay();
 console.log(n);
 
-var a = moment().endOf('year');
+var a = moment().endOf("year");
 var b = moment();
-var days = a.diff(b, 'days');
+var days = a.diff(b, "days");
 
 $render(
   <hstack background="#0284c7" frame="max" spacing="6" padding="14">
-    <vstack alignment="leading" spacing="3"><text font="caption" color="#7dd3fc">THIS YEAR</text><text font="largeTitle" weight="bold" color="white">{days}</text><text font="caption" color="#bae6fd">days remaining</text></vstack><spacer/><icon systemName="hourglass" size="28" color="#38bdf8"/>
-  </hstack>
+    <vstack alignment="leading" spacing="3">
+      <text font="caption" color="#7dd3fc">
+        THIS YEAR
+      </text>
+      <text font="largeTitle" weight="bold" color="white">
+        {days}
+      </text>
+      <text font="caption" color="#bae6fd">
+        days remaining
+      </text>
+    </vstack>
+    <spacer />
+    <icon systemName="hourglass" size="28" color="#38bdf8" />
+  </hstack>,
 );

@@ -1,10 +1,9 @@
-// 
-// ScriptWidget 
+//
+// ScriptWidget
 // https://atomsprout.com/scriptwidget
-// 
+//
 // Usage for component button
-// 
-
+//
 
 const onButtonClick = () => {
   console.log("button tapped");
@@ -20,5 +19,5 @@ $render(
     <button action="reload">
       <text>Refresh Widget</text>
     </button>
-  </vstack>
+  </vstack>,
 );
