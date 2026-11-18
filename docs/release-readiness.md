@@ -81,10 +81,10 @@ The editor budgets are enforced by repeated CodeMirror state creation and edit t
 
 ### GitHub releases
 
-The repository's Releases list holds four products, told apart by tag prefix: `v<version>` for the Apple apps, `android-v<version>` for Android, `windows-v<version>` for Windows and `cli-v<version>` for the command line tool.
+The repository's Releases list holds five products, told apart by tag prefix: `v<version>` for the Apple apps, `android-v<version>` for Android, `windows-v<version>` for Windows, `linux-v<version>` for Linux and `cli-v<version>` for the command line tool.
 
-- The newest app release (Apple, Android or Windows) carries the Latest mark, so the repository page shows a recent date. Create it with `gh release create … --latest`.
-- A command line tool release never takes the mark, and neither does a preview of an app (such as Windows 0.1.0): create these with `--latest=false`.
+- The newest app release (Apple, Android, Windows or Linux) carries the Latest mark, so the repository page shows a recent date. Create it with `gh release create … --latest`.
+- A command line tool release never takes the mark, and neither does a preview of an app (such as Windows 0.1.0 or Linux 0.1.0): create these with `--latest=false`.
 - When an Apple version goes live on the App Store, tag the commit it was built from as `v<version>` and create a release with the App Store release notes and the two App Store links. It has no files attached.
 - Do not publish a release without notes.
 

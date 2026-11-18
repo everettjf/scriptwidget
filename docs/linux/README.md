@@ -1,19 +1,69 @@
 # ScriptWidget for Linux
 
-Status: in development on branch `linux`. There is no release yet and nothing shows on a desktop yet. What exists is the runtime, the painter and the command line (phase 1 of [plan.md](plan.md), written in Chinese). What was tested and on which machine is in [testing.md](testing.md); what is left is in [TODO.md](TODO.md).
+Status: preview, for [Omarchy](https://omarchy.org) 4.5. An archive is on [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) (tag `linux-v<version>`). What was tested and on which machine is in [testing.md](testing.md); what is left is in [TODO.md](TODO.md); the plan is in [plan.md](plan.md) (Chinese); the messages between the service and the display are in [protocol.md](protocol.md).
 
-ScriptWidget for Linux will put the same Package 2.0 widgets that run on iPhone, iPad, Mac, Android and Windows on the Linux desktop, first on [Omarchy](https://omarchy.org). It is written in Rust and runs the same shared JavaScript as Android and Windows in the same QuickJS-NG sources.
+ScriptWidget for Linux puts the same Package 2.0 widgets that run on iPhone, iPad, Mac, Android and Windows on the Linux desktop. It is written in Rust and runs the same shared JavaScript as Android and Windows in the same QuickJS-NG sources. A widget is a picture the background service draws; on Omarchy a small plugin of the Omarchy shell shows it on the desktop layer, below your windows, and passes clicks back.
 
-## Parts
+![Widgets on the Omarchy desktop](images/desktop.png)
 
-| Part | Crate | State |
-| --- | --- | --- |
-| Engine: QuickJS-NG behind a safe wrapper | `Linux/crates/sw-quickjs` | Done |
-| Runtime: packages, archives, compiler, executor, `Intl`, native APIs, Data Source Plugins, timeline | `Linux/crates/sw-core` | Done |
-| Painter: element tree to bitmap and tap regions, on Skia | `Linux/crates/sw-render` | Done; see the list of differences in [TODO.md](TODO.md) |
-| Command line `scriptwidget` | `Linux/crates/sw-cli` | The commands that need no background service |
-| Background service, Omarchy display plugin | planned `sw-host`, `Linux/omarchy-plugin` | Not started (phase 2). A throwaway check of the display is in `Linux/spikes/plugin` |
-| Management window | planned `sw-studio` (GPUI) | Not started (phase 3). A throwaway check is in `Linux/spikes/gpui` |
+On other desktops the command line and the management window work, but nothing is shown on the desktop yet.
+
+## What is in the archive
+
+| Part | What it does |
+| --- | --- |
+| `scriptwidget` | The command line, and the background service (`scriptwidget host run`): it runs the scripts on a schedule, draws the pictures and handles clicks. It opens no window |
+| `scriptwidget-studio` | The management window: your widgets, the templates, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
+| Omarchy plugin `com.atomsprout.scriptwidget` | Shows the pictures on the desktop layer and adds an entry to the bar. It only shows pictures and forwards numbers and coordinates |
+
+## Pictures
+
+The management window on Omarchy 4.5 (screenshots of the real window in the test machine):
+
+| | |
+| --- | --- |
+| ![My widgets](images/studio-library.png) | ![Templates](images/studio-templates.png) |
+| ![A template opened](images/studio-template.png) | ![Editor with live preview](images/studio-editor.png) |
+| ![Settings](images/studio-settings.png) | ![My widgets in Chinese](images/studio-library-zh.png) |
+
+The interface follows the system language when it is English or Simplified Chinese, and is English otherwise.
+
+## Installing it
+
+Needs Omarchy 4.5 (or another Arch-based system with the same libraries: ICU 78, fontconfig, FreeType, and a Vulkan driver for the management window). Download `scriptwidget-<version>-linux-<arch>.tar.gz` from [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), check it against the SHA-256 the release lists, unpack it and run:
+
+```
+sh install.sh
+```
+
+- **It installs for you only**, without root: programs in `~/.local/bin`, data in `~/.local/share/scriptwidget`, a systemd user unit `scriptwidget.service` that starts with the graphical session, a launcher entry, and on Omarchy the plugin in `~/.config/omarchy/plugins`, enabled.
+- **The archive is not signed.** Each release lists the SHA-256 of its files.
+- **Which archive.** `aarch64` was built and tested on an Omarchy 4.5 machine. `x86_64` is built and tested without a desktop by CI on Arch Linux; nobody has seen it show widgets on a desktop.
+- **It is built against ICU 78.** When the distribution moves to a newer ICU the programs stop starting until a new archive is published; see [TODO.md](TODO.md).
+- **Updating.** There is no automatic update. Run `install.sh` of the newer archive; it stops the service, replaces the programs and keeps your widgets.
+- **Removing it.** `sh uninstall.sh` keeps your widgets; `sh uninstall.sh --purge` deletes them too.
+
+## Using it
+
+- **Add a widget.** Open ScriptWidget from the launcher or the bar entry, open a template, choose "Use this template", then "Add to desktop". From a terminal: `scriptwidget install <folder or .swt>`, then `scriptwidget add <name> --family medium`.
+- **Move a widget.** Right-click the ScriptWidget entry in the bar and turn on "Arrange widgets" (or run `scriptwidget arrange`). Drag widgets; they snap to the screen edges and stay out of the bar and the dock. Turn it off when done. Outside this mode only buttons, toggles and links react; clicks anywhere else on a widget go through to the desktop.
+- **Change its size, edit or remove it.** In arrange mode, right-click the widget.
+- **See widgets above your windows.** "Show widgets on top" in the bar entry, or `scriptwidget peek`; once more puts them back.
+- **Edit.** The preview next to the code is drawn by the same painter as the desktop widget. `scriptwidget dev <folder>` watches a folder and refreshes the placed widgets of that package on save.
+- **Move a widget to another device.** Export it as a `.swt` file and open that file in ScriptWidget on the other device; a `.swt` from another device is imported the same way.
+
+## Parts in the source
+
+| Part | Crate or folder |
+| --- | --- |
+| Engine: QuickJS-NG behind a safe wrapper | `Linux/crates/sw-quickjs` |
+| Runtime: packages, archives, compiler, executor, `Intl`, native APIs, Data Source Plugins, timeline | `Linux/crates/sw-core` |
+| Painter: element tree to bitmap and tap regions, on Skia | `Linux/crates/sw-render` |
+| Background service | `Linux/crates/sw-host` |
+| Command line `scriptwidget` | `Linux/crates/sw-cli` |
+| Management window, on GPUI and gpui-kit | `Linux/crates/sw-studio` |
+| Omarchy plugin (QML) | `Linux/omarchy-plugin` |
+| Archive, installer, systemd unit, desktop entry | `Linux/packaging`, `Linux/scripts/package.sh` |
 
 ## Building
 
@@ -25,12 +75,16 @@ node Linux/scripts/build-shared-js.mjs        # shared JavaScript -> Linux/asset
 cd Linux
 cargo test --locked --workspace
 cargo build --locked --release -p sw-cli      # target/release/scriptwidget
+cargo build --locked --release -p sw-studio --features ui   # target/release/scriptwidget-studio
 sh scripts/asan-test.sh                       # engine binding tests with AddressSanitizer in QuickJS (Linux only)
+sh scripts/package.sh                         # Linux/artifacts/scriptwidget-<version>-linux-<arch>.tar.gz
 ```
+
+The management window is behind the `ui` feature, off by default, so that `cargo test --workspace` needs no graphical libraries; with it the build also needs the development files of libxkbcommon, libxcb, Wayland and Vulkan. The "Linux release archive" workflow builds the x86_64 archive on Arch Linux; the aarch64 archive is built with `package.sh` on an aarch64 Omarchy machine.
 
 Run `node Linux/scripts/build-shared-js.mjs` again after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`. Those sources are shared with Android and Windows: a change there needs their suites as well.
 
-`Linux/assets`, `Linux/tests/assets` and `Linux/target` are generated and not checked in.
+`Linux/assets`, `Linux/tests/assets`, `Linux/target` and `Linux/artifacts` are generated and not checked in.
 
 ### Where the program finds its files
 
@@ -60,7 +114,13 @@ Every command prints one JSON report on standard output; errors and warnings are
 | `scriptwidget pack <dir> [file.swt] [--force]` | Exports a `.swt` |
 | `scriptwidget install <.swt or dir>`, `list`, `templates` | Installed packages and bundled templates |
 | `scriptwidget doctor` | Checks the installation: files, engine, painter, fonts, data folder |
-| `add`, `remove`, `widgets`, `refresh`, `dev`, `peek`, `arrange`, `watch`, `tap`, `move`, `screen`, `theme`, `menu` | Need the background service, which does not exist yet: exit code 69 |
+| `scriptwidget host run` | The background service. Normally started by the systemd user unit |
+| `scriptwidget add <package> [--family F]`, `remove <id>`, `widgets`, `refresh [id]` | Widgets on the desktop |
+| `scriptwidget dev <folder>` | Watches a package folder and refreshes its placed widgets on save |
+| `scriptwidget peek`, `arrange` | Toggle "on top" and arrange mode |
+| `watch`, `tap`, `move`, `screen`, `theme`, `menu`, `session` | Used by the display; see [protocol.md](protocol.md) |
+
+The commands from `add` on need the background service; without it they exit with 69 and say how to start it.
 
 Families: `small` 170×170, `medium` 329×170, `large` 329×345, `extraLarge` 639×345 points, multiplied by `--scale` (default 2).
 
@@ -70,7 +130,7 @@ Families: `small` 170×170, `medium` 329×170, `large` 329×345, `extraLarge` 63
 | 1 | The package, archive or script is at fault |
 | 2 | Usage or environment: missing folder, unwritable or unsafe output, missing runtime files |
 | 3 | Internal error |
-| 69 | Needs the background service |
+| 69 | The background service is not running |
 
 Every report has `reportVersion` (1), `command`, `status` (`passed`, `failed`, `error`), `ok`, `tool`, `error` and `diagnostics`. Package commands add `backend` (`linux-native`), `package`, `sourceHash`, `manifest` and `checks` (`package`, `compile`, `execute`, `render`, `export`, each `passed`, `failed` or `notRun`).
 
@@ -94,9 +154,15 @@ Every bundled package that needs no live data produces the same element tree on 
 | Area | On Linux |
 | --- | --- |
 | Rendering modes | Always `fullColor`; `backgroundMaterial` uses the opaque `background` fallback |
-| Fonts | Inter and the six display fonts are built into the program. Chinese, Japanese, Korean and emoji use system fonts found through fontconfig; the order of the Chinese, Japanese and Korean faces follows the locale. Monospace and serif are the user's fontconfig choices |
+| Fonts | Inter is built into the program. The six display fonts of the other platforms are not shipped, because the repository records no licence for them: text that asks for one is drawn with Inter, unless the font file is put in `~/.local/share/scriptwidget/fonts` (or the folder `SCRIPTWIDGET_FONTS` names). Chinese, Japanese, Korean and emoji use system fonts found through fontconfig; the order of the Chinese, Japanese and Korean faces follows the locale. Monospace and serif are the user's fontconfig choices |
 | `animation` | The first frame, as on Android and Windows |
-| `<gif>` | Every frame is decoded with its delay (at most 60 frames) for the display to cycle; one render shows the first frame |
+| `<gif>` | Animated on the desktop, at most 60 frames; `render` and the previews show the first frame |
+| `<date>` | A running timer is redrawn every second and a clock time every minute |
+| Timeline | The script runs again at each transition |
+| Links | `http`, `https` and `mailto` links open with `xdg-open`. Other schemes are refused |
+| Refresh | Every 15 minutes by default (5 minutes to 24 hours in the settings), at timeline transitions, after the theme or a screen changes, after sleep, and on demand |
+| Dark mode | Follows the brightness of the Omarchy theme |
+| Where widgets live | On the desktop layer of Omarchy, placed anywhere; not in a panel or dashboard |
 | `$device`, `$system` | `model` is `"PC"`, `name` and `hostName` are the host name, `brightness` is `1`, `thermalState` is `"nominal"`; the battery is the first system battery under `/sys/class/power_supply`, and a machine without one reports level 1 and `"full"`; `systemVersion` is `VERSION_ID` from `os-release`, or the kernel release where there is none |
 | `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource`, `$weather` | Yes, with the same permissions, network-domain declarations, private-address refusal and budgets. `$weather` is the MET Norway forecast |
 | `$calendar`, `$reminders`, `$health`, `$photos`, `$contacts`, `$documents`, `$home`, `$icloud`, `$alarms`, `$maps`, `$services`, `$music`, `$notifications`, `$location` | No. `isAvailable()` returns `false` and calls reject with `[unsupported_platform]`. Templates that use one are left out of the template list |
@@ -109,4 +175,6 @@ Scripts, imported archives and network responses are untrusted, as on every plat
 - **Archives** are checked whole before anything is extracted (entry count, file size, expanded size, names), extracted through the same reading of the archive that checked them, into a unique staging folder on the same filesystem, and published with a rename that refuses to replace anything.
 - **Network.** Requests go over a small HTTP/1.1 client on rustls. It resolves the host itself, refuses private, loopback and link-local addresses, and connects only to the address it checked. Redirects are followed by hand with the same checks at every hop, and a redirect to another origin does not receive the `Authorization` or `Cookie` header the script set. The system proxy is not used. Requests name the client as `ScriptWidget-Linux/<version>` unless the script sets its own `User-Agent`.
 - **Engine isolation.** Package code runs inside the program's process, as on the other platforms: QuickJS exposes no system interface, and memory, stack and time are bounded.
+- **Service socket.** `$XDG_RUNTIME_DIR/scriptwidget/host.sock` is readable by the user only, and the service checks that the peer is the same user. Requests are single lines that name packages, widget ids, integers and fixed words; nothing received is run as code or used as a path.
+- **The display plugin** runs inside the Omarchy shell, unsandboxed like every plugin, so it is kept small: it shows PNG files from the service's own folder, ignores any other path, and sends back only a widget id with a region number or coordinates. Which action a region stands for is looked up in the service.
 - **Command line output.** `render --output` and `pack` write a private temporary file and rename it; they refuse a symlink at the output name and any output inside the package.

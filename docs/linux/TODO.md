@@ -2,17 +2,24 @@
 
 The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](testing.md).
 
-## Before anything is released
+## Known limits of the preview
 
-- **Licences of the six display fonts.** The repository records the licence of Inter only (`OFL-Inter.txt`). The six display fonts under `Android/core/src/main/assets/fonts` are built into the Linux program and need their licence files recorded before a release.
-- **A real Linux computer.** Everything ran in one virtual machine with a virtual GPU. Not tested: a real GPU, an input method, display scales above 1, several displays, sleep and wake.
+- **Tested on one machine.** Everything a person can see was tested in one aarch64 Omarchy 4.5 virtual machine with a virtual GPU, one 1920×1080 display at scale 1, and a virtual pointer instead of a hand. Not tested: a real computer, a real GPU, display scales above 1, several displays, a light theme, sleep and wake, a restart of the computer with the service enabled, an input method.
+- **The x86_64 archive** is built and tested without a desktop by CI on Arch Linux. Nobody has seen it show widgets.
+- **ICU.** The programs link the system's ICU 78 by its versioned name. When Arch and Omarchy move to ICU 79 they stop starting until a new archive is built. Fix: link ICU statically, or publish an AUR source package that is rebuilt on the user's machine.
+- **Display fonts.** The six display fonts of the other platforms (Apple ][, Larabiefont Free, Monofonto, White Rabbit, OneSlot, Unispace) are not shipped: the repository records no licence for them, and the notice inside `Unispace.ttf` forbids redistribution. Text that asks for one is drawn with Inter. The same files ship in the iPhone, Android and Windows apps; their licences need to be settled there too.
+- **The archive is not signed**, and its third-party notices are a hand-written summary, not a generated list of every crate licence.
+- **No AUR package and no entry in the Omarchy plugin catalog.** The plugin is installed by `install.sh` from the archive.
 
-## Phases still to do
+## Still to do
 
-- **Phase 2: background service and display.** `sw-host`, the commands that need it (`add`, `remove`, `widgets`, `refresh`, `dev`, `peek`, `arrange`, `watch`, `tap`, `move`, `screen`, `theme`, `menu`), the Omarchy plugin (`service` and `bar-widget`), GIF frame cycling, the per-second and per-minute redraw of `<date>`, refresh scheduling.
-- **Phase 3: management window** with GPUI and `gpui-kit` (pin the version: it is released weekly).
-- **Phase 4: packaging.** GitHub release `linux-v<version>`, AUR package, plugin repository. Remove `Linux/spikes` once phases 2 and 3 have replaced them.
-- `docs/platform-support.md` has no Linux column yet; add it when there is something a user can install.
+- **Lock screen.** Omarchy locks through its own shell and sends nothing on logind, and the plugin does not report it, so the service keeps refreshing behind the lock screen.
+- **Screens.** No message tells the service a display went away; scales above 1 and moving widgets between displays have code but never ran.
+- **Time zone changes** are not noticed until the next refresh.
+- **Management window:** closing it with unsaved changes does not ask (moving to another page does); no "new file" button; the components and API reference pages of the Windows app are missing; changing the refresh interval writes the setting but does not tell the running service; in the test machine the editor's blinking cursor costs a quarter of a core under software rendering.
+- **Plugin:** frames do not pause behind ordinary windows or on the lock screen; the bar entry starts `scriptwidget-studio` without checking that it exists; widgets are not moved when the dock appears later; the Chinese strings were not seen on screen.
+- **Service:** real suspend and resume, timeline transitions end to end, and the path that drops a slow display were not exercised; `doctor` does not ask the plugin for its status.
+- `docs/platform-support.md` lists Linux; the website and the user READMEs do not yet.
 
 ## Runtime
 
@@ -32,7 +39,7 @@ Differences from the Windows painter, or things not compared:
 
 - No picture has been compared pixel for pixel with Windows or iPhone; about 25 pictures were looked at by eye.
 - Live date slots, motion slots and scrolling-list slots are not ported: Linux draws again instead, and a `<list>` is drawn in place with only its visible tap targets.
-- GIF: every frame keeps its own delay (at most 60 frames, 8 MB, 16 million pixels); Windows samples 24 frames. Showing frame N decodes frames 0 to N again: the service has to cache decoded frames.
+- GIF: every frame keeps its own delay (at most 60 frames, 8 MB, 16 million pixels); Windows samples 24 frames. The service caches decoded frames while it draws an animation.
 - Images are decoded at full size before being reduced (limit 40 megapixels). HEIC is probably not decodable; not tested.
 - Rounded corners of the widget itself are left to the display, as on Windows.
 - Gradients interpolate premultiplied (as CSS and Windows; Android does not). Conic gradients use Skia's sweep gradient.
@@ -45,7 +52,7 @@ Differences from the Windows painter, or things not compared:
 
 ## Tests and tooling
 
-- `clippy` reports style warnings in `sw-render`; CI runs it without failing on warnings.
+- `clippy` reports style warnings in `sw-render`; CI runs it without failing on warnings. CI does not build the management window (`ui` feature); the release workflow does.
 - AddressSanitizer covers the engine binding tests only.
 - The 14 bundled templates that ask the network were not rendered anywhere.
 - Not tested: a real `/usr/share/scriptwidget` installation, two `install` commands at once, the `openat2` fallback being chosen by a kernel without it, a filesystem without `RENAME_NOREPLACE`.
