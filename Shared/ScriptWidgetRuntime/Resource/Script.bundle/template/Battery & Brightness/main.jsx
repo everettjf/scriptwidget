@@ -4,11 +4,18 @@
 //
 // Battery & Brightness
 //
+// Shows two device readings. Try changing the colors or adding a third reading.
+//
 
+// Read the data. $device.battery() returns { level, state }: level goes from 0 to 1 and
+// state is a word such as "unplugged". $system.brightness() is the screen brightness,
+// also from 0 to 1.
 const battery = $device.battery();
 const brightness = $system.brightness();
+// The level as a whole-number percentage, as text: for example "80".
 const percent = (battery.level * 100).toFixed(0);
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 if ($getenv("widget-size") === "small") {
   // Small: the battery level, with the brightness as one line under it.
   $render(
@@ -24,6 +31,7 @@ if ($getenv("widget-size") === "small") {
         {percent}%
       </text>
       <badge text={battery.state} color="#4ade80" />
+      {/* A Mac reports a brightness of -1 (unknown), so a dash is shown for a negative value. */}
       <hstack spacing="6">
         <icon systemName="sun.max.fill" size="14" color="#38bdf8" />
         <text font="caption" color="#7dd3fc">
@@ -33,6 +41,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Medium and larger: battery on the left, brightness on the right, a line between.
   $render(
     <hstack frame="max" spacing="18" padding="16" background="#111827">
       <vstack alignment="leading" spacing="6">

@@ -2,16 +2,22 @@
 // ScriptWidget
 // https://atomsprout.com/scriptwidget
 //
+// Datetime Timezone
+// Shows the time in three cities. Try changing the cities and their time zone names.
 //
 
+// The size being drawn, and the widget's parameter (read here, but not used below).
 const widget_size = $getenv("widget-size");
 const widget_param = $getenv("widget-param");
 
+// The time in a zone such as "Asia/Shanghai", as hours and minutes in the device's own
+// format. The text is worked out when the script runs.
 const time = (zone) =>
   new Date().toLocaleTimeString([], { timeZone: zone, hour: "2-digit", minute: "2-digit" });
 
 if (widget_size === "small") {
   // Small: one city on each line.
+  // A component for one line: the city on the left, its time on the right.
   const City = ({ name, zone }) => (
     <hstack>
       <text font="caption" color="#94a3b8">
@@ -38,6 +44,7 @@ if (widget_size === "small") {
     </vstack>,
   );
 } else {
+  // Medium and larger: the three cities side by side.
   $render(
     <vstack frame="max" spacing="8" padding="14" background="#111827">
       <hstack frame="max">
