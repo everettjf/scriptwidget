@@ -35,7 +35,16 @@ function literal(raw, jsx = false) {
 export function parseVisualLayout(source) {
   const model = { formatVersion: 1, source, nodes: [], roots: [], issue: "" };
   if (typeof source !== "string" || new TextEncoder().encode(source).length > maximumSource) return { ...model, issue: "Layout editing supports source files up to 512 KiB." };
-  const tree = parser.parse(source);
+  // The grammar does not read a JSX comment child, `{/* … */}`, and reports
+  // the rest as a syntax error. Parse a copy in which each one is `{0   }` of
+  // the same length, and leave those children out below. Ranges are unchanged,
+  // and everything shown or edited is still read from `source`.
+  const comments = new Set();
+  const parsedText = source.replace(/\{\s*(?:\/\*[\s\S]*?\*\/\s*)+\}/g, (whole, offset) => {
+    comments.add(offset);
+    return `{0${whole.slice(2, -1).replace(/[^\r\n]/g, " ")}}`;
+  });
+  const tree = parser.parse(parsedText);
   let syntaxError = false;
   tree.iterate({ enter: node => { if (node.type.isError) syntaxError = true; } });
   if (syntaxError) return { ...model, issue: "Fix the JavaScript/JSX syntax before using Layout. Your source is preserved." };
@@ -68,12 +77,15 @@ export function parseVisualLayout(source) {
     row.reason = spread ? "Spread properties are preserved; edit this element in Code." : duplicate ? "Duplicate properties are preserved; resolve them in Code." : !definition ? "Custom components and fragments are preserved; edit them in Code." : "";
     if (row.locked) row.properties.forEach(property => { property.editable = false; });
     model.nodes.push(row);
-    const content = paired ? parts.slice(1, -1) : [];
+    const content = (paired ? parts.slice(1, -1) : []).filter(child => !(child.name === "JSXEscape" && comments.has(child.from)));
     for (const child of content) if (child.name === "JSXElement") row.children.push(element(child, row.id, depth + 1).id);
     row.structure = !row.locked && paired && containers.has(component) && content.every(child => child.name === "JSXElement" || (child.name === "JSXText" && !slice(source, child).trim())) && row.children.every(id => !model.nodes.find(child => child.id === id).locked);
     if (!row.locked && component === "Text" && paired && content.length === 1) {
       const child = content[0], raw = slice(source, child);
-      const value = child.name === "JSXText" && !/[\r\n]/.test(raw) ? textEntity(raw) : child.name === "JSXEscape" ? literal(raw.slice(1, -1)) : undefined;
+      // Text on a line of its own between the tags is the same text: JSX drops
+      // the line breaks and the indentation around it.
+      const alone = /[\r\n]/.test(raw) && !/[\r\n]/.test(raw.trim()) ? raw.trim() : null;
+      const value = child.name === "JSXText" && alone ? textEntity(alone) : child.name === "JSXText" && !/[\r\n]/.test(raw) ? textEntity(raw) : child.name === "JSXEscape" ? literal(raw.slice(1, -1)) : undefined;
       if (typeof value === "string") { row.text = value; row.textEditable = true; }
     }
     return row;
@@ -83,7 +95,8 @@ export function parseVisualLayout(source) {
       if (node.name !== "CallExpression") return;
       const parts = children(node.node);
       if (parts[0]?.name !== "VariableName" || slice(source, parts[0]) !== "$render" || parts[1]?.name !== "ArgList") return;
-      const args = children(parts[1]).filter(child => !["(", ")"].includes(child.name));
+      // A comma after the element and comments beside it are not arguments.
+      const args = children(parts[1]).filter(child => !["(", ")", ",", "LineComment", "BlockComment"].includes(child.name));
       if (args.length === 1 && args[0].name === "JSXElement") { model.roots.push(element(args[0], null, 0).id); return false; }
     } });
   } catch (error) { return { ...model, nodes: [], roots: [], issue: error.message }; }
