@@ -7,9 +7,14 @@ const links = [
   { href: productLinks.ios, name: "iOS & iPadOS", detail: "Download on the App Store", icon: Smartphone },
   { href: productLinks.mac, name: "macOS", detail: "Download on the Mac App Store", icon: Monitor },
   { href: productLinks.android, name: "Android APK", detail: "GitHub release · Android 15+", icon: Smartphone },
+  { href: productLinks.windows, name: "Windows (preview)", detail: "GitHub release · Windows 11", icon: Monitor },
+  { href: productLinks.linux, name: "Linux (preview)", detail: "GitHub release · Omarchy 4.5", icon: Monitor },
   { href: productLinks.website, name: "Official website", detail: "ScriptWidget home", icon: Globe },
   { href: productLinks.discord, name: "Discord community", detail: "Discuss widgets and get help", icon: MessageCircle },
 ];
+
+// The entries before the separator are downloads; the rest are places to go.
+const downloads = links.findIndex((link) => link.href === productLinks.website);
 
 export function ProductLinks() {
   return (
@@ -24,7 +29,7 @@ export function ProductLinks() {
             <DropdownMenu.Label className="px-2 py-1.5 text-xs font-medium text-muted-foreground">Download ScriptWidget</DropdownMenu.Label>
             {links.map(({ href, name, detail, icon: Icon }, index) => (
               <div key={href}>
-                {index === 3 && <DropdownMenu.Separator className="my-1 h-px bg-border" />}
+                {index === downloads && <DropdownMenu.Separator className="my-1 h-px bg-border" />}
                 <DropdownMenu.Item asChild>
                   <a href={href} target="_blank" rel="noopener noreferrer"
                     className="flex items-center gap-3 rounded-md px-2 py-2.5 outline-none data-highlighted:bg-accent data-highlighted:text-accent-foreground">

@@ -19,7 +19,7 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 - **Management window:** closing it with unsaved changes does not ask (moving to another page does); no "new file" button; the components and API reference pages of the Windows app are missing; changing the refresh interval writes the setting but does not tell the running service; in the test machine the editor's blinking cursor costs a quarter of a core under software rendering.
 - **Plugin:** frames do not pause behind ordinary windows or on the lock screen; the bar entry starts `scriptwidget-studio` without checking that it exists; widgets are not moved when the dock appears later; the Chinese strings were not seen on screen.
 - **Service:** real suspend and resume, timeline transitions end to end, and the path that drops a slow display were not exercised; `doctor` does not ask the plugin for its status.
-- `docs/platform-support.md` lists Linux; the website and the user READMEs do not yet.
+- `docs/platform-support.md`, the website and Web Studio list Linux; the root README files do not yet.
 
 ## Runtime
 
