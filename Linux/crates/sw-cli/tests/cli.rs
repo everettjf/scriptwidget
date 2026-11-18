@@ -218,16 +218,12 @@ fn mistakes_on_the_command_line_exit_with_2_and_say_why() {
     assert!(!sandbox.path("work/x.png").exists() && !sandbox.path("escape").exists());
 }
 
+// The commands that need the background service are tested in `desktop.rs`.
 #[test]
-fn desktop_commands_say_that_they_need_the_background_service() {
+fn a_desktop_command_without_a_session_needs_the_service() {
     let sandbox = Sandbox::new();
-    for command in ["add", "remove", "widgets", "refresh", "dev", "peek", "arrange", "watch", "tap", "move", "screen", "theme", "menu"] {
-        let outcome = sandbox.run(&[command, "anything", "--family", "small"]);
-        let report = outcome.expect(EXIT_NEEDS_SERVICE);
-        assert_eq!(report["command"], command);
-        assert_eq!(report["error"]["kind"], "service.unavailable");
-        assert!(outcome.stderr.contains("needs the background service, which is not available yet"), "{}", outcome.stderr);
-    }
+    let outcome = sandbox.run(&["widgets"]);
+    assert_eq!(outcome.expect(EXIT_NEEDS_SERVICE)["error"]["kind"], "service.unavailable");
 }
 
 #[test]

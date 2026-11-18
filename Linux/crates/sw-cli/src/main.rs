@@ -3,10 +3,15 @@
 //! runtime the desktop service uses, and needs no graphical session.
 //!
 //! Every command prints one JSON report on standard output and exits with one
-//! of the codes in [`report`]. See `commands::USAGE`.
+//! of the codes in [`report`]. See `commands::USAGE`. The exceptions are in
+//! [`desktop`]: `watch` and `dev` print one line of JSON at a time, and
+//! `host run` is the background service itself. The service is this same
+//! program so that one file is installed and the command line can never be a
+//! different version from the service it talks to.
 
 mod arguments;
 mod commands;
+mod desktop;
 mod output;
 mod report;
 
@@ -35,7 +40,17 @@ fn dispatch(command: &str, rest: &[String]) -> Result<Report, Failure> {
             report.set("version", serde_json::json!(env!("CARGO_PKG_VERSION")));
             Ok(report)
         }
-        _ if commands::SERVICE_COMMANDS.contains(&command) => Err(commands::needs_service(command)),
+        "add" => desktop::add(command, rest),
+        "remove" => desktop::remove(command, rest),
+        "widgets" => desktop::widgets(command, rest),
+        "refresh" => desktop::refresh(command, rest),
+        "peek" | "arrange" => desktop::switch(command, rest),
+        "tap" => desktop::tap(command, rest),
+        "move" => desktop::move_widget(command, rest),
+        "screen" => desktop::screen(command, rest),
+        "theme" => desktop::theme(command, rest),
+        "menu" => desktop::menu(command, rest),
+        "session" => desktop::session(command, rest),
         _ => Err(Failure::usage(format!("Unknown command {command}. scriptwidget --help lists the commands."))),
     }
 }
@@ -51,6 +66,10 @@ fn execute() -> i32 {
             Err(_) => return Report::from_failure("", &Failure::usage("Arguments must be valid UTF-8")).finish(),
         }
     }
+    // Installed under the name the plan gives the service, the program is the service.
+    if std::env::args_os().next().is_some_and(|program| std::path::Path::new(&program).file_name().is_some_and(|name| name == "scriptwidget-host")) {
+        arguments.splice(0..0, ["host".to_owned(), "run".to_owned()]);
+    }
     let Some(command) = arguments.first().cloned() else {
         eprint!("{}", commands::USAGE);
         return EXIT_USAGE;
@@ -58,6 +77,10 @@ fn execute() -> i32 {
     if matches!(command.as_str(), "--help" | "-h" | "help") {
         print!("{}", commands::USAGE);
         return 0;
+    }
+    // The commands that print lines for as long as they run, and the service itself.
+    if let Some(code) = desktop::stream(&command, &arguments[1..]) {
+        return code;
     }
     let report = dispatch(&command, &arguments[1..]).unwrap_or_else(|failure| Report::from_failure(&command, &failure));
     report.finish()

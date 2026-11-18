@@ -183,6 +183,13 @@ impl Library {
         Ok(())
     }
 
+    /// Removes one file of an installed package; a file that is already gone is not an error.
+    pub fn delete_file(&self, name: &str, path: &str) -> Result<(), PackageError> {
+        self.store.delete_file(name, path)?;
+        self.clear_build(name);
+        Ok(())
+    }
+
     /// Removes the compiled-artifact cache of a package.
     pub fn clear_build(&self, name: &str) {
         if let Some(installed) = self.find(name) {

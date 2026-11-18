@@ -15,6 +15,7 @@ mod css;
 mod dom;
 mod fonts;
 pub mod gif;
+pub mod gif_cache;
 mod images;
 mod painter;
 #[cfg(test)]

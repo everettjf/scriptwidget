@@ -30,6 +30,7 @@
 pub mod archive;
 mod disk_files;
 mod error;
+mod file_remover;
 mod file_writer;
 pub mod limits;
 pub mod manifests;

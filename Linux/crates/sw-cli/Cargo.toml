@@ -13,6 +13,7 @@ path = "src/main.rs"
 [dependencies]
 sw-core.workspace = true
 sw-render.workspace = true
+sw-host.workspace = true
 # The element tree of a report nests deeper than serde_json reads by default.
 serde_json = { workspace = true, features = ["unbounded_depth"] }
 serde.workspace = true

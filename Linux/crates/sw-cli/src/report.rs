@@ -20,7 +20,7 @@ pub const EXIT_FAILED: i32 = 1;
 pub const EXIT_USAGE: i32 = 2;
 /// ScriptWidget itself failed.
 pub const EXIT_INTERNAL: i32 = 3;
-/// The command needs the background service, which this version does not have (`EX_UNAVAILABLE` of sysexits.h).
+/// The command needs the background service, which is not running (`EX_UNAVAILABLE` of sysexits.h).
 pub const EXIT_NEEDS_SERVICE: i32 = 69;
 
 /// Why a command stopped before it had a result of its own.

@@ -39,7 +39,9 @@ impl Arguments {
             let argument = &arguments[index];
             index += 1;
             if options_ended || !argument.starts_with("--") {
-                if !options_ended && argument.len() > 1 && argument.starts_with('-') {
+                // A negative number is a value (`move <id> <screen> -20 40`), not an option.
+                let negative_number = argument.len() > 1 && argument[1..].bytes().all(|byte| byte.is_ascii_digit() || byte == b'.') && argument.as_bytes()[1].is_ascii_digit();
+                if !options_ended && argument.len() > 1 && argument.starts_with('-') && !negative_number {
                     return Err(Failure::usage(format!("Unknown option {argument}")));
                 }
                 parsed.positionals.push(argument.clone());
@@ -145,5 +147,10 @@ mod tests {
         }
         assert!(parse(&["pkg", "--format", "json"]).is_ok());
         assert_eq!(parse(&["-"]).unwrap().positional(0), Some("-"));
+        // A negative number is a value.
+        let parsed = parse(&["-20", "-4.5"]).unwrap();
+        assert_eq!((parsed.positional(0), parsed.positional(1)), (Some("-20"), Some("-4.5")));
+        assert!(parse(&["-.5"]).is_err());
+        assert!(parse(&["-2x"]).is_err());
     }
 }

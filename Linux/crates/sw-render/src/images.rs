@@ -66,7 +66,7 @@ impl PackageImageSource {
                 self.timelines.insert(source.to_owned(), timeline.clone());
                 let timeline = timeline?;
                 let frame = self.gif_time.map_or(0, |time| timeline.frame_at(time));
-                let (_, pixels) = gif::decode_frame(&data, frame)?;
+                let (_, pixels) = crate::gif_cache::frame(&data, frame)?;
                 let info = ImageInfo::new((timeline.width as i32, timeline.height as i32), ColorType::RGBA8888, AlphaType::Premul, None);
                 return images::raster_from_data(&info, Data::new_copy(&pixels), info.min_row_bytes());
             }

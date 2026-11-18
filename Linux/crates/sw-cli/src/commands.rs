@@ -25,7 +25,7 @@ use sw_render::{Presentation, RenderOutput, WidgetRenderer};
 
 use crate::arguments::{Arguments, Shape};
 use crate::output;
-use crate::report::{EXIT_FAILED, EXIT_NEEDS_SERVICE, Failure, Report};
+use crate::report::{EXIT_FAILED, Failure, Report};
 
 pub const USAGE: &str = "\
 Usage: scriptwidget <command> [options]
@@ -55,24 +55,41 @@ Library commands (use your data folder, or --data <dir>):
   templates                           List the bundled templates that run on Linux.
   doctor                              Check this installation.
 
-Desktop commands (need the background service, which this version does not have yet):
-  add remove widgets refresh dev peek arrange watch tap move screen theme menu
+Desktop commands (need the background service):
+  add <package> [--family <name>]     Put a widget of an installed package on the desktop.
+  remove <id>                         Take a widget off the desktop.
+  widgets                             List the widgets on the desktop.
+  refresh [<id>] [--package <name>]   Run one widget, the widgets of a package, or all of them again.
+  dev <dir> [--family <name>] [--adopt]
+                                      Copy a package folder into the library whenever it changes and
+                                      refresh its widgets; prints one JSON line each time.
+  peek [on|off|toggle]                Raise the widgets above the windows, or put them back.
+  arrange [on|off|toggle]             Turn arrange mode on or off.
 
-Every command prints one JSON report on standard output; errors and warnings
-also go to standard error. Exit codes: 0 passed, 1 the package is at fault,
-2 usage or environment, 3 internal error, 69 the background service is needed.
+For the display (see docs/linux/protocol.md):
+  watch                               Print the display events, one JSON object a line.
+  tap <id> <n> [<version>]            Region n of a widget was tapped.
+  move <id> <screen> <x> <y>          A widget was dragged to a new place.
+  screen <name> <scale> <width> <height>
+                                      A screen's name, scale and logical size.
+  theme <dark|light>                  The theme of the desktop.
+  menu <id> <word>                    resize-small, resize-medium, resize-large, resize-extraLarge,
+                                      edit, remove or refresh.
+  session <locked|unlocked>           The session was locked or unlocked.
+
+The background service:
+  host run                            Run the service in this session until it is told to stop.
+                                      Usually started by systemd: systemctl --user start scriptwidget.service
+
+Every command except watch, dev and host prints one JSON report on standard
+output; errors and warnings also go to standard error. Exit codes: 0 passed,
+1 the package is at fault, 2 usage or environment, 3 internal error,
+69 the background service is not running.
 ";
-
-/// The commands that talk to the background service (`scriptwidget-host`), which arrives in phase 2.
-pub const SERVICE_COMMANDS: [&str; 13] = ["add", "remove", "widgets", "refresh", "dev", "peek", "arrange", "watch", "tap", "move", "screen", "theme", "menu"];
-
-pub fn needs_service(command: &str) -> Failure {
-    Failure::new(EXIT_NEEDS_SERVICE, "service.unavailable", format!("scriptwidget {command} needs the background service, which is not available yet in this version."))
-}
 
 // What every command needs
 
-fn resources() -> Result<Resources, Failure> {
+pub(crate) fn resources() -> Result<Resources, Failure> {
     Resources::locate().map_err(|error| Failure::environment("tool.resources_missing", error.to_string()))
 }
 
@@ -89,7 +106,7 @@ fn runtime(scripts: &Arc<SharedScripts>, paths: &DataPaths) -> Result<WidgetRunt
 }
 
 /// The data folder of the user, or the one `--data` names.
-fn user_data(arguments: &Arguments) -> Result<DataPaths, Failure> {
+pub(crate) fn user_data(arguments: &Arguments) -> Result<DataPaths, Failure> {
     DataPaths::new(arguments.value("data").map(Path::new)).map_err(|error| Failure::environment("tool.data_directory", format!("The data folder cannot be used: {error}")))
 }
 
@@ -136,7 +153,7 @@ fn round(value: f64, digits: i32) -> f64 {
 // The package stage
 
 /// The absolute path of a package folder the user named. It must be a directory itself, not a link to one.
-fn package_directory(text: &str) -> Result<PathBuf, Failure> {
+pub(crate) fn package_directory(text: &str) -> Result<PathBuf, Failure> {
     let directory = std::path::absolute(Path::new(text)).unwrap_or_else(|_| PathBuf::from(text));
     match std::fs::symlink_metadata(&directory) {
         Ok(metadata) if metadata.is_dir() => Ok(directory),
@@ -450,7 +467,7 @@ pub fn timeline(command: &str, arguments: &[String]) -> Result<Report, Failure> 
 // pack
 
 /// The name of the archive's top-level folder: the folder's own name when it is a package name, else the manifest's.
-fn archive_name(directory: &Path, manifest: Option<&sw_core::json::Object>) -> String {
+pub(crate) fn archive_name(directory: &Path, manifest: Option<&sw_core::json::Object>) -> String {
     let folder = directory.file_name().and_then(|name| name.to_str()).filter(|name| names::is_valid(name)).map(str::to_owned);
     folder.or_else(|| manifest.and_then(|manifest| manifests::string_value(manifest, "name")).filter(|name| names::is_valid(name))).unwrap_or_else(|| "Widget".into())
 }
@@ -813,7 +830,20 @@ pub fn doctor(command: &str, arguments: &[String]) -> Result<Report, Failure> {
             }
         }
     }
-    // The background service arrives in phase 2; until then there is nothing to ask.
-    report.check_not_run("service");
+    // The background service is optional for everything above: not running is not a fault of the installation.
+    match crate::desktop::status() {
+        Ok(Some(status)) => {
+            report.check("service", true);
+            report.set("service", json!({ "running": true, "protocol": status["protocol"], "version": status["service"], "widgets": status["widgets"], "watchers": status["watchers"], "locked": status["locked"] }));
+        }
+        Ok(None) => {
+            report.check_not_run("service");
+            report.set("service", json!({ "running": false }));
+        }
+        Err(failure) => {
+            report.check("service", false);
+            report.fail(EXIT_FAILED, &failure.code, &failure.message);
+        }
+    }
     Ok(report)
 }
