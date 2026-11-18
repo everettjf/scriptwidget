@@ -795,6 +795,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "sw-core",
+ "sw-host",
  "sw-render",
 ]
 
@@ -819,6 +820,20 @@ dependencies = [
  "unicode-normalization",
  "unicode-properties",
  "unicode-segmentation",
+ "url",
+]
+
+[[package]]
+name = "sw-host"
+version = "0.1.0"
+dependencies = [
+ "getrandom 0.3.4",
+ "libc",
+ "serde",
+ "serde_json",
+ "sha2",
+ "sw-core",
+ "sw-render",
  "url",
 ]
 

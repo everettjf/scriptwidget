@@ -1,0 +1,18 @@
+[package]
+name = "sw-host"
+description = "The ScriptWidget background service for Linux: schedules, renders and places desktop widgets, and serves the display protocol"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+
+[dependencies]
+sw-core.workspace = true
+sw-render.workspace = true
+# The element tree nests deeper than serde_json reads by default.
+serde_json = { workspace = true, features = ["unbounded_depth"] }
+serde.workspace = true
+sha2.workspace = true
+getrandom.workspace = true
+libc.workspace = true
+url.workspace = true

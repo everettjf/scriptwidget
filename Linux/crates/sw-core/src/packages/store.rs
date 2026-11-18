@@ -12,7 +12,7 @@ use super::archive::{self, ExtractedPackage};
 use super::disk_files::DiskPackageFiles;
 use super::error::{PackageError, codes};
 use super::limits::{ArchiveLimits, MAX_FILE_BYTES, MAX_METADATA_BYTES, MAX_NAME_ATTEMPTS, MAX_SCRIPT_BYTES};
-use super::{file_writer, manifests, names, path_rules, safe_files, tree};
+use super::{file_remover, file_writer, manifests, names, path_rules, safe_files, tree};
 use crate::json::Object;
 use crate::package_files::PackageFiles;
 
@@ -290,6 +290,14 @@ impl PackageStore {
             return Err(PackageError::new(codes::TOO_MANY_ENTRIES, "Package contains too many entries."));
         }
         file_writer::write(&directory, relative_path, bytes)
+    }
+
+    /// Removes one file of an installed package, under the path and link
+    /// rules of the package file writer. A file that is already gone is not an error.
+    pub fn delete_file(&self, name: &str, relative_path: &str) -> Result<(), PackageError> {
+        let _guard = self.lock();
+        let directory = self.existing(name)?;
+        file_remover::remove(&directory, relative_path)
     }
 
     /// Bytes of one file of an installed package, at most 25 MiB, under the rules of [`DiskPackageFiles`].

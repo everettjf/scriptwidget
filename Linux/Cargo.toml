@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli"]
+members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli", "crates/sw-host"]
 
 [workspace.package]
 version = "0.1.0"
@@ -60,6 +60,7 @@ rustls = { version = "0.23", default-features = false, features = ["ring", "std"
 rustls-native-certs = "0.8"
 sw-core = { path = "crates/sw-core" }
 sw-render = { path = "crates/sw-render" }
+sw-host = { path = "crates/sw-host" }
 # The version and features the phase 0 check built: a prebuilt Skia is downloaded, nothing is compiled from source.
 skia-safe = { version = "0.157.0", features = ["textlayout"] }
 
