@@ -2,7 +2,7 @@
 
 ## Product and Architecture
 
-ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit on iPhone, iPad and Mac, and App Widgets on Android. `Shared/ScriptWidgetRuntime` is compiled into the iOS/macOS apps and widget extensions, so shared-source changes must remain valid in both application and extension contexts. The Android app does not use the Swift runtime; it runs the shared JavaScript from `Web/preview-engine` in QuickJS.
+ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit on iPhone, iPad and Mac, App Widgets on Android, and desktop widgets on Windows 11 and Linux (both previews). `Shared/ScriptWidgetRuntime` is compiled into the iOS/macOS apps and widget extensions, so shared-source changes must remain valid in both application and extension contexts. The Android app does not use the Swift runtime; it runs the shared JavaScript from `Web/preview-engine` in QuickJS.
 
 - `Shared/ScriptWidgetRuntime/Common/`: package/storage models, Package 2.0, secure archives, iCloud and local fallback cache.
 - `Shared/ScriptWidgetRuntime/Widget/`: JavaScriptCore host, public APIs, runtime limits, JSX element mapping, App Intents, and support bundles.
@@ -12,7 +12,7 @@ ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit
 - `iOS/ScriptWidget`, `ScriptWidgetWidget`, `ScriptWidgetShare`: iPhone/iPad app, WidgetKit/Live Activity/Control Widget extension, and share extension.
 - `macOS/ScriptWidgetMac`, `ScriptWidgetMacWidget`: Studio app and macOS widget extension. Studio features live in `Editor/`, `AIGenerate/`, `Skills/`, `Plugin/`, and `Onboarding/`.
 - `Editor/editorfe/`: Vite frontend with CodeMirror 6. Built files are copied into both platform `StudioEditor.bundle` directories.
-- `Web/preview-engine/`: browser preview engine (plain JavaScript with `.d.ts` types); `Web/studio/`: Web Studio, a React + strict TypeScript + shadcn/ui app published to GitHub Pages. Its `kernel.js` and `renderer.js` are also the Android runtime, so a change there affects the browser preview and Android together.
+- `Web/preview-engine/`: browser preview engine (plain JavaScript with `.d.ts` types); `Web/studio/`: Web Studio, a React + strict TypeScript + shadcn/ui app published to GitHub Pages. Its `kernel.js` and `renderer.js` are also the Android, Windows and Linux runtime, so a change there affects the browser preview and all three together.
 - `Windows/`: the Windows 11 desktop app (preview). `native` builds `swcore.dll` from the QuickJS-NG sources under `Android/core/src/main/cpp/quickjs`; `src/ScriptWidget.Core` is a C# port of `Android/core` (engine wrapper, compiler, executor, packages, APIs, plugins, Win2D renderer); `src/ScriptWidget.App` is the always-running desktop host; `src/ScriptWidget.Studio` is the WinUI 3 management window; `src/ScriptWidget.Cli` is `swcli`. It runs the same shared JavaScript as Android, built by `Scripts/lib/shared-js.mjs`. `Windows/assets`, `Windows/native/out` and `Windows/artifacts` are generated; do not edit or commit them.
 - `Linux/`: the Linux app (preview, for Omarchy), written in Rust. `crates/sw-quickjs` builds the QuickJS-NG sources under `Android/core/src/main/cpp/quickjs`; `crates/sw-core` is the runtime (packages, compiler, executor, APIs, plugins), ported from `Windows/src/ScriptWidget.Core`; `crates/sw-render` is the Skia painter; `crates/sw-host` is the background service that draws the widgets; `crates/sw-cli` is the `scriptwidget` command line, which also starts the service; `crates/sw-studio` is the GPUI management window (behind the `ui` feature); `omarchy-plugin` is the QML plugin of the Omarchy shell that shows the pictures and forwards clicks, speaking the protocol in `docs/linux/protocol.md`; `packaging` and `scripts/package.sh` build the release archive. It runs the same shared JavaScript as Android and Windows. `Linux/assets`, `Linux/tests/assets`, `Linux/target` and `Linux/artifacts` are generated; do not edit or commit them. The six display fonts are deliberately not shipped on Linux.
 - `Android/core`: QuickJS-NG with its JNI layer, the Kotlin host and native APIs, Canvas renderer, package store, Gallery, Skills, plugins and AI client. `Android/app`: Compose app, widget providers, tiles, shortcuts, Live Updates and push. `Android/core/src/main/assets/scriptwidget` is generated; do not edit it. `Android/app/src/main/assets/Script.android` holds the templates for what only Android has: the scrolling `<list>`, the `material.<role>` colors and the automation entry point, all described under "Only on Android" in `docs/android/README.md`. `Android/play`: Google Play listing kit.
@@ -82,7 +82,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - iCloud/cache work must cover primary reads, proactive caching, eviction fallback, nested imports, supported binary resources, and user-visible iCloud states. Do not claim physical-device coverage unless it was actually executed.
 - UI changes require the relevant iOS/macOS scheme build and screenshots when the visual result matters.
 - Live Activity, Dynamic Island, Control Widget, app/widget shared-container, and extension-memory behavior need targeted smoke tests when touched.
-- Android changes need the JVM tests and the instrumented suites on a device or emulator; changes to `Web/preview-engine` need both its own tests and the Android suites. Record what ran, on which device, in `docs/android/testing.md`, and keep `docs/android/TODO.md` current.
+- Android changes need the JVM tests and the instrumented suites on a device or emulator; changes to `Web/preview-engine` need its own tests and the Android, Windows and Linux suites. Record what ran, on which device, in `docs/android/testing.md`, and keep `docs/android/TODO.md` current.
 
 ## Commits and Pull Requests
 
@@ -97,7 +97,8 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 ## Current Product Priorities
 
 - Stabilize and document the now-versioned runtime, Package 2.0, Skills 1.0, Gallery 1.0, and Data Source Plugin 1.0 contracts before expanding them.
-- Bring Android 1.0.0 to Google Play: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
+- Bring Android 1.0.0 from the Google Play closed test to production: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
+- Take the Windows and Linux previews towards a first full release: finish the items in `docs/windows/TODO.md` and `docs/linux/TODO.md`, test on real hardware, and keep `docs/platform-support.md` (written from `Editor/editorfe/src/platformSupport.js`) the one place that says what runs where.
 - Grow the curated Gallery and beginner templates while keeping every example verified, permission-correct, and runnable offline where appropriate.
 - Improve Studio authoring ergonomics, diagnostics, accessibility, localization, and multi-file workflows without weakening crash recovery or iCloud conflict safety.
 - Establish repeatable on-device performance baselines for timeline generation, JavaScript evaluation, cold launch, editor latency, and widget-extension memory.
