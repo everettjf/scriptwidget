@@ -21,6 +21,8 @@ const month = now.toLocaleString("en-US", { month: "long" });
 const day = now.getDate();
 const firstWeekday = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
 const dayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+// A month that touches six weeks gets smaller cells, so the grid keeps its height.
+const sixWeeks = firstWeekday + dayCount > 35;
 
 const MonthGrid = ({ cell, font, spacing }) => {
   const columns = JSON.stringify(Array.from({ length: 7 }, () => ({ type: "fixed", value: String(cell) })));
@@ -105,11 +107,11 @@ if (size === "accessoryCircular") {
         <text font="title" fontWeight="bold" color="#1C1C1E">{month}</text>
         <text font="title" fontWeight="light" color={accent}>{now.getFullYear()}</text>
         <spacer />
-        <text font="subheadline" fontWeight="semibold" color="#8E8E93">{weekday}</text>
+        <text font="subheadline" fontWeight="semibold" color="#8E8E93">{wide ? weekday : weekday.slice(0, 3)}</text>
       </hstack>
       {wide
-        ? <hstack alignment="top" spacing="24"><MonthGrid cell={36} font="callout" spacing="6" />{agenda}</hstack>
-        : <MonthGrid cell={28} font="footnote" spacing="3" />}
+        ? <hstack alignment="top" spacing="24"><MonthGrid cell={sixWeeks ? 30 : 36} font="callout" spacing="6" />{agenda}</hstack>
+        : <MonthGrid cell={sixWeeks ? 24 : 28} font="footnote" spacing={sixWeeks ? "2" : "3"} />}
       {wide ? null : agenda}
     </vstack>
   );

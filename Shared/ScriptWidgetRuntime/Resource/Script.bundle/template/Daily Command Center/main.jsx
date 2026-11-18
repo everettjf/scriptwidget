@@ -7,16 +7,15 @@ const now = new Date();
 const progress = (now.getHours() * 60 + now.getMinutes()) / 1440;
 
 const Row = ({ text, index }) => (
-  <hstack frame="max" spacing="9">
+  <hstack frame="max,leading" spacing="9">
     <circle frame="7,7" color={index === 0 ? "#60a5fa" : "#334155"}/>
     <text font="caption" color={index === 0 ? "#f8fafc" : "#cbd5e1"}>{text.trim()}</text>
-    <spacer/>
   </hstack>
 );
 
 $render(
   <vstack frame="max" alignment="leading" spacing="12" padding="18" background="#172554">
-    <hstack frame="max">
+    <hstack>
       <vstack alignment="leading" spacing="2"><text font="title2" weight="bold" color="white">Today</text><date date="now" style="date" font="caption" color="#94a3b8"/></vstack>
       <spacer/><badge text="COMMAND CENTER" color="#93c5fd"/>
     </hstack>

@@ -89,7 +89,7 @@ if (size === "accessoryCircular") {
   $render(
     <vstack alignment="leading" spacing="12" padding="16" background="black">
       <text font="headline" color="white">World Clock</text>
-      <vgrid columns={grid} spacing={wide ? 12 : 14}>{cities.map((city) => <City city={city} side={wide ? 84 : 70} digital />)}</vgrid>
+      <vgrid columns={grid} spacing={wide ? 12 : 14}>{cities.map((city) => <City city={city} side={70} digital />)}</vgrid>
       <spacer />
     </vstack>
   );
