@@ -4,14 +4,20 @@
 //
 // System Insights
 //
+// Shows values from $system, which runs on every system. Try adding another value,
+// such as $system.thermalState().
+//
 
+// memory.physical is the installed memory in bytes; systemUptime() is in seconds.
 const memory = $system.memory();
 const uptimeHours = ($system.systemUptime() / 3600).toFixed(1);
 const cpuCount = $system.processorCount();
 const activeCpu = $system.activeProcessorCount();
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 if ($getenv("widget-size") === "small") {
   // Small: the platform and the three numbers, one on each line.
+  // A small component: a function that returns JSX and is used below as <Line … />.
   const Line = ({ title, value, color }) => (
     <hstack>
       <text font="caption2" color="#94a3b8">
@@ -23,6 +29,7 @@ if ($getenv("widget-size") === "small") {
       </text>
     </hstack>
   );
+  // frame="max" fills the widget; padding is the space around the content, in points.
   $render(
     <vstack frame="max" alignment="leading" spacing="7" padding="14" background="#0f172a">
       <hstack spacing="7">
@@ -44,6 +51,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Medium and larger: the platform on the left, three <stat> values on the right.
   $render(
     <hstack frame="max" spacing="18" padding="16" background="#0f172a">
       <vstack alignment="leading" spacing="6">

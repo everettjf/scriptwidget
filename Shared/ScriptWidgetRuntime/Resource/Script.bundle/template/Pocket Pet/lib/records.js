@@ -1,24 +1,41 @@
 // Identical package-local helper in the built-in record templates.
 // Rendering is read-only. Keep at most 366 local calendar days; no network/iCloud sync.
+//
+// A small diary for a widget: one value per calendar day, kept as JSON in $storage.
+// main.jsx loads this file and uses the localRecords object it defines:
+//   localRecords.create(key, validValue, empty, at) opens the diary saved under `key`;
+//   localRecords.configuration(kind) reads the settings saved by Records & Configuration.
+// Start by changing main.jsx; change this file only if you need another record format.
 var localRecords = (() => {
+  // A date as a "YYYY-MM-DD" key in local time.
   const keyFor = (date) =>
     `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  // The date `days` later, at noon so that a daylight saving change cannot shift the day.
   const offset = (date, days) =>
     new Date(date.getFullYear(), date.getMonth(), date.getDate() + days, 12);
+  // True for a real calendar date written as "YYYY-MM-DD" (so not 2026-02-30).
   const validDate = (key) => {
     if (typeof key !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(key)) return false;
     const parts = key.split("-").map(Number);
     return parts[0] >= 1970 && keyFor(new Date(parts[0], parts[1] - 1, parts[2], 12)) === key;
   };
+  // A deep copy, so that a caller cannot change the saved state by accident.
   const clone = (value) => JSON.parse(JSON.stringify(value));
+  // validValue(value) says whether a day's value is acceptable; `empty` is the value of a
+  // day without an entry; `at` is the moment to treat as now.
   function create(key, validValue, empty, at = new Date()) {
+    // Entries older than 365 days are dropped when something is saved.
     const now = offset(at, 0),
       today = keyFor(now),
       oldest = keyFor(offset(now, -365));
     const invalid = () => {
       throw new Error("Saved history is invalid. Restore your records before making changes.");
     };
+    // Turns the stored string into a checked state object:
+    // { version: 1, revision, entries: [{ date, value }], undo }. Damaged data throws an
+    // error instead of being replaced, so that a record is never lost silently.
     function parse(raw) {
+      // $storage.getString returns "" for a key that was never written: an empty diary.
       if (raw === "") return { version: 1, revision: 0, entries: [], undo: null };
       if (typeof raw !== "string" || raw.length > 64000) return invalid();
       let state;
@@ -59,11 +76,16 @@ var localRecords = (() => {
         return invalid();
       return state;
     }
+    // Reading is all that drawing the widget needs; it never writes.
     const read = () => parse($storage.getString(key));
+    // The value saved for a date (today by default), or the empty value.
     const value = (state, date = today) => {
       const entry = state.entries.find((item) => item.date === date);
       return entry ? clone(entry.value) : clone(empty);
     };
+    // Saves a change. compareAndSetString writes only if the stored string is still the one
+    // read just before; if the app or another widget changed it meanwhile, read again and
+    // retry, at most four times. transform returns the new state, or null for "no change".
     function commit(transform) {
       for (let attempt = 0; attempt < 4; attempt++) {
         const raw = $storage.getString(key),
@@ -84,6 +106,8 @@ var localRecords = (() => {
       }
       throw new Error("Could not save. Storage is busy or unavailable; please try again.");
     }
+    // Changes today's value. update receives the current value and returns the new one; null
+    // removes today's entry. The old value is remembered so that undo() can put it back.
     const edit = (update) =>
       commit((state) => {
         const old = state.entries.find((entry) => entry.date === today);
@@ -96,6 +120,7 @@ var localRecords = (() => {
         if (next !== null) state.entries.push({ date: today, value: next });
         return state;
       });
+    // Puts back the value that the last edit replaced. Only one step is kept.
     const undo = () =>
       commit((state) => {
         if (!state.undo) return null;
@@ -107,6 +132,7 @@ var localRecords = (() => {
         state.undo = null;
         return state;
       });
+    // The last `count` days, oldest first, each with its value and whether it has an entry.
     const recent = (state, count = 7) =>
       Array.from({ length: count }, (_, index) => {
         const date = keyFor(offset(now, index - count + 1));
@@ -118,6 +144,8 @@ var localRecords = (() => {
       });
     return { today, read, value, edit, undo, reset: () => edit(() => null), recent };
   }
+  // Reads the settings saved under "recordTemplate.config.v1" for one kind of template and
+  // checks every field. With nothing saved, the defaults below are used.
   function configuration(kind) {
     const defaults = {
       plantCare: { title: "My plant", intervalDays: 3 },
@@ -144,6 +172,7 @@ var localRecords = (() => {
     } catch (_) {
       return invalid();
     }
+    // Saved settings look like { version: 1, kind, values } with exactly the expected keys.
     if (
       !state ||
       Object.keys(state).sort().join(",") !== "kind,values,version" ||
@@ -155,6 +184,7 @@ var localRecords = (() => {
     )
       return invalid();
     const value = state.values;
+    // Two small checks: a text of limited length, and a whole number within a range.
     const text = (input, length, empty = false) =>
       typeof input === "string" && input.length <= length && (empty || input.trim() !== "");
     const integer = (input, minimum, maximum) =>

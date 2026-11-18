@@ -6,12 +6,15 @@
 // Sample numbers keep it offline; replace them with your own data.
 //
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 const size = $getenv("widget-size");
+// Sample data: 30 daily values for the sparkline, oldest first.
 const history = [
   96.2, 97.1, 96.8, 98.4, 99.0, 98.1, 99.6, 100.4, 101.2, 100.6, 101.9, 102.4, 101.8, 103.1, 104.0,
   103.2, 104.8, 105.5, 104.9, 106.2, 107.0, 106.4, 107.9, 108.6, 108.1, 109.4, 110.2, 109.6, 111.0,
   112.4,
 ];
+// Each holding: [symbol, name, price, today's change in percent].
 const holdings = [
   ["AAPL", "Apple", 231.4, 1.24],
   ["MSFT", "Microsoft", 421.8, 0.62],
@@ -19,14 +22,19 @@ const holdings = [
   ["AMZN", "Amazon", 186.3, 0.41],
   ["TSLA", "Tesla", 198.1, -2.37],
 ];
+// The total value in dollars and today's change in percent.
 const value = 48261.37;
 const change = 1.27;
+// Colors for a rise and a fall.
 const up = "#30D158";
 const down = "#FF453A";
+// money(48261.37) gives "$48,261.37"; signed(1.27) gives "+1.27%".
 const money = (amount) =>
   `$${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const signed = (percent) => `${percent >= 0 ? "+" : ""}${percent.toFixed(2)}%`;
 
+// The sparkline: an area chart without axes. data is a JSON string of { label, value }
+// points. 90 is subtracted so that the small ups and downs use the whole height.
 const Spark = ({ height }) => (
   <chart
     type="area"
@@ -43,6 +51,7 @@ const Spark = ({ height }) => (
     )}
   />
 );
+// The total, with today's change in green or red.
 const Total = ({ font }) => (
   <vstack alignment="leading" spacing="2">
     <text font="caption" fontWeight="semibold" color="#8E8E93">
@@ -63,6 +72,7 @@ const Total = ({ font }) => (
     </hstack>
   </vstack>
 );
+// One row of the holdings list; item is one entry of `holdings`.
 const Holding = ({ item }) => (
   <hstack spacing="8">
     <vstack alignment="leading" spacing="0">
@@ -91,6 +101,8 @@ const Holding = ({ item }) => (
   </hstack>
 );
 
+// Choose a layout for the widget size. The "accessory" sizes are Lock Screen widgets
+// (iPhone and iPad only).
 if (size === "accessoryCircular") {
   $render(
     <vstack spacing="0">
@@ -117,6 +129,7 @@ if (size === "accessoryCircular") {
     </text>,
   );
 } else if (size === "small") {
+  // Small: the total above the sparkline. padding is the space around the content.
   $render(
     <vstack alignment="leading" spacing="6" padding="14" background="#0B0B0F">
       <Total font="title3" />
@@ -125,6 +138,7 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else if (size === "medium") {
+  // Medium: total and sparkline on the left, three holdings on the right.
   $render(
     <hstack spacing="16" padding="14" background="#0B0B0F">
       <vstack alignment="leading" spacing="6" frame="max,leading">
@@ -155,6 +169,7 @@ if (size === "accessoryCircular") {
     </hstack>,
   );
 } else if (size === "extraLarge") {
+  // Extra large: a taller chart and all five holdings.
   $render(
     <hstack spacing="32" padding="24" background="#0B0B0F">
       <vstack alignment="leading" spacing="16" frame="max,leading">
@@ -169,6 +184,7 @@ if (size === "accessoryCircular") {
     </hstack>,
   );
 } else {
+  // Large: total, sparkline and four holdings.
   $render(
     <vstack alignment="leading" spacing="12" padding="16" background="#0B0B0F">
       <Total font="title" />

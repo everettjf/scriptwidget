@@ -7,7 +7,9 @@
 // weather service (declare the domain in widget.json).
 //
 
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 const size = $getenv("widget-size");
+// Sample data. hours: [label, SF Symbol name, temperature]. days: [label, symbol, low, high].
 const weather = {
   city: "Cupertino",
   temp: 24,
@@ -31,15 +33,19 @@ const weather = {
     ["Thu", "sun.max.fill", 16, 28],
   ],
 };
+// $gradient makes a value that fades from one color to another. It is used like a
+// color: here as the background, further down as the color of a bar.
 const sky = $gradient({
   type: "linear",
   colors: ["#2F80ED", "#56CCF2"],
   startPoint: "top",
   endPoint: "bottom",
 });
+// Sun icons are yellow, all others white.
 const iconColor = (name) => (name.startsWith("sun") ? "#FFD60A" : "white");
 const soft = "#E3F2FD";
 
+// The city and the temperature now.
 const Header = ({ big }) => (
   <vstack alignment="leading" spacing="0">
     <hstack spacing="4">
@@ -53,6 +59,7 @@ const Header = ({ big }) => (
     </text>
   </vstack>
 );
+// The icon, the condition and the day's high and low.
 const Summary = () => (
   <vstack alignment="leading" spacing="2">
     <icon systemName={weather.icon} size="18" color={iconColor(weather.icon)} />
@@ -64,6 +71,7 @@ const Summary = () => (
     </text>
   </vstack>
 );
+// The next `count` hours in columns of equal width (each has frame="max").
 const Hours = ({ count }) => (
   <hstack>
     {weather.hours.slice(0, count).map(([label, icon, temp], index) => (
@@ -85,6 +93,7 @@ const highest = Math.max(...weather.days.map((day) => day[3]));
 const Days = ({ barWidth }) => (
   <vstack spacing="8">
     {weather.days.map(([label, icon, low, high]) => {
+      // Points of bar width per degree.
       const scale = barWidth / (highest - lowest);
       return (
         <hstack spacing="10">
@@ -95,6 +104,7 @@ const Days = ({ barWidth }) => (
           <text font="subheadline" color={soft} frame="28,trailing">
             {low}°
           </text>
+          {/* A faint track; over it, an invisible rect pushes the colored range into place. */}
           <zstack frame={`${barWidth},5`}>
             <capsule color="white" opacity="0.25" frame={`${barWidth},5`} />
             <hstack spacing="0" frame={`${barWidth},5`}>
@@ -120,6 +130,8 @@ const Days = ({ barWidth }) => (
   </vstack>
 );
 
+// Choose a layout for the widget size. The "accessory" sizes are Lock Screen widgets
+// (iPhone and iPad only).
 if (size === "accessoryCircular") {
   $render(
     <vstack spacing="1">
@@ -151,6 +163,7 @@ if (size === "accessoryCircular") {
     </text>,
   );
 } else if (size === "small") {
+  // Small: city and temperature at the top, the summary at the bottom.
   $render(
     <vstack alignment="leading" frame="max,leading" padding="16" background={sky}>
       <Header />
@@ -159,6 +172,7 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else if (size === "medium") {
+  // Medium: header and summary side by side, then six hours.
   $render(
     <vstack spacing="10" padding="16" background={sky}>
       <hstack alignment="top">
@@ -170,6 +184,7 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else {
+  // Large and extra large add the five days; the bars are wider in the extra large size.
   const wide = size === "extraLarge";
   $render(
     <vstack spacing="14" padding="16" background={sky}>

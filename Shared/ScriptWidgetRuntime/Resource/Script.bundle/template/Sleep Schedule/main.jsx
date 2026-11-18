@@ -1,7 +1,14 @@
 // widget-param: bedtime,wake time (optional)
+//
+// This template shows two texts from the widget parameter, with one layout for the small
+// widget and one for the others. Try changing the default times or the colors.
+
+// $getenv("widget-param") is the parameter text set for this widget, split at the comma.
 const t = ($getenv("widget-param") || "10:30 PM,6:30 AM").split(",");
+// $getenv("widget-size") is the size being drawn: "small", "medium", "large", …
 if ($getenv("widget-size") === "small") {
   // Small: the two times under each other.
+  // frame="max" fills the widget; padding is the space around the content, in points.
   $render(
     <vstack frame="max" alignment="leading" spacing="8" padding="14" background="#111827">
       <hstack>
@@ -23,6 +30,7 @@ if ($getenv("widget-size") === "small") {
         <text font="caption2" color="#9ca3af">
           WAKE UP
         </text>
+        {/* The fallback covers a parameter with only one time in it. */}
         <text font="headline" weight="bold" color="white">
           {(t[1] || "6:30 AM").trim()}
         </text>
@@ -30,6 +38,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Medium and larger: the two times side by side, kept apart by <spacer />.
   $render(
     <vstack frame="max" spacing="10" padding="14" background="#111827">
       <hstack frame="max">
