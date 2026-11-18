@@ -4,7 +4,10 @@
 //
 // Template for component link
 //
+// Shows a card that opens a web page when it is tapped. Try your own address in linkurl.
 
+// $getenv("widget-size") is the size being drawn.
+// linkurl on the outer stack makes the whole card a link.
 if ($getenv("widget-size") === "small") {
   // Small: the name of the link, without the sentence that needs the width.
   $render(
@@ -28,6 +31,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Other sizes: also a sentence under the name.
   $render(
     <vstack
       frame="max"

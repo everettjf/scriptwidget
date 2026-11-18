@@ -1,8 +1,18 @@
 // Separate iCloud example. It does not migrate or change Hydration Goal's local records.
 // Connect this installation to the same iCloud Data store ID on each device.
+// Shows today's water like Hydration Goal, but keeps the log in iCloud so that several
+// devices can share it. Try another goal or glass size with the widget parameter.
+// The iCloud API runs on iPhone, iPad and Mac, and on Android with a sync folder the user picks
+// (it cannot exchange data with an iPhone); not on Windows or Linux.
+// widget.json must declare the permission "icloud"; the buttons need its "actions".
+
+// $import runs another file of this package; lib/cloud-hydration.js defines `cloudHydration`.
+// It returns false when the file is missing.
 if (!$import("lib/cloud-hydration.js"))
   throw new Error("Install the complete template, including lib/cloud-hydration.js.");
+// $getenv("widget-size") is the size being drawn, such as "small" or "accessoryInline".
 const size = $getenv("widget-size");
+// The optional widget parameter, JSON such as {"goal":8,"glassML":250}.
 const parameter = ($getenv("widget-param") || "").trim();
 let options = { goal: 8, glassML: 250 };
 if (parameter) {
@@ -19,6 +29,7 @@ if (parameter) {
     throw new Error("Hydration settings accept goal and glassML only.");
   }
 }
+// `goal` is in glasses, `glassML` in millilitres per glass.
 const { goal, glassML } = options;
 if (
   !Number.isInteger(goal) ||
@@ -30,6 +41,8 @@ if (
 ) {
   throw new Error("Set goal to 1–32 glasses and glassML to 25–2000.");
 }
+// The two functions below are named by the "actions" in widget.json; a tap on a <button>
+// with that actionID calls them. They are async because the iCloud calls must be awaited.
 async function addGlass() {
   await cloudHydration.add(glassML);
   $render(<text>Glass saved locally; iCloud delivery may follow later</text>);
@@ -39,8 +52,11 @@ async function syncRecords() {
   $render(<text>Cloud exchange requested; delivery may follow later</text>);
 }
 
+// A tap runs this script with the size "function" or "action": draw no widget then.
 if (size !== "function" && size !== "action") {
   try {
+    // Read the data. `snapshot` is what iCloud returned and `data` the checked log.
+    // `days` holds the last 7 days and ends with today; the totals are in mL.
     const { snapshot, data } = await cloudHydration.read();
     const days = cloudHydration.recent(data);
     const today = days[days.length - 1].total;
@@ -51,10 +67,12 @@ if (size !== "function" && size !== "action") {
     const muted = dark ? "#7DD3FC" : "#0369A1";
     const background = dark ? "#082F49" : "#F0F9FF";
     const label = `${today} / ${target} mL`;
+    // The state is "conflict" when two devices saved different logs while offline.
     const hint =
       snapshot.state === "conflict"
         ? "Tap Sync to merge two offline logs"
         : "Cached on this device · iCloud may be delayed";
+    // Choose a layout: the three Lock Screen sizes first, then the Home Screen sizes.
     if (size === "accessoryInline") $render(<text>{`Water · ${label}`}</text>);
     else if (size === "accessoryCircular")
       $render(
@@ -80,6 +98,7 @@ if (size !== "function" && size !== "action") {
               {days[6].day.slice(5)}
             </text>
           </hstack>
+          {/* Small widget: a progress bar. Other sizes: a ring next to the text. */}
           {size === "small" ? (
             <vstack alignment="leading" spacing="5">
               <text font="headline" color={ink}>
@@ -114,6 +133,7 @@ if (size !== "function" && size !== "action") {
           <text font="caption2" color={muted}>
             {hint}
           </text>
+          {/* Large sizes also list the 7 days. day.day.slice(5) is the MM-DD part. */}
           {!["small", "medium"].includes(size) && (
             <vstack alignment="leading" spacing="4">
               <text font="caption" color={muted}>
@@ -135,6 +155,7 @@ if (size !== "function" && size !== "action") {
         </vstack>,
       );
   } catch (error) {
+    // Reading failed, for example because iCloud Data is not connected: say what to do.
     console.error(String(error));
     $render(
       <vstack alignment="leading" padding="14" spacing="6">

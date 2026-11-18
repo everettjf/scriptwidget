@@ -1,11 +1,17 @@
 // MET Norway Locationforecast 2.0. Forecasts are model data, not observations.
 // https://api.met.no/doc/TermsOfService · https://api.met.no/doc/License
+// main.jsx imports this file ("lib/weather.js") and then uses `localWeather`.
+// It chooses the place, asks MET Norway for its forecast and keeps a copy in $storage.
 var localWeather = (() => {
+  // The storage key of the saved forecasts, and one hour in milliseconds.
   const cacheKey = "weather.met.v1",
     hour = 3600000;
+  // The settings. `unit` is "c" or "f"; `city` with its coordinates is the saved city.
   const defaults = { city: "", latitude: 0, longitude: 0, useLocation: true, unit: "c" };
+  // True for a real number between min and max.
   const numeric = (value, min, max) =>
     typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+  // The keys of a plain object, sorted and joined ("a,b,c"); "" for anything else.
   const keys = (object) =>
     object && typeof object === "object" && !Array.isArray(object)
       ? Object.keys(object).sort().join(",")
@@ -21,6 +27,8 @@ var localWeather = (() => {
       ["c", "f"].includes(value.unit)
     );
   }
+  // Work out the settings: the defaults, then the configuration saved by Records &
+  // Configuration (`raw`), then the widget parameter: JSON, or latitude,longitude,City.
   function options(raw, parameter) {
     let value = { ...defaults };
     if (raw !== "") {
@@ -34,6 +42,7 @@ var localWeather = (() => {
       }
       if (
         typeof raw !== "string" ||
+        // unescape(encodeURIComponent(text)).length is the size of the text in UTF-8 bytes.
         unescape(encodeURIComponent(raw)).length > 4096 ||
         keys(state) !== "kind,values,version" ||
         state.version !== 1 ||
@@ -64,6 +73,7 @@ var localWeather = (() => {
           );
         value = { ...value, ...custom };
       } else {
+        // latitude,longitude with an optional city name. A fixed place turns location off.
         const parts = parameter.split(",").map((value) => value.trim());
         if (
           parts.length < 2 ||
@@ -86,13 +96,16 @@ var localWeather = (() => {
       );
     return value;
   }
+  // Coordinates are rounded to 2 decimals, roughly a kilometre, before use.
   const rounded = (value) => Number(value.toFixed(2));
+  // The name of a place in the saved copy, such as "manual:59.91,10.75".
   const placeKey = (source, latitude, longitude) =>
     `${source}:${rounded(latitude).toFixed(2)},${rounded(longitude).toFixed(2)}`;
   const validHTTPDate = (value) =>
     typeof value === "string" &&
     /^[A-Za-z0-9,: -]{1,128}$/.test(value) &&
     Number.isFinite(Date.parse(value));
+  // One forecast point: time (ms), temperature (°C), humidity (%), wind (m/s), symbol code.
   function validPoint(point) {
     return (
       keys(point) === "humidity,symbol,temperature,time,wind" &&
@@ -115,6 +128,8 @@ var localWeather = (() => {
       numeric(Number(match[3]), -180, 180)
     );
   }
+  // Read the saved copy: up to 4 places with up to 24 forecast points each.
+  // Anything unexpected gives an empty list, so a damaged copy is simply loaded again.
   function packets(raw, now) {
     try {
       if (typeof raw !== "string" || unescape(encodeURIComponent(raw)).length > 64000) return [];
@@ -162,6 +177,9 @@ var localWeather = (() => {
       return [];
     }
   }
+  // Save the forecast of one place next to the others; only one place found by location
+  // is kept. compareAndSetString writes only if the stored text is still `raw`; if
+  // something else saved in between, read again and retry.
   function publish(packet, now, projection) {
     if (projection) return false;
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -190,6 +208,9 @@ var localWeather = (() => {
     }
     return false;
   }
+  // When to ask again: when the response expires (Expires, else Cache-Control max-age),
+  // or in one hour without a usable time. Never sooner than 15 minutes, plus up to 5
+  // random minutes.
   function expires(headers, now) {
     let until = Date.parse(headers.expires || "");
     const maxAge = /(?:^|,)\s*max-age=(\d+)/i.exec(headers["cache-control"] || "");
@@ -197,6 +218,7 @@ var localWeather = (() => {
     if (!Number.isFinite(until) || until > now + 7 * 24 * hour) until = now + hour;
     return Math.round(Math.max(now + 900000, until) + Math.random() * 300000);
   }
+  // Check the answer of MET Norway and keep up to 24 points, starting 2 hours ago.
   function parseResponse(body, place, now, headers, status) {
     if (typeof body !== "string" || unescape(encodeURIComponent(body)).length > 2097152)
       throw new Error("Invalid forecast");
@@ -239,8 +261,10 @@ var localWeather = (() => {
         throw new Error("Invalid forecast point");
       points.push(point);
     }
+    // One of the points must lie within 90 minutes of now.
     if (!points.some((point) => Math.abs(point.time - now) <= 90 * 60000))
       throw new Error("Forecast is unavailable");
+    // Status 203 is how MET Norway announces that this version of the service will end.
     return {
       key: place.key,
       source: place.source,
@@ -257,6 +281,8 @@ var localWeather = (() => {
       deprecated: status === 203,
     };
   }
+  // The forecast point for now: the latest one that is not in the future, provided it is
+  // within 90 minutes of now and the forecast is less than a day old.
   function pointAt(packet, now) {
     if (
       !packet ||
@@ -269,6 +295,7 @@ var localWeather = (() => {
     const point = earlier[earlier.length - 1] || packet.points[0];
     return Math.abs(point.time - now) <= 90 * 60000 ? point : null;
   }
+  // Turn a symbol code such as "partlycloudy_night" into a title and an SF Symbol name.
   function condition(symbol) {
     const night = symbol.endsWith("_night");
     if (symbol.includes("thunder")) return { title: "Thunderstorms", icon: "cloud.bolt.rain.fill" };
@@ -283,10 +310,12 @@ var localWeather = (() => {
     if (symbol.startsWith("cloudy")) return { title: "Cloudy", icon: "cloud.fill" };
     return { title: "Forecast", icon: "cloud.fill" };
   }
+  // True when location exists here, the app may use it and widgets may use it too.
   const locationAllowed = () =>
     $location.isAvailable() &&
     ["authorizedWhenInUse", "authorizedAlways"].includes($location.authorizationStatus()) &&
     $location.isAuthorizedForWidgetUpdates();
+  // Forget the forecast saved for a location once location is no longer allowed.
   function clearLocationCache(now, projection) {
     if (projection) return;
     for (let attempt = 0; attempt < 4; attempt++) {
@@ -302,6 +331,7 @@ var localWeather = (() => {
         return;
     }
   }
+  // Location was allowed and no longer is: use the saved city, if there is one.
   async function revoked(config, now, projection) {
     clearLocationCache(now, projection);
     return config.city.trim()
@@ -312,6 +342,9 @@ var localWeather = (() => {
           hint: "Choose a saved city to continue.",
         };
   }
+  // load(config, now, projection) returns what the widget shows. `now` is in milliseconds.
+  // `projection` is true for a future timeline entry, which asks neither for the position
+  // nor for a new forecast.
   async function load(config, now, projection) {
     let entries = packets($storage.getString(cacheKey), now);
     const authorized = locationAllowed();
@@ -319,10 +352,12 @@ var localWeather = (() => {
       entries = entries.filter((entry) => entry.source !== "location");
       clearLocationCache(now, projection);
     }
+    // Choose the place: the current position, else the last saved one, else the city.
     let place = null;
     if (config.useLocation && authorized) {
       if (!projection) {
         try {
+          // maxAge: 3600 accepts a position up to one hour old; `age` is in seconds.
           const location = await $location.current({ maxAge: 3600 });
           const stale =
             location.isStale === true || (typeof location.age === "number" && location.age > 3600);
@@ -366,6 +401,7 @@ var localWeather = (() => {
     let packet = entries.find((entry) => entry.key === place.key),
       saved = true,
       fromCache = true;
+    // Ask MET Norway only when there is no saved forecast for the place or it is due.
     if (!projection && !place.skipNetwork && (!packet || now >= packet.nextRequestAt)) {
       try {
         const headers = {
@@ -373,6 +409,7 @@ var localWeather = (() => {
           Accept: "application/json",
         };
         if (packet?.lastModified) headers["If-Modified-Since"] = packet.lastModified;
+        // The call resolves to { status, body, headers }, also for statuses such as 304.
         const response = await $http.getResponse(
           `https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=${place.latitude.toFixed(2)}&lon=${place.longitude.toFixed(2)}`,
           { headers, timeoutInterval: 4 },
@@ -381,6 +418,7 @@ var localWeather = (() => {
           return await revoked(config, now, projection);
         }
         const responseHeaders = response.headers || {};
+        // 304: not changed since the last request, so the saved points stay.
         if (response.status === 304 && pointAt(packet, now))
           packet = {
             ...packet,
@@ -392,6 +430,7 @@ var localWeather = (() => {
           packet = parseResponse(response.body, place, now, responseHeaders, response.status);
           fromCache = false;
         } else {
+          // Another status: retry at the Retry-After time, 15 minutes to 24 hours from now.
           const retry = responseHeaders["retry-after"] || "";
           let until = /^\d+$/.test(retry) ? now + Number(retry) * 1000 : Date.parse(retry);
           if (!Number.isFinite(until)) until = now + 900000;
@@ -401,6 +440,7 @@ var localWeather = (() => {
         }
         saved = publish(packet, now, projection);
       } catch (error) {
+        // No usable answer: keep the saved points and note the failure.
         if (place.source === "location" && !locationAllowed())
           return await revoked(config, now, projection);
         const retryAt = numeric(error?.retryAt, now, now + 24 * hour)
@@ -427,9 +467,11 @@ var localWeather = (() => {
         title: "Forecast unavailable",
         hint: "Check your connection or saved city, then refresh.",
       };
+    // Temperatures are saved in °C and converted for display.
     const celsius = config.unit === "c",
       temperature = (value) =>
         Math.round(celsius ? value : (value * 9) / 5 + 32) + (celsius ? "°C" : "°F");
+    // Minutes since MET Norway updated the forecast.
     const age = Math.max(0, Math.floor((now - packet.updatedAt) / 60000));
     const statusText = packet.deprecated
       ? "Service update needed"
@@ -453,6 +495,8 @@ var localWeather = (() => {
             : fromCache
               ? "Saved forecast"
               : "Forecast";
+    // The result for main.jsx. Wind is converted from m/s to km/h (× 3.6).
+    // `upcoming` holds the next 4 points, with labels such as "+3h".
     return {
       available: true,
       statusShort,

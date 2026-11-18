@@ -2,19 +2,35 @@
 // Optional instance parameter: latitude,longitude,City or JSON weather settings.
 // Forecast data: MET Norway (CC BY 4.0). No API key; Expires/conditional requests
 // and a bounded four-place cache reduce traffic. No exact refresh guarantee.
+// Shows the forecast for where you are, or for a saved city, in every widget size.
+// Try the widget parameter: 59.91,10.75,Oslo or {"unit":"f"}.
+// The Location API runs on iPhone and iPad, and on Android (widgets see the position
+// saved while the app was open); not on Mac, Windows or Linux. There the saved city is
+// used. widget.json must declare the permissions "location", "storage" and "network",
+// with the host api.met.no.
+
+// $import runs another file of this package; lib/weather.js defines `localWeather`.
+// It returns false when the file is missing.
 if (!$import("lib/weather.js"))
   throw new Error("Install the complete weather template, including lib/weather.js.");
+// The settings: defaults, then what the app saved in $storage, then the widget parameter
+// ($getenv("widget-param"), a text you set on each widget you place).
 const config = localWeather.options(
   $storage.getString("recordTemplate.config.v1"),
   $getenv("widget-param"),
 );
+// Read the forecast: from MET Norway when the saved copy is due for a refresh, else from
+// $storage. "timeline-is-projection" is "true" when the script runs for a future timeline
+// entry; no request is made then.
 const weather = await localWeather.load(
   config,
   Date.now(),
   $getenv("timeline-is-projection") === "true",
 );
+// $getenv("widget-size") is the size being drawn, such as "small" or "accessoryInline".
 const size = $getenv("widget-size"),
   compact = size === "small";
+// No forecast: show the reason in a form that fits the size.
 if (!weather.available) {
   if (size === "accessoryInline") $render(<text>{weather.title}</text>);
   else if (size === "accessoryCircular") $render(<icon systemName="cloud" size="25" />);
@@ -38,8 +54,10 @@ if (!weather.available) {
       </vstack>,
     );
 } else if (size === "accessoryInline") {
+  // Lock Screen, inline: one line of text.
   $render(<text>{weather.temperature + " · " + weather.condition.title}</text>);
 } else if (size === "accessoryCircular") {
+  // Lock Screen, circular: an icon and the temperature.
   $render(
     <vstack spacing="2">
       <icon systemName={weather.condition.icon} size="23" />
@@ -49,6 +67,7 @@ if (!weather.available) {
     </vstack>,
   );
 } else if (size === "accessoryRectangular") {
+  // Lock Screen, rectangular: place, temperature and condition.
   $render(
     <hstack spacing="8">
       <icon systemName={weather.condition.icon} size="26" />
@@ -59,6 +78,7 @@ if (!weather.available) {
     </hstack>,
   );
 } else if (compact) {
+  // Small widget. Array.from(name).slice(0, 12) keeps the first 12 characters of the name.
   $render(
     <vstack frame="max" alignment="leading" padding="12" spacing="4" background="#eff6ff">
       <text font="caption2" weight="semibold" color="#1e3a8a">
@@ -86,6 +106,7 @@ if (!weather.available) {
     </vstack>,
   );
 } else if (size === "medium") {
+  // Medium widget: icon, place and temperature in one row.
   $render(
     <vstack frame="max" padding="16" spacing="7" background="#eff6ff">
       <hstack frame="max" spacing="14">
@@ -118,6 +139,7 @@ if (!weather.available) {
     </vstack>,
   );
 } else {
+  // Large and extra large widgets: also wind, humidity and the next forecast points.
   $render(
     <vstack frame="max" padding="16" spacing="8" background="#eff6ff">
       <hstack frame="max">

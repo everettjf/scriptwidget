@@ -1,9 +1,14 @@
 // Personal Dashboard
 // widget-param: your first name (optional)
+// Shows a greeting for the time of day and how much of today has passed.
+// Try changing the greetings, the colors or the Focus line.
 
+// $getenv("widget-param") is the optional widget parameter, a text you set on each widget.
 const name = ($getenv("widget-param") || "Friend").trim();
+// The hour in local time, 0 to 23.
 const hour = new Date().getHours();
 const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+// The share of the day that has passed, from 0 to 1. A day has 1440 minutes.
 const dayProgress = Math.min(1, (hour * 60 + new Date().getMinutes()) / 1440);
 
 if ($getenv("widget-size") === "small") {
@@ -34,6 +39,7 @@ if ($getenv("widget-size") === "small") {
     </vstack>,
   );
 } else {
+  // Other sizes: greeting and date, then a Focus line and the progress of the day.
   $render(
     <vstack frame="max" background="#18181b" spacing="8" padding="14">
       <hstack frame="max">
@@ -46,6 +52,7 @@ if ($getenv("widget-size") === "small") {
         <spacer />
         <icon systemName="sparkles" size="24" color="#a78bfa" />
       </hstack>
+      {/* <divider> draws a line; <stat> shows a title with its value. */}
       <divider color="#3f3f46" />
       <stat title="Focus" value="1 thing" color="#a78bfa" />
       <progress value={dayProgress} total="1" color="#8b5cf6" />

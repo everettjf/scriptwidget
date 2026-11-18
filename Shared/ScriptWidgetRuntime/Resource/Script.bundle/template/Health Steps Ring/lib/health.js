@@ -1,6 +1,9 @@
 // Query only the selected metric. Never persist HealthKit readings or authorization.
+// main.jsx imports this file ("lib/health.js") and then uses `healthCard`.
 var healthCard = (() => {
+  // metric is "steps", "energy" or "heart". The goals are steps and kcal per day.
   const defaults = { metric: "steps", stepsGoal: 8000, energyGoal: 500 };
+  // Check the settings, or throw a message the app can show.
   function validate(value) {
     if (
       !value ||
@@ -18,6 +21,9 @@ var healthCard = (() => {
       throw new Error("Choose a metric and valid goals in Records & Configuration.");
     return value;
   }
+  // Work out the settings: the defaults, then the configuration saved by Records &
+  // Configuration (`raw`), then the widget parameter, which is JSON such as
+  // {"metric":"heart"}.
   function options(raw, parameter) {
     let result = { ...defaults };
     if (raw !== null && raw !== undefined && raw !== "") {
@@ -48,9 +54,12 @@ var healthCard = (() => {
     }
     return validate(result);
   }
+  // load(config, now, projection) returns what the widget shows. `now` is in milliseconds.
+  // `projection` is true for a future timeline entry, which gets no reading.
   async function load(config, now, projection) {
     validate(config);
     const metric = config.metric;
+    // Title, icon and color of the chosen metric.
     const title =
       metric === "steps"
         ? "Steps today"
@@ -60,21 +69,26 @@ var healthCard = (() => {
     const icon =
       metric === "steps" ? "figure.walk" : metric === "energy" ? "flame.fill" : "heart.fill";
     const color = metric === "steps" ? "#2563eb" : metric === "energy" ? "#c2410c" : "#be185d";
+    // The result when there is no number: a heading and one line of explanation.
     const empty = (heading, detail) => ({ available: false, title, icon, color, heading, detail });
     if (projection)
       return empty(
         "Refresh in current entry",
         "Health readings are queried only for the current entry.",
       );
+    // isAvailable() is false on a system without Health data.
     if (!$health.isAvailable())
       return empty(
         "Health on iPhone",
         "Install on iPhone and enable Health in ScriptWidget Settings.",
       );
+    // Health does not tell an app whether reading was allowed, so this only stops when
+    // Health is not available or not set up.
     const authorization = $health.authorizationStatus();
     if (["unavailable", "undeclared", "denied", "notDetermined"].includes(authorization))
       return empty("Connect Health", "Enable Health in ScriptWidget Settings on iPhone.");
     let reading;
+    // Ask Health for the chosen metric only. `await` waits for the answer.
     try {
       reading = await (metric === "steps"
         ? $health.stepCountToday()
@@ -87,6 +101,7 @@ var healthCard = (() => {
         "Open ScriptWidget to check access; locked devices may delay readings.",
       );
     }
+    // No samples. A value of 0 without the hasSamples flag is treated the same way.
     if (
       !reading ||
       typeof reading !== "object" ||
@@ -99,6 +114,8 @@ var healthCard = (() => {
       );
     if (reading.hasSamples !== undefined && typeof reading.hasSamples !== "boolean")
       return empty("Reading unavailable", "Invalid sample metadata. Refresh later.");
+    // Accept the reading only with the expected unit, a believable value and a recent end:
+    // within 15 minutes for today's totals, 24 hours for the heart rate.
     const unit = metric === "steps" ? "count" : metric === "energy" ? "kcal" : "bpm";
     const start = Date.parse(reading.start),
       end = Date.parse(reading.end),
@@ -116,6 +133,7 @@ var healthCard = (() => {
       now - end > limit
     )
       return empty("Reading unavailable", "No recent valid sample. Open Health and refresh later.");
+    // A total that began on another day is not today's total.
     if (metric !== "heart") {
       const today = new Date(now),
         begin = new Date(start);
@@ -124,9 +142,12 @@ var healthCard = (() => {
       if (today.getTime() !== begin.getTime())
         return empty("Refresh for today", "Yesterday’s total is not shown as today’s activity.");
     }
+    // Heart rate has no goal.
     const goal =
       metric === "steps" ? config.stepsGoal : metric === "energy" ? config.energyGoal : null;
+    // Whole minutes since the end of the reading.
     const minutes = Math.max(0, Math.floor((now - end) / 60000));
+    // The result for main.jsx. `progress` is value / goal, at most 1.
     return {
       available: true,
       title,

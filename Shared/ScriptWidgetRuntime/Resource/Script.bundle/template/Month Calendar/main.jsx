@@ -5,7 +5,10 @@
 // Month Calendar: the date, a month grid, and the next events.
 // Edit `events` to show your own schedule.
 //
+// The grid follows today's date; the events are fixed samples.
+// Try changing `accent`, or the cell sizes passed to <MonthGrid>.
 
+// $getenv("widget-size") is the size being drawn, such as "small" or "accessoryInline".
 const size = $getenv("widget-size");
 const now = new Date();
 const accent = "#FF3B30";
@@ -16,19 +19,24 @@ const events = [
   { time: "19:30", title: "Call Mom", color: "#BF5AF2" },
 ];
 
+// Names in English, such as "Sunday" and "March".
 const weekday = now.toLocaleString("en-US", { weekday: "long" });
 const month = now.toLocaleString("en-US", { month: "long" });
 const day = now.getDate();
+// getDay() of the 1st: 0 = Sunday. Day 0 of next month is the last day of this month.
 const firstWeekday = new Date(now.getFullYear(), now.getMonth(), 1).getDay();
 const dayCount = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
 // A month that touches six weeks gets smaller cells, so the grid keeps its height.
 const sixWeeks = firstWeekday + dayCount > 35;
 
+// The month as a grid of 7 columns; `cell` is the size of one cell in points.
+// <vgrid> takes its columns as JSON text: here seven columns of a fixed width.
 const MonthGrid = ({ cell, font, spacing }) => {
   const columns = JSON.stringify(
     Array.from({ length: 7 }, () => ({ type: "fixed", value: String(cell) })),
   );
   const cells = [];
+  // First row: the letters of the weekdays.
   ["S", "M", "T", "W", "T", "F", "S"].forEach((name) =>
     cells.push(
       <text font={font} fontWeight="semibold" color="#8E8E93" frame={`${cell},${cell}`}>
@@ -36,12 +44,14 @@ const MonthGrid = ({ cell, font, spacing }) => {
       </text>,
     ),
   );
+  // Empty cells before the 1st.
   for (let i = 0; i < firstWeekday; i++)
     cells.push(
       <text font={font} frame={`${cell},${cell}`}>
         {" "}
       </text>,
     );
+  // One cell per day. Today gets a filled circle.
   for (let d = 1; d <= dayCount; d++) {
     const today = d === day;
     cells.push(
@@ -64,6 +74,7 @@ const MonthGrid = ({ cell, font, spacing }) => {
   );
 };
 
+// One event: a colored bar, the title and the time.
 const EventRow = ({ event, font }) => (
   <hstack spacing="6">
     <capsule frame="3,26" color={event.color} />
@@ -79,6 +90,7 @@ const EventRow = ({ event, font }) => (
   </hstack>
 );
 
+// The weekday and the day number in large type.
 const Today = () => (
   <vstack alignment="leading" spacing="0">
     <text font="caption" fontWeight="bold" color={accent}>
@@ -90,7 +102,9 @@ const Today = () => (
   </vstack>
 );
 
+// Choose a layout for the widget size.
 if (size === "accessoryCircular") {
+  // Lock Screen, circular: weekday and day.
   $render(
     <vstack spacing="0">
       <text font="caption2" fontWeight="semibold">
@@ -102,6 +116,7 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else if (size === "accessoryRectangular") {
+  // Lock Screen, rectangular: the date and the first two events.
   $render(
     <vstack alignment="leading" spacing="1" frame="max,leading">
       <text font="headline">
@@ -116,12 +131,14 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else if (size === "accessoryInline") {
+  // Lock Screen, inline: one line of text.
   $render(
     <text>
       {weekday.slice(0, 3)} {day} · {events[0].title} {events[0].time}
     </text>,
   );
 } else if (size === "small") {
+  // Small widget: today and the first event.
   $render(
     <vstack alignment="leading" frame="max,leading" padding="16" background="white">
       <Today />
@@ -130,6 +147,7 @@ if (size === "accessoryCircular") {
     </vstack>,
   );
 } else if (size === "medium") {
+  // Medium widget: today on the left, the month grid on the right.
   $render(
     <hstack spacing="16" padding="16" background="white">
       <vstack alignment="leading" frame="max,leading">
@@ -146,6 +164,8 @@ if (size === "accessoryCircular") {
     </hstack>,
   );
 } else {
+  // Large widget: the month grid above two events.
+  // Extra large widget: the grid and four events side by side.
   const wide = size === "extraLarge";
   const agenda = (
     <vstack alignment="leading" spacing="8" frame="max,leading">
