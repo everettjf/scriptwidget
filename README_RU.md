@@ -18,6 +18,25 @@ ScriptWidget — это открытая платформа для создан�
 
 Приложение для Android (версия 1.0.0, Android 15 и новее) доступно как [APK в GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). В Google Play идёт закрытое тестирование: чтобы участвовать, вступите в [группу Atomsprout Testers](https://groups.google.com/g/atomsprout). См. [ScriptWidget для Android](docs/android/README.md).
 
+Версии для Windows и Linux — предварительные: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) требует Windows 11, см. [ScriptWidget для Windows](docs/windows/README.md); версия для Linux пока работает в [Omarchy](https://omarchy.org) 4.5, архивы лежат в [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), см. [ScriptWidget для Linux](docs/linux/README.md). Обе запускают те же пакеты виджетов, но в них нет API данных устройства: здоровья, календаря, геопозиции, музыки и других.
+
+### Снимки экрана на каждой платформе
+
+Все снимки настоящие. Версии для Windows и Linux — предварительные.
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![Галерея шаблонов на iPhone](docs/images/platforms/iphone-templates.webp) | ![Редактор на iPad](docs/images/platforms/ipad-editor.webp) | ![ScriptWidget Studio на Mac](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![Виджеты на главном экране Android](docs/images/platforms/android-widgets.webp) | ![Виджеты на рабочем столе Windows](docs/images/platforms/windows-desktop.webp) | ![Виджеты на рабочем столе Omarchy](docs/images/platforms/linux-desktop.webp) |
+| ![Редактор в Android](docs/images/platforms/android-editor.webp) | ![Редактор в Windows](docs/images/platforms/windows-editor.webp) | ![Редактор в Linux](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![Web Studio в браузере](docs/images/platforms/web-studio.webp) |
+
 ## Почему ScriptWidget
 
 - Один скрипт работает в iOS, iPadOS, macOS и в Android (тестируется), а макеты адаптируются через `$getenv("widget-size")`.

@@ -18,6 +18,25 @@ ScriptWidget ist eine Open-Source-Plattform unter der Apache 2.0-Lizenz zum Erst
 
 Die Android-App (Version 1.0.0, ab Android 15) gibt es als [APK in den GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). Bei Google Play läuft ein geschlossener Test: Wer teilnehmen möchte, tritt der [Gruppe Atomsprout Testers](https://groups.google.com/g/atomsprout) bei. Siehe [ScriptWidget für Android](docs/android/README.md).
 
+Die Versionen für Windows und Linux sind Vorschauversionen: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) benötigt Windows 11, siehe [ScriptWidget für Windows](docs/windows/README.md); die Linux-Version läuft derzeit unter [Omarchy](https://omarchy.org) 4.5, die Archive liegen in den [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), siehe [ScriptWidget für Linux](docs/linux/README.md). Beide führen dieselben Widget-Pakete aus, haben aber keine APIs für Gerätedaten wie Gesundheit, Kalender, Standort und Musik.
+
+### Screenshots aller Plattformen
+
+Alles echte Screenshots. Windows und Linux sind Vorschauversionen.
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![Vorlagengalerie auf dem iPhone](docs/images/platforms/iphone-templates.webp) | ![Editor auf dem iPad](docs/images/platforms/ipad-editor.webp) | ![ScriptWidget Studio auf dem Mac](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![Widgets auf dem Android-Startbildschirm](docs/images/platforms/android-widgets.webp) | ![Widgets auf dem Windows-Desktop](docs/images/platforms/windows-desktop.webp) | ![Widgets auf dem Omarchy-Desktop](docs/images/platforms/linux-desktop.webp) |
+| ![Editor unter Android](docs/images/platforms/android-editor.webp) | ![Editor unter Windows](docs/images/platforms/windows-editor.webp) | ![Editor unter Linux](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![Web Studio im Browser](docs/images/platforms/web-studio.webp) |
+
 ## Warum ScriptWidget?
 
 - Ein Skript läuft auf iOS, iPadOS und macOS sowie auf Android (im Test); Layouts lassen sich mit `$getenv("widget-size")` anpassen.

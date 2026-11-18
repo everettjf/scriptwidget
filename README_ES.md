@@ -18,6 +18,25 @@ ScriptWidget es una plataforma de código abierto con licencia Apache 2.0 para c
 
 La app para Android (versión 1.0.0, Android 15 o posterior) está disponible como [APK en GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). En Google Play está en prueba cerrada: para participar, únete al [grupo Atomsprout Testers](https://groups.google.com/g/atomsprout). Consulta [ScriptWidget para Android](docs/android/README.md).
 
+Las versiones para Windows y Linux son versiones preliminares: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) requiere Windows 11, consulta [ScriptWidget para Windows](docs/windows/README.md); la versión para Linux funciona por ahora en [Omarchy](https://omarchy.org) 4.5, los archivos están en [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), consulta [ScriptWidget para Linux](docs/linux/README.md). Ambas ejecutan los mismos paquetes de widgets, pero no tienen las API de datos del dispositivo como salud, calendario, ubicación y música.
+
+### Capturas de cada plataforma
+
+Todas son capturas reales. Windows y Linux son versiones preliminares.
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![Galería de plantillas en el iPhone](docs/images/platforms/iphone-templates.webp) | ![Editor en el iPad](docs/images/platforms/ipad-editor.webp) | ![ScriptWidget Studio en el Mac](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![Widgets en la pantalla de inicio de Android](docs/images/platforms/android-widgets.webp) | ![Widgets en el escritorio de Windows](docs/images/platforms/windows-desktop.webp) | ![Widgets en el escritorio de Omarchy](docs/images/platforms/linux-desktop.webp) |
+| ![Editor en Android](docs/images/platforms/android-editor.webp) | ![Editor en Windows](docs/images/platforms/windows-editor.webp) | ![Editor en Linux](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![Web Studio en el navegador](docs/images/platforms/web-studio.webp) |
+
 ## Por qué elegir ScriptWidget
 
 - Un mismo script funciona en iOS, iPadOS y macOS, y también en Android (en pruebas), con diseños adaptables mediante `$getenv("widget-size")`.

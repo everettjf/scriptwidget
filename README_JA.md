@@ -18,6 +18,25 @@ ScriptWidget は、Apache 2.0 ライセンスのオープンソース・ウィ�
 
 Android アプリ（バージョン 1.0.0、Android 15 以降）は [GitHub Releases の APK](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) で入手できます。Google Play ではクローズドテスト中です。参加するには [Atomsprout Testers グループ](https://groups.google.com/g/atomsprout) に参加してください。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
 
+Windows 版と Linux 版はプレビュー版です。[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) には Windows 11 が必要です（[Windows 版 ScriptWidget](docs/windows/README.md) を参照）。Linux 版は現在 [Omarchy](https://omarchy.org) 4.5 に対応しており、アーカイブは [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) にあります（[Linux 版 ScriptWidget](docs/linux/README.md) を参照）。どちらも同じウィジェットパッケージを実行しますが、ヘルスケア、カレンダー、位置情報、ミュージックなどのデバイスデータ API はありません。
+
+### 各プラットフォームのスクリーンショット
+
+すべて実際のスクリーンショットです。Windows 版と Linux 版はプレビュー版です。
+
+| iPhone | iPad | Mac |
+| --- | --- | --- |
+| ![iPhone のテンプレートギャラリー](docs/images/platforms/iphone-templates.webp) | ![iPad のエディタ](docs/images/platforms/ipad-editor.webp) | ![Mac の ScriptWidget Studio](docs/images/platforms/mac-studio.webp) |
+
+| Android | Windows | Linux (Omarchy) |
+| --- | --- | --- |
+| ![Android のホーム画面のウィジェット](docs/images/platforms/android-widgets.webp) | ![Windows のデスクトップのウィジェット](docs/images/platforms/windows-desktop.webp) | ![Omarchy のデスクトップのウィジェット](docs/images/platforms/linux-desktop.webp) |
+| ![Android のエディタ](docs/images/platforms/android-editor.webp) | ![Windows のエディタ](docs/images/platforms/windows-editor.webp) | ![Linux のエディタ](docs/images/platforms/linux-editor.webp) |
+
+| Web Studio |
+| --- |
+| ![ブラウザの Web Studio](docs/images/platforms/web-studio.webp) |
+
 ## ScriptWidget の特長
 
 - 1 つのスクリプトが iOS、iPadOS、macOS で動作し（Android 版はテスト中）、`$getenv("widget-size")` でサイズ別に調整できます。
