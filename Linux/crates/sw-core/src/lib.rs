@@ -16,6 +16,9 @@ pub mod package_files;
 pub mod shared_scripts;
 pub mod data_paths;
 pub mod packages;
+pub mod plugins;
+pub mod timeline;
+pub mod xml;
 
 pub use compiler::{PackageCompiler, PreparedPackage, RuntimeError};
 pub use executor::{Completion, ExecutionError, ExecutionRequest, ExecutionResult, ExecutionSession, LogEntry, NativeModule, ScriptExecutor};
@@ -23,3 +26,4 @@ pub use package_files::{MemoryPackageFiles, PackageFiles, normalize_package_path
 pub use shared_scripts::SharedScripts;
 pub use data_paths::DataPaths;
 pub use packages::{ArchiveLimits, DiskPackageFiles, PackageError, PackageInfo, PackageStore};
+pub use timeline::{TimelinePlanner, TimelineState};

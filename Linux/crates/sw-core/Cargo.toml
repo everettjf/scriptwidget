@@ -19,6 +19,11 @@ unicode-normalization.workspace = true
 unicode-segmentation.workspace = true
 unicode-properties.workspace = true
 serde.workspace = true
+libc.workspace = true
+httparse.workspace = true
+icu_normalizer.workspace = true
+rustls.workspace = true
+rustls-native-certs.workspace = true
 
 [build-dependencies]
 cc.workspace = true
