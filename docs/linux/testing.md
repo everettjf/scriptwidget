@@ -312,6 +312,15 @@ cargo test --locked -p sw-core --test parity -- --nocapture   # 只跑一致性�
 
 这个修复在 0.1.1 里。
 
+### 0.1.1 的发布包（提交 `7878d884`）
+
+| 包 | 怎么来的 | 检查 |
+| --- | --- | --- |
+| `scriptwidget-0.1.1-linux-aarch64.tar.gz` | 在这台测试虚拟机上用 `package.sh` 构建 | 构建前全部测试 512 个通过；用 `install.sh` 覆盖安装 0.1.0 并重启外壳后，`doctor` 全过，四个小组件回到桌面；摆放模式里拖动一个小组件再退出，四个窗口都在 `bottom` 层 |
+| `scriptwidget-0.1.1-linux-x86_64.tar.gz` | GitHub Actions 的"Linux release archive"工作流（运行 44280183662），Arch Linux 容器 | 工作流里的测试和解包自检通过；另在这台虚拟机上经指令模拟运行：`doctor` 通过，它的服务接管桌面后四个小组件显示在 `bottom` 层。没有在 x86_64 的电脑上运行过 |
+
+PR 78 的检查（两种架构的 Linux 测试、Apple 平台、编辑器）全部通过后合并。0.1.0 的发布说明里加了"已被 0.1.1 取代"。
+
 
 - 真实的 Linux 电脑、x86_64、Omarchy 以外的桌面。
 - 画笔和其他平台的图片逐像素对比。
