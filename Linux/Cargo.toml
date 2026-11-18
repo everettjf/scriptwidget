@@ -1,0 +1,71 @@
+[workspace]
+resolver = "3"
+members = ["crates/sw-quickjs", "crates/sw-core", "crates/sw-render", "crates/sw-cli", "crates/sw-host", "crates/sw-studio"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+license = "Apache-2.0"
+publish = false
+
+[workspace.dependencies]
+sw-quickjs = { path = "crates/sw-quickjs" }
+cc = "1"
+pkg-config = "0.3"
+serde_json = { version = "1", features = ["preserve_order"] }
+sha2 = "0.10"
+getrandom = "0.3"
+url = "2"
+# The package layer (crates/sw-core/src/packages). Each one is small, widely
+# used and maintained, and adds no C code:
+# - rustix: openat2 with RESOLVE_BENEATH, openat, fstat and renameat2 as safe
+#   functions, so the package layer has no `unsafe` of its own. `libc` would
+#   need hand-written unsafe wrappers for the same calls.
+# - flate2 with only the pure-Rust miniz_oxide backend: inflate and deflate.
+#   The ZIP container itself is read and written by the package layer: the
+#   central directory has to be checked byte by byte before anything is
+#   extracted anyway (preflight), and extracting through that same reading
+#   leaves no second parser that could disagree with it about an entry.
+# - unicode-normalization, unicode-segmentation, unicode-properties (all from
+#   the unicode-rs project): NFC for name collisions, grapheme clusters for
+#   the package name limit, and the general category for control and format
+#   characters. The standard library has none of the three.
+# - serde: already a dependency of serde_json; named here because the strict
+#   manifest reader (duplicate keys are an error) implements its visitor.
+rustix = { version = "1", default-features = false, features = ["std", "fs"] }
+flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
+unicode-normalization = "0.1"
+unicode-segmentation = "1"
+unicode-properties = { version = "0.1", default-features = false, features = ["general-category"] }
+serde = "1"
+libc = "0.2"
+httparse = "1"
+icu_normalizer = "2"
+# The HTTP stack of fetch, $http, $weather and Data Source Plugins is a small
+# HTTP/1.1 client in sw-core (api/http.rs) over std sockets and rustls, not a
+# client library. Reasons: the request must go to the very address that was
+# resolved and checked (never a second lookup inside a library), TLS must still
+# be verified against the host name, redirects are followed by hand so every
+# hop is checked again, each wait has its own timeout inside a total deadline,
+# and the executor is synchronous, so a blocking client on worker threads fits.
+# Client libraries that allow all of this (own resolver, no redirects, no
+# proxy) do so through unstable hooks or bring an async runtime and a larger
+# dependency tree. rustls with the ring provider needs only a C compiler (no
+# OpenSSL, and no cmake as aws-lc-rs does); certificates are checked against
+# the system's certificate store (rustls-native-certs), as a distribution
+# package is expected to. httparse reads response heads; flate2 (pure Rust
+# backend) decodes gzip and deflate bodies and reads and writes .swplugin
+# archives.
+rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
+rustls-native-certs = "0.8"
+sw-core = { path = "crates/sw-core" }
+sw-render = { path = "crates/sw-render" }
+sw-host = { path = "crates/sw-host" }
+# The version and features the phase 0 check built: a prebuilt Skia is downloaded, nothing is compiled from source.
+skia-safe = { version = "0.157.0", features = ["textlayout"] }
+
+# QuickJS is compiled with -O2 in every profile (see sw-quickjs/build.rs); the
+# Rust side of a test build is optimized too, so that the parity run measures
+# something close to what ships.
+[profile.test]
+opt-level = 2

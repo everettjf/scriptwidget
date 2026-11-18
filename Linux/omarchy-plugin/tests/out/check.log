@@ -1,0 +1,66 @@
+PASS  validate: omarchy plugin validate accepts the plugin
+PASS  enable: omarchy plugin list shows it enabled
+PASS  connect: the service runs watch and shows two widgets
+PASS  layer: widget a is on the bottom layer at 80,80 329x170
+PASS  layer: widget b is on the bottom layer at 460,80 170x170
+PASS  layer: no other widget window
+PASS  report: scriptwidget screen <name> <scale> <width> <height>
+PASS  report: scriptwidget theme dark or light
+PASS  swap: a new picture file is shown within a second
+PASS  swap: a new version under the same file name is shown
+PASS  frames: the pictures of b change
+PASS  frames: one widget is animating
+PASS  tap: a click in the region sends scriptwidget tap a 1
+PASS  tap: clicks outside a region send nothing
+PASS  peek: the widgets move to the overlay layer
+PASS  pass through: a click on a widget without regions reaches the window below
+PASS  pass through: a click beside the region reaches the window below
+PASS  pass through: a click in the region is a tap
+PASS  pass through: and does not reach the window below
+PASS  pass through: in arrange mode the click stays with the widget
+PASS  peek: and back to the bottom layer
+PASS  frames: paused behind a fullscreen window
+PASS  frames: running again after it
+PASS  arrange: the mode event turns arrange mode on
+PASS  arrange: one window over the screen shows the widgets
+PASS  arrange: in place of the widget windows
+PASS  arrange: a drag sends scriptwidget move a <screen> 680 480
+PASS  arrange: near the left edge and the bottom it snaps to 16 px from them, above the dock
+PASS  arrange: in the middle of the screen it stays where it is dropped
+PASS  menu: a right click opens the menu
+PASS  menu: a click elsewhere closes it and sends nothing
+PASS  menu: the second row sends scriptwidget menu b resize-medium
+PASS  arrange: off again
+PASS  arrange: the widget windows are back, where they were dropped
+PASS  menu: b now has the medium size
+PASS  remove: the remove event takes the window away
+PASS  bad input: pictures outside the frames directory, bad ids and bad sizes are ignored
+PASS  screen: a widget for an unknown screen is shown on the first screen
+PASS  stopped: with the service gone the bar entry knows it is not running
+PASS  stopped: the last picture stays on the desktop
+PASS  bar: the icon looks different while the service is not running
+PASS  reconnect: the service is found again after it comes back
+PASS  reconnect: by a new run of watch
+PASS  reconnect: screen and theme are reported again
+PASS  bar: a click opens the management window
+PASS  bar: a right click opens the card with the two switches
+PASS  bar: the first switch runs scriptwidget peek
+PASS  bar: and the widgets go to the overlay layer
+PASS  bar: again, and they are back on the bottom layer
+PASS  bar: the second switch runs scriptwidget arrange
+PASS  bar: again, and arrange mode is off
+PASS  bye: after a bye event the service counts as not running
+PASS  bye: and watch is run again
+PASS  missing: a program that cannot be started is reported as not installed
+PASS  missing: the pictures stay
+PASS  missing: found again once it is there
+PASS  protocol: hello with protocol 2 is refused
+PASS  protocol: nothing is shown on the desktop
+PASS  protocol: with protocol 1 again the widgets are back
+PASS  restart: after omarchy-restart-shell the widgets are back
+PASS  restart: the old watch was ended and a new one started
+PASS  restart: two widget windows on the bottom layer
+PASS  disable: the widget windows go away
+PASS  disable: watch is ended
+
+all checks passed

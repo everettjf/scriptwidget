@@ -1,0 +1,33 @@
+# The ScriptWidget background service, as a systemd user unit.
+#
+# Install as /usr/lib/systemd/user/scriptwidget.service (a package) or
+# ~/.config/systemd/user/scriptwidget.service (by hand), then:
+#
+#   systemctl --user enable --now scriptwidget.service
+#
+# It starts with the graphical session and stops with it. The service opens
+# no window; the display (the Omarchy plugin) connects to its socket at
+# $XDG_RUNTIME_DIR/scriptwidget/host.sock.
+
+[Unit]
+Description=ScriptWidget background service
+Documentation=https://github.com/everettjf/ScriptWidget/blob/main/docs/linux/README.md
+PartOf=graphical-session.target
+After=graphical-session.target
+
+[Service]
+Type=exec
+# A package installs the program in /usr/bin; change the path for another prefix.
+ExecStart=/usr/bin/scriptwidget host run
+# On SIGTERM the service tells every display "bye", removes its socket and exits with 0.
+TimeoutStopSec=10
+Restart=on-failure
+RestartSec=2
+# Only the service itself is stopped. A browser that a link in a widget
+# started, and the management window, are the user's programs: they must not
+# be closed when the service is restarted or updated.
+KillMode=process
+Slice=app.slice
+
+[Install]
+WantedBy=graphical-session.target

@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- The shared-mime-info description of a ScriptWidget package (.swt).
+     Install as /usr/share/mime/packages/scriptwidget-studio.xml and run update-mime-database.
+     A .swt file is a ZIP archive; the glob has more weight than the ZIP magic so that it wins. -->
+<mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
+  <mime-type type="application/x-scriptwidget-package">
+    <comment>ScriptWidget widget</comment>
+    <comment xml:lang="zh_CN">ScriptWidget 小组件</comment>
+    <sub-class-of type="application/zip"/>
+    <icon name="scriptwidget-studio"/>
+    <glob pattern="*.swt" weight="60"/>
+  </mime-type>
+</mime-info>

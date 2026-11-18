@@ -1,0 +1,6 @@
+#!/bin/bash
+# A stand-in for the management window, for the tests: it only writes a line
+# to the stand-in's log.
+frames=${SCRIPTWIDGET_PLUGIN_FRAMES:-${XDG_RUNTIME_DIR:?}/scriptwidget-plugin-test/frames}
+mkdir -p "${frames%/frames}"
+echo "$(date +%H:%M:%S.%N | cut -c1-12) studio opened $*" >> "${frames%/frames}/log"

@@ -1,0 +1,30 @@
+[package]
+name = "sw-core"
+description = "The ScriptWidget runtime for Linux: packages, compiler, executor and native APIs"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish.workspace = true
+links = "swicu"
+
+[dependencies]
+sw-quickjs.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+getrandom.workspace = true
+url.workspace = true
+rustix.workspace = true
+flate2.workspace = true
+unicode-normalization.workspace = true
+unicode-segmentation.workspace = true
+unicode-properties.workspace = true
+serde.workspace = true
+libc.workspace = true
+httparse.workspace = true
+icu_normalizer.workspace = true
+rustls.workspace = true
+rustls-native-certs.workspace = true
+
+[build-dependencies]
+cc.workspace = true
+pkg-config.workspace = true

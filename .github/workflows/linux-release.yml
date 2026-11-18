@@ -1,0 +1,68 @@
+name: Linux release archive
+# Builds the x86_64 release archive of ScriptWidget for Linux on Arch Linux,
+# the base of Omarchy, so that it links the libraries an Omarchy system has
+# (an archive built on Ubuntu would ask for Ubuntu's ICU). Started by hand, by
+# a `linux-v*` tag, or by a pull request that changes the packaging.
+#
+# The aarch64 archive is built on an aarch64 Omarchy machine with
+# Linux/scripts/package.sh: there is no official Arch Linux image for it here.
+on:
+  workflow_dispatch:
+  push:
+    tags: ['linux-v*']
+  pull_request:
+    paths: ['.github/workflows/linux-release.yml', 'Linux/scripts/package.sh', 'Linux/packaging/**']
+permissions:
+  contents: read
+concurrency:
+  group: linux-release-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  archive:
+    name: Archive (x86_64, Arch Linux)
+    runs-on: ubuntu-24.04
+    container: archlinux:latest
+    timeout-minutes: 60
+    steps:
+      - name: System packages
+        run: |
+          pacman -Syu --noconfirm --needed base-devel git rustup nodejs npm python zip unzip clang cmake pkgconf \
+            icu fontconfig freetype2 libxkbcommon libxkbcommon-x11 libxcb wayland vulkan-icd-loader vulkan-headers \
+            openssl zstd alsa-lib noto-fonts noto-fonts-cjk noto-fonts-emoji
+          rustup default stable
+          rustc -vV
+          pacman -Q icu fontconfig glibc
+      - uses: actions/checkout@v7
+      - name: Install esbuild for the shared JavaScript bundle
+        working-directory: Web/studio
+        run: npm ci --no-audit --no-fund
+      - name: Shared JavaScript
+        run: node Linux/scripts/build-shared-js.mjs
+      - name: Test
+        working-directory: Linux
+        run: cargo test --locked --workspace
+      - name: Archive
+        run: sh Linux/scripts/package.sh
+      # The archive as a user unpacks it, with nothing from the checkout: the
+      # self-check, one rendered template, and the font rule.
+      - name: Check the unpacked archive
+        run: |
+          set -eu
+          work=$(mktemp -d)
+          tar -xzf Linux/artifacts/scriptwidget-*-linux-x86_64.tar.gz -C "$work"
+          root=$(echo "$work"/scriptwidget-*)
+          env -i HOME="$work/home" PATH=/usr/bin "$root/bin/scriptwidget" doctor > "$work/doctor.json" || { cat "$work/doctor.json"; exit 1; }
+          env -i HOME="$work/home" PATH=/usr/bin "$root/bin/scriptwidget" render "$root/share/scriptwidget/templates/template/Month Calendar" --family large --output "$work/calendar.png" > "$work/render.json"
+          python -c 'import json,sys; r=json.load(open(sys.argv[1])); assert r["status"]=="passed" and r["picture"]["visiblePixels"]>0, r' "$work/render.json"
+          "$root/bin/scriptwidget-studio" --version
+          ldd "$root/bin/scriptwidget" | grep -i icu
+          ! find "$root" -iname '*.ttf' -o -iname '*.otf' | grep .
+          cp "$work/calendar.png" Linux/artifacts/
+      - uses: actions/upload-artifact@v7
+        with:
+          name: scriptwidget-linux-x86_64
+          path: |
+            Linux/artifacts/*.tar.gz
+            Linux/artifacts/*.sha256
+            Linux/artifacts/calendar.png
+          if-no-files-found: error

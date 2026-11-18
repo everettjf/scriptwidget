@@ -1,0 +1,166 @@
+#!/bin/bash
+# A stand-in for the `scriptwidget` program, for testing the Omarchy plugin
+# without the real background service. It is not installed with the plugin.
+#
+# It speaks the display protocol of docs/linux/plan.md section 4.8:
+#   scriptwidget watch                      prints one JSON event per line
+#   scriptwidget tap <id> <n>               \
+#   scriptwidget move <id> <screen> <x> <y>  |
+#   scriptwidget screen <name> <scale> <width> <height>
+#   scriptwidget theme <dark|light>          |  logged, and passed to `watch`
+#   scriptwidget menu <id> <word>            |  through a named pipe
+#   scriptwidget peek | arrange             /
+# and, for the tests only:
+#   scriptwidget raw <one JSON line>        `watch` prints the line as it is
+#   scriptwidget bye                        `watch` prints a bye event and exits
+#
+# Its files are in the folder that holds the frames directory named by
+# SCRIPTWIDGET_PLUGIN_FRAMES (the same variable the plugin reads):
+#   frames/    the pictures, drawn with ImageMagick
+#   log        every command received, one per line
+#   ctl        the named pipe
+#   down       if this file exists, the "service" is not running: exit code 69
+#   protocol   if this file exists, the protocol number `hello` announces
+#
+# It shows two widgets: `a` (medium, with a "+1" button, tap region 1) and
+# `b` (small, four frames, no tap region).
+
+frames=${SCRIPTWIDGET_PLUGIN_FRAMES:-${XDG_RUNTIME_DIR:?}/scriptwidget-plugin-test/frames}
+dir=${frames%/frames}
+fifo="$dir/ctl"
+log="$dir/log"
+pidfile="$dir/watch.pid"
+
+stamp() { date +%H:%M:%S.%N | cut -c1-12; }
+note() { echo "$(stamp) $*" >> "$log"; }
+serving() { [ -f "$pidfile" ] && [ -p "$fifo" ] && kill -0 "$(cat "$pidfile")" 2>/dev/null; }
+
+verb=${1:-}
+[ -n "$verb" ] || { echo "usage: scriptwidget <command>" >&2; exit 2; }
+shift
+
+if [ "$verb" != watch ]; then
+  mkdir -p "$dir"
+  if [ -e "$dir/down" ] || ! serving; then
+    note "refused $verb $*"
+    echo "error: [service_unavailable] the background service is not running" >&2
+    exit 69
+  fi
+  note "command $verb $*"
+  printf '%s\n' "$verb $*" > "$fifo"
+  exit 0
+fi
+
+# ---------------------------------------------------------------- watch
+
+mkdir -p -m 700 "$dir" "$frames"
+if [ -e "$dir/down" ]; then
+  note "watch refused: down"
+  echo "error: [service_unavailable] the background service is not running" >&2
+  exit 69
+fi
+[ -f "$pidfile" ] && kill "$(cat "$pidfile")" 2>/dev/null
+echo $$ > "$pidfile"
+rm -f "$fifo" "$frames"/*.png
+mkfifo -m 600 "$fifo"
+exec 3<>"$fifo"
+
+protocol=1
+[ -f "$dir/protocol" ] && protocol=$(tr -cd '0-9' < "$dir/protocol")
+arrange=false; peek=false
+ascreen=""; ax=80; ay=80; aw=329; ah=170; aversion=0; count=0
+bscreen=""; bx=460; by=80; bw=170; bh=170; bversion=0
+colors=("#e64553" "#fe640b" "#40a02b" "#1e66f5")
+
+note "watch started pid $$ protocol $protocol"
+echo "{\"event\":\"hello\",\"protocol\":$protocol,\"dark\":true,\"arrange\":$arrange,\"peek\":$peek}"
+
+# draw_a <file>: the medium widget, at twice its logical size.
+draw_a() {
+  local w=$((aw * 2)) h=$((ah * 2)) left=$(((aw - 128) / 2 * 2)) top=$(((ah - 65) * 2))
+  magick -size "${w}x${h}" xc:none -fill "#1e1e2ee6" -draw "roundrectangle 0,0 $((w - 1)),$((h - 1)) 44,44" \
+    -fill white -pointsize 44 -gravity north -annotate +0+24 "count $count" \
+    -pointsize 44 -annotate +0+84 "version $aversion" \
+    -fill "#1e66f5" -draw "roundrectangle $left,$top $((left + 256)),$((top + 90)) 24,24" \
+    -fill white -pointsize 40 -gravity northwest -annotate "+$((left + 100))+$((top + 22))" "+1" \
+    "$dir/tmp-a.png" && mv "$dir/tmp-a.png" "$1"
+}
+
+# emit_a [same]: a new picture of `a`. With `same`, under the file name it had.
+emit_a() {
+  local file
+  aversion=$((aversion + 1))
+  if [ "${1:-}" = same ] && [ -f "$afile" ]; then file=$afile; else file="$frames/a-$aversion.png"; fi
+  draw_a "$file"
+  echo "{\"event\":\"widget\",\"id\":\"a\",\"screen\":\"$ascreen\",\"x\":$ax,\"y\":$ay,\"width\":$aw,\"height\":$ah,\"image\":\"$file\",\"version\":$aversion,\"regions\":[{\"n\":1,\"x\":$(((aw - 128) / 2)),\"y\":$((ah - 65)),\"width\":128,\"height\":45}]}"
+  note "emit a version $aversion $file"
+  [ "$afile" != "$file" ] && [ -n "$afile" ] && { sleep 0.3; rm -f "$afile"; }
+  afile=$file
+}
+afile=""
+
+emit_b() {
+  local list="" index file
+  bversion=$((bversion + 1))
+  for index in 0 1 2 3; do
+    file="$frames/b-$bversion-$index.png"
+    magick -size "$((bw * 2))x$((bh * 2))" xc:none -fill "${colors[$index]}" \
+      -draw "roundrectangle 0,0 $((bw * 2 - 1)),$((bh * 2 - 1)) 44,44" \
+      -fill white -pointsize 120 -gravity center -annotate 0 "$index" "$dir/tmp-b.png" && mv "$dir/tmp-b.png" "$file"
+    list="$list{\"image\":\"$file\",\"ms\":250},"
+  done
+  echo "{\"event\":\"widget\",\"id\":\"b\",\"screen\":\"$bscreen\",\"x\":$bx,\"y\":$by,\"width\":$bw,\"height\":$bh,\"image\":\"$frames/b-$bversion-0.png\",\"version\":$bversion,\"regions\":[],\"frames\":[${list%,}]}"
+  note "emit b version $bversion"
+  [ "$bversion" -gt 1 ] && { sleep 0.3; rm -f "$frames"/b-$((bversion - 1))-*.png; }
+}
+
+number() { case "$1" in ""|*[!0-9-]*) return 1 ;; esac; }
+
+resize() {
+  case "$1" in
+    resize-small) echo "170 170" ;;
+    resize-medium) echo "329 170" ;;
+    resize-large) echo "329 345" ;;
+    resize-extraLarge) echo "639 345" ;;
+  esac
+}
+
+aalive=true; balive=true
+emit_a; emit_b
+
+while read -r -u 3 verb one two three four; do
+  case "$verb" in
+    tap)
+      [ "$one" = a ] && [ "$two" = 1 ] && $aalive && { count=$((count + 1)); emit_a; } ;;
+    move)
+      number "$three" && number "$four" || continue
+      if [ "$one" = a ] && $aalive; then ascreen=$two; ax=$three; ay=$four; emit_a same
+      elif [ "$one" = b ] && $balive; then bscreen=$two; bx=$three; by=$four; emit_b; fi ;;
+    menu)
+      case "$two" in
+        resize-*)
+          read -r w h <<< "$(resize "$two")"
+          [ -n "$w" ] || continue
+          if [ "$one" = a ] && $aalive; then aw=$w; ah=$h; emit_a
+          elif [ "$one" = b ] && $balive; then bw=$w; bh=$h; emit_b; fi ;;
+        refresh)
+          if [ "$one" = a ] && $aalive; then emit_a same; elif [ "$one" = b ] && $balive; then emit_b; fi ;;
+        remove)
+          if [ "$one" = a ]; then aalive=false; elif [ "$one" = b ]; then balive=false; else continue; fi
+          echo "{\"event\":\"remove\",\"id\":\"$one\"}" ;;
+      esac ;;
+    peek)
+      if $peek; then peek=false; else peek=true; fi
+      echo "{\"event\":\"mode\",\"arrange\":$arrange,\"peek\":$peek}" ;;
+    arrange)
+      if $arrange; then arrange=false; else arrange=true; fi
+      echo "{\"event\":\"mode\",\"arrange\":$arrange,\"peek\":$peek}" ;;
+    raw)
+      printf '%s\n' "$one${two:+ $two}${three:+ $three}${four:+ $four}" ;;
+    bye)
+      echo '{"event":"bye","reason":"test"}'
+      note "watch said bye"
+      rm -f "$pidfile"
+      exit 0 ;;
+  esac
+done

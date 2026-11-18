@@ -1,0 +1,18 @@
+{
+  "status.starting": "Connecting to ScriptWidget…",
+  "status.stopped": "ScriptWidget is not running. The widgets come back when its background service is started.",
+  "status.missing": "ScriptWidget is not installed. This plugin only shows the widgets; install the scriptwidget package to use it.",
+  "status.outdated": "Please update ScriptWidget. The installed version and this plugin do not match, so no widgets are shown.",
+  "status.unavailable": "The ScriptWidget plugin is not loaded.",
+  "bar.peek": "Show widgets on top",
+  "bar.peek.description": "Above every window, until switched off",
+  "bar.arrange": "Arrange widgets",
+  "bar.arrange.description": "Drag to move, right-click for more",
+  "menu.resize-small": "Small",
+  "menu.resize-medium": "Medium",
+  "menu.resize-large": "Large",
+  "menu.resize-extraLarge": "Extra large",
+  "menu.edit": "Edit",
+  "menu.refresh": "Refresh",
+  "menu.remove": "Remove"
+}
