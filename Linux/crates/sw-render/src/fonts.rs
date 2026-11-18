@@ -16,24 +16,62 @@ use skia_safe::font_style::{Slant, Width};
 use skia_safe::textlayout::{FontCollection, TypefaceFontProvider};
 use skia_safe::{Font, FontArguments, FontMgr, FontStyle, FourByteTag, Typeface};
 
-/// The fonts that ship inside the program: Inter and the six display fonts,
-/// as on Android and Windows. They are the files the Android app ships,
-/// embedded at build time from its asset folder, so the repository holds one
-/// copy and the program needs no font files next to it. Inter is under the
-/// SIL Open Font License (OFL-Inter.txt in that folder); the repository
-/// records no licence file for the six display fonts.
+/// The font that ships inside the program: Inter, the file the Android app
+/// ships, embedded at build time from its asset folder. It is under the SIL
+/// Open Font License (OFL-Inter.txt in that folder).
 const INTER: &[u8] = include_bytes!("../../../../Android/core/src/main/assets/fonts/Inter.ttf");
 
 /// Display fonts selectable with `font="custom,<name>,<size>"`: the names a
-/// script may use, the alias the face is registered under, and the file.
-const DISPLAY_FONTS: &[(&[&str], &str, &[u8])] = &[
-    (&["apple ][", "apple"], "sw-display-apple", include_bytes!("../../../../Android/core/src/main/assets/fonts/Apple ][.ttf")),
-    (&["larabiefont free", "larabiefontfree"], "sw-display-larabiefont", include_bytes!("../../../../Android/core/src/main/assets/fonts/Larabiefont Free.ttf")),
-    (&["monofonto"], "sw-display-monofonto", include_bytes!("../../../../Android/core/src/main/assets/fonts/Monofonto.ttf")),
-    (&["white rabbit", "whiterabbit", "new"], "sw-display-whiterabbit", include_bytes!("../../../../Android/core/src/main/assets/fonts/New.ttf")),
-    (&["oneslot"], "sw-display-oneslot", include_bytes!("../../../../Android/core/src/main/assets/fonts/OneSlot.ttf")),
-    (&["unispace"], "sw-display-unispace", include_bytes!("../../../../Android/core/src/main/assets/fonts/Unispace.ttf")),
+/// script may use, the alias the face is registered under, and the file name.
+///
+/// Unlike on Android and Windows these six are NOT inside the program: the
+/// repository records no licence for them, so a Linux release does not
+/// redistribute them. A file with one of these names in the optional font
+/// folder (see [`display_font_folder`]) is used; without it the text is drawn
+/// with Inter.
+const DISPLAY_FONTS: &[(&[&str], &str, &str)] = &[
+    (&["apple ][", "apple"], "sw-display-apple", "Apple ][.ttf"),
+    (&["larabiefont free", "larabiefontfree"], "sw-display-larabiefont", "Larabiefont Free.ttf"),
+    (&["monofonto"], "sw-display-monofonto", "Monofonto.ttf"),
+    (&["white rabbit", "whiterabbit", "new"], "sw-display-whiterabbit", "New.ttf"),
+    (&["oneslot"], "sw-display-oneslot", "OneSlot.ttf"),
+    (&["unispace"], "sw-display-unispace", "Unispace.ttf"),
 ];
+
+/// A display font file larger than this is ignored.
+const MAXIMUM_DISPLAY_FONT_BYTES: u64 = 16 * 1024 * 1024;
+
+/// Where optional display fonts are looked for: the folder `SCRIPTWIDGET_FONTS`
+/// names, else `fonts` next to the `runtime` folder of the installed
+/// resources (`share/scriptwidget/fonts`). `None` when neither exists. Unit
+/// tests of this crate read the Android asset folder of the repository.
+pub fn display_font_folder() -> Option<std::path::PathBuf> {
+    static FOLDER: std::sync::OnceLock<Option<std::path::PathBuf>> = std::sync::OnceLock::new();
+    FOLDER
+        .get_or_init(|| {
+            if let Some(value) = std::env::var_os("SCRIPTWIDGET_FONTS").filter(|value| !value.is_empty()) {
+                let folder = std::path::PathBuf::from(value);
+                return folder.is_absolute().then_some(folder);
+            }
+            if cfg!(test) {
+                return Some(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../../Android/core/src/main/assets/fonts"));
+            }
+            let resources = sw_core::Resources::locate().ok()?;
+            let folder = resources.runtime.parent()?.join("fonts");
+            folder.is_dir().then_some(folder)
+        })
+        .clone()
+}
+
+/// The bytes of an optional display font, or `None` when it is not installed.
+fn display_font_bytes(file: &str) -> Option<Vec<u8>> {
+    let path = display_font_folder()?.join(file);
+    let metadata = std::fs::symlink_metadata(&path).ok()?;
+    if !metadata.is_file() || metadata.len() > MAXIMUM_DISPLAY_FONT_BYTES {
+        return None;
+    }
+    std::fs::read(path).ok()
+}
 
 /// System families tried for the generic names: the one the user configured
 /// for the generic name in fontconfig first, then common ones by name.
@@ -227,10 +265,11 @@ impl FontRegistry {
     fn resolve(&mut self, family: &str, weight: i32) -> Face {
         let first = family.split(',').next().unwrap_or("").trim().trim_matches('"');
         let lower = first.to_lowercase();
-        if let Some((_, alias, data)) = DISPLAY_FONTS.iter().find(|(names, _, _)| names.contains(&lower.as_str())) {
+        if let Some((_, alias, file)) = DISPLAY_FONTS.iter().find(|(names, _, _)| names.contains(&lower.as_str())) {
             // A display font has one face; its weight is not synthesized, as on Android.
+            // It is optional on Linux: without the file the text is drawn with Inter.
             let loader = self.loader.clone();
-            if let Some(typeface) = self.register(alias, || loader.new_from_bytes(data, None)) {
+            if let Some(typeface) = self.register(alias, || display_font_bytes(file).and_then(|data| loader.new_from_bytes(&data, None))) {
                 return self.finish(Some(((*alias).to_owned(), typeface)), 400);
             }
             return self.bundled(weight);
