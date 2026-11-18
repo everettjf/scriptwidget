@@ -140,7 +140,8 @@ fn the_bundled_inter_is_loaded_and_its_weights_and_the_display_fonts_differ() {
     if face.primary.is_empty() || face.primary == "Inter" {
         println!("no system sans-serif face was found here ({:?}); skipped", face.primary);
     } else {
-        assert!((system.measure(sample, &regular) - inter).abs() > 0.5, "the system font {} measures like Inter", face.primary);
+        // Which face it is, not how wide: on Arch Linux the system's Noto Sans sets this sample within half a pixel of Inter.
+        assert!(system.measure(sample, &regular) > 100.0);
         assert_eq!(system.families_used(sample, &regular), [face.primary.clone()]);
     }
 }
