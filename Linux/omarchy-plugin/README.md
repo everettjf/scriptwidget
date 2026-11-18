@@ -64,7 +64,7 @@ The contract is section 4.8 of [`docs/linux/plan.md`](../../docs/linux/plan.md).
 - `image` is an absolute path below the frames directory that ends in `.png`; every path component consists of letters, digits, `.`, `_` and `-`. Anything else is ignored, and so is the widget.
 - A new picture has a new `version`. The file name may stay the same or change.
 - `frames`, when present, has 2 to 60 entries `{image, ms}`; `image` is still required and is shown where animation is off. One invalid frame turns the animation off. `ms` below 20 is taken as 20.
-- After `hello` the service names every widget again within 3 seconds. Widgets the plugin still shows from before and that are not named by then are removed.
+- After `hello` the service names every widget again within 12 seconds (a widget whose script is still running has no picture yet and is named late). Widgets the plugin still shows from before and that are not named by then are removed.
 - `scriptwidget peek` and `scriptwidget arrange` without arguments switch the mode over, and the service answers with a `mode` event.
 - The service answers `move`, and a `menu` resize, with a `widget` event. Until then the picture stays where it was dropped, for at most 3 seconds.
 - `watch` ends with a non-zero exit code or any other way when there is no service; the plugin does not look at the code.
