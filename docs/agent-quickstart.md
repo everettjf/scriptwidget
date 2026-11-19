@@ -46,7 +46,7 @@ The browser uses its sample mocks; native CLI fixture files are not automaticall
 The device must have ScriptWidget installed. A Skill supplies authoring instructions; it does not install the iOS app.
 
 - From Mac: send the exported `.swt` with AirDrop or iCloud Drive, then use the iOS share sheet to open it with ScriptWidget.
-- From Web Studio on iPhone: choose **Install on iPhone**. When file sharing is supported, choose ScriptWidget in the share sheet. Otherwise save the downloaded `.swt` and share it from Files.
+- From Web Studio on iPhone: choose **Install on device**. When file sharing is supported, choose ScriptWidget in the share sheet. Otherwise save the downloaded `.swt` and share it from Files.
 - Review the imported package and permissions. Add a ScriptWidget widget through the Home Screen widget gallery and select the imported package yourself. Importing a package does not place a widget on the Home Screen.
 
 No App Store update is needed for this existing import workflow.

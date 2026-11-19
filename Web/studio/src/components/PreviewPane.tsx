@@ -86,7 +86,7 @@ function Stage({ output }: { output: PreviewOutput }) {
         <div id="runtime-unavailable" role="alert" className="max-w-sm rounded-xl border bg-card p-4 text-sm">
           <strong>The preview can't start</strong>
           <p className="mt-1.5 text-muted-foreground">{output.message}</p>
-          <p className="mt-1.5 text-muted-foreground">You can keep editing, export the widget, and preview it on iPhone.</p>
+          <p className="mt-1.5 text-muted-foreground">You can keep editing, export the widget, and preview it in ScriptWidget on your device.</p>
         </div>
       )}
       {output.kind === "error" && (
@@ -104,7 +104,7 @@ function statusText(output: PreviewOutput): string {
     case "starting": return "Starting the preview runtime…";
     case "unavailable": return `The preview runtime could not start: ${output.message}`;
     case "error": return "Fix the error to see the preview.";
-    case "widget": return `Web fast preview · ${output.milliseconds} ms · ${output.width}×${output.height} pt. Install on iPhone for the final look.`;
+    case "widget": return `Web fast preview · ${output.milliseconds} ms · ${output.width}×${output.height} pt. Install it in ScriptWidget for the final look.`;
   }
 }
 
@@ -129,7 +129,7 @@ function PackageSummary({ report }: { report: PackageReport }) {
       <p className={report.valid ? "text-success" : "text-destructive"}>
         {report.valid ? "Ready to export: the manifest passes Package 2.0 validation." : "Fix the manifest errors in Problems before exporting."}
       </p>
-      <p className="text-muted-foreground">Edit widget.json to change sizes, permissions, or network hosts. iPhone asks the user to review permissions on import.</p>
+      <p className="text-muted-foreground">Edit widget.json to change sizes, permissions, or network hosts. ScriptWidget asks the user to review permissions on import.</p>
     </div>
   );
 }
