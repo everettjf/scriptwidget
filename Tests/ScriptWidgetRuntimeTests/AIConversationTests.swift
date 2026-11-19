@@ -1039,6 +1039,196 @@ final class AIConversationTests: XCTestCase {
         XCTAssertNotNil(session.previewElement)
     }
 
+    // MARK: - multi-turn quality
+
+    /// One request of a multi-turn case, and what the code has to look like after it.
+    struct ConversationEvalStep {
+        let request: String
+        /// Go back to this version number before sending, as a user would.
+        var fromVersion: Int? = nil
+        /// Text the code must hold after the turn, compared without case.
+        var mustContain: [String] = []
+        var mustNotContain: [String] = []
+        /// A small request should touch few lines: added plus removed, at most this.
+        var maxChangedLines: Int? = nil
+    }
+
+    struct ConversationEvalCase {
+        let id: String
+        let size: AIWidgetSize
+        let steps: [ConversationEvalStep]
+    }
+
+    /// The cases the live run sends. Every later step is a small change, so
+    /// that a model that rewrites everything shows in the changed lines.
+    static let conversationEvalCases: [ConversationEvalCase] = [
+        ConversationEvalCase(id: "greeting", size: .medium, steps: [
+            ConversationEvalStep(request: "A card that says Hello in large text with today's date under it, on a light background", mustContain: ["Hello"]),
+            ConversationEvalStep(request: "Change the word Hello to Welcome. Change nothing else.", mustContain: ["Welcome"], mustNotContain: ["Hello"], maxChangedLines: 6),
+            ConversationEvalStep(request: "Add a line at the bottom that says Have a nice day", mustContain: ["Welcome", "Have a nice day"], maxChangedLines: 12),
+            ConversationEvalStep(request: "Make the background dark blue and all text white", fromVersion: 1, mustContain: ["Hello"], mustNotContain: ["Have a nice day"]),
+        ]),
+        ConversationEvalCase(id: "habits", size: .large, steps: [
+            ConversationEvalStep(request: "A habit tracker with three rows: Water 6 of 8, Reading 20 of 30 and Steps 4200 of 8000. Each row has its name, the numbers and a progress bar. Use fixed sample data.", mustContain: ["Water", "Reading", "Steps"]),
+            ConversationEvalStep(request: "Rename Reading to Study. Change nothing else.", mustContain: ["Study", "Water", "Steps"], mustNotContain: ["Reading"], maxChangedLines: 6),
+            ConversationEvalStep(request: "Remove the Steps row", mustContain: ["Study", "Water"], mustNotContain: ["Steps"]),
+            ConversationEvalStep(request: "Add a title at the top that says Today", mustContain: ["Today", "Study", "Water"], maxChangedLines: 12),
+        ]),
+        ConversationEvalCase(id: "clock", size: .small, steps: [
+            ConversationEvalStep(request: "The current time in large text and the date under it in small text, centered, on a black background with white text", mustContain: ["<date"]),
+            ConversationEvalStep(request: "Show the date as a relative time instead", mustContain: ["relative"], maxChangedLines: 8),
+            ConversationEvalStep(request: "Make the background dark green", mustContain: ["<date"], maxChangedLines: 8),
+        ]),
+        ConversationEvalCase(id: "chinese", size: .medium, steps: [
+            ConversationEvalStep(request: "做一个卡片，大字显示“早上好”，下面一行小字显示“今天也要加油”，浅色背景", mustContain: ["早上好", "今天也要加油"]),
+            ConversationEvalStep(request: "把“早上好”改成“晚上好”，其他不要动", mustContain: ["晚上好", "今天也要加油"], mustNotContain: ["早上好"], maxChangedLines: 6),
+            ConversationEvalStep(request: "背景换成深色，文字换成白色", mustContain: ["晚上好", "今天也要加油"]),
+        ]),
+    ]
+
+    /// Runs `cases` through a session each and returns one record per turn.
+    private func runConversationEval(
+        _ cases: [ConversationEvalCase], makeSession: () -> AIConversationSession, output: URL? = nil
+    ) async throws -> [[String: Any]] {
+        var records: [[String: Any]] = []
+        for evalCase in cases {
+            let session = makeSession()
+            session.setSize(evalCase.size)
+            for (index, step) in evalCase.steps.enumerated() {
+                if let number = step.fromVersion, let version = session.conversation.versions.first(where: { $0.number == number }) {
+                    session.selectVersion(version.id)
+                }
+                let before = session.currentSource
+                let started = Date()
+                session.send(step.request)
+                await session.settle()
+                let turn = try XCTUnwrap(session.conversation.turns.last)
+                let after = turn.status == .succeeded ? session.currentSource : (turn.failedSource ?? "")
+                let changes = before.isEmpty ? nil : AISourceDiff.summary(old: before, new: after)
+                let changed = changes.map { $0.added + $0.removed }
+                let missing = turn.status == .succeeded
+                    ? step.mustContain.filter { !after.localizedCaseInsensitiveContains($0) } : step.mustContain
+                let unwanted = step.mustNotContain.filter { after.localizedCaseInsensitiveContains($0) }
+                let tooMany = turn.status == .succeeded && step.maxChangedLines != nil && (changed ?? 0) > (step.maxChangedLines ?? 0)
+                var record: [String: Any] = [
+                    "case": evalCase.id, "turn": index + 1, "request": step.request,
+                    "status": turn.status.rawValue, "repairs": turn.repairs,
+                    "promptTokens": turn.usage.promptTokens, "completionTokens": turn.usage.completionTokens,
+                    "seconds": (Date().timeIntervalSince(started) * 10).rounded() / 10,
+                    "lines": AISourceDiff.split(after).count,
+                    "missing": missing, "unwanted": unwanted, "tooManyChangedLines": tooMany,
+                    "passed": turn.status == .succeeded && missing.isEmpty && unwanted.isEmpty && !tooMany,
+                    "note": turn.note ?? "", "error": turn.errorSummary ?? "",
+                ]
+                if let changes { record["added"] = changes.added; record["removed"] = changes.removed }
+                if let limit = step.maxChangedLines { record["maxChangedLines"] = limit }
+                records.append(record)
+                if let output {
+                    try after.write(to: output.appendingPathComponent("\(evalCase.id)-turn-\(index + 1).jsx"), atomically: true, encoding: .utf8)
+                }
+            }
+        }
+        if let output {
+            let data = try JSONSerialization.data(withJSONObject: ["turns": records], options: [.prettyPrinted, .sortedKeys])
+            try data.write(to: output.appendingPathComponent("conversation-quality.json"))
+            try Self.conversationEvalReport(records).write(to: output.appendingPathComponent("report.md"), atomically: true, encoding: .utf8)
+        }
+        return records
+    }
+
+    /// The records as a page a person reads.
+    static func conversationEvalReport(_ records: [[String: Any]]) -> String {
+        func number(_ record: [String: Any], _ key: String) -> Int { record[key] as? Int ?? 0 }
+        let passed = records.filter { $0["passed"] as? Bool == true }.count
+        let later = records.filter { number($0, "turn") > 1 && $0["status"] as? String == "succeeded" }
+        let changed = later.map { number($0, "added") + number($0, "removed") }
+        let share = later.map { Double(number($0, "added") + number($0, "removed")) / Double(max(1, number($0, "lines"))) }
+        var lines = [
+            "# Multi-turn AI quality", "",
+            "- Turns passed: \(passed) of \(records.count)",
+            "- Repairs: \(records.map { number($0, "repairs") }.reduce(0, +))",
+            "- Tokens: \(records.map { number($0, "promptTokens") }.reduce(0, +)) sent, \(records.map { number($0, "completionTokens") }.reduce(0, +)) received",
+            "- Changed lines per later turn: \(changed.isEmpty ? 0 : changed.reduce(0, +) / changed.count) on average; \(share.isEmpty ? 0 : Int((share.reduce(0, +) / Double(share.count) * 100).rounded()))% of the widget's lines",
+            "", "| Case | Turn | Result | Repairs | +/− lines | Sent | Received | Seconds | Problem |", "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+        ]
+        for record in records {
+            var problems: [String] = []
+            if let error = record["error"] as? String, !error.isEmpty, record["status"] as? String != "succeeded" { problems.append(String(error.prefix(80))) }
+            if let missing = record["missing"] as? [String], !missing.isEmpty { problems.append("missing: " + missing.joined(separator: ", ")) }
+            if let unwanted = record["unwanted"] as? [String], !unwanted.isEmpty { problems.append("still there: " + unwanted.joined(separator: ", ")) }
+            if record["tooManyChangedLines"] as? Bool == true { problems.append("changed more than \(number(record, "maxChangedLines")) lines") }
+            let diff = record["added"] == nil ? "new" : "+\(number(record, "added")) −\(number(record, "removed"))"
+            lines.append("| \(record["case"] ?? "") | \(number(record, "turn")) | \(record["passed"] as? Bool == true ? "passed" : (record["status"] as? String ?? "")) | \(number(record, "repairs")) | \(diff) | \(number(record, "promptTokens")) | \(number(record, "completionTokens")) | \(record["seconds"] ?? "") | \(problems.joined(separator: "; ").replacingOccurrences(of: "|", with: "/").replacingOccurrences(of: "\n", with: " ")) |")
+        }
+        return lines.joined(separator: "\n") + "\n"
+    }
+
+    /// The harness itself, with scripted replies: no key, no network.
+    func testConversationEvalRecordsWhatEachTurnChangedAndMissed() async throws {
+        let first = "$render(\n  <vstack>\n    <text>Hello</text>\n    <text>Today</text>\n  </vstack>\n)\n"
+        ConversationProviderStub.enqueue([
+            reply("Made a greeting.", first),
+            edit("Says Welcome.", [("    <text>Hello</text>", "    <text>Welcome</text>")]),
+            // Asked for one more line, rewrote everything and forgot it.
+            reply("Rewrote it.", "$render(\n  <hstack>\n    <text>Welcome</text>\n    <spacer />\n    <text>Now</text>\n  </hstack>\n)\n"),
+        ])
+        let output = directory.appendingPathComponent("eval", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        let records = try await runConversationEval([
+            ConversationEvalCase(id: "scripted", size: .medium, steps: [
+                ConversationEvalStep(request: "A greeting", mustContain: ["Hello"]),
+                ConversationEvalStep(request: "Say Welcome", mustContain: ["Welcome"], mustNotContain: ["Hello"], maxChangedLines: 2),
+                ConversationEvalStep(request: "Add a line that says Bye", mustContain: ["Bye"], maxChangedLines: 2),
+            ]),
+        ], makeSession: { self.makeSession() }, output: output)
+
+        XCTAssertEqual(records.map { $0["passed"] as? Bool }, [true, true, false])
+        XCTAssertNil(records[0]["added"], "a new widget has nothing to compare with")
+        XCTAssertEqual(records[1]["added"] as? Int, 1)
+        XCTAssertEqual(records[1]["removed"] as? Int, 1)
+        XCTAssertEqual(records[2]["missing"] as? [String], ["Bye"])
+        XCTAssertEqual(records[2]["tooManyChangedLines"] as? Bool, true)
+        let report = try String(contentsOf: output.appendingPathComponent("report.md"), encoding: .utf8)
+        XCTAssertTrue(report.contains("Turns passed: 2 of 3"))
+        XCTAssertTrue(report.contains("missing: Bye; changed more than 2 lines"))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: output.appendingPathComponent("scripted-turn-2.jsx").path))
+        XCTAssertFalse(try String(contentsOf: output.appendingPathComponent("conversation-quality.json"), encoding: .utf8).contains(Self.secret))
+    }
+
+    /// The multi-turn cases against a real provider. It costs tokens, so it runs
+    /// only with AI_CONVERSATION_QUALITY=1 and ROCKY_OPENAI_APIKEY set; see
+    /// Scripts/ai-conversation-quality.sh. The key is never written.
+    func testConversationQualityAgainstARealProviderWhenConfigured() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        func read(_ name: String) -> String? {
+            for key in [name, "TEST_RUNNER_\(name)"] {
+                if let value = environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty { return value }
+            }
+            return nil
+        }
+        guard read("AI_CONVERSATION_QUALITY") == "1", let key = read("ROCKY_OPENAI_APIKEY") else {
+            throw XCTSkip("Set AI_CONVERSATION_QUALITY=1 and ROCKY_OPENAI_APIKEY to run the multi-turn quality cases.")
+        }
+        let profile = AIProfile(
+            id: "live-conversation-quality", name: "live",
+            baseURL: read("ROCKY_OPENAI_BASEURL") ?? AIProfile.defaultBaseURL,
+            model: read("ROCKY_OPENAI_MODEL") ?? AIProfile.defaultModel,
+            apiKey: key, authMethod: .apiKey
+        )
+        let settings = AISettings(profile: profile, maxIterations: 20, temperature: 0.2)
+        let output = read("AI_CONVERSATION_QUALITY_OUTPUT").map { URL(fileURLWithPath: $0, isDirectory: true) }
+        if let output { try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true) }
+        let store = try XCTUnwrap(self.store)
+        let records = try await runConversationEval(
+            Self.conversationEvalCases,
+            makeSession: { AIConversationSession(store: store, loadSettings: { settings }, skillsText: { _ in nil }) },
+            output: output
+        )
+        print(Self.conversationEvalReport(records))
+        let failed = records.filter { $0["passed"] as? Bool != true }.map { "\($0["case"] ?? "") turn \($0["turn"] ?? "")" }
+        XCTAssertEqual(failed, [], "see report.md")
+    }
+
     /// One turn that needs the network, against a real provider and a real
     /// public host (httpbin.org). Runs only with ROCKY_OPENAI_APIKEY set.
     func testNetworkWidgetAgainstARealProviderWhenConfigured() async throws {
