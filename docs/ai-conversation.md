@@ -61,7 +61,8 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 - On an iPhone the preview is on top, the turns are below it and the message field sits above the keyboard. While you type, the preview gets smaller to leave room. On an iPad the conversation is on the left and the preview, with the three sizes under it, on the right.
 - **Save** in the top bar asks for a name, and asks again before saving a widget that uses the network. The **…** menu holds a new conversation, the drafts, Skills, the provider, the code, the logs and deleting the conversation.
 - Conversations are files in the app's own Application Support folder on the device, as on the Mac.
-- The **Copilot** tab of the iPhone and iPad editor is not a conversation yet. It still sends one request for the open widget and shows a proposal to accept.
+- The **Copilot** tab of the editor is the conversation about the open widget, with the rules of [In the editor](#in-the-editor): the AI works on a copy, **Apply** writes the version on screen into the document, and a new host is asked about first. It has no Manage Skills entry; Skills are managed in Settings.
+- With the device set to Simplified Chinese, the conversation's own texts are in Chinese. The AI's notes are in the language you write in.
 
 ![The conversation on an iPad: the turns on the left, the preview and the three sizes on the right](images/ai-conversation-ipad.png)
 
@@ -163,8 +164,6 @@ The preview package carries a Package 2.0 `widget.json` with no permission, or w
 
 In the editor, the copy runs with the widget's own `widget.json` plus the declared hosts, and a legacy widget without `widget.json` runs as a legacy package, as it does when installed. A `widget.json` that is present but can not be read turns the panel off; it is never treated as absent.
 
-The single request of the Copilot tab in the iPhone and iPad editor still runs its candidate in a package without `widget.json`.
-
 ## Limits
 
 | | |
@@ -177,7 +176,7 @@ The single request of the Copilot tab in the iPhone and iPad editor still runs i
 
 ## Not in this version
 
-A conversation in the Copilot tab of the iPhone and iPad editor, code written out as it arrives on Android, and translations of the conversation's own texts. The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
+Code written out as it arrives on Android, an editor panel on Android, and translations of the conversation's own texts on the Mac and on Android (the Mac app has no translation yet; iPhone and iPad have Simplified Chinese). The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
 
 ## For contributors
 
