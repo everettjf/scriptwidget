@@ -38,6 +38,18 @@ A widget that fetches data must say which hosts it contacts. The AI is asked to 
 
 The **+** button holds Skills and examples. Skills chosen there apply to every turn of the conversation. They are text added to the request and grant nothing; see [Skills](skills.md).
 
+## In the editor
+
+The **Copilot** tab of the editor is the conversation about the open widget. A widget made in the AI window continues the conversation it was made in; any other widget starts one when you first write to it.
+
+- The AI works on a copy of the widget. Each version it makes is drawn small in the panel, and the widget and the editor stay as they are.
+- **Apply to Editor** writes the version on screen into the open document and saves it. If the document changed since the panel last looked, nothing is written and the conversation continues from the editor's code instead. Undo in the editor restores what was there.
+- Code the conversation has not seen (you typed in the editor, or used the Layout panel) is taken over as a version marked "Code from the editor" before your next request, so the AI always changes what you see.
+- The copy contains the widget's other files, so a widget that imports its own files or reads its own images runs as it does in the widget. A widget with more than 300 files or 20 MB is too large for this, and the panel says so.
+- The copy runs with the widget's own permissions. If a version declares a host the widget may not contact yet, Apply asks first and adds the network permission for that host to the widget.
+- **Fix Runtime Error** sends the error the editor's preview last reported.
+- The conversation changes the widget's main file. With another file selected, the panel asks you to select the main file.
+
 ## When something goes wrong
 
 | What happened | What you see |
@@ -77,7 +89,9 @@ Generated code is untrusted. It runs only through the ScriptWidget runtime, in a
 
 The preview package carries a Package 2.0 `widget.json` with no permission, or with the network permission for the declared hosts, so the code is held to what the saved widget will get. Other permissions (location, calendar, health and the rest) can not be declared in a conversation; a widget that needs one gets it in the editor's configuration after saving, with the usual system approval.
 
-The earlier single request on iPhone and iPad, and the editor's Copilot, still run their candidate in a package without `widget.json`.
+In the editor, the copy runs with the widget's own `widget.json` plus the declared hosts, and a legacy widget without `widget.json` runs as a legacy package, as it does when installed. A `widget.json` that is present but can not be read turns the panel off; it is never treated as absent.
+
+The earlier single request on iPhone and iPad still runs its candidate in a package without `widget.json`.
 
 ## Limits
 
@@ -91,7 +105,7 @@ The earlier single request on iPhone and iPad, and the editor's Copilot, still r
 
 ## Not in this version
 
-The same conversation in the editor's Copilot panel, targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface.
+Targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface.
 
 ## For contributors
 

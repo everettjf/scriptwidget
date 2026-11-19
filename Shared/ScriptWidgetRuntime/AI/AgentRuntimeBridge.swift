@@ -83,6 +83,46 @@ final class AgentRuntimeBridge {
         return ScriptWidgetPackage(path: dir, readonly: false)
     }
 
+    /// Copies a widget's own files into a sandbox package, so that code which
+    /// imports or reads them runs as it would in the widget. Regular files
+    /// only, no links, nothing from the build cache, within fixed limits.
+    /// Returns false when the widget is too large to copy; nothing is half-copied
+    /// silently in that case, the caller is told.
+    @discardableResult
+    func seed(_ package: ScriptWidgetPackage, from source: URL) -> Bool {
+        let fileManager = FileManager.default
+        let keys: [URLResourceKey] = [.isRegularFileKey, .isDirectoryKey, .isSymbolicLinkKey, .fileSizeKey]
+        guard let enumerator = fileManager.enumerator(
+            at: source, includingPropertiesForKeys: keys, options: [.skipsHiddenFiles]
+        ) else { return false }
+        let root = source.standardizedFileURL.path
+        var files: [(relative: String, url: URL)] = []
+        var total = 0
+        for case let url as URL in enumerator {
+            guard let values = try? url.resourceValues(forKeys: Set(keys)) else { return false }
+            if values.isSymbolicLink == true { continue }
+            let path = url.standardizedFileURL.path
+            guard path.hasPrefix(root + "/") else { continue }
+            let relative = String(path.dropFirst(root.count + 1))
+            if relative.split(separator: "/").first.map({ $0.lowercased() == "__build" }) == true {
+                if values.isDirectory == true { enumerator.skipDescendants() }
+                continue
+            }
+            guard values.isRegularFile == true else { continue }
+            total += values.fileSize ?? 0
+            files.append((relative, url))
+            guard files.count <= Self.seedMaximumFiles, total <= Self.seedMaximumBytes else { return false }
+        }
+        for file in files {
+            guard let data = try? Data(contentsOf: file.url),
+                  ScriptWidgetPackageFiles.write(data, root: package.path, relative: file.relative) else { return false }
+        }
+        return true
+    }
+
+    static let seedMaximumFiles = 300
+    static let seedMaximumBytes = 20 * 1_048_576
+
     func cleanupSandboxPackage(_ package: ScriptWidgetPackage) {
         try? FileManager.default.removeItem(at: package.path)
     }
@@ -96,6 +136,7 @@ final class AgentRuntimeBridge {
         return await withCheckedContinuation { continuation in
             runQueue.async {
                 if let manifest {
+                    // A seeded copy may carry the widget's own widget.json; this one replaces it.
                     guard let data = try? JSONEncoder().encode(manifest),
                           ScriptWidgetPackageFiles.write(data, root: package.path, relative: "widget.json") else {
                         continuation.resume(returning: AgentRunResult(

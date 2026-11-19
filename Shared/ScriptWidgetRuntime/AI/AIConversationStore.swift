@@ -77,6 +77,17 @@ final class AIConversationStore {
             }
     }
 
+    /// The newest conversation saved as this widget: by manifest id when there
+    /// is one, else by name.
+    func latest(packageID: String?, packageName: String) -> AIConversation? {
+        lock.lock()
+        defer { lock.unlock() }
+        return allLocked().first { conversation in
+            if let packageID, let saved = conversation.savedPackageID { return saved == packageID }
+            return conversation.savedPackageName == packageName
+        }
+    }
+
     func delete(id: UUID) {
         lock.lock()
         defer { lock.unlock() }
