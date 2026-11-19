@@ -36,6 +36,76 @@ struct AIConversationVersion: Codable, Identifiable, Equatable {
     let source: String
     let parentID: UUID?
     let createdAt: Date
+    /// Hosts the widget declared it contacts; nil or empty for a widget that stays offline.
+    var networkDomains: [String]?
+}
+
+/// What a generated widget says about its own network use. It is the model's
+/// claim, so it is untrusted: it is checked like any manifest, shown to the
+/// user before saving, and can only ever name the network permission.
+struct AINetworkDeclaration: Equatable {
+    static let maximumDomains = 8
+
+    let domains: [String]
+
+    enum ParseResult: Equatable {
+        case none
+        case declared(AINetworkDeclaration)
+        case invalid(String)
+    }
+
+    /// Reads `{"permissions": ["network"], "networkDomains": [...]}`.
+    static func parse(json: String?) -> ParseResult {
+        guard let json, !json.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return .none }
+        guard json.utf8.count <= 4_096,
+              let object = try? JSONSerialization.jsonObject(with: Data(json.utf8)) as? [String: Any] else {
+            return .invalid("it is not a JSON object")
+        }
+        guard Set(object.keys).isSubset(of: ["permissions", "networkDomains"]) else {
+            return .invalid("only \"permissions\" and \"networkDomains\" may appear")
+        }
+        let permissions = object["permissions"] as? [String] ?? []
+        let domains = object["networkDomains"] as? [String] ?? []
+        if permissions.isEmpty && domains.isEmpty { return .none }
+        guard permissions == ["network"] else {
+            return .invalid("\"permissions\" must be exactly [\"network\"]; no other permission can be declared")
+        }
+        guard !domains.isEmpty, domains.count <= maximumDomains else {
+            return .invalid("\"networkDomains\" must list 1 to \(maximumDomains) hosts")
+        }
+        let declaration = AINetworkDeclaration(domains: domains)
+        let scratch = ScriptWidgetPackage(path: FileManager.default.temporaryDirectory, readonly: true)
+        let report = WidgetPackageManifestValidator.validate(
+            declaration.manifest(name: "AI Preview"), package: scratch, checkEntryExists: false
+        )
+        guard report.isValid else {
+            return .invalid(report.errors.map(\.message).joined(separator: " "))
+        }
+        return .declared(declaration)
+    }
+
+    /// A new Package 2.0 manifest that allows exactly these hosts and nothing else.
+    func manifest(name: String) -> WidgetPackageManifest {
+        Self.manifest(name: name, domains: domains)
+    }
+
+    /// The manifest a widget saved from a conversation gets: no permission at
+    /// all, or the network permission for the declared hosts.
+    static func manifest(name: String, domains: [String]) -> WidgetPackageManifest {
+        var manifest = WidgetPackageManifest.newProject(name: name)
+        if !domains.isEmpty {
+            manifest.permissions = [.network]
+            manifest.networkDomains = domains
+        }
+        return manifest
+    }
+
+    var json: String {
+        let data = try? JSONSerialization.data(
+            withJSONObject: ["permissions": ["network"], "networkDomains": domains], options: [.sortedKeys]
+        )
+        return data.flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
+    }
 }
 
 struct AIConversationTurn: Codable, Identifiable, Equatable {
@@ -148,10 +218,11 @@ struct AIConversation: Codable, Identifiable, Equatable {
 
     /// Records a version made by a turn and makes it the current one.
     @discardableResult
-    mutating func addVersion(source: String, now: Date = Date()) -> AIConversationVersion {
+    mutating func addVersion(source: String, networkDomains: [String] = [], now: Date = Date()) -> AIConversationVersion {
         versionCounter += 1
         let version = AIConversationVersion(
-            id: UUID(), number: versionCounter, source: source, parentID: currentVersionID, createdAt: now
+            id: UUID(), number: versionCounter, source: source, parentID: currentVersionID, createdAt: now,
+            networkDomains: networkDomains.isEmpty ? nil : networkDomains
         )
         versions.append(version)
         currentVersionID = version.id

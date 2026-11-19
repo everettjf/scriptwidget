@@ -46,6 +46,7 @@ private struct AIConversationWindowContent: View {
     @State private var saveError: String?
     @State private var shownCode: ShownCode?
     @State private var showingLogs = false
+    @State private var confirmingNetworkSave = false
     @State private var isDebugMode = false
     @State private var profiles: [AIProfile] = []
     @State private var activeProfileID = ""
@@ -101,7 +102,7 @@ private struct AIConversationWindowContent: View {
         }
         .sheet(item: $shownCode) { codeSheet($0) }
         .sheet(isPresented: $showingLogs) { logsSheet }
-        .alert("Save Failed", isPresented: saveErrorBinding) {
+        .alert("Saving the Widget", isPresented: saveErrorBinding) {
             Button("OK") { saveError = nil }
         } message: {
             Text(saveError ?? "")
@@ -318,6 +319,16 @@ private struct AIConversationWindowContent: View {
                     .controlSize(.small)
                     .keyboardShortcut(".", modifiers: .command)
             }
+            if !session.liveText.isEmpty {
+                Text(Self.tail(of: session.liveText, lines: 8))
+                    .font(.caption.monospaced())
+                    .foregroundStyle(.secondary)
+                    .lineLimit(8, reservesSpace: true)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(8)
+                    .background(Color(nsColor: .textBackgroundColor).opacity(0.6), in: .rect(cornerRadius: 6))
+                    .accessibilityLabel("Code being written")
+            }
         case .succeeded:
             Text(turn.note ?? "Done.")
                 .textSelection(.enabled)
@@ -507,11 +518,23 @@ private struct AIConversationWindowContent: View {
                 }
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 360)
+            .frame(minHeight: 280)
             .clipShape(.rect(cornerRadius: StudioDesign.cardCornerRadius))
             .overlay {
                 RoundedRectangle(cornerRadius: StudioDesign.cardCornerRadius, style: .continuous)
                     .stroke(StudioDesign.separator, lineWidth: 1)
+            }
+
+            if conversation.currentVersion != nil {
+                thumbnails
+            }
+
+            if !session.currentDomains.isEmpty {
+                Label("This version may contact: \(session.currentDomains.joined(separator: ", "))", systemImage: "globe")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(2)
+                    .textSelection(.enabled)
             }
 
             HStack {
@@ -529,6 +552,57 @@ private struct AIConversationWindowContent: View {
             }
         }
         .padding(12)
+    }
+
+    /// The widget at the three home-screen sizes; a click shows that size above.
+    private var thumbnails: some View {
+        HStack(alignment: .bottom, spacing: 12) {
+            ForEach(AIConversationSession.thumbnailSizes) { size in
+                let scale: CGFloat = 0.24
+                let full = size.previewSize
+                Button {
+                    session.setSize(size)
+                } label: {
+                    VStack(spacing: 4) {
+                        Group {
+                            if let element = session.previews[size], let package = session.previewPackage {
+                                ScriptWidgetElementView(
+                                    element: element,
+                                    context: ScriptWidgetElementContext(
+                                        runtime: nil, debugMode: false, scriptName: "AI Preview",
+                                        scriptParameter: "", package: package
+                                    )
+                                )
+                                .frame(width: full.width, height: full.height)
+                                .background(Color(NSColor.textBackgroundColor))
+                                .cornerRadius(10)
+                                .scaleEffect(scale)
+                                .allowsHitTesting(false)
+                            } else {
+                                ProgressView().controlSize(.small)
+                            }
+                        }
+                        .frame(width: full.width * scale, height: full.height * scale)
+                        .overlay {
+                            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                                .stroke(size == conversation.size ? Color.accentColor : StudioDesign.separator,
+                                        lineWidth: size == conversation.size ? 2 : 1)
+                        }
+                        Text(size.displayName)
+                            .font(.caption2)
+                            .foregroundStyle(size == conversation.size ? .primary : .secondary)
+                    }
+                    .contentShape(.rect)
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Show the \(size.displayName) size")
+            }
+            Spacer()
+        }
+    }
+
+    private static func tail(of text: String, lines: Int) -> String {
+        text.split(separator: "\n", omittingEmptySubsequences: false).suffix(lines).joined(separator: "\n")
     }
 
     private var usageText: some View {
@@ -554,14 +628,16 @@ private struct AIConversationWindowContent: View {
                 scriptParameter: "",
                 package: package
             )
-            ScrollView([.horizontal, .vertical]) {
+            // A size larger than the space is drawn smaller, never cut off.
+            GeometryReader { proxy in
+                let scale = min(1, (proxy.size.width - 32) / size.width, (proxy.size.height - 32) / size.height)
                 ScriptWidgetElementView(element: element, context: context)
                     .frame(width: size.width, height: size.height)
                     .background(Color(NSColor.textBackgroundColor))
                     .cornerRadius(conversation.size.previewIsCircular ? size.height / 2 : 10)
-                    .padding(16)
+                    .scaleEffect(max(0.1, scale))
+                    .frame(width: proxy.size.width, height: proxy.size.height)
             }
-            .defaultScrollAnchor(.center)
         } else if session.isRunning {
             VStack(spacing: StudioDesign.standardSpacing) {
                 ProgressView()
@@ -605,7 +681,18 @@ private struct AIConversationWindowContent: View {
             TextField("Widget name", text: $saveName)
                 .textFieldStyle(.roundedBorder)
                 .frame(minWidth: 200, maxWidth: 260)
-            Button("Save Widget", systemImage: "square.and.arrow.down", action: performSave)
+            Button("Save Widget", systemImage: "square.and.arrow.down") {
+                if session.currentDomains.isEmpty { performSave() } else { confirmingNetworkSave = true }
+            }
+                .confirmationDialog(
+                    "Allow this widget to use the network?",
+                    isPresented: $confirmingNetworkSave
+                ) {
+                    Button("Save and Allow") { performSave() }
+                    Button("Cancel", role: .cancel) { }
+                } message: {
+                    Text("The AI wrote a widget that contacts: \(session.currentDomains.joined(separator: ", ")). Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration.")
+                }
                 .buttonStyle(.borderedProminent)
                 .disabled(session.currentSource.isEmpty || session.isRunning
                           || saveName.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -732,18 +819,42 @@ private struct AIConversationWindowContent: View {
             saveError = "Widget name can not be empty."
             return
         }
+        // Resolve the name first so that the package just created can be found again.
+        let packageName = sharedScriptManager.getValidPackageName(recommendPackageName: trimmed)
+        guard !packageName.isEmpty else {
+            saveError = "This name can not be used for a widget, or the widget library is not available."
+            return
+        }
         let result = sharedScriptManager.createScript(
             content: session.currentSource,
-            recommendPackageName: trimmed,
+            recommendPackageName: packageName,
             imageCopyPath: nil
         )
-        if result.0 {
-            session.markSaved(packageName: trimmed)
-            NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
-            WidgetCenter.shared.reloadAllTimelines()
-            dismiss()
-        } else {
+        guard result.0 else {
             saveError = result.1
+            return
+        }
+        var warning: String?
+        let domains = session.currentDomains
+        if !domains.isEmpty {
+            // The declaration came from the model; writeManifest validates it again.
+            let package = sharedScriptManager.getScriptPackage(packageName: packageName)
+            if var manifest = package.readManifest() {
+                manifest.permissions = [.network]
+                manifest.networkDomains = domains
+                let written = package.writeManifest(manifest)
+                if !written.0 { warning = written.1 }
+            } else {
+                warning = "The widget's configuration could not be read."
+            }
+        }
+        session.markSaved(packageName: packageName)
+        NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
+        WidgetCenter.shared.reloadAllTimelines()
+        if let warning {
+            saveError = "The widget was saved, but its network permission could not be added: \(warning) Add it in the widget's configuration."
+        } else {
+            dismiss()
         }
     }
 }

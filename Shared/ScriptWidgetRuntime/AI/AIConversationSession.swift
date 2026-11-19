@@ -27,8 +27,11 @@ final class AIConversationSession: ObservableObject {
 
     @Published private(set) var conversation: AIConversation
     @Published private(set) var activity: Activity = .idle
-    /// The current version, rendered at the conversation's size.
-    @Published private(set) var previewElement: ScriptWidgetRuntimeElement?
+    /// The current version, rendered at the conversation's size and at the
+    /// thumbnail sizes. Rendering happens on this device and sends nothing.
+    @Published private(set) var previews: [AIWidgetSize: ScriptWidgetRuntimeElement] = [:]
+    /// The code of the reply being written, as far as it has arrived.
+    @Published private(set) var liveText = ""
     /// The package the preview was rendered in; views need it to resolve files.
     @Published private(set) var previewPackage: ScriptWidgetPackage?
     /// Console output of each attempt of the newest turn, for the Logs view.
@@ -41,7 +44,13 @@ final class AIConversationSession: ObservableObject {
         let lines: [String]
     }
 
+    /// The sizes always rendered next to the chosen one.
+    static let thumbnailSizes: [AIWidgetSize] = [.small, .medium, .large]
+
     var isRunning: Bool { activity != .idle }
+    var previewElement: ScriptWidgetRuntimeElement? { previews[conversation.size] }
+    /// Hosts the version on screen may contact.
+    var currentDomains: [String] { conversation.currentVersion?.networkDomains ?? [] }
     var currentSource: String { conversation.currentVersion?.source ?? "" }
 
     private let store: AIConversationStore
@@ -59,6 +68,7 @@ final class AIConversationSession: ObservableObject {
     private var generation = UUID()
     private var previewGeneration = UUID()
     private var pendingAttemptCode = ""
+    private var pendingDomains: [String] = []
 
     init(
         conversation: AIConversation = AIConversation(),
@@ -102,7 +112,8 @@ final class AIConversationSession: ObservableObject {
             previousCode: conversation.version(base?.parentID)?.source,
             request: turn.request,
             skillsText: skillsText(Set(conversation.skillIDs)),
-            size: conversation.size
+            size: conversation.size,
+            currentDomains: base?.networkDomains ?? []
         )
         persist()
         run(turnID: turn.id, context: context)
@@ -125,6 +136,7 @@ final class AIConversationSession: ObservableObject {
         currentTask?.cancel()
         finishRunningTurns(as: .cancelled, message: nil)
         activity = .idle
+        liveText = ""
         persist()
     }
 
@@ -144,7 +156,8 @@ final class AIConversationSession: ObservableObject {
         guard conversation.size != size else { return }
         conversation.size = size
         persist()
-        refreshPreview()
+        // A thumbnail size is already rendered; any other size is rendered now.
+        if previews[size] == nil { refreshPreview() }
     }
 
     func setSkills(_ ids: Set<String>) {
@@ -166,6 +179,8 @@ final class AIConversationSession: ObservableObject {
         self.generation = generation
         attemptLogs = []
         pendingAttemptCode = ""
+        pendingDomains = []
+        liveText = ""
         activity = .thinking(attempt: 1)
 
         let settings = loadSettings()
@@ -189,8 +204,13 @@ final class AIConversationSession: ObservableObject {
     private func apply(event: AgentLoopEvent, turnID: UUID) {
         switch event {
         case .thinking(let attempt):
+            liveText = ""
             if case .repairing = activity { break }
             activity = .thinking(attempt: attempt)
+        case .partial(let text):
+            liveText = PromptBuilder.previewOfPartialReply(text)
+        case .declared(let domains):
+            pendingDomains = domains
         case .produced(_, let jsx):
             pendingAttemptCode = jsx
         case .running(let attempt):
@@ -211,6 +231,7 @@ final class AIConversationSession: ObservableObject {
 
     private func apply(outcome: AgentLoopOutcome, turnID: UUID) {
         activity = .idle
+        liveText = ""
         switch outcome {
         case .succeeded(let jsx, let element, let usage):
             guard jsx.utf8.count <= AIConversationLimits.maxSourceBytes else {
@@ -221,7 +242,7 @@ final class AIConversationSession: ObservableObject {
                 }
                 break
             }
-            let version = conversation.addVersion(source: jsx)
+            let version = conversation.addVersion(source: jsx, networkDomains: pendingDomains)
             conversation.updateTurn(turnID) {
                 $0.status = .succeeded
                 $0.versionID = version.id
@@ -261,28 +282,33 @@ final class AIConversationSession: ObservableObject {
     }
 
     private func showPreview(element: ScriptWidgetRuntimeElement, source: String) {
-        previewGeneration = UUID()
-        previewTask?.cancel()
-        if let previewPackage { _ = previewPackage.writeMainFile(content: source) }
-        previewElement = element
+        // The loop already rendered the chosen size; the others follow.
+        previews = [conversation.size: element]
+        refreshPreview(keeping: [conversation.size])
     }
 
-    /// Runs the current version again in the preview package.
-    private func refreshPreview() {
-        guard let previewPackage, let version = conversation.currentVersion else {
-            previewElement = nil
-            return
-        }
+    /// Runs the current version in the preview package: at the chosen size and
+    /// at the thumbnail sizes, with the permissions the version declares.
+    private func refreshPreview(keeping kept: Set<AIWidgetSize> = []) {
         let token = UUID()
         previewGeneration = token
         previewTask?.cancel()
-        let size = conversation.size
+        guard let previewPackage, let version = conversation.currentVersion else {
+            previews = [:]
+            return
+        }
+        previews = previews.filter { kept.contains($0.key) }
+        var sizes = [conversation.size] + Self.thumbnailSizes.filter { $0 != conversation.size }
+        sizes.removeAll { kept.contains($0) }
+        let manifest = AINetworkDeclaration.manifest(name: "AI Preview", domains: version.networkDomains ?? [])
         previewTask = Task { [weak self, bridge] in
-            let result = await bridge.run(jsx: version.source, in: previewPackage, size: size)
-            guard let self, self.previewGeneration == token else { return }
-            // A version only exists because it ran once; if it fails now (the
-            // network is gone, say) the element it does return is still shown.
-            self.previewElement = result.element
+            for size in sizes {
+                let result = await bridge.run(jsx: version.source, in: previewPackage, size: size, manifest: manifest)
+                guard let self, self.previewGeneration == token else { return }
+                // A version only exists because it ran once; if it fails now (the
+                // network is gone, say) the element it does return is still shown.
+                self.previews[size] = result.element
+            }
         }
     }
 

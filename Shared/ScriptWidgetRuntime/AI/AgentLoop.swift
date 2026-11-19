@@ -23,6 +23,10 @@ enum AgentLoopEvent {
     case tokensUsed(AITokenUsage)  // incremental
     /// The model's one-sentence account of its change; conversation turns only.
     case note(String)
+    /// The reply so far, while it is being written; conversation turns only.
+    case partial(String)
+    /// Hosts the candidate about to run declares it contacts; conversation turns only.
+    case declared([String])
 }
 
 struct AgentLoopRequest {
@@ -116,7 +120,7 @@ final class AgentLoop {
                     AIMessage(role: .assistant, content: previous),
                     AIMessage(role: .user, content: PromptBuilder.userPromptFix(
                         previousCode: previous, errorSummary: errMsg, recentLogs: lastLogs
-                    )),
+                    ) + (isTurn ? PromptBuilder.turnRepairSuffix : "")),
                 ]
             } else {
                 messages = [systemMessage, firstUserMessage]
@@ -124,7 +128,13 @@ final class AgentLoop {
 
             let chatResult: AIChatResult
             do {
-                chatResult = try await client.chat(messages: messages, settings: request.settings)
+                if isTurn {
+                    chatResult = try await client.chatStream(messages: messages, settings: request.settings) { text in
+                        await onEvent(.partial(text))
+                    }
+                } else {
+                    chatResult = try await client.chat(messages: messages, settings: request.settings)
+                }
             } catch {
                 if Task.isCancelled { return .cancelled(usage: cumulativeUsage) }
                 return .failed(message: error.localizedDescription, usage: cumulativeUsage)
@@ -138,18 +148,39 @@ final class AgentLoop {
             }
 
             let jsx: String
+            var manifest: WidgetPackageManifest?
+            var declarationError: String?
             if isTurn {
                 let reply = PromptBuilder.parseTurnReply(chatResult.content)
                 jsx = reply.code
                 if let note = reply.note { await onEvent(.note(note)) }
+                // A conversation's widget runs with the permissions it would have
+                // once saved: none, or the network for the hosts it declares.
+                switch AINetworkDeclaration.parse(json: reply.declaration) {
+                case .none:
+                    manifest = AINetworkDeclaration.manifest(name: "AI Preview", domains: [])
+                    await onEvent(.declared([]))
+                case .declared(let declaration):
+                    manifest = declaration.manifest(name: "AI Preview")
+                    await onEvent(.declared(declaration.domains))
+                case .invalid(let reason):
+                    declarationError = "The network declaration block is not valid: \(reason)."
+                }
             } else {
                 jsx = PromptBuilder.stripCodeFences(chatResult.content)
             }
             latestCode = jsx
             await onEvent(.produced(iteration: iteration, jsx: jsx))
 
+            if let declarationError {
+                lastError = declarationError
+                lastLogs = []
+                await onEvent(.ranFailed(iteration: iteration, errorSummary: declarationError, logs: []))
+                continue
+            }
+
             await onEvent(.running(iteration: iteration))
-            let runResult = await bridge.run(jsx: jsx, in: package, size: request.size)
+            let runResult = await bridge.run(jsx: jsx, in: package, size: request.size, manifest: manifest)
 
             if Task.isCancelled {
                 return .cancelled(usage: cumulativeUsage)

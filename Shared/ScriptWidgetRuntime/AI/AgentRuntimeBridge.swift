@@ -87,9 +87,23 @@ final class AgentRuntimeBridge {
         try? FileManager.default.removeItem(at: package.path)
     }
 
-    func run(jsx: String, in package: ScriptWidgetPackage, size: AIWidgetSize) async -> AgentRunResult {
+    /// Runs the code in the sandbox package. With a manifest, the package is a
+    /// Package 2.0 one and the code gets exactly the permissions written there,
+    /// as it would once saved; without, it is a legacy package.
+    func run(
+        jsx: String, in package: ScriptWidgetPackage, size: AIWidgetSize, manifest: WidgetPackageManifest? = nil
+    ) async -> AgentRunResult {
         return await withCheckedContinuation { continuation in
             runQueue.async {
+                if let manifest {
+                    guard let data = try? JSONEncoder().encode(manifest),
+                          ScriptWidgetPackageFiles.write(data, root: package.path, relative: "widget.json") else {
+                        continuation.resume(returning: AgentRunResult(
+                            element: nil, error: .internalError("Failed to write widget.json"), logs: []
+                        ))
+                        return
+                    }
+                }
                 // Persist the JSX so packages that read themselves or
                 // register support files still work.
                 let writeResult = package.writeMainFile(content: jsx)

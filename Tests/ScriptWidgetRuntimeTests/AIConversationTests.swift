@@ -251,6 +251,176 @@ final class AIConversationTests: XCTestCase {
         await session.settle()
     }
 
+    // MARK: - streaming
+
+    func testReplyIsReadAsItIsWrittenAndEndsAsOneText() async {
+        let content = "SUMMARY: Made a greeting.\n```jsx\n\(Self.goodWidget)\n```"
+        ConversationProviderStub.enqueue([.content(content)])
+        let client = AIClient(session: urlSession)
+        var profile = AIProfile.makeDefault()
+        profile.baseURL = "http://conversation.test"
+        profile.model = "stub-model"
+        profile.apiKey = Self.secret
+        let collected = Collected()
+        let result = try? await client.chatStream(
+            messages: [.init(role: .user, content: "hi")],
+            settings: AISettings(profile: profile, maxIterations: 1, temperature: 0)
+        ) { text in await collected.append(text) }
+
+        XCTAssertEqual(result?.content, content)
+        XCTAssertEqual(result?.usage.totalTokens, 15, "usage comes from the last event")
+        let texts = await collected.texts
+        XCTAssertEqual(texts.last, content)
+        XCTAssertTrue(texts.allSatisfy { content.hasPrefix($0) }, "every update is the text so far")
+        XCTAssertEqual(ConversationProviderStub.streamFlags, [true])
+    }
+
+    func testTurnUsesTheStreamedFormAndClearsTheLiveTextWhenDone() async {
+        ConversationProviderStub.enqueue([reply("Made a greeting.", Self.goodWidget)])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        XCTAssertEqual(ConversationProviderStub.streamFlags, [true])
+        XCTAssertEqual(session.conversation.turns[0].status, .succeeded)
+        XCTAssertEqual(session.conversation.turns[0].usage.totalTokens, 15)
+        XCTAssertEqual(session.liveText, "")
+    }
+
+    func testServerWithoutStreamingIsAskedAgainInThePlainForm() async {
+        ConversationProviderStub.enqueue([.plainOnly("SUMMARY: Made a greeting.\n```jsx\n\(Self.goodWidget)\n```")])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        XCTAssertEqual(session.conversation.turns[0].status, .succeeded)
+        XCTAssertEqual(session.currentSource, Self.goodWidget)
+        XCTAssertEqual(ConversationProviderStub.refusedStreams, 1)
+        XCTAssertEqual(ConversationProviderStub.streamFlags, [false])
+    }
+
+    func testPartialReplyShowsOnlyTheCode() {
+        XCTAssertEqual(PromptBuilder.previewOfPartialReply("SUMMARY: Made it.\n```jsx\n$render(<te"), "$render(<te")
+        XCTAssertEqual(PromptBuilder.previewOfPartialReply("SUMMARY: Made it.\n```js"), "")
+        XCTAssertEqual(PromptBuilder.previewOfPartialReply("```jsx\nA\n```\n```json\n{}"), "A\n")
+    }
+
+    // MARK: - network declaration
+
+    func testDeclarationParsingAcceptsOnlyTheNetworkForListedPublicHosts() {
+        XCTAssertEqual(AINetworkDeclaration.parse(json: nil), .none)
+        XCTAssertEqual(AINetworkDeclaration.parse(json: "{}"), .none)
+        XCTAssertEqual(
+            AINetworkDeclaration.parse(json: #"{"permissions":["network"],"networkDomains":["api.example.com","*.example.org"]}"#),
+            .declared(AINetworkDeclaration(domains: ["api.example.com", "*.example.org"]))
+        )
+        let rejected = [
+            #"{"permissions":["network","location"],"networkDomains":["api.example.com"]}"#,
+            #"{"permissions":["health"]}"#,
+            #"{"permissions":["network"],"networkDomains":[]}"#,
+            #"{"permissions":["network"],"networkDomains":["https://api.example.com/path"]}"#,
+            #"{"permissions":["network"],"networkDomains":["API.Example.com"]}"#,
+            #"{"permissions":["network"],"networkDomains":["api.example.com"],"actions":[]}"#,
+            #"{"networkDomains":["api.example.com"]}"#,
+            "[1]",
+            "not json",
+        ]
+        for json in rejected {
+            guard case .invalid = AINetworkDeclaration.parse(json: json) else {
+                XCTFail("should be rejected: \(json)")
+                continue
+            }
+        }
+        let many = (0...AINetworkDeclaration.maximumDomains).map { "\"h\($0).example.com\"" }.joined(separator: ",")
+        guard case .invalid = AINetworkDeclaration.parse(json: #"{"permissions":["network"],"networkDomains":["# + many + "]}") else {
+            return XCTFail("too many hosts should be rejected")
+        }
+    }
+
+    func testReplyParsingSeparatesTheDeclarationFromTheCode() {
+        let reply = PromptBuilder.parseTurnReply("""
+        SUMMARY: Shows a quote.
+        ```jsx
+        $render(<text>a</text>)
+        ```
+        ```json
+        {"permissions": ["network"], "networkDomains": ["api.example.com"]}
+        ```
+        """)
+        XCTAssertEqual(reply.note, "Shows a quote.")
+        XCTAssertEqual(reply.code, "$render(<text>a</text>)")
+        XCTAssertEqual(reply.declaration, #"{"permissions": ["network"], "networkDomains": ["api.example.com"]}"#)
+
+        // Even without a fence around the code, the declaration is never taken for the widget.
+        let bare = PromptBuilder.parseTurnReply("$render(<text>a</text>)\n```json\n{\"permissions\": []}\n```")
+        XCTAssertEqual(bare.code, "$render(<text>a</text>)")
+        XCTAssertNotNil(bare.declaration)
+    }
+
+    func testDeclaredHostsAreKeptSentToTheNextTurnAndAreAllThePreviewMayReach() async throws {
+        let declaration = #"{"permissions": ["network"], "networkDomains": ["api.example.com"]}"#
+        ConversationProviderStub.enqueue([
+            .content("SUMMARY: Made it.\n```jsx\n\(Self.goodWidget)\n```\n```json\n\(declaration)\n```"),
+            reply("Went offline.", Self.betterWidget),
+        ])
+        let session = makeSession()
+        session.send("A quote of the day")
+        await session.settle()
+
+        XCTAssertEqual(session.currentSource, Self.goodWidget, "the declaration is not part of the source")
+        XCTAssertEqual(session.currentDomains, ["api.example.com"])
+        let package = try XCTUnwrap(session.previewPackage)
+        let manifest = try XCTUnwrap(package.readManifest())
+        XCTAssertEqual(manifest.permissions, [.network])
+        XCTAssertEqual(manifest.networkDomains, ["api.example.com"])
+        XCTAssertTrue(ScriptWidgetNetworkPolicy.packageAllows(URL(string: "https://api.example.com/q")!, package: package))
+        XCTAssertFalse(ScriptWidgetNetworkPolicy.packageAllows(URL(string: "https://other.example.net/")!, package: package))
+        XCTAssertEqual(store.load(id: session.conversation.id)?.currentVersion?.networkDomains, ["api.example.com"])
+
+        session.send("Do it without the network")
+        await session.settle()
+        XCTAssertTrue(ConversationProviderStub.bodies[1].contains("api.example.com"), "the model is told what is declared")
+        XCTAssertEqual(session.currentDomains, [], "a reply without the block declares nothing")
+        let offline = try XCTUnwrap(package.readManifest())
+        XCTAssertEqual(offline.permissions, [])
+        XCTAssertFalse(ScriptWidgetNetworkPolicy.packageAllows(URL(string: "https://api.example.com/q")!, package: package),
+                       "a widget that declares nothing gets no network in the preview, as after saving")
+    }
+
+    func testInvalidDeclarationIsNotRunAndIsSentBackForRepair() async {
+        let bad = #"{"permissions": ["network", "location"], "networkDomains": ["api.example.com"]}"#
+        ConversationProviderStub.enqueue([
+            .content("SUMMARY: Made it.\n```jsx\n\(Self.goodWidget)\n```\n```json\n\(bad)\n```"),
+            reply("Made it.", Self.goodWidget),
+        ])
+        let session = makeSession()
+        session.send("A quote of the day")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded)
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(session.currentDomains, [])
+        XCTAssertTrue(ConversationProviderStub.bodies[1].contains("network declaration block is not valid"))
+        XCTAssertTrue(ConversationProviderStub.bodies[1].contains("no other permission"))
+    }
+
+    // MARK: - sizes
+
+    func testThumbnailSizesAreRenderedLocally() async {
+        ConversationProviderStub.enqueue([reply("Made it.", "$render(<vstack><text>{$getenv(\"widget-size\")}</text></vstack>)")])
+        let session = makeSession()
+        session.send("Show the size")
+        await session.settle()
+        for size in AIConversationSession.thumbnailSizes {
+            XCTAssertEqual(texts(session.previews[size]), [size.rawValue])
+        }
+        XCTAssertEqual(ConversationProviderStub.bodies.count, 1)
+
+        session.setSize(.accessoryRectangular)
+        await session.settle()
+        XCTAssertEqual(texts(session.previewElement), ["accessoryRectangular"])
+        XCTAssertEqual(ConversationProviderStub.bodies.count, 1)
+    }
+
     // MARK: - versions
 
     func testGoingBackAndContinuingLeavesTheLaterTurnBehind() async {
@@ -538,6 +708,11 @@ final class AIConversationTests: XCTestCase {
     }
 }
 
+private actor Collected {
+    private(set) var texts: [String] = []
+    func append(_ text: String) { texts.append(text) }
+}
+
 /// Answers `http://conversation.test/v1/chat/completions` from a queue.
 final class ConversationProviderStub: URLProtocol {
     enum Reply {
@@ -545,12 +720,21 @@ final class ConversationProviderStub: URLProtocol {
         case status(Int)
         /// Never answers; the request ends only when it is cancelled.
         case hang
+        /// Answered only in the plain form; the streamed form gets HTTP 400.
+        case plainOnly(String)
     }
 
     private static let lock = NSLock()
     private static var queue: [Reply] = []
     private static var recordedBodies: [String] = []
     private static var recordedAuthorizations: [String] = []
+    private static var recordedStreamFlags: [Bool] = []
+    private static var refused = 0
+
+    /// Whether each answered request asked for the streamed form.
+    static var streamFlags: [Bool] { lock.withLock { recordedStreamFlags } }
+    /// Streamed requests that were refused and asked again in the plain form.
+    static var refusedStreams: Int { lock.withLock { refused } }
 
     static var bodies: [String] { lock.withLock { recordedBodies } }
     static var authorizations: [String] { lock.withLock { recordedAuthorizations } }
@@ -564,6 +748,8 @@ final class ConversationProviderStub: URLProtocol {
             queue = []
             recordedBodies = []
             recordedAuthorizations = []
+            recordedStreamFlags = []
+            refused = 0
         }
     }
 
@@ -572,34 +758,62 @@ final class ConversationProviderStub: URLProtocol {
 
     override func startLoading() {
         let body = Self.readBody(request)
+        let object = try? JSONSerialization.jsonObject(with: body) as? [String: Any]
+        let wantsStream = object?["stream"] as? Bool ?? false
         // The JSON body escapes the text; undo that so tests can search for it.
-        let messages = (try? JSONSerialization.jsonObject(with: body) as? [String: Any])?["messages"] as? [[String: Any]]
+        let messages = object?["messages"] as? [[String: Any]]
         let text = (messages ?? []).compactMap { $0["content"] as? String }.joined(separator: "\n---\n")
         let next: Reply? = Self.lock.withLock {
+            // A server without streaming refuses the streamed form and is asked again.
+            if wantsStream, case .plainOnly = Self.queue.first {
+                Self.refused += 1
+                return .status(400)
+            }
             Self.recordedBodies.append(text)
+            Self.recordedStreamFlags.append(wantsStream)
             Self.recordedAuthorizations.append(request.value(forHTTPHeaderField: "Authorization") ?? "")
-            return Self.queue.isEmpty ? nil : Self.queue.removeFirst()
+            return Self.queue.isEmpty ? .status(503) : Self.queue.removeFirst()
         }
         switch next ?? .status(503) {
         case .hang:
             return
         case .status(let code):
             respond(code, Data("{}".utf8))
-        case .content(let content):
-            let payload: [String: Any] = [
-                "id": "stub", "object": "chat.completion", "created": 1, "model": "stub-model",
-                "choices": [["index": 0, "message": ["role": "assistant", "content": content], "finish_reason": "stop"]],
-                "usage": ["prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15],
-            ]
-            respond(200, (try? JSONSerialization.data(withJSONObject: payload)) ?? Data())
+        case .content(let content), .plainOnly(let content):
+            let usage: [String: Any] = ["prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15]
+            guard wantsStream else {
+                let payload: [String: Any] = [
+                    "id": "stub", "object": "chat.completion", "created": 1, "model": "stub-model",
+                    "choices": [["index": 0, "message": ["role": "assistant", "content": content], "finish_reason": "stop"]],
+                    "usage": usage,
+                ]
+                respond(200, (try? JSONSerialization.data(withJSONObject: payload)) ?? Data())
+                return
+            }
+            // Server-sent events: the text in pieces, then the usage, then the end mark.
+            var events = ""
+            var rest = Substring(content)
+            while !rest.isEmpty {
+                let piece = rest.prefix(7)
+                rest = rest.dropFirst(7)
+                let chunk: [String: Any] = ["choices": [["index": 0, "delta": ["content": String(piece)]]]]
+                events += "data: " + Self.json(chunk) + "\n\n"
+            }
+            events += "data: " + Self.json(["choices": [], "usage": usage]) + "\n\n"
+            events += "data: [DONE]\n\n"
+            respond(200, Data(events.utf8), contentType: "text/event-stream")
         }
+    }
+
+    private static func json(_ object: [String: Any]) -> String {
+        String(data: (try? JSONSerialization.data(withJSONObject: object)) ?? Data(), encoding: .utf8) ?? "{}"
     }
 
     override func stopLoading() {}
 
-    private func respond(_ status: Int, _ data: Data) {
+    private func respond(_ status: Int, _ data: Data, contentType: String = "application/json") {
         guard let url = request.url, let response = HTTPURLResponse(
-            url: url, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": "application/json"]
+            url: url, statusCode: status, httpVersion: nil, headerFields: ["Content-Type": contentType]
         ) else { return }
         client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
         client?.urlProtocol(self, didLoad: data)

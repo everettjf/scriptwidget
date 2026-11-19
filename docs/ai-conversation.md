@@ -17,7 +17,24 @@ iPhone and iPad still have the earlier single request with a Refine field; the c
 5. If you ask for something while an older version is shown, the conversation continues from that version, and the turns after it are marked "left behind" and are no longer sent.
 6. **Save Widget** saves the version on screen as a widget.
 
-The size picker above the preview runs the widget again on the Mac at that size. It costs no tokens.
+While the AI writes, the code appears under the request as it arrives. A provider that can not stream is asked in the plain way instead, and the code appears when it is complete.
+
+Under the preview the widget is drawn at the Small, Medium and Large sizes; a click shows that size above. The size picker offers the other sizes. All of this runs on the Mac and costs no tokens. A size larger than the preview area is drawn smaller to fit.
+
+![Three sizes under the preview and the host the widget declares](images/ai-conversation-mac-sizes.png)
+
+## Widgets that use the network
+
+A widget that fetches data must say which hosts it contacts. The AI is asked to end its reply with a short declaration, the same one the Android app uses:
+
+```json
+{"permissions": ["network"], "networkDomains": ["api.example.com"]}
+```
+
+- The declaration is the AI's claim and is treated as untrusted. It may name only the network permission and at most 8 hosts, and it passes the same check as any `widget.json`. One that does not is not run; the AI is told why and tries again.
+- The preview runs with exactly what was declared: a widget that declares nothing has no network, and a declared widget reaches its declared hosts only. This is what the saved widget will be allowed, so the preview no longer shows something that fails after saving.
+- The hosts are shown under the preview. **Save Widget** asks before saving a widget that uses the network, and writes the permission and the hosts into the new widget's `widget.json`.
+- Private and local hosts stay blocked by the runtime, whatever is declared.
 
 The **+** button holds Skills and examples. Skills chosen there apply to every turn of the conversation. They are text added to the request and grant nothing; see [Skills](skills.md).
 
@@ -47,7 +64,7 @@ Each turn sends one request, plus one for each repair:
 - the current widget source, and the version before it when it is short, so that "put it back" can work;
 - the selected Skills, and your new request.
 
-A repair also sends the error and the ends of the last ten console lines of the failed run, each cut to 300 characters. A widget can print anything it read, so keep that in mind when a widget handles private data.
+The current widget's network declaration is sent with its source. A repair also sends the error and the ends of the last ten console lines of the failed run, each cut to 300 characters. A widget can print anything it read, so keep that in mind when a widget handles private data.
 
 ## What is never sent or stored
 
@@ -58,7 +75,9 @@ A repair also sends the error and the ends of the last ten console lines of the 
 
 Generated code is untrusted. It runs only through the ScriptWidget runtime, in a temporary package, under the same time, memory and API limits as any widget.
 
-One difference from a saved widget remains: the preview package has no `widget.json`, so it is treated like a legacy package and may use the network, while a widget saved from the conversation gets a new Package 2.0 manifest with no permissions. A generated widget that fetches data therefore works in the preview and needs the `network` permission and its domains added in the editor after saving. The Android app already has the AI declare this; the Apple apps do not yet.
+The preview package carries a Package 2.0 `widget.json` with no permission, or with the network permission for the declared hosts, so the code is held to what the saved widget will get. Other permissions (location, calendar, health and the rest) can not be declared in a conversation; a widget that needs one gets it in the editor's configuration after saving, with the usual system approval.
+
+The earlier single request on iPhone and iPad, and the editor's Copilot, still run their candidate in a package without `widget.json`.
 
 ## Limits
 
@@ -72,14 +91,15 @@ One difference from a saved widget remains: the preview package has no `widget.j
 
 ## Not in this version
 
-Streaming output, thumbnails of several sizes at once, the same conversation in the editor's Copilot panel, targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface.
+The same conversation in the editor's Copilot panel, targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface.
 
 ## For contributors
 
 - `Shared/ScriptWidgetRuntime/AI/AIConversation.swift`: the saved model and its limits.
 - `AIConversationStore.swift`: the files.
 - `AIConversationSession.swift`: the state a view observes; it sends turns through `AgentLoop` in its `turn` mode.
-- `PromptBuilder.userPromptTurn` and `parseTurnReply`: the request and reply format.
+- `PromptBuilder.userPromptTurn` and `parseTurnReply`: the request and reply format. `AINetworkDeclaration` reads and checks the declaration.
+- `AIClient.chatStream`: server-sent events, with the fallback to `chat`.
 - `macOS/ScriptWidgetMac/AIGenerate/AIGenerateWindowView.swift`: the window.
 - `Tests/ScriptWidgetRuntimeTests/AIConversationTests.swift`: tests against a stub provider. They need no key and make no network request.
 - `testThreeTurnsAgainstARealProviderWhenConfigured` sends three turns to a real provider when `ROCKY_OPENAI_APIKEY`, `ROCKY_OPENAI_BASEURL` and `ROCKY_OPENAI_MODEL` are set, as in [AI quality testing](ai-quality-testing.md). It costs tokens and is skipped otherwise. `AI_CONVERSATION_LIVE_DIR` names a folder for the three sources and a short report. Pass the key through the environment; never write it into a command or a file of the repository.
