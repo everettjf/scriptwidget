@@ -4,6 +4,8 @@ The AI window of the Mac app is a conversation about one widget: describe it, lo
 
 ![The conversation on the left and the preview on the right; the third turn did not run and the widget stayed at version 2](images/ai-conversation-mac.png)
 
+![The running app after a session with a local stand-in provider: a repaired turn, a turn left behind, and a change that did not run](images/ai-conversation-mac-live.png)
+
 iPhone and iPad still have the earlier single request with a Refine field; the conversation is planned for them and will use the same shared code.
 
 ## Using it

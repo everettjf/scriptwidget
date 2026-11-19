@@ -128,7 +128,7 @@ private struct AIConversationWindowContent: View {
                             .background(.quaternary, in: .capsule)
                     }
                 }
-                Text("Describe a widget, then keep asking for changes. Every change that runs becomes a version.")
+                Text("Describe a widget, then keep asking for changes.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -198,6 +198,7 @@ private struct AIConversationWindowContent: View {
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                 }
+                .onAppear { proxy.scrollTo("bottom", anchor: .bottom) }
                 .onChange(of: conversation.turns.count) { _, _ in
                     withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
@@ -535,6 +536,8 @@ private struct AIConversationWindowContent: View {
         let last = conversation.turns.last?.usage.totalTokens ?? 0
         return Text("Last turn \(last) · Total \(total) tokens")
             .font(.caption)
+            .lineLimit(1)
+            .fixedSize()
             .foregroundStyle(.secondary)
             .accessibilityLabel("Tokens: last turn \(last), total \(total)")
             .opacity(total == 0 ? 0 : 1)
