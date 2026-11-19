@@ -59,7 +59,7 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 **Generate with AI** under New Widget opens the conversation. It uses the same code as the Mac window and follows the rules on this page, with these differences:
 
 - On an iPhone the preview is on top, the turns are below it and the message field sits above the keyboard. While you type, the preview gets smaller to leave room. In a window at least 720 points wide, an iPad's full screen for one, the conversation is on the left and the preview, with the three sizes under it, on the right; a narrower iPad window gets the iPhone layout.
-- **Save** in the top bar asks for a name, and asks again before saving a widget that uses the network. The **…** menu holds a new conversation, the drafts, Skills, the provider, the code, the logs and deleting the conversation.
+- **Save** in the top bar asks for a name. For a widget that uses the network the same dialog names its hosts, and its button reads **Save and Allow**. The **…** menu holds a new conversation, the drafts, Skills, the provider, the code, the logs and deleting the conversation.
 - Conversations are files in the app's own Application Support folder on the device, as on the Mac.
 - The **Copilot** tab of the editor is the conversation about the open widget, with the rules of [In the editor](#in-the-editor): the AI works on a copy, **Apply** writes the version on screen into the document, and a new host is asked about first. It has no Manage Skills entry; Skills are managed in Settings.
 - With the device set to Simplified Chinese, the conversation's own texts are in Chinese. The AI's notes are in the language you write in.

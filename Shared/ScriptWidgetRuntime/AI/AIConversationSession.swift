@@ -154,6 +154,8 @@ final class AIConversationSession: ObservableObject {
             conversation.currentVersionID = base
             refreshPreview()
         }
+        // The new turn takes the place of the one that did not succeed.
+        conversation.turns.removeAll { $0.id == turnID }
         send(turn.request)
     }
 

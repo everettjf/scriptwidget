@@ -48,7 +48,6 @@ private struct AIConversationScreen: View {
     @State private var shownCode: ShownCode?
     @State private var showingLogs = false
     @State private var showingSaveName = false
-    @State private var confirmingNetworkSave = false
     @State private var confirmingDelete = false
     @State private var isDebugMode = false
     @State private var profiles: [AIProfile] = []
@@ -135,25 +134,23 @@ private struct AIConversationScreen: View {
         }
         .sheet(item: $shownCode) { codeSheet($0) }
         .sheet(isPresented: $showingLogs) { logsSheet }
+        // One dialog asks for the name and, for a widget that uses the network,
+        // names its hosts: a second dialog right after the first is dropped by iOS.
         .alert("Save Widget", isPresented: $showingSaveName) {
             TextField("Widget name", text: $saveName)
                 .textInputAutocapitalization(.words)
             Button("Cancel", role: .cancel) { }
-            Button("Save") {
-                if session.currentDomains.isEmpty { performSave() } else { confirmingNetworkSave = true }
+            if session.currentDomains.isEmpty {
+                Button("Save") { performSave() }
+            } else {
+                Button("Save and Allow") { performSave() }
             }
         } message: {
-            Text("Choose a name for your new widget.")
-        }
-        .confirmationDialog(
-            "Allow this widget to use the network?",
-            isPresented: $confirmingNetworkSave,
-            titleVisibility: .visible
-        ) {
-            Button("Save and Allow") { performSave() }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("The AI wrote a widget that contacts: \(session.currentDomains.joined(separator: ", ")). Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration.")
+            if session.currentDomains.isEmpty {
+                Text("Choose a name for your new widget.")
+            } else {
+                Text("Choose a name for your new widget. The AI wrote a widget that contacts: \(session.currentDomains.joined(separator: ", ")). Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration.")
+            }
         }
         .confirmationDialog(
             "Delete this conversation?",

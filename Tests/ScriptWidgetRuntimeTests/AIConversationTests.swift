@@ -507,8 +507,9 @@ final class AIConversationTests: XCTestCase {
         ConversationProviderStub.enqueue([reply("Added a second line.", Self.betterWidget)])
         session.retry(turnID: failed.id)
         await session.settle()
-        XCTAssertEqual(session.conversation.turns.count, 3)
-        XCTAssertEqual(session.conversation.turns[2].status, .succeeded)
+        XCTAssertEqual(session.conversation.turns.count, 2, "the new turn takes the place of the failed one")
+        XCTAssertEqual(session.conversation.turns[1].status, .succeeded)
+        XCTAssertFalse(session.conversation.turns.contains { $0.id == failed.id })
         XCTAssertEqual(session.currentSource, Self.betterWidget)
     }
 
