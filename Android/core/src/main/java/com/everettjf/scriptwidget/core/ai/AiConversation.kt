@@ -21,6 +21,24 @@ object AiConversationLimits {
     const val TITLE_CHARACTERS = 40
     const val NOTE_CHARACTERS = 300
     const val ERROR_CHARACTERS = 600
+    /** From here on the user is told that the conversation has grown heavy. */
+    const val HEAVY_PROMPT_TOKENS = 30_000
+    const val HEAVY_TOTAL_TOKENS = 300_000
+}
+
+/**
+ * Something the user should know about the size of a conversation; the way out is to continue
+ * in a new conversation from the current version. Port of `AIConversationUsageAdvice`.
+ */
+data class AiConversationUsageAdvice(val reason: Reason, val tokens: Int = 0) {
+    enum class Reason { HEAVY_REQUESTS, HEAVY_TOTAL, VERSIONS_FULL, HISTORY_FULL }
+
+    val message: String get() = when (reason) {
+        Reason.HEAVY_REQUESTS -> "Each request now sends about ${"%,d".format(tokens)} tokens. A new conversation from this version sends less."
+        Reason.HEAVY_TOTAL -> "This conversation has used ${"%,d".format(tokens)} tokens. A new conversation from this version starts small again."
+        Reason.VERSIONS_FULL -> "A conversation keeps ${AiConversationLimits.MAX_VERSIONS} versions; the oldest are dropped from now on."
+        Reason.HISTORY_FULL -> "The AI is told about the last ${AiConversationLimits.HISTORY_TURNS} turns only; older requests are no longer sent."
+    }
 }
 
 /** One version of the widget's source a turn produced. Port of `AIConversationVersion`. */
@@ -108,6 +126,32 @@ class AiConversation(
     val latestVersion: AiConversationVersion? get() = versions.maxByOrNull { it.number }
     val totalUsage: AiTokenUsage get() = turns.fold(AiTokenUsage.ZERO) { sum, turn -> sum + turn.usage }
     val isRunning: Boolean get() = turns.any { it.status == AiConversationTurn.Status.RUNNING }
+
+    /** What the newest finished turn sent per request, on average over its attempts. */
+    val lastRequestTokens: Int get() {
+        val turn = turns.lastOrNull { it.usage.promptTokens > 0 && it.status != AiConversationTurn.Status.RUNNING } ?: return 0
+        val attempts = if (turn.status == AiConversationTurn.Status.SUCCEEDED) turn.repairs + 1 else maxOf(1, turn.repairs)
+        return turn.usage.promptTokens / maxOf(1, attempts)
+    }
+
+    /** The most pressing thing to say about the size of the conversation, if any. */
+    val usageAdvice: AiConversationUsageAdvice? get() {
+        if (lastRequestTokens >= AiConversationLimits.HEAVY_PROMPT_TOKENS) return AiConversationUsageAdvice(AiConversationUsageAdvice.Reason.HEAVY_REQUESTS, lastRequestTokens)
+        if (totalUsage.totalTokens >= AiConversationLimits.HEAVY_TOTAL_TOKENS) return AiConversationUsageAdvice(AiConversationUsageAdvice.Reason.HEAVY_TOTAL, totalUsage.totalTokens)
+        if (versions.size >= AiConversationLimits.MAX_VERSIONS) return AiConversationUsageAdvice(AiConversationUsageAdvice.Reason.VERSIONS_FULL)
+        val told = turns.count { it.status == AiConversationTurn.Status.SUCCEEDED && !it.isAbandoned && !it.isManualEdit }
+        if (told > AiConversationLimits.HISTORY_TURNS) return AiConversationUsageAdvice(AiConversationUsageAdvice.Reason.HISTORY_FULL)
+        return null
+    }
+
+    /**
+     * A new conversation that starts from the current version: same size, same widget, one
+     * version, no turns, and so no history to send. Null without a version.
+     */
+    fun continuedFromCurrentVersion(now: Long = System.currentTimeMillis()): AiConversation? {
+        val current = currentVersion ?: return null
+        return AiConversation(title = title, size = size, packageId = packageId, createdAt = now).also { it.addVersion(current.source, current.networkDomains, now) }
+    }
 
     fun version(id: String?): AiConversationVersion? = id?.let { wanted -> versions.firstOrNull { it.id == wanted } }
 

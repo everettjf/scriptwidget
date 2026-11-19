@@ -111,3 +111,64 @@ class AiSourceEditsTest {
         assertEquals("\$render(<vstack><text>Hi</text></vstack>)\n", (outcome as AgentLoopOutcome.Succeeded).source)
     }
 }
+
+/** What changed between versions, and the notice for a conversation that has grown. Mirrors the Swift tests. */
+class AiSourceDiffTest {
+    @Test
+    fun theDiffShowsChangedLinesWithContextAndLeavesTheRestOut() {
+        val old = (1..20).joinToString("\n") { "line $it" } + "\n"
+        val new = old.replace("line 10\n", "line ten\nline ten and a half\n")
+        assertEquals(AiSourceDiff.Summary(2, 1), AiSourceDiff.summary(old, new))
+        val lines = AiSourceDiff.lines(old, new)!!
+        val k = AiSourceDiff.Kind.entries
+        assertEquals(
+            listOf(k[3], k[0], k[0], k[0], k[2], k[1], k[1], k[0], k[0], k[0], k[3]),
+            lines.map { it.kind },
+        )
+        assertEquals(listOf(6, 7), lines.filter { it.kind == AiSourceDiff.Kind.SKIPPED }.map { it.skipped })
+        assertEquals(listOf("line ten", "line ten and a half"), lines.filter { it.kind == AiSourceDiff.Kind.ADDED }.map { it.text })
+        assertEquals("line 10", lines.first { it.kind == AiSourceDiff.Kind.REMOVED }.text)
+        assertEquals(emptyList<AiSourceDiff.Line>(), AiSourceDiff.lines(old, old))
+        assertEquals("line endings are not a change", AiSourceDiff.Summary(0, 0), AiSourceDiff.summary("a\r\nb\n", "a\nb"))
+        assertNull(AiSourceDiff.summary("x\n".repeat(AiSourceDiff.MAX_LINES + 1), "x"))
+    }
+
+    @Test
+    fun usageAdviceAppearsOnlyWhenAConversationHasGrown() {
+        val conversation = AiConversation(size = AiWidgetSize.LARGE, packageId = "installation-1")
+        assertNull(conversation.usageAdvice)
+        assertNull("nothing to continue from", conversation.continuedFromCurrentVersion())
+        fun turn(prompt: Int, repairs: Int = 0) {
+            val turn = conversation.beginTurn("Change it")
+            val version = conversation.addVersion("\$render(<text>${conversation.versionCounter}</text>)\n", listOf("example.com"))
+            turn.status = AiConversationTurn.Status.SUCCEEDED
+            turn.versionId = version.id
+            turn.repairs = repairs
+            turn.usage = AiTokenUsage(prompt, 100, prompt + 100)
+        }
+        turn(5_000)
+        assertNull(conversation.usageAdvice)
+        turn(70_000, repairs = 1)
+        assertEquals(35_000, conversation.lastRequestTokens)
+        assertEquals(AiConversationUsageAdvice(AiConversationUsageAdvice.Reason.HEAVY_REQUESTS, 35_000), conversation.usageAdvice)
+        turn(5_000)
+        assertNull("it follows the newest turn", conversation.usageAdvice)
+        repeat(AiConversationLimits.HISTORY_TURNS) { turn(5_000) }
+        assertEquals(AiConversationUsageAdvice.Reason.HISTORY_FULL, conversation.usageAdvice?.reason)
+        repeat(20) { turn(5_000) }
+        assertEquals(AiConversationUsageAdvice.Reason.VERSIONS_FULL, conversation.usageAdvice?.reason)
+        turn(200_000)
+        assertEquals(AiConversationUsageAdvice.Reason.HEAVY_REQUESTS, conversation.usageAdvice?.reason)
+        assertTrue(conversation.usageAdvice!!.message.contains("200,000"))
+
+        val next = conversation.continuedFromCurrentVersion()!!
+        assertFalse(next.id == conversation.id)
+        assertEquals(listOf(conversation.currentVersion!!.source), next.versions.map { it.source })
+        assertEquals(listOf("example.com"), next.currentVersion!!.networkDomains)
+        assertEquals(AiWidgetSize.LARGE, next.size)
+        assertEquals("installation-1", next.packageId)
+        assertTrue(next.turns.isEmpty())
+        assertNull(next.usageAdvice)
+        assertTrue("no earlier turn is sent", next.historyForPrompt().isEmpty())
+    }
+}
