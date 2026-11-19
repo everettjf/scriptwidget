@@ -20,6 +20,7 @@ The 2026-10-22 A+B delivery scope (Spotify removed; C/D canceled) is recorded in
 - macOS app/tests and iOS Simulator app compile with signing disabled.
 - Runtime execution stays below the checked performance budgets in `RuntimePerformanceTests`.
 - CI runs the same entry point; no separate “CI-only” validation logic is allowed.
+- In `release-readiness.sh` and `ipad-icloud-tests.sh` a failed XCTest is run again, up to three times in all. A widget that takes longer than five seconds is stopped, and a busy hosted runner now and then pushes a test past that. A test that passed only on a later run is still listed with its first failure in the workflow's "Report XCTest results" step: read that list, and treat a test that shows up there often as a defect. `SCRIPTWIDGET_TEST_RETRY=` (empty) runs every test once.
 - CI also runs the full shared test target on an iPad Simulator; real iCloud tests remain opt-in because hosted runners have no signed-in Apple ID.
 - Local documentation links/images, Gallery file sizes and SHA-256 hashes, and required community-health files validate in the same gate.
 
