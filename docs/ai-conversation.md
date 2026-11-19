@@ -6,7 +6,7 @@ The AI window of the Mac app is a conversation about one widget: describe it, lo
 
 ![The running app after a session with a local stand-in provider: a repaired turn, a turn left behind, and a change that did not run](images/ai-conversation-mac-live.png)
 
-iPhone and iPad still have the earlier single request with a Refine field; the conversation is planned for them and will use the same shared code.
+The Android app has the same conversation on one screen; see [On Android](#on-android). iPhone and iPad still have the earlier single request with a Refine field; the conversation is planned for them and will use the same shared code.
 
 ## Using it
 
@@ -49,6 +49,19 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 - The copy runs with the widget's own permissions. If a version declares a host the widget may not contact yet, Apply asks first and adds the network permission for that host to the widget.
 - **Fix Runtime Error** sends the error the editor's preview last reported.
 - The conversation changes the widget's main file. With another file selected, the panel asks you to select the main file.
+
+## On Android
+
+![The conversation on a phone: the preview and its versions on top, the turns below](images/ai-conversation-android.png)
+
+**Generate with AI** under New widget, and **Improve with AI** on a widget's page, open the conversation. It follows the rules on this page with these differences:
+
+- The preview is on top and the turns are below it. The reply appears when it is complete; code is not written out as it arrives.
+- An installed widget is changed with **Apply to widget**, which asks first and names any host the version adds.
+- There is no editor panel. Code changed in the editor is taken over as a version the next time the conversation opens.
+- Conversations stay in the app's no-backup directory on the device.
+
+More in the [Android notes](android/README.md#ai-conversation).
 
 ## When something goes wrong
 

@@ -37,10 +37,16 @@ Run this after changing `Web/preview-engine/src`, the support bundle or `Android
 cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug
 ```
 
-Unit tests cover package and archive hardening, Gallery, Skills, plugins and the AI client. They run on the JVM.
+Unit tests cover package and archive hardening, Gallery, Skills, plugins, the AI client and the AI conversation. They run on the JVM.
 
 ```bash
 Android/scripts/device-test.sh core
+```
+
+A debug build has the Play package name, so a phone that has the app from Google Play refuses it (the signatures differ). `-PdevSuffix=.dev` builds a copy that installs beside it with its own data, and `SUFFIX=.dev Android/scripts/device-test.sh app` tests that copy:
+
+```bash
+cd Android && ./gradlew -PdevSuffix=.dev :app:installPlayDebug
 ```
 
 Device tests need a connected device or emulator. They cover the engine, parity with JavaScriptCore on the bundled corpus (`Web/preview-engine/test/parity/native-trees.json`), rendering of every corpus tree, native APIs (including a live HTTPS request) and the timeline planner. Pass a class name to run one suite, for example `device-test.sh core ParityTest`.
@@ -168,6 +174,18 @@ adb shell "am broadcast -a com.atomsprout.scriptwidget.automation.RUN_ACTION -p 
 - Android does not deliver broadcasts to an app the user force-stopped until the app is opened again.
 
 The three bundled examples are under Templates → Android only: Scrolling Checklist, Wallpaper Colors and Automation Counter. Their source is in `Android/app/src/main/assets/Script.android`.
+
+### AI conversation
+
+**Generate with AI** and **Improve with AI** open a conversation about one widget, as the Mac app's AI window does: describe it, look at the preview, ask for a change, look again. The rules are in [AI conversation](../ai-conversation.md); this is what is particular to Android.
+
+- One screen: the preview on top with its size and its versions, the turns below, the request field above the keyboard.
+- The reply is shown when it is complete. Code is not written out as it arrives.
+- **Save widget** makes a new widget from the version on screen. For an installed widget the AI works on a copy in memory, and **Apply to widget** writes the version on screen into it. A version that contacts a host the widget may not reach yet is applied only after you agree, and the network permission for that host is added then. A conversation never removes a host a widget already has.
+- A conversation belongs to a widget by its installation, so it follows a rename and is deleted with the widget. Code changed elsewhere (the editor, a Gallery update) is taken over as a version the next time the conversation opens.
+- Conversations that are not saved as a widget are drafts, offered under **Continue a draft**. All conversations are files in the app's no-backup directory: they stay on the device and are not part of a device backup. They hold requests, notes and widget sources, never a key or a provider.
+- Enabled Skills are read when a request is sent.
+- The Mac app's editor panel, the three sizes side by side and the list of providers are not on Android: there is one provider profile at a time, chosen in Settings → AI.
 
 ### Synced documents and iPhone
 

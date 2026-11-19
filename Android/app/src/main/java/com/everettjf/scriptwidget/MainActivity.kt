@@ -11,7 +11,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.everettjf.scriptwidget.ui.AiScreen
+import com.everettjf.scriptwidget.ui.AiConversationScreen
 import com.everettjf.scriptwidget.ui.AppTheme
 import com.everettjf.scriptwidget.ui.DetailScreen
 import com.everettjf.scriptwidget.ui.EditorScreen
@@ -58,8 +58,8 @@ class MainActivity : ComponentActivity() {
                     composable("live-activities") { com.everettjf.scriptwidget.ui.LiveActivitiesScreen(navigation) }
                     composable("skills") { com.everettjf.scriptwidget.ui.SkillsScreen(navigation) }
                     composable("plugins") { com.everettjf.scriptwidget.ui.PluginsScreen(navigation, AppServices.plugins) }
-                    composable("ai") { AiScreen(navigation, null) }
-                    composable("ai/{name}") { entry -> AiScreen(navigation, Uri.decode(entry.arguments?.getString("name").orEmpty())) }
+                    composable("ai") { AiConversationScreen(navigation, null) }
+                    composable("ai/{name}") { entry -> AiConversationScreen(navigation, Uri.decode(entry.arguments?.getString("name").orEmpty())) }
                     composable("package/{name}") { entry -> DetailScreen(navigation, Uri.decode(entry.arguments?.getString("name").orEmpty())) }
                     composable("editor/{name}") { entry -> EditorScreen(navigation, Uri.decode(entry.arguments?.getString("name").orEmpty())) }
                 }
