@@ -133,7 +133,7 @@ export function App() {
 
   const addImage = async (file: File) => {
     if (!project) return;
-    if (file.size > maximumImageBytes) { toast.error("Images must be 8 MB or smaller, like on iPhone."); return; }
+    if (file.size > maximumImageBytes) { toast.error("Images must be 8 MB or smaller, as in the ScriptWidget apps."); return; }
     const name = file.name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-");
     const target = `image/${name}`;
     if (project.files[target] && !(await confirm({ title: `Replace ${target}?`, description: "The existing image is replaced in this project.", action: "Replace" }))) return;

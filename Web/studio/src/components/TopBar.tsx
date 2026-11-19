@@ -47,7 +47,7 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
         <Button id="open-templates" variant="outline" size="sm" onClick={onTemplates}><LayoutGrid />Gallery</Button>
         <Button id="import-package" variant="outline" size="sm" onClick={onImport}><Upload />Import</Button>
         <Button id="export-package" variant="outline" size="sm" onClick={onExport}><Download />Export .swt</Button>
-        <Button id="install-package" size="sm" onClick={onInstall}><Smartphone />Install on iPhone</Button>
+        <Button id="install-package" size="sm" onClick={onInstall}><Smartphone />Install on device</Button>
       </nav>
     </header>
   );

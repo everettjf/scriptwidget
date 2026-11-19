@@ -57,7 +57,7 @@ the browser and previews them itself.
   summarizes the manifest. **Mock Data** configures preview API responses.
 - If a content blocker or browser setting blocks the preview sandbox
   (`sandbox.html`), the preview says so within a few seconds. Allow the site or
-  use another browser; editing, export, and Install on iPhone keep working.
+  use another browser; editing, export, and Install on device keep working.
 - The web preview never uses the network. `fetch` and `$http` read the
   **Mock Data** rules; system services use editable sample responses. Fixtures stay in
   the browser and are not exported.
@@ -69,23 +69,24 @@ look, refresh, and interactions. Always check the widget on the device it is
 for before sharing it. See [browser preview coverage](browser-preview-coverage.md) for
 what is supported, approximated, or not yet rendered.
 
-## Install on iPhone
+## Install on your device
 
 1. Fix any errors in **Problems**; export is blocked until `widget.json` passes
    Package 2.0 validation.
-2. Tap or click **Install on iPhone**.
-   - In Safari on iPhone, the share sheet opens: choose **ScriptWidget**.
-   - On a computer, the `.swt` file downloads. Send it to the iPhone with
-     AirDrop, iCloud Drive, or email, open it, tap **Share**, and choose
-     **ScriptWidget**.
-3. Review the permissions, then add the widget to the Home Screen.
+2. Tap or click **Install on device**.
+   - In the browser of a phone or tablet that can share files, the share sheet
+     opens: choose **ScriptWidget**.
+   - Otherwise the `.swt` file downloads, and a list says what to do with it.
+3. Open the file in ScriptWidget:
+   - **iPhone and iPad:** send it with AirDrop, iCloud Drive, or email, open
+     it, tap **Share**, and choose **ScriptWidget**.
+   - **Android:** send it to the device and open it with ScriptWidget.
+   - **Mac, Windows and Linux:** open it with ScriptWidget on that computer.
+4. Review the permissions, then add the widget where your system keeps widgets.
 
-**Export .swt** downloads the same file without the instructions.
-
-The `.swt` file is not only for iPhone: ScriptWidget on iPad, Mac, Android,
-Windows and Linux opens the same file. The **Install on iPhone** button only
-adds the iPhone steps. Which features and APIs each system has is in
-[Platform support](platform-support.md).
+**Export .swt** downloads the same file without the instructions. Which
+features and APIs each system has is in [Platform support](platform-support.md);
+Windows and Linux are previews and have no personal-data APIs.
 
 ## For coding agents
 
