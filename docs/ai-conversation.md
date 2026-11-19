@@ -1,12 +1,12 @@
 # AI conversation
 
-The AI window of the Mac app is a conversation about one widget: describe it, look at the preview, ask for a change, look again. This page says what it does, what it sends to the AI provider and what it keeps on the Mac. Provider setup is in [AI generation](ai-generate.md).
+Making a widget with AI is a conversation about one widget: describe it, look at the preview, ask for a change, look again. The Mac app, the iPhone and iPad app and the Android app all have it. This page describes the Mac window first, then what differs elsewhere; it says what the conversation does, what it sends to the AI provider and what it keeps on the device. Provider setup is in [AI generation](ai-generate.md).
 
 ![The conversation on the left and the preview on the right; the third turn did not run and the widget stayed at version 2](images/ai-conversation-mac.png)
 
 ![The running app after a session with a local stand-in provider: a repaired turn, a turn left behind, and a change that did not run](images/ai-conversation-mac-live.png)
 
-The Android app has the same conversation on one screen; see [On Android](#on-android). iPhone and iPad still have the earlier single request with a Refine field; the conversation is planned for them and will use the same shared code.
+iPhone and iPad have the same conversation, see [On iPhone and iPad](#on-iphone-and-ipad), and so does the Android app, see [On Android](#on-android).
 
 ## Using it
 
@@ -16,6 +16,8 @@ The Android app has the same conversation on one screen; see [On Android](#on-an
 4. Every change that runs becomes a numbered version. **Go to This Version** under a turn, or the arrows at the bottom, show an older one. Nothing is sent to the provider when you do that.
 5. If you ask for something while an older version is shown, the conversation continues from that version, and the turns after it are marked "left behind" and are no longer sent.
 6. **Save Widget** saves the version on screen as a widget.
+
+A version shows how many lines it added and removed against the one it was made from, as **+3 −2**; a click shows those lines with a little of what is around them. The comparison is made on the device.
 
 While the AI writes, the code appears under the request as it arrives. A provider that can not stream is asked in the plain way instead, and the code appears when it is complete.
 
@@ -50,6 +52,19 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 - **Fix Runtime Error** sends the error the editor's preview last reported.
 - The conversation changes the widget's main file. With another file selected, the panel asks you to select the main file.
 
+## On iPhone and iPad
+
+![The conversation on an iPhone: the preview on top, the turns below and the message field at the bottom](images/ai-conversation-iphone.png)
+
+**Generate with AI** under New Widget opens the conversation. It uses the same code as the Mac window and follows the rules on this page, with these differences:
+
+- On an iPhone the preview is on top, the turns are below it and the message field sits above the keyboard. While you type, the preview gets smaller to leave room. On an iPad the conversation is on the left and the preview, with the three sizes under it, on the right.
+- **Save** in the top bar asks for a name, and asks again before saving a widget that uses the network. The **…** menu holds a new conversation, the drafts, Skills, the provider, the code, the logs and deleting the conversation.
+- Conversations are files in the app's own Application Support folder on the device, as on the Mac.
+- The **Copilot** tab of the iPhone and iPad editor is not a conversation yet. It still sends one request for the open widget and shows a proposal to accept.
+
+![The conversation on an iPad: the turns on the left, the preview and the three sizes on the right](images/ai-conversation-ipad.png)
+
 ## On Android
 
 ![The conversation on a phone: the preview and its versions on top, the turns below](images/ai-conversation-android.png)
@@ -57,6 +72,7 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 **Generate with AI** under New widget, and **Improve with AI** on a widget's page, open the conversation. It follows the rules on this page with these differences:
 
 - The preview is on top and the turns are below it. The reply appears when it is complete; code is not written out as it arrives.
+- **+1 −1** on a version opens the changed lines, as on the Mac.
 - An installed widget is changed with **Apply to widget**, which asks first and names any host the version adds.
 - There is no editor panel. Code changed in the editor is taken over as a version the next time the conversation opens.
 - Conversations stay in the app's no-backup directory on the device.
@@ -68,11 +84,54 @@ More in the [Android notes](android/README.md#ai-conversation).
 | What happened | What you see |
 |---|---|
 | The code did not run | The AI is told the error and tries again, up to three times. A turn that needed that says "Fixed automatically". |
+| The code uses a tag, an attribute or a value that does not exist | The same: the AI is told which one and what exists instead. See [Tags and attributes that do not exist](#tags-and-attributes-that-do-not-exist). |
+| The AI sent a change that does not fit the code | The same: the AI is told which part did not fit and sends the whole code. See [Changing a part of the code](#changing-a-part-of-the-code). |
 | It still did not run | The widget and the preview stay as they were. The turn shows the error, **Try Again** and **Show Its Code**. |
 | The provider could not be reached or refused | The turn shows the reason and **Retry**. Everything else stays usable. |
 | You pressed Stop (⌘.) | The request ends at once and the widget stays as it was. |
 | The app closed during a turn | The turn is shown as interrupted, with **Send Again**. |
 | No provider is set up | A notice with a button to the AI settings; nothing can be sent. |
+
+## Changing a part of the code
+
+For a small change the AI may send only the places that change, instead of the whole code:
+
+```
+<<<<<<< SEARCH
+lines copied from the current code
+=======
+the lines that replace them
+>>>>>>> REPLACE
+```
+
+- The app puts each block into the current version. The searched lines have to be in the code exactly once. If they are missing, or there more than once, nothing is applied: the AI is told which block did not fit and sends the whole code instead. The app never guesses where a change belongs.
+- What comes out is run and checked like any other reply, with the same limits and permissions. A change that does not run leaves the widget as it was.
+- A new widget, and a repair, are always sent whole.
+
+This makes a small change quicker and cheaper, and keeps the AI from rewriting parts you did not ask about. The **+3 −2** on a version shows what a turn really changed.
+
+## Tags and attributes that do not exist
+
+ScriptWidget ignores an attribute it does not know, and a value outside a fixed list, without an error: `<date style="weekday">` runs and shows the time. The AI would never learn of its mistake. So after a reply ran, the app looks through its code for:
+
+- a tag that ScriptWidget does not have;
+- an attribute that the tag does not have;
+- a value outside a fixed list, for the attributes that have one (`style` of `<date>`, `fontWeight`, `fontDesign`, `clip`, `backgroundMaterial`, `mode` of `<image>`, `axis`, `style` of `<progress>`).
+
+When it finds one, the AI is told what it wrote and what exists, and tries again; this counts as one of the three repairs. On the last attempt a widget that runs is kept as it is.
+
+The check reads the code loosely and stays silent when unsure. A tag that starts with a capital letter is your own component and is not checked, and a value that is computed is not judged. It grants nothing and blocks nothing when a widget runs: the runtime decides that, as before. Its lists are written by `npm run docs` in `Editor/editorfe` from Studio's API metadata and the web renderer's coverage table, and every template and example in the app passes it. The scrolling `<list>` is a tag on Android only.
+
+## When a conversation has grown
+
+A long conversation sends more with every request. Above the message field a line appears when:
+
+- one request now sends about 30,000 tokens or more;
+- the conversation has used 300,000 tokens in all;
+- it holds 30 versions, so the oldest are dropped from now on;
+- it has more than 12 turns, so the oldest are no longer sent.
+
+**Start New From Here** opens a new draft with the version on screen as its first version, the same size and Skills, and no earlier turn to send. The old conversation stays among the drafts.
 
 ## Drafts
 
@@ -104,7 +163,7 @@ The preview package carries a Package 2.0 `widget.json` with no permission, or w
 
 In the editor, the copy runs with the widget's own `widget.json` plus the declared hosts, and a legacy widget without `widget.json` runs as a legacy package, as it does when installed. A `widget.json` that is present but can not be read turns the panel off; it is never treated as absent.
 
-The earlier single request on iPhone and iPad still runs its candidate in a package without `widget.json`.
+The single request of the Copilot tab in the iPhone and iPad editor still runs its candidate in a package without `widget.json`.
 
 ## Limits
 
@@ -118,7 +177,7 @@ The earlier single request on iPhone and iPad still runs its candidate in a pack
 
 ## Not in this version
 
-Targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface. The [plan](ai-conversation-plan.md) (Chinese) lists them in order.
+A conversation in the Copilot tab of the iPhone and iPad editor, code written out as it arrives on Android, and translations of the conversation's own texts. The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
 
 ## For contributors
 
@@ -126,8 +185,10 @@ Targeted edits instead of whole-file replies, a view of what changed between ver
 - `AIConversationStore.swift`: the files.
 - `AIConversationSession.swift`: the state a view observes; it sends turns through `AgentLoop` in its `turn` mode.
 - `PromptBuilder.userPromptTurn` and `parseTurnReply`: the request and reply format. `AINetworkDeclaration` reads and checks the declaration.
+- `AISourceEdits.swift`: reads and applies edit blocks. `AIJSXCheck.swift` with the generated `AIJSXSurfaceData.swift`: the check for tags and attributes. `AISourceDiff.swift`: the comparison of two versions and its view. The Kotlin ports are `AiSourceEdits`, `AiJsxCheck` and `AiSourceDiff`; a change to one side belongs in the other too.
 - `AIClient.chatStream`: server-sent events, with the fallback to `chat`.
-- `macOS/ScriptWidgetMac/AIGenerate/AIGenerateWindowView.swift`: the window.
+- `macOS/ScriptWidgetMac/AIGenerate/AIGenerateWindowView.swift`: the window. `iOS/ScriptWidget/View/AIGenerate/AIGenerateView.swift`: the iPhone and iPad screen. Both draw the turns with the shared `AIConversationTurnsView.swift`.
 - `Tests/ScriptWidgetRuntimeTests/AIConversationTests.swift`: tests against a stub provider. They need no key and make no network request.
 - `testThreeTurnsAgainstARealProviderWhenConfigured` sends three turns to a real provider when `ROCKY_OPENAI_APIKEY`, `ROCKY_OPENAI_BASEURL` and `ROCKY_OPENAI_MODEL` are set, as in [AI quality testing](ai-quality-testing.md). It costs tokens and is skipped otherwise. `AI_CONVERSATION_LIVE_DIR` names a folder for the three sources and a short report. Pass the key through the environment; never write it into a command or a file of the repository.
-- The picture on this page is written by the same test file when `AI_CONVERSATION_SNAPSHOT_DIR` names a folder (prefix it with `TEST_RUNNER_` for `xcodebuild`). It draws the window with a prepared conversation; it does not click through it.
+- `Scripts/ai-conversation-quality.sh` runs four small conversations against a real provider and reports what each turn changed, missed and cost; see [AI quality testing](ai-quality-testing.md#several-turns).
+- The pictures of the Mac window, the iPhone and the iPad on this page are written by the same test file when `AI_CONVERSATION_SNAPSHOT_DIR` names a folder (prefix it with `TEST_RUNNER_` for `xcodebuild`); the iPhone and iPad ones come from running it on those simulators. They draw the conversation with a prepared one; they do not click through it.

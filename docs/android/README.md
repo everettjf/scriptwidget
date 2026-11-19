@@ -185,6 +185,10 @@ The three bundled examples are under Templates → Android only: Scrolling Check
 - A conversation belongs to a widget by its installation, so it follows a rename and is deleted with the widget. Code changed elsewhere (the editor, a Gallery update) is taken over as a version the next time the conversation opens.
 - Conversations that are not saved as a widget are drafts, offered under **Continue a draft**. All conversations are files in the app's no-backup directory: they stay on the device and are not part of a device backup. They hold requests, notes and widget sources, never a key or a provider.
 - Enabled Skills are read when a request is sent.
+- A version shows how many lines it added and removed, and a tap shows them. A small change may arrive as edit blocks, and a tag, attribute or value that does not exist is sent back to the model; both work as described in [AI conversation](../ai-conversation.md#changing-a-part-of-the-code). The check knows `<list>` on Android.
+- A conversation that has grown heavy says so above the request field and offers **Start new from here**.
+
+![The changed lines of a version](../images/ai-conversation-android-changes.png)
 - The Mac app's editor panel, the three sizes side by side and the list of providers are not on Android: there is one provider profile at a time, chosen in Settings → AI.
 
 ### Synced documents and iPhone
