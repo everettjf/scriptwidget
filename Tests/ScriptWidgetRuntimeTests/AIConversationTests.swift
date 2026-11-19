@@ -380,6 +380,71 @@ final class AIConversationTests: XCTestCase {
         XCTAssertEqual(store.summaries().count, 1)
     }
 
+    // MARK: - a real model, on request
+
+    /// Three turns against a real OpenAI-compatible provider. Costs tokens, so it
+    /// runs only when ROCKY_OPENAI_APIKEY is set (see AIGenerationTests for the
+    /// variables). With AI_CONVERSATION_LIVE_DIR set, the sources and a short
+    /// account of each turn are written there; the key is never written.
+    func testThreeTurnsAgainstARealProviderWhenConfigured() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        func read(_ name: String) -> String? {
+            for key in [name, "TEST_RUNNER_\(name)"] {
+                if let value = environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                    return value
+                }
+            }
+            return nil
+        }
+        guard let key = read("ROCKY_OPENAI_APIKEY") else {
+            throw XCTSkip("ROCKY_OPENAI_APIKEY not set — skipping the live conversation test.")
+        }
+        let profile = AIProfile(
+            id: "live-conversation", name: "live",
+            baseURL: read("ROCKY_OPENAI_BASEURL") ?? AIProfile.defaultBaseURL,
+            model: read("ROCKY_OPENAI_MODEL") ?? AIProfile.defaultModel,
+            apiKey: key, authMethod: .apiKey
+        )
+        let settings = AISettings(profile: profile, maxIterations: 20, temperature: 0.2)
+        let session = AIConversationSession(store: store, loadSettings: { settings }, skillsText: { _ in nil })
+
+        let requests = [
+            "A card that says Hello in large text with today's date under it, on a light background",
+            "Make the Hello text smaller and change the background to dark blue with white text",
+            "Add a line at the bottom that says Have a nice day",
+        ]
+        var report: [String] = []
+        for (index, request) in requests.enumerated() {
+            let started = Date()
+            session.send(request)
+            await session.settle()
+            let turn = try XCTUnwrap(session.conversation.turns.last)
+            report.append("""
+            Turn \(index + 1): \(request)
+              status: \(turn.status.rawValue), repairs: \(turn.repairs), tokens: \(turn.usage.totalTokens),             seconds: \(Int(Date().timeIntervalSince(started)))
+              note: \(turn.note ?? "(none)")
+              error: \(turn.errorSummary ?? "(none)")
+            """)
+            if let folder = read("AI_CONVERSATION_LIVE_DIR") {
+                let output = URL(fileURLWithPath: folder, isDirectory: true)
+                try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+                try (turn.failedSource ?? session.currentSource)
+                    .write(to: output.appendingPathComponent("turn-\(index + 1).jsx"), atomically: true, encoding: .utf8)
+                try report.joined(separator: "\n").write(
+                    to: output.appendingPathComponent("report.txt"), atomically: true, encoding: .utf8)
+            }
+            XCTAssertEqual(turn.status, .succeeded, "turn \(index + 1) should run: \(turn.errorSummary ?? "")")
+            XCTAssertNotNil(turn.note, "the model should say what it did")
+        }
+        print(report.joined(separator: "\n"))
+
+        XCTAssertEqual(session.conversation.versions.count, 3)
+        let final = session.currentSource
+        XCTAssertTrue(final.contains("Hello"), "an unrelated part survives the later turns")
+        XCTAssertTrue(final.localizedCaseInsensitiveContains("Have a nice day"))
+        XCTAssertNotNil(session.previewElement)
+    }
+
     // MARK: - window snapshot (macOS, on request)
 
     #if os(macOS)

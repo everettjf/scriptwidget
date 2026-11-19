@@ -82,4 +82,5 @@ Streaming output, thumbnails of several sizes at once, the same conversation in 
 - `PromptBuilder.userPromptTurn` and `parseTurnReply`: the request and reply format.
 - `macOS/ScriptWidgetMac/AIGenerate/AIGenerateWindowView.swift`: the window.
 - `Tests/ScriptWidgetRuntimeTests/AIConversationTests.swift`: tests against a stub provider. They need no key and make no network request.
+- `testThreeTurnsAgainstARealProviderWhenConfigured` sends three turns to a real provider when `ROCKY_OPENAI_APIKEY`, `ROCKY_OPENAI_BASEURL` and `ROCKY_OPENAI_MODEL` are set, as in [AI quality testing](ai-quality-testing.md). It costs tokens and is skipped otherwise. `AI_CONVERSATION_LIVE_DIR` names a folder for the three sources and a short report. Pass the key through the environment; never write it into a command or a file of the repository.
 - The picture on this page is written by the same test file when `AI_CONVERSATION_SNAPSHOT_DIR` names a folder (prefix it with `TEST_RUNNER_` for `xcodebuild`). It draws the window with a prepared conversation; it does not click through it.
