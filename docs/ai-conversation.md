@@ -19,7 +19,7 @@ iPhone and iPad have the same conversation, see [On iPhone and iPad](#on-iphone-
 
 A version shows how many lines it added and removed against the one it was made from, as **+3 −2**; a click shows those lines with a little of what is around them. The comparison is made on the device.
 
-While the AI writes, the code appears under the request as it arrives. A provider that can not stream is asked in the plain way instead, and the code appears when it is complete.
+While the AI writes, the code appears under the request as it arrives. Apple Private Cloud Compute answers in one piece, and a provider that can not stream is asked in the plain way instead; with those the code appears when it is complete.
 
 Under the preview the widget is drawn at the Small, Medium and Large sizes; a click shows that size above. The size picker offers the other sizes. All of this runs on the Mac and costs no tokens. A size larger than the preview area is drawn smaller to fit.
 

@@ -175,7 +175,7 @@ struct AIConversationTurnsView: View {
         case .idle: return ""
         case .thinking: return String(localized: "Writing the widget…")
         case .running: return String(localized: "Running it…")
-        case .repairing(let attempt, _): return String(localized: "It needs a fix. Fixing, attempt \(attempt) of \(AIConversationLimits.maxAttemptsPerTurn)…")
+        case .repairing(let attempt, _): return String(localized: "It needs a fix. Fixing, attempt \(attempt) of \(session.attemptLimit)…")
         }
     }
 

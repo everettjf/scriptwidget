@@ -48,6 +48,14 @@ final class AIConversationSession: ObservableObject {
     static let thumbnailSizes: [AIWidgetSize] = [.small, .medium, .large]
 
     var isRunning: Bool { activity != .idle }
+    /// How many attempts a turn gets with the provider in use; Apple Private
+    /// Cloud Compute gets fewer than the others.
+    var attemptLimit: Int {
+        AgentLoop.iterationLimit(for: AgentLoopRequest(
+            mode: .fresh(userDescription: ""), size: conversation.size, settings: loadSettings(),
+            maxIterations: AIConversationLimits.maxAttemptsPerTurn
+        ))
+    }
     var previewElement: ScriptWidgetRuntimeElement? { previews[conversation.size] }
     /// Hosts the version on screen may contact.
     var currentDomains: [String] { conversation.currentVersion?.networkDomains ?? [] }
