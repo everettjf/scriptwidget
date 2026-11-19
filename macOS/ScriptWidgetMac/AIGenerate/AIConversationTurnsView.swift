@@ -29,7 +29,8 @@ struct AIConversationTurnsView: View {
     }
 
     private func manualEdit(_ turn: AIConversationTurn) -> some View {
-        HStack(spacing: 8) {
+        // Two lines: side by side they do not fit the editor's narrow panel.
+        VStack(alignment: .leading, spacing: 3) {
             Label("Code from the editor", systemImage: "pencil.line")
                 .font(.caption)
                 .foregroundStyle(.secondary)
