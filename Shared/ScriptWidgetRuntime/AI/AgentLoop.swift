@@ -237,12 +237,23 @@ final class AgentLoop {
                 return .cancelled(usage: cumulativeUsage)
             }
 
+            // An attribute that does not exist is ignored when the widget runs,
+            // so running proves nothing about it.
+            let unknown = AIJSXCheck.summary(of: jsx)
+
             if runResult.didSucceed, let element = runResult.element {
+                // Not on the last attempt: a widget that runs is better than none.
+                if let unknown, iteration < iterationLimit {
+                    lastError = unknown
+                    lastLogs = runResult.logs
+                    await onEvent(.ranFailed(iteration: iteration, errorSummary: unknown, logs: runResult.logs))
+                    continue
+                }
                 await onEvent(.ranSucceeded(iteration: iteration))
                 return .succeeded(jsx: jsx, element: element, usage: cumulativeUsage)
             }
 
-            let summary: String
+            var summary: String
             if let err = runResult.error {
                 summary = err.summaryForPrompt
             } else if runResult.element == nil {
@@ -250,6 +261,7 @@ final class AgentLoop {
             } else {
                 summary = "Runtime returned a fallback/placeholder element. The widget did not render real content."
             }
+            if let unknown { summary += "\n\n" + unknown }
             lastError = summary
             lastLogs = runResult.logs
             await onEvent(.ranFailed(iteration: iteration, errorSummary: summary, logs: runResult.logs))

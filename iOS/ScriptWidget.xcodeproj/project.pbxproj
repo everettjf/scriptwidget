@@ -59,6 +59,8 @@
 		A102002300000000000000B0 /* AIConversationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002300000000000000B0 /* AIConversationSession.swift */; };
 		A102002400000000000000B0 /* AIConversationTurnsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002400000000000000B0 /* AIConversationTurnsView.swift */; };
 		A102002500000000000000B0 /* AISourceEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002500000000000000B0 /* AISourceEdits.swift */; };
+		A102002700000000000000B0 /* AIJSXSurfaceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002700000000000000B0 /* AIJSXSurfaceData.swift */; };
+		A102002600000000000000B0 /* AIJSXCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002600000000000000B0 /* AIJSXCheck.swift */; };
 		A102002200000000000000B0 /* AIConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002200000000000000B0 /* AIConversationStore.swift */; };
 		A102002100000000000000B0 /* AIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002100000000000000B0 /* AIConversation.swift */; };
 		A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000800000000000000B0 /* AIGenerateProgressView.swift */; };
@@ -559,6 +561,8 @@
 		A101002300000000000000B0 /* AIConversationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationSession.swift; sourceTree = "<group>"; };
 		A101002400000000000000B0 /* AIConversationTurnsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationTurnsView.swift; sourceTree = "<group>"; };
 		A101002500000000000000B0 /* AISourceEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISourceEdits.swift; sourceTree = "<group>"; };
+		A101002700000000000000B0 /* AIJSXSurfaceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIJSXSurfaceData.swift; sourceTree = "<group>"; };
+		A101002600000000000000B0 /* AIJSXCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIJSXCheck.swift; sourceTree = "<group>"; };
 		A101002200000000000000B0 /* AIConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationStore.swift; sourceTree = "<group>"; };
 		A101002100000000000000B0 /* AIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversation.swift; sourceTree = "<group>"; };
 		A101000800000000000000B0 /* AIGenerateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateProgressView.swift; sourceTree = "<group>"; };
@@ -965,6 +969,8 @@
 				A101002300000000000000B0 /* AIConversationSession.swift */,
 				A101002400000000000000B0 /* AIConversationTurnsView.swift */,
 				A101002500000000000000B0 /* AISourceEdits.swift */,
+				A101002700000000000000B0 /* AIJSXSurfaceData.swift */,
+				A101002600000000000000B0 /* AIJSXCheck.swift */,
 				A101002200000000000000B0 /* AIConversationStore.swift */,
 				A101002100000000000000B0 /* AIConversation.swift */,
 				A101000800000000000000B0 /* AIGenerateProgressView.swift */,
@@ -2102,6 +2108,8 @@
 				A102002300000000000000B0 /* AIConversationSession.swift in Sources */,
 				A102002400000000000000B0 /* AIConversationTurnsView.swift in Sources */,
 				A102002500000000000000B0 /* AISourceEdits.swift in Sources */,
+				A102002700000000000000B0 /* AIJSXSurfaceData.swift in Sources */,
+				A102002600000000000000B0 /* AIJSXCheck.swift in Sources */,
 				A102002200000000000000B0 /* AIConversationStore.swift in Sources */,
 				A102002100000000000000B0 /* AIConversation.swift in Sources */,
 				A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */,

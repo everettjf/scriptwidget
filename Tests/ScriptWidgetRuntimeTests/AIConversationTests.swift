@@ -295,6 +295,91 @@ final class AIConversationTests: XCTestCase {
         XCTAssertEqual(session.conversation.versions.count, 1)
     }
 
+    // MARK: - tags and attributes that do not exist
+
+    func testWidgetThatUsesOnlyWhatExistsHasNoProblem() {
+        let source = """
+        // <nothing here="x"> is a tag
+        const title = "a <b c> in a string";
+        const wide = count<limit && other < 3;
+        $render(
+          <vstack frame="max" alignment="leading" background="#0a84ff" padding="16" spacing="6" {...extra}>
+            <text font="title,bold" weight="bold" fontDesign="rounded" color={dark ? "white" : "black"}>It's {title}</text>
+            <date date={new Date()} style="timer" />
+            <date date={now} style={"relative"} />
+            {rows.map((row) => <hstack key={row.id}><Card title={row.title} flavour="x" /></hstack>)}
+            <image systemName="sun.max" mode="fit" clip="circle" />
+            <Ring side={96} />
+          </vstack>,
+        );
+        """
+        XCTAssertEqual(AIJSXCheck.problems(in: source), [])
+        XCTAssertNil(AIJSXCheck.summary(of: source))
+    }
+
+    func testAttributeOrValueOrTagThatDoesNotExistIsNamed() {
+        let weekday = AIJSXCheck.problems(in: "$render(<date date={now} style=\"weekday\" />)")
+        XCTAssertEqual(weekday, ["style=\"weekday\" on <date> is not one of its values; it would be ignored. Use one of: time, date, relative, offset, timer."])
+
+        let format = AIJSXCheck.problems(in: "$render(<vstack><date date={now} format=\"EEEE\" /></vstack>)")
+        XCTAssertTrue(format.first?.hasPrefix("<date> has no attribute \"format\"; it would be ignored. Its attributes are: date, style, ") == true, format.first ?? "")
+
+        let tag = AIJSXCheck.problems(in: "$render(<row><text>a</text></row>)")
+        XCTAssertTrue(tag.first?.hasPrefix("<row> is not a ScriptWidget tag. The tags are: vstack, hstack, ") == true, tag.first ?? "")
+
+        XCTAssertTrue(AIJSXCheck.problems(in: "return <text fontWeight={\"huge\"}>a</text>").first?.contains("fontWeight=\"huge\"") == true)
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<text fontWeight={weight}>a</text>)"), [], "a value that is computed is not judged")
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack><row/><row/></vstack>)").count, 1)
+        let many = (1...12).map { "<text madeUp\($0)=\"1\">a</text>" }.joined()
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack>\(many)</vstack>)").count, AIJSXCheck.maxProblems)
+        XCTAssertTrue(AIJSXCheck.problems(in: "$render(<list spacing=\"4\"></list>)").first?.contains("<list> is not a ScriptWidget tag") == true,
+                      "the scrolling list is a tag on Android only")
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<list spacing=\"4\"></list>)", surface: AIJSXCheck.parseSurface(AIJSXSurfaceData.text, system: "android")), [])
+    }
+
+    /// Every template and example in the app passes: the check must not cry wolf.
+    func testEveryBundledWidgetPassesTheCheck() throws {
+        let bundle = try XCTUnwrap(Bundle.main.url(forResource: "Script", withExtension: "bundle"))
+        var count = 0
+        var wrong: [String] = []
+        let files = try XCTUnwrap(FileManager.default.enumerator(at: bundle, includingPropertiesForKeys: nil))
+        for case let file as URL in files where file.pathExtension == "jsx" {
+            count += 1
+            let problems = AIJSXCheck.problems(in: try String(contentsOf: file, encoding: .utf8))
+            if !problems.isEmpty { wrong.append("\(file.path.replacingOccurrences(of: bundle.path, with: "")): \(problems.joined(separator: " | "))") }
+        }
+        XCTAssertGreaterThan(count, 50)
+        XCTAssertEqual(wrong, [])
+    }
+
+    func testMadeUpValueIsSentBackAlthoughTheWidgetRuns() async {
+        let wrong = "$render(<date date={new Date()} style=\"weekday\" />)\n"
+        let right = "$render(<date date={new Date()} style=\"date\" />)\n"
+        ConversationProviderStub.enqueue([reply("Shows the weekday.", wrong), reply("Shows the date.", right)])
+        let session = makeSession()
+        session.send("Show the weekday")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded, turn.errorSummary ?? "")
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(session.currentSource, right)
+        XCTAssertTrue(ConversationProviderStub.bodies.last?.contains("is not one of its values") == true, "the model is told what does not exist")
+    }
+
+    func testOnTheLastAttemptAWidgetThatRunsIsKept() async {
+        let wrong = "$render(<date date={new Date()} style=\"weekday\" />)\n"
+        ConversationProviderStub.enqueue(Array(repeating: reply("Shows the weekday.", wrong), count: 6))
+        let session = makeSession()
+        session.send("Show the weekday")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded, turn.errorSummary ?? "")
+        XCTAssertEqual(turn.repairs, AIConversationLimits.maxAttemptsPerTurn - 1)
+        XCTAssertEqual(session.currentSource, wrong)
+    }
+
     func testChangeThatNeverRunsLeavesTheWidgetAndPreviewAsTheyWere() async {
         ConversationProviderStub.enqueue([reply("Made a greeting.", Self.goodWidget)])
         ConversationProviderStub.enqueue(Array(repeating: reply("Broke it.", Self.brokenWidget), count: 6))
