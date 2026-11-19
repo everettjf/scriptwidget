@@ -254,7 +254,13 @@ private struct AIConversationScreen: View {
                     if !isConfigured {
                         notConfiguredNotice
                     } else if conversation.turns.isEmpty {
-                        emptyState
+                        if conversation.currentVersion == nil {
+                            emptyState
+                        } else {
+                            Text("This conversation continues from an earlier one. Say what to change.")
+                                .font(.callout)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     AIConversationTurnsView(session: session, canSend: isConfigured) { title, code in
                         shownCode = ShownCode(title: title, code: code)
@@ -282,7 +288,16 @@ private struct AIConversationScreen: View {
                 if focused { withAnimation { proxy.scrollTo("bottom", anchor: .bottom) } }
             }
         }
-        .safeAreaInset(edge: .bottom, spacing: 0) { composer }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            VStack(spacing: 0) {
+                AIConversationUsageNotice(conversation: conversation) { next in
+                    session.cancel()
+                    onOpen(next)
+                }
+                composer
+            }
+            .background(.bar)
+        }
     }
 
     private var notConfiguredNotice: some View {
@@ -410,7 +425,6 @@ private struct AIConversationScreen: View {
         }
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(.bar)
     }
 
     private var canSend: Bool {

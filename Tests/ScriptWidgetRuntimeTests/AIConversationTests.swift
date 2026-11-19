@@ -295,6 +295,67 @@ final class AIConversationTests: XCTestCase {
         XCTAssertEqual(session.conversation.versions.count, 1)
     }
 
+    // MARK: - what changed between versions
+
+    func testDiffShowsChangedLinesWithContextAndLeavesTheRestOut() throws {
+        let old = (1...20).map { "line \($0)" }.joined(separator: "\n") + "\n"
+        let new = old.replacingOccurrences(of: "line 10\n", with: "line ten\nline ten and a half\n")
+        XCTAssertEqual(AISourceDiff.summary(old: old, new: new), AISourceDiff.Summary(added: 2, removed: 1))
+        let lines = try XCTUnwrap(AISourceDiff.lines(old: old, new: new))
+        XCTAssertEqual(lines.map(\.kind), [
+            .skipped(count: 6), .same, .same, .same, .removed, .added, .added, .same, .same, .same, .skipped(count: 7),
+        ])
+        XCTAssertEqual(lines.filter { $0.kind == .added }.map(\.text), ["line ten", "line ten and a half"])
+        XCTAssertEqual(lines.first { $0.kind == .removed }?.text, "line 10")
+        XCTAssertEqual(AISourceDiff.lines(old: old, new: old), [])
+        XCTAssertEqual(AISourceDiff.summary(old: "a\r\nb\n", new: "a\nb"), AISourceDiff.Summary(added: 0, removed: 0), "line endings are not a change")
+        let long = String(repeating: "x\n", count: AISourceDiff.maxLines + 1)
+        XCTAssertNil(AISourceDiff.summary(old: long, new: "x"))
+    }
+
+    // MARK: - a conversation that has grown heavy
+
+    func testUsageAdviceAppearsOnlyWhenAConversationHasGrown() throws {
+        var conversation = AIConversation(size: .large, skillIDs: ["visual-polish"])
+        XCTAssertNil(conversation.usageAdvice)
+        XCTAssertNil(conversation.continuedFromCurrentVersion(), "nothing to continue from")
+
+        func turn(_ prompt: Int, repairs: Int = 0) {
+            let turn = conversation.beginTurn(request: "Change it")
+            let version = conversation.addVersion(source: "$render(<text>\(conversation.versionCounter)</text>)\n", networkDomains: ["example.com"])
+            conversation.updateTurn(turn.id) {
+                $0.status = .succeeded
+                $0.versionID = version.id
+                $0.repairs = repairs
+                $0.usage = AITokenUsage(promptTokens: prompt, completionTokens: 100, totalTokens: prompt + 100)
+            }
+        }
+        turn(5_000)
+        XCTAssertNil(conversation.usageAdvice)
+        // Two attempts shared 70,000 tokens: 35,000 each.
+        turn(70_000, repairs: 1)
+        XCTAssertEqual(conversation.lastRequestTokens, 35_000)
+        XCTAssertEqual(conversation.usageAdvice?.reason, .heavyRequests(tokens: 35_000))
+        turn(5_000)
+        XCTAssertNil(conversation.usageAdvice, "it follows the newest turn")
+        for _ in 0..<AIConversationLimits.historyTurns { turn(5_000) }
+        XCTAssertEqual(conversation.usageAdvice?.reason, .historyFull)
+        for _ in 0..<20 { turn(5_000) }
+        XCTAssertEqual(conversation.usageAdvice?.reason, .versionsFull)
+        turn(200_000)
+        XCTAssertEqual(conversation.usageAdvice?.reason, .heavyRequests(tokens: 200_000))
+
+        let next = try XCTUnwrap(conversation.continuedFromCurrentVersion())
+        XCTAssertNotEqual(next.id, conversation.id)
+        XCTAssertEqual(next.versions.map(\.source), [conversation.currentVersion?.source])
+        XCTAssertEqual(next.currentVersion?.networkDomains, ["example.com"])
+        XCTAssertEqual(next.size, .large)
+        XCTAssertEqual(next.skillIDs, ["visual-polish"])
+        XCTAssertTrue(next.turns.isEmpty && next.isDraft)
+        XCTAssertNil(next.usageAdvice)
+        XCTAssertTrue(next.historyForPrompt().isEmpty, "no earlier turn is sent")
+    }
+
     // MARK: - tags and attributes that do not exist
 
     func testWidgetThatUsesOnlyWhatExistsHasNoProblem() {

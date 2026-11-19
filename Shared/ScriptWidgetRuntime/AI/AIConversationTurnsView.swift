@@ -152,6 +152,9 @@ struct AIConversationTurnsView: View {
                         .font(.caption)
                         .disabled(session.isRunning)
                 }
+                if let parent = session.conversation.version(version.parentID) {
+                    AIVersionChangesButton(title: "Changes in Version \(version.number)", old: parent.source, new: version.source)
+                }
                 if turn.isAbandoned {
                     Text("left behind")
                         .font(.caption)
@@ -186,5 +189,36 @@ struct AIConversationTurnsView: View {
 
     private static func tail(of text: String, lines: Int) -> String {
         text.split(separator: "\n", omittingEmptySubsequences: false).suffix(lines).joined(separator: "\n")
+    }
+}
+
+/// Shown above the message field when a conversation has grown heavy, with
+/// the way out. Nothing is shown while the conversation is small.
+struct AIConversationUsageNotice: View {
+    let conversation: AIConversation
+    /// Opens the conversation that continues from the current version.
+    let onContinue: (AIConversation) -> Void
+
+    var body: some View {
+        if let advice = conversation.usageAdvice {
+            HStack(alignment: .firstTextBaseline, spacing: 8) {
+                Image(systemName: "gauge.with.dots.needle.67percent")
+                    .foregroundStyle(.orange)
+                    .accessibilityHidden(true)
+                Text(advice.message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 4)
+                if let next = conversation.continuedFromCurrentVersion() {
+                    Button("Start New From Here") { onContinue(next) }
+                        .font(.caption)
+                        .controlSize(.small)
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .accessibilityElement(children: .contain)
+        }
     }
 }

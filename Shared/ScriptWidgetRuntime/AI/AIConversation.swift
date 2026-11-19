@@ -27,6 +27,38 @@ enum AIConversationLimits {
     /// The version before the current one is sent for reference when it is small.
     static let previousSourceCharacters = 8_000
     static let titleCharacters = 40
+    /// From here on the user is told that the conversation has grown heavy.
+    static let heavyPromptTokens = 30_000
+    static let heavyTotalTokens = 300_000
+}
+
+/// Something the user should know about the size of a conversation, with the
+/// way out: continue in a new conversation from the current version.
+struct AIConversationUsageAdvice: Equatable {
+    enum Reason: Equatable {
+        /// Each request now sends about this many tokens.
+        case heavyRequests(tokens: Int)
+        /// The conversation has used this many tokens in all.
+        case heavyTotal(tokens: Int)
+        /// The oldest versions are being dropped.
+        case versionsFull
+        /// Turns older than the newest ones are no longer sent.
+        case historyFull
+    }
+    let reason: Reason
+
+    var message: String {
+        switch reason {
+        case .heavyRequests(let tokens):
+            return "Each request now sends about \(tokens.formatted()) tokens. A new conversation from this version sends less."
+        case .heavyTotal(let tokens):
+            return "This conversation has used \(tokens.formatted()) tokens. A new conversation from this version starts small again."
+        case .versionsFull:
+            return "A conversation keeps \(AIConversationLimits.maxVersions) versions; the oldest are dropped from now on."
+        case .historyFull:
+            return "The AI is told about the last \(AIConversationLimits.historyTurns) turns only; older requests are no longer sent."
+        }
+    }
 }
 
 struct AIConversationVersion: Codable, Identifiable, Equatable {
@@ -186,6 +218,41 @@ struct AIConversation: Codable, Identifiable, Equatable {
     var currentVersion: AIConversationVersion? { version(currentVersionID) }
     var latestVersion: AIConversationVersion? { versions.max { $0.number < $1.number } }
     var totalUsage: AITokenUsage { turns.reduce(.zero) { $0 + $1.usage } }
+
+    /// What the newest finished turn sent per request, on average over its attempts.
+    var lastRequestTokens: Int {
+        guard let turn = turns.last(where: { $0.usage.promptTokens > 0 && $0.status != .running }) else { return 0 }
+        let attempts = turn.status == .succeeded ? turn.repairs + 1 : max(1, turn.repairs)
+        return turn.usage.promptTokens / max(1, attempts)
+    }
+
+    /// The most pressing thing to say about the size of the conversation, if any.
+    var usageAdvice: AIConversationUsageAdvice? {
+        if lastRequestTokens >= AIConversationLimits.heavyPromptTokens {
+            return AIConversationUsageAdvice(reason: .heavyRequests(tokens: lastRequestTokens))
+        }
+        if totalUsage.totalTokens >= AIConversationLimits.heavyTotalTokens {
+            return AIConversationUsageAdvice(reason: .heavyTotal(tokens: totalUsage.totalTokens))
+        }
+        if versions.count >= AIConversationLimits.maxVersions {
+            return AIConversationUsageAdvice(reason: .versionsFull)
+        }
+        let told = turns.filter { $0.status == .succeeded && !$0.isAbandoned && $0.isManualEdit != true }.count
+        if told > AIConversationLimits.historyTurns {
+            return AIConversationUsageAdvice(reason: .historyFull)
+        }
+        return nil
+    }
+
+    /// A new draft that starts from the current version: same size and skills,
+    /// one version, no turns, and so no history to send. nil without a version.
+    func continuedFromCurrentVersion(now: Date = Date()) -> AIConversation? {
+        guard let current = currentVersion else { return nil }
+        var next = AIConversation(size: size, skillIDs: skillIDs, now: now)
+        next.title = title
+        next.addVersion(source: current.source, networkDomains: current.networkDomains ?? [], now: now)
+        return next
+    }
 
     func version(_ id: UUID?) -> AIConversationVersion? {
         guard let id else { return nil }
