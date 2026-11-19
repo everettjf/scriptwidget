@@ -118,7 +118,7 @@ The earlier single request on iPhone and iPad still runs its candidate in a pack
 
 ## Not in this version
 
-Targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface.
+Targeted edits instead of whole-file replies, a view of what changed between versions, and the iPhone and iPad interface. The [plan](ai-conversation-plan.md) (Chinese) lists them in order.
 
 ## For contributors
 
