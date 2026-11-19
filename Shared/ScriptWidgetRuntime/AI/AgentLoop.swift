@@ -29,6 +29,28 @@ enum AgentLoopEvent {
     case declared([String])
 }
 
+/// How a conversation about an existing widget sets up its sandbox: with the
+/// widget's files, and with the widget's own permissions.
+struct AgentSandboxSetup {
+    /// The widget's folder; its files are copied in before the first run.
+    let seedDirectory: URL
+    /// The widget's manifest. nil means a legacy package: the candidate runs
+    /// without widget.json, as that widget does.
+    let baseManifest: WidgetPackageManifest?
+
+    /// The manifest a candidate runs with: the widget's own, plus the network
+    /// permission for the hosts the candidate declares.
+    func manifest(declaring domains: [String]) -> WidgetPackageManifest? {
+        guard var manifest = baseManifest else { return nil }
+        guard !domains.isEmpty else { return manifest }
+        if !manifest.permissions.contains(.network) { manifest.permissions.append(.network) }
+        for domain in domains where !manifest.networkDomains.contains(domain) {
+            manifest.networkDomains.append(domain)
+        }
+        return manifest
+    }
+}
+
 struct AgentLoopRequest {
     enum Mode {
         case fresh(userDescription: String)
@@ -41,6 +63,8 @@ struct AgentLoopRequest {
     let size: AIWidgetSize
     let settings: AISettings
     let maxIterations: Int
+    /// Only for a conversation about an existing widget.
+    var sandbox: AgentSandboxSetup? = nil
 }
 
 final class AgentLoop {
@@ -97,6 +121,12 @@ final class AgentLoop {
             return .failed(message: error.localizedDescription, usage: cumulativeUsage)
         }
         defer { bridge.cleanupSandboxPackage(package) }
+        if let sandbox = request.sandbox, !bridge.seed(package, from: sandbox.seedDirectory) {
+            return .failed(
+                message: "This widget has too many or too large files to try changes on a copy.",
+                usage: cumulativeUsage
+            )
+        }
 
         var lastError: String?
         var lastLogs: [String] = []
@@ -158,10 +188,12 @@ final class AgentLoop {
                 // once saved: none, or the network for the hosts it declares.
                 switch AINetworkDeclaration.parse(json: reply.declaration) {
                 case .none:
-                    manifest = AINetworkDeclaration.manifest(name: "AI Preview", domains: [])
+                    manifest = request.sandbox.map { $0.manifest(declaring: []) }
+                        ?? AINetworkDeclaration.manifest(name: "AI Preview", domains: [])
                     await onEvent(.declared([]))
                 case .declared(let declaration):
-                    manifest = declaration.manifest(name: "AI Preview")
+                    manifest = request.sandbox.map { $0.manifest(declaring: declaration.domains) }
+                        ?? declaration.manifest(name: "AI Preview")
                     await onEvent(.declared(declaration.domains))
                 case .invalid(let reason):
                     declarationError = "The network declaration block is not valid: \(reason)."

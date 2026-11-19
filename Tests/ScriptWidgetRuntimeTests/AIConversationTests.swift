@@ -19,9 +19,9 @@ import AppKit
 final class AIConversationTests: XCTestCase {
 
     private static let secret = "sk-stub-secret-7f3a91"
-    private static let goodWidget = "$render(<vstack><text>Hello</text></vstack>)"
-    private static let betterWidget = "$render(<vstack><text>Hello</text><text>World</text></vstack>)"
-    private static let brokenWidget = "const broken = ;"
+    private static let goodWidget = "$render(<vstack><text>Hello</text></vstack>)\n"
+    private static let betterWidget = "$render(<vstack><text>Hello</text><text>World</text></vstack>)\n"
+    private static let brokenWidget = "const broken = ;\n"
 
     private var directory: URL!
     private var store: AIConversationStore!
@@ -45,7 +45,8 @@ final class AIConversationTests: XCTestCase {
 
     private func makeSession(
         _ conversation: AIConversation = AIConversation(),
-        skills: String? = nil
+        skills: String? = nil,
+        sandbox: AgentSandboxSetup? = nil
     ) -> AIConversationSession {
         let client = AIClient(session: urlSession)
         var profile = AIProfile.makeDefault()
@@ -58,9 +59,28 @@ final class AIConversationTests: XCTestCase {
             store: store,
             makeLoop: { AgentLoop(client: client) },
             loadSettings: { settings },
-            skillsText: { _ in skills }
+            skillsText: { _ in skills },
+            sandbox: sandbox
         )
     }
+
+    /// A widget folder with a second file that main.jsx imports.
+    private func makeWidgetFolder(manifest: WidgetPackageManifest?) throws -> URL {
+        let folder = directory.appendingPathComponent("Widget-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("lib"), withIntermediateDirectories: true)
+        try "globalThis.Greeting = { text: \"From the library\" };"
+            .write(to: folder.appendingPathComponent("lib/greeting.js"), atomically: true, encoding: .utf8)
+        try Self.importingWidget.write(to: folder.appendingPathComponent("main.jsx"), atomically: true, encoding: .utf8)
+        if let manifest {
+            try JSONEncoder().encode(manifest).write(to: folder.appendingPathComponent("widget.json"))
+        }
+        return folder
+    }
+
+    private static let importingWidget = """
+    if (!$import("lib/greeting.js")) throw new Error("lib/greeting.js is missing");
+    $render(<vstack><text>{Greeting.text}</text></vstack>)
+    """
 
     private func reply(_ summary: String, _ code: String) -> ConversationProviderStub.Reply {
         .content("SUMMARY: \(summary)\n```jsx\n\(code)\n```")
@@ -98,19 +118,19 @@ final class AIConversationTests: XCTestCase {
     func testReplyParsingAcceptsEveryShapeAModelMaySend() {
         let full = PromptBuilder.parseTurnReply("SUMMARY: 标题改小了\n```jsx\n$render(<text>a</text>)\n```")
         XCTAssertEqual(full.note, "标题改小了")
-        XCTAssertEqual(full.code, "$render(<text>a</text>)")
+        XCTAssertEqual(full.code, "$render(<text>a</text>)\n")
 
         let noFence = PromptBuilder.parseTurnReply("Summary: Smaller title\n$render(<text>a</text>)")
         XCTAssertEqual(noFence.note, "Smaller title")
-        XCTAssertEqual(noFence.code, "$render(<text>a</text>)")
+        XCTAssertEqual(noFence.code, "$render(<text>a</text>)\n")
 
         let codeOnly = PromptBuilder.parseTurnReply("$render(<text>a</text>)")
         XCTAssertNil(codeOnly.note)
-        XCTAssertEqual(codeOnly.code, "$render(<text>a</text>)")
+        XCTAssertEqual(codeOnly.code, "$render(<text>a</text>)\n")
 
         let fenceOnly = PromptBuilder.parseTurnReply("```jsx\n$render(<text>a</text>)\n```")
         XCTAssertNil(fenceOnly.note)
-        XCTAssertEqual(fenceOnly.code, "$render(<text>a</text>)")
+        XCTAssertEqual(fenceOnly.code, "$render(<text>a</text>)\n")
     }
 
     func testRepairPromptClipsLongLogLines() {
@@ -346,12 +366,12 @@ final class AIConversationTests: XCTestCase {
         ```
         """)
         XCTAssertEqual(reply.note, "Shows a quote.")
-        XCTAssertEqual(reply.code, "$render(<text>a</text>)")
+        XCTAssertEqual(reply.code, "$render(<text>a</text>)\n")
         XCTAssertEqual(reply.declaration, #"{"permissions": ["network"], "networkDomains": ["api.example.com"]}"#)
 
         // Even without a fence around the code, the declaration is never taken for the widget.
         let bare = PromptBuilder.parseTurnReply("$render(<text>a</text>)\n```json\n{\"permissions\": []}\n```")
-        XCTAssertEqual(bare.code, "$render(<text>a</text>)")
+        XCTAssertEqual(bare.code, "$render(<text>a</text>)\n")
         XCTAssertNotNil(bare.declaration)
     }
 
@@ -419,6 +439,145 @@ final class AIConversationTests: XCTestCase {
         await session.settle()
         XCTAssertEqual(texts(session.previewElement), ["accessoryRectangular"])
         XCTAssertEqual(ConversationProviderStub.bodies.count, 1)
+    }
+
+    // MARK: - a conversation about an existing widget
+
+    func testCodeFromTheEditorBecomesAVersionAndIsNotSentAsARequest() async {
+        ConversationProviderStub.enqueue([reply("Added a second line.", Self.betterWidget)])
+        let session = makeSession()
+        session.adoptEditorSource(Self.goodWidget)
+        await session.settle()
+
+        XCTAssertEqual(session.conversation.versions.count, 1)
+        XCTAssertEqual(session.conversation.turns.first?.isManualEdit, true)
+        XCTAssertEqual(session.currentSource, Self.goodWidget)
+        XCTAssertNotNil(session.previewElement)
+        XCTAssertEqual(ConversationProviderStub.bodies.count, 0, "taking over the editor's code sends nothing")
+
+        session.send("Add a second line")
+        await session.settle()
+        let body = ConversationProviderStub.bodies[0]
+        XCTAssertTrue(body.contains("<text>Hello</text>"), "the editor's code is the widget the AI changes")
+        XCTAssertFalse(body.contains("Earlier turns"), "a manual edit is not an earlier request")
+        XCTAssertEqual(session.conversation.currentVersion?.number, 2)
+    }
+
+    func testEditorStillHoldingAnOlderVersionDoesNotReplaceThePendingOne() async {
+        ConversationProviderStub.enqueue([reply("Added a second line.", Self.betterWidget)])
+        let session = makeSession()
+        session.adoptEditorSource(Self.goodWidget)
+        session.send("Add a second line")
+        await session.settle()
+
+        // The new version was not applied: the editor still holds version 1.
+        session.adoptEditorSource(Self.goodWidget)
+        XCTAssertEqual(session.currentSource, Self.betterWidget, "the pending version stays the one being worked on")
+        XCTAssertEqual(session.conversation.versions.count, 2)
+
+        // Code the conversation never saw is the user's own edit.
+        let edited = "$render(<vstack><text>Mine</text></vstack>)"
+        session.adoptEditorSource(edited)
+        await session.settle()
+        XCTAssertEqual(session.currentSource, edited)
+        XCTAssertEqual(session.conversation.versions.count, 3)
+        XCTAssertEqual(session.conversation.turns.last?.isManualEdit, true)
+    }
+
+    func testCandidateRunsWithTheWidgetsOwnFiles() async throws {
+        let folder = try makeWidgetFolder(manifest: nil)
+        ConversationProviderStub.enqueue([reply("Kept the import.", Self.importingWidget + "\n// changed")])
+        let session = makeSession(sandbox: AgentSandboxSetup(seedDirectory: folder, baseManifest: nil))
+        session.adoptEditorSource(Self.importingWidget)
+        await session.settle()
+        XCTAssertEqual(texts(session.previewElement), ["From the library"], "the preview copy has lib/greeting.js")
+
+        session.send("Change something")
+        await session.settle()
+        XCTAssertEqual(session.conversation.turns.last?.status, .succeeded,
+                       session.conversation.turns.last?.errorSummary ?? "")
+        XCTAssertTrue(session.currentSource.hasSuffix("// changed\n"),
+                      "a last line that is a comment still runs: the code ends with a line break")
+        XCTAssertEqual(texts(session.previewElement), ["From the library"])
+        XCTAssertEqual(try String(contentsOf: folder.appendingPathComponent("main.jsx"), encoding: .utf8),
+                       Self.importingWidget, "the widget itself is not touched")
+    }
+
+    func testCandidateRunsWithTheWidgetsOwnPermissionsPlusDeclaredHosts() async throws {
+        var manifest = WidgetPackageManifest.newProject(name: "Bound")
+        manifest.permissions = [.storage, .network]
+        manifest.networkDomains = ["one.example.com"]
+        let folder = try makeWidgetFolder(manifest: manifest)
+        let declaration = #"{"permissions": ["network"], "networkDomains": ["two.example.com"]}"#
+        ConversationProviderStub.enqueue([
+            .content("SUMMARY: Kept it.\n```jsx\n\(Self.importingWidget)\n// v2\n```\n```json\n\(declaration)\n```"),
+        ])
+        let session = makeSession(sandbox: AgentSandboxSetup(seedDirectory: folder, baseManifest: manifest))
+        session.adoptEditorSource(Self.importingWidget)
+        session.send("Use a second host")
+        await session.settle()
+
+        XCTAssertEqual(session.conversation.turns.last?.status, .succeeded,
+                       session.conversation.turns.last?.errorSummary ?? "")
+        let preview = try XCTUnwrap(session.previewPackage?.readManifest())
+        XCTAssertEqual(preview.id, manifest.id)
+        XCTAssertEqual(Set(preview.permissions), [.storage, .network], "nothing but the network is ever added")
+        XCTAssertEqual(preview.networkDomains, ["one.example.com", "two.example.com"])
+        let saved = try JSONDecoder().decode(WidgetPackageManifest.self,
+                                             from: Data(contentsOf: folder.appendingPathComponent("widget.json")))
+        XCTAssertEqual(saved.networkDomains, ["one.example.com"], "the widget's own manifest is not changed by a turn")
+    }
+
+    func testSandboxSetupNeverInventsAManifestForALegacyWidget() {
+        let legacy = AgentSandboxSetup(seedDirectory: directory, baseManifest: nil)
+        XCTAssertNil(legacy.manifest(declaring: ["api.example.com"]))
+    }
+
+    func testSeedingSkipsLinksAndTheBuildCacheAndRefusesAnOversizedWidget() throws {
+        let folder = try makeWidgetFolder(manifest: nil)
+        try FileManager.default.createDirectory(at: folder.appendingPathComponent("__Build"), withIntermediateDirectories: true)
+        try "cache".write(to: folder.appendingPathComponent("__Build/cache.js"), atomically: true, encoding: .utf8)
+        let outside = directory.appendingPathComponent("outside-\(UUID().uuidString).txt")
+        try "secret".write(to: outside, atomically: true, encoding: .utf8)
+        try FileManager.default.createSymbolicLink(at: folder.appendingPathComponent("link.txt"), withDestinationURL: outside)
+
+        let package = try AgentRuntimeBridge.shared.makeSandboxPackage(prefix: "seed-test")
+        defer { AgentRuntimeBridge.shared.cleanupSandboxPackage(package) }
+        XCTAssertTrue(AgentRuntimeBridge.shared.seed(package, from: folder))
+        let copied = package.path
+        XCTAssertTrue(FileManager.default.fileExists(atPath: copied.appendingPathComponent("lib/greeting.js").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copied.appendingPathComponent("link.txt").path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: copied.appendingPathComponent("__Build/cache.js").path))
+
+        for index in 0...AgentRuntimeBridge.seedMaximumFiles {
+            try "x".write(to: folder.appendingPathComponent("lib/f\(index).js"), atomically: true, encoding: .utf8)
+        }
+        let second = try AgentRuntimeBridge.shared.makeSandboxPackage(prefix: "seed-test")
+        defer { AgentRuntimeBridge.shared.cleanupSandboxPackage(second) }
+        XCTAssertFalse(AgentRuntimeBridge.shared.seed(second, from: folder))
+    }
+
+    func testConversationIsFoundAgainByTheWidgetItWasSavedAs() async {
+        ConversationProviderStub.enqueue([reply("Made a greeting.", Self.goodWidget)])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        session.markSaved(packageName: "Greeting", packageID: "local.abc")
+
+        XCTAssertEqual(store.latest(packageID: "local.abc", packageName: "Renamed")?.id, session.conversation.id,
+                       "the manifest id finds it after a rename")
+        XCTAssertNil(store.latest(packageID: "local.other", packageName: "Greeting"),
+                     "another widget that took the old name does not get the conversation")
+        XCTAssertEqual(store.latest(packageID: nil, packageName: "Greeting")?.id, session.conversation.id)
+        XCTAssertNil(store.latest(packageID: nil, packageName: "Other"))
+    }
+
+    func testRuntimeDiagnosticIsPartOfTheRequest() {
+        let prompt = PromptBuilder.userPromptTurn(AITurnContext(
+            history: [], currentCode: "CODE", previousCode: nil, request: "Fix it", skillsText: nil,
+            size: .small, runtimeDiagnostic: "scriptException: boom"
+        ))
+        XCTAssertTrue(prompt.contains("scriptException: boom"))
     }
 
     // MARK: - versions

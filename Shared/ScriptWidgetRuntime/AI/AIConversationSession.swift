@@ -58,6 +58,8 @@ final class AIConversationSession: ObservableObject {
     private let makeLoop: () -> AgentLoop
     private let loadSettings: () -> AISettings
     private let skillsText: (Set<String>) -> String?
+    /// Set when the conversation is about an existing widget.
+    private let sandbox: AgentSandboxSetup?
 
     /// The temporary preview folder, removed when the session goes away.
     private let previewPackageURL: URL?
@@ -76,8 +78,10 @@ final class AIConversationSession: ObservableObject {
         bridge: AgentRuntimeBridge = .shared,
         makeLoop: @escaping () -> AgentLoop = { AgentLoop() },
         loadSettings: @escaping () -> AISettings = { AISettingsStore.shared.load() },
-        skillsText: @escaping (Set<String>) -> String? = { AIWidgetSkills.instructions(selectedIDs: $0) }
+        skillsText: @escaping (Set<String>) -> String? = { AIWidgetSkills.instructions(selectedIDs: $0) },
+        sandbox: AgentSandboxSetup? = nil
     ) {
+        self.sandbox = sandbox
         self.conversation = conversation
         self.store = store
         self.bridge = bridge
@@ -85,6 +89,7 @@ final class AIConversationSession: ObservableObject {
         self.loadSettings = loadSettings
         self.skillsText = skillsText
         let package = try? bridge.makeSandboxPackage(prefix: "chat-preview")
+        if let package, let sandbox { bridge.seed(package, from: sandbox.seedDirectory) }
         previewPackage = package
         previewPackageURL = package?.path
         if conversation.currentVersion != nil { refreshPreview() }
@@ -96,8 +101,21 @@ final class AIConversationSession: ObservableObject {
 
     // MARK: - turns
 
+    /// Takes over what the editor holds when it is not the current version, so
+    /// that the next turn starts from the user's own changes.
+    ///
+    /// Code that is already one of the conversation's versions is not taken
+    /// over: the editor simply has not received a newer version yet, and that
+    /// version stays the one being worked on.
+    func adoptEditorSource(_ source: String) {
+        guard !isRunning, !conversation.versions.contains(where: { $0.source == source }),
+              conversation.adoptExternalSource(source, networkDomains: currentDomains) else { return }
+        persist()
+        refreshPreview()
+    }
+
     /// Sends a new request, continuing from the current version.
-    func send(_ text: String) {
+    func send(_ text: String, runtimeDiagnostic: String? = nil) {
         let request = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !request.isEmpty, !isRunning else { return }
 
@@ -113,7 +131,8 @@ final class AIConversationSession: ObservableObject {
             request: turn.request,
             skillsText: skillsText(Set(conversation.skillIDs)),
             size: conversation.size,
-            currentDomains: base?.networkDomains ?? []
+            currentDomains: base?.networkDomains ?? [],
+            runtimeDiagnostic: runtimeDiagnostic
         )
         persist()
         run(turnID: turn.id, context: context)
@@ -166,8 +185,9 @@ final class AIConversationSession: ObservableObject {
     }
 
     /// Records that the current version was saved as a widget.
-    func markSaved(packageName: String) {
+    func markSaved(packageName: String, packageID: String? = nil) {
         conversation.savedPackageName = packageName
+        conversation.savedPackageID = packageID
         conversation.updatedAt = Date()
         persist()
     }
@@ -188,7 +208,8 @@ final class AIConversationSession: ObservableObject {
             mode: .turn(context),
             size: conversation.size,
             settings: settings,
-            maxIterations: AIConversationLimits.maxAttemptsPerTurn
+            maxIterations: AIConversationLimits.maxAttemptsPerTurn,
+            sandbox: sandbox
         )
         let loop = makeLoop()
         currentTask = Task { [weak self] in
@@ -300,7 +321,9 @@ final class AIConversationSession: ObservableObject {
         previews = previews.filter { kept.contains($0.key) }
         var sizes = [conversation.size] + Self.thumbnailSizes.filter { $0 != conversation.size }
         sizes.removeAll { kept.contains($0) }
-        let manifest = AINetworkDeclaration.manifest(name: "AI Preview", domains: version.networkDomains ?? [])
+        let domains = version.networkDomains ?? []
+        let manifest = sandbox.map { $0.manifest(declaring: domains) }
+            ?? AINetworkDeclaration.manifest(name: "AI Preview", domains: domains)
         previewTask = Task { [weak self, bridge] in
             for size in sizes {
                 let result = await bridge.run(jsx: version.source, in: previewPackage, size: size, manifest: manifest)

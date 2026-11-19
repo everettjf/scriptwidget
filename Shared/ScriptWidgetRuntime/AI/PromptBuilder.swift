@@ -98,6 +98,8 @@ struct AITurnContext {
     let size: AIWidgetSize
     /// Hosts the current widget declares it contacts.
     var currentDomains: [String] = []
+    /// What the editor's preview last reported for this widget, if it failed.
+    var runtimeDiagnostic: String? = nil
 }
 
 struct AICopilotChangeSummary: Equatable {
@@ -413,6 +415,8 @@ enum PromptBuilder {
 
             \(context.currentDomains.isEmpty ? "It declares no network use." : "Its network declaration: " + AINetworkDeclaration(domains: context.currentDomains).json)
 
+            \(context.runtimeDiagnostic.map { "The latest local ScriptWidget runtime diagnostic is:\n" + clip($0, 2_000) } ?? "")
+
             The user now asks:
             \(context.request)
 
@@ -468,7 +472,10 @@ enum PromptBuilder {
             }
             break
         }
-        return (note, stripCodeFences(body), declaration)
+        // The code ends with a line break, like a file. The runtime puts its own
+        // closing text right after the source, so a last line that is a `//`
+        // comment would otherwise swallow it.
+        return (note, stripCodeFences(body) + "\n", declaration)
     }
 
     /// Added to a repair request inside a conversation, where the declaration

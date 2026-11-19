@@ -142,6 +142,9 @@ struct AIConversationTurn: Codable, Identifiable, Equatable {
     let createdAt: Date
     /// The user went back to an older version and continued from there.
     var isAbandoned: Bool
+    /// Not a request: the user changed the code in the editor, and this records
+    /// the version that came of it.
+    var isManualEdit: Bool?
 }
 
 struct AIConversation: Codable, Identifiable, Equatable {
@@ -159,6 +162,8 @@ struct AIConversation: Codable, Identifiable, Equatable {
     var versionCounter: Int
     /// The widget the conversation was saved as; nil while it is a draft.
     var savedPackageName: String?
+    /// That widget's manifest id, which survives a rename; nil for a legacy package.
+    var savedPackageID: String?
     let createdAt: Date
     var updatedAt: Date
 
@@ -238,8 +243,24 @@ struct AIConversation: Codable, Identifiable, Equatable {
 
     /// The turns the model is told about: finished, not abandoned, oldest first.
     func historyForPrompt() -> [AIConversationTurn] {
-        let finished = turns.filter { $0.status == .succeeded && !$0.isAbandoned }
+        let finished = turns.filter { $0.status == .succeeded && !$0.isAbandoned && $0.isManualEdit != true }
         return Array(finished.suffix(AIConversationLimits.historyTurns))
+    }
+
+    /// Takes over code that did not come from the AI: what the editor holds when
+    /// it differs from the current version. Returns whether a version was added.
+    @discardableResult
+    mutating func adoptExternalSource(_ source: String, networkDomains: [String] = [], now: Date = Date()) -> Bool {
+        guard currentVersion?.source != source else { return false }
+        abandonTurnsAfterCurrentVersion()
+        let base = currentVersionID
+        let version = addVersion(source: source, networkDomains: networkDomains, now: now)
+        turns.append(AIConversationTurn(
+            id: UUID(), request: "", baseVersionID: base, status: .succeeded, note: nil, errorSummary: nil,
+            repairs: 0, versionID: version.id, failedSource: nil, usage: .zero, createdAt: now,
+            isAbandoned: false, isManualEdit: true
+        ))
+        return true
     }
 
     /// A turn left running by a closed app can never finish.
