@@ -242,5 +242,20 @@ class AiConversationUiTest {
         assertTrue(applied.files.readText("widget.json")!!.contains("example.org"))
         assertEquals(listOf("network"), applied.permissions)
         picture("14-applied")
+
+        // A small change may come as edit blocks. The version says how many lines it changed, and shows them.
+        replies += "SUMMARY: The time reads 12:45.\n```edit\n<<<<<<< SEARCH\n    <text font=\"title\" color=\"white\">12:30</text>\n=======\n" +
+            "    <text font=\"title\" color=\"white\">12:45</text>\n>>>>>>> REPLACE\n```"
+        ask("Make the time say 12:45")
+        wait(By.text("The time reads 12:45."))
+        assertTrue("the reply form offers edit blocks", requests.last().contains("<<<<<<< SEARCH"))
+        tap(By.descContains("1 lines added, 1 removed"))
+        wait(By.textContains("Changes in version"))
+        wait(By.textContains("12:45</text>"))
+        wait(By.textContains("12:30</text>"))
+        picture("15-changes")
+        tap(By.text("Close"))
+        val edited = AiServices.conversations(context).latest(saved.installation)!!.currentVersion!!.source
+        assertTrue("only that line changed", edited.contains("12:45") && !edited.contains("12:30") && edited.contains("#15803d") && edited.contains("example.org"))
     }
 }

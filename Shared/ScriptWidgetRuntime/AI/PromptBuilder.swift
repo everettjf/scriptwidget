@@ -426,10 +426,11 @@ enum PromptBuilder {
             parts.append("The user asks for a new widget:\n\(context.request)")
         }
 
+        let canEdit = !(context.currentCode ?? "").isEmpty
         parts.append("""
         Reply in exactly this form, which replaces the output rule above for this conversation:
         SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
-        then the FULL widget code in one ```jsx fenced block.
+        \(canEdit ? editReplyRule : "then the FULL widget code in one ```jsx fenced block.")
         If, and only if, the widget uses `fetch` or `$http`, end with one more fenced block
         that declares every host it contacts:
         ```json
@@ -440,6 +441,24 @@ enum PromptBuilder {
         """)
         return parts.joined(separator: "\n\n")
     }
+
+    /// How a turn that changes existing code may answer: with all of the code,
+    /// or with the places that change. See AISourceEdits.
+    static let editReplyRule = """
+    then EITHER the FULL widget code in one ```jsx fenced block,
+    OR, when only a few places change, edit blocks instead of the full code:
+    ```edit
+    <<<<<<< SEARCH
+    lines copied exactly from the current code, with their indentation
+    =======
+    the lines that replace them
+    >>>>>>> REPLACE
+    ```
+    Write one SEARCH/REPLACE pair for each place, as many as the change needs. Each SEARCH
+    text must be in the current code exactly once: copy enough neighbouring lines to make
+    it so. An empty REPLACE part deletes the lines. Prefer edit blocks for a small change
+    and the full code when most of the widget changes. Never use both forms in one reply.
+    """
 
     /// Splits a turn reply into the model's note, the widget code and the
     /// network declaration, if any. A reply without the SUMMARY line or without

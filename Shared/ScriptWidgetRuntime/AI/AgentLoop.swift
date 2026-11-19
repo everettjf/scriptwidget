@@ -182,7 +182,26 @@ final class AgentLoop {
             var declarationError: String?
             if isTurn {
                 let reply = PromptBuilder.parseTurnReply(chatResult.content)
-                jsx = reply.code
+                // A reply written as edit blocks changes the code the model was
+                // shown last: the current version, or its own failed attempt.
+                do {
+                    if let edits = try AISourceEdits.parse(chatResult.content) {
+                        guard let base = latestCode, !base.isEmpty else {
+                            throw AISourceEdits.Failure(reason: "there is no current code to change")
+                        }
+                        jsx = try AISourceEdits.apply(edits, to: base)
+                    } else {
+                        jsx = reply.code
+                    }
+                } catch {
+                    let reason = (error as? AISourceEdits.Failure)?.reason ?? "they could not be read"
+                    let summary = "The edit blocks could not be applied: \(reason). Reply with the full widget code instead."
+                    if let note = reply.note { await onEvent(.note(note)) }
+                    lastError = summary
+                    lastLogs = []
+                    await onEvent(.ranFailed(iteration: iteration, errorSummary: summary, logs: []))
+                    continue
+                }
                 if let note = reply.note { await onEvent(.note(note)) }
                 // A conversation's widget runs with the permissions it would have
                 // once saved: none, or the network for the hosts it declares.
@@ -218,12 +237,23 @@ final class AgentLoop {
                 return .cancelled(usage: cumulativeUsage)
             }
 
+            // An attribute that does not exist is ignored when the widget runs,
+            // so running proves nothing about it.
+            let unknown = AIJSXCheck.summary(of: jsx)
+
             if runResult.didSucceed, let element = runResult.element {
+                // Not on the last attempt: a widget that runs is better than none.
+                if let unknown, iteration < iterationLimit {
+                    lastError = unknown
+                    lastLogs = runResult.logs
+                    await onEvent(.ranFailed(iteration: iteration, errorSummary: unknown, logs: runResult.logs))
+                    continue
+                }
                 await onEvent(.ranSucceeded(iteration: iteration))
                 return .succeeded(jsx: jsx, element: element, usage: cumulativeUsage)
             }
 
-            let summary: String
+            var summary: String
             if let err = runResult.error {
                 summary = err.summaryForPrompt
             } else if runResult.element == nil {
@@ -231,6 +261,7 @@ final class AgentLoop {
             } else {
                 summary = "Runtime returned a fallback/placeholder element. The widget did not render real content."
             }
+            if let unknown { summary += "\n\n" + unknown }
             lastError = summary
             lastLogs = runResult.logs
             await onEvent(.ranFailed(iteration: iteration, errorSummary: summary, logs: runResult.logs))

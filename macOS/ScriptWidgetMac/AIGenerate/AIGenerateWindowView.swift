@@ -188,7 +188,13 @@ private struct AIConversationWindowContent: View {
                         if !isConfigured {
                             notConfiguredNotice
                         } else if conversation.turns.isEmpty {
-                            emptyState
+                            if conversation.currentVersion == nil {
+                                emptyState
+                            } else {
+                                Text("This conversation continues from an earlier one. Say what to change.")
+                                    .font(.callout)
+                                    .foregroundStyle(.secondary)
+                            }
                         }
                         AIConversationTurnsView(session: session, canSend: isConfigured) { title, code in
                             shownCode = ShownCode(title: title, code: code)
@@ -207,6 +213,10 @@ private struct AIConversationWindowContent: View {
                 }
             }
             Divider()
+            AIConversationUsageNotice(conversation: conversation) { next in
+                session.cancel()
+                onOpen(next)
+            }
             composer
         }
     }

@@ -59,7 +59,11 @@ class AgentLoopRequest(
  * candidate is judged by the `validate` callback so this class has no
  * dependency on the JavaScript runtime and can be tested on the JVM.
  */
-class AgentLoop(private val chat: AiChat) {
+class AgentLoop(
+    private val chat: AiChat,
+    /** The tags and attributes a candidate may use; null turns the check off. See [AiJsxCheck]. */
+    private val surface: AiJsxCheck.Surface? = AiJsxCheck.ANDROID,
+) {
 
     /**
      * Runs until a candidate validates, the cap is reached, the provider fails or [cancellation] fires.
@@ -78,6 +82,8 @@ class AgentLoop(private val chat: AiChat) {
         val system = AiMessage(AiMessage.Role.SYSTEM, request.systemPrompt)
         val firstUser: AiMessage
         var latest: AiCandidate?
+        // In a turn: the code the model was shown last, which a reply written as edit blocks changes.
+        var editBase: String? = null
         when (val mode = request.mode) {
             is AgentLoopRequest.Mode.Fresh -> {
                 firstUser = AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptFirst(PromptBuilder.augmentWithSkills(mode.userDescription, request.skillsText), request.size))
@@ -93,6 +99,7 @@ class AgentLoop(private val chat: AiChat) {
             is AgentLoopRequest.Mode.Turn -> {
                 firstUser = AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptTurn(mode.context))
                 latest = null
+                editBase = mode.context.currentCode
             }
         }
         val isTurn = request.mode is AgentLoopRequest.Mode.Turn
@@ -100,7 +107,8 @@ class AgentLoop(private val chat: AiChat) {
         var lastError: String? = null
         var lastLogs: List<String> = emptyList()
 
-        for (iteration in 1..iterationLimit(request.maxIterations)) {
+        val limit = iterationLimit(request.maxIterations)
+        for (iteration in 1..limit) {
             if (cancellation.isCancelled) return AgentLoopOutcome.Cancelled(usage)
             onEvent(AgentLoopEvent.Thinking(iteration))
 
@@ -134,7 +142,22 @@ class AgentLoop(private val chat: AiChat) {
                 val reply = PromptBuilder.parseTurnReply(result.content)
                 // A repair may leave the summary out; the first one still describes the turn.
                 reply.note?.let { note = it; onEvent(AgentLoopEvent.Note(iteration, it)) }
-                reply.candidate
+                val edited = try {
+                    AiSourceEdits.parse(result.content)?.let { edits ->
+                        val base = editBase
+                        if (base.isNullOrEmpty()) throw AiSourceEdits.Failure("there is no current code to change")
+                        AiSourceEdits.apply(edits, base)
+                    }
+                } catch (failure: AiSourceEdits.Failure) {
+                    // Refused whole: the model is told why and asked for all of the code.
+                    val summary = "The edit blocks could not be applied: ${failure.reason}. Reply with the full widget code instead."
+                    if (!editBase.isNullOrEmpty()) latest = AiCandidate(editBase!!, latest?.manifestJson)
+                    lastError = summary
+                    lastLogs = emptyList()
+                    onEvent(AgentLoopEvent.RanFailed(iteration, summary, emptyList()))
+                    continue
+                }
+                if (edited != null) AiCandidate(edited, reply.candidate.manifestJson) else reply.candidate
             } else AiOutput.extract(result.content)
             // Parse the declaration before anything runs: an invalid one is feedback for the model, never a guess.
             var declarationError: String? = null
@@ -143,10 +166,11 @@ class AgentLoop(private val chat: AiChat) {
             }
             val candidate = AiCandidate(extracted.source, declaration)
             latest = candidate
+            if (isTurn && candidate.source.isNotEmpty()) editBase = candidate.source
             onEvent(AgentLoopEvent.Produced(iteration, candidate.source, candidate.manifestJson))
 
             onEvent(AgentLoopEvent.Running(iteration))
-            val validation = when {
+            val ran = when {
                 candidate.source.isEmpty() -> ValidationResult.failure("The reply contained no JSX code.")
                 result.truncated -> ValidationResult.failure("The reply was cut off at the output limit. Return a shorter, complete widget.")
                 declarationError != null -> ValidationResult.failure("Invalid package declaration: $declarationError")
@@ -157,6 +181,16 @@ class AgentLoop(private val chat: AiChat) {
                 }
             }
             if (cancellation.isCancelled) return AgentLoopOutcome.Cancelled(usage)
+
+            // An attribute that does not exist is ignored when the widget runs, so running proves
+            // nothing about it. Not on the last attempt: a widget that runs is better than none.
+            val unknown = if (surface != null && candidate.source.isNotEmpty() && declarationError == null && !result.truncated) AiJsxCheck.summary(candidate.source, surface) else null
+            val validation = when {
+                unknown == null -> ran
+                !ran.ok -> ValidationResult.failure((ran.errorSummary ?: "Runtime returned no element.") + "\n\n" + unknown, ran.logs)
+                iteration < limit -> ValidationResult.failure(unknown, ran.logs)
+                else -> ran
+            }
 
             if (validation.ok) {
                 onEvent(AgentLoopEvent.RanSucceeded(iteration))

@@ -19,6 +19,21 @@ Artifacts default to the git-ignored `__Release/ai-quality/<timestamp>/`. Overri
 
 The default CI suite skips the opt-in live test. Deterministic frame and appearance regressions run in the normal suite without a key.
 
+## Several turns
+
+`Scripts/ai-conversation-quality.sh` sends four small conversations to a real provider through the same session the apps use: a greeting card, a habit tracker, a clock, and a card asked for in Chinese. The first turn of each makes a widget; every later turn is a small change, and one goes back to an older version first. It takes the same three variables as above and uses provider tokens: 14 turns, plus repairs.
+
+```sh
+ROCKY_OPENAI_APIKEY="$DEEPSEEK_API_KEY" \
+ROCKY_OPENAI_BASEURL=https://api.deepseek.com \
+ROCKY_OPENAI_MODEL=deepseek-flash \
+./Scripts/ai-conversation-quality.sh
+```
+
+Artifacts go to the git-ignored `__Release/ai-conversation-quality/<timestamp>/`, or to an absolute `AI_CONVERSATION_QUALITY_OUTPUT`: the code after every turn, `conversation-quality.json` and `report.md`. A turn passes when it ran, the code holds the texts the request asked for, no longer holds the ones it asked to remove, and a small request changed no more lines than its limit. The report adds repairs, tokens sent and received, and the changed lines of the later turns as a share of the widget, which is the number to watch when the prompt or the model changes: a model that rewrites the whole widget for "rename this" shows there.
+
+The checks look at the code, not at the picture. A turn that passes can still look wrong; open the saved code in the app to judge that. `testConversationEvalRecordsWhatEachTurnChangedAndMissed` runs the same harness with scripted replies in the normal suite, without a key.
+
 ## Compare without another model call
 
 Replay a prior run's JSX through the current runtime. This separates renderer fixes from randomness in generation and does not require credentials:

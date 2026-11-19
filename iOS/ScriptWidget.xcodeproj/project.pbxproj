@@ -57,6 +57,11 @@
 		A102000600000000000000B0 /* AgentLoop.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000600000000000000B0 /* AgentLoop.swift */; };
 		A102000700000000000000B0 /* AIGenerateSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000700000000000000B0 /* AIGenerateSession.swift */; };
 		A102002300000000000000B0 /* AIConversationSession.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002300000000000000B0 /* AIConversationSession.swift */; };
+		A102002400000000000000B0 /* AIConversationTurnsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002400000000000000B0 /* AIConversationTurnsView.swift */; };
+		A102002500000000000000B0 /* AISourceEdits.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002500000000000000B0 /* AISourceEdits.swift */; };
+		A102002800000000000000B0 /* AISourceDiff.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002800000000000000B0 /* AISourceDiff.swift */; };
+		A102002700000000000000B0 /* AIJSXSurfaceData.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002700000000000000B0 /* AIJSXSurfaceData.swift */; };
+		A102002600000000000000B0 /* AIJSXCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002600000000000000B0 /* AIJSXCheck.swift */; };
 		A102002200000000000000B0 /* AIConversationStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002200000000000000B0 /* AIConversationStore.swift */; };
 		A102002100000000000000B0 /* AIConversation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101002100000000000000B0 /* AIConversation.swift */; };
 		A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101000800000000000000B0 /* AIGenerateProgressView.swift */; };
@@ -70,7 +75,6 @@
 		A102001000000000000000B0 /* AIWidgetSkills.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101001000000000000000B0 /* AIWidgetSkills.swift */; };
 		A104000100000000000000B0 /* SettingAIView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000100000000000000B0 /* SettingAIView.swift */; };
 		A104000200000000000000B0 /* AIGenerateView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000200000000000000B0 /* AIGenerateView.swift */; };
-		A104000300000000000000B0 /* AIReviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A103000300000000000000B0 /* AIReviewView.swift */; };
 		A106000300000000000000B0 /* SwiftOpenAI in Frameworks */ = {isa = PBXBuildFile; productRef = A106000200000000000000B0 /* SwiftOpenAI */; };
 		A109000300000000000000B0 /* ScriptWidgetGallery.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000100000000000000B0 /* ScriptWidgetGallery.swift */; };
 		A109000400000000000000B0 /* ScriptWidgetGalleryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */; };
@@ -556,6 +560,11 @@
 		A101000600000000000000B0 /* AgentLoop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentLoop.swift; sourceTree = "<group>"; };
 		A101000700000000000000B0 /* AIGenerateSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateSession.swift; sourceTree = "<group>"; };
 		A101002300000000000000B0 /* AIConversationSession.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationSession.swift; sourceTree = "<group>"; };
+		A101002400000000000000B0 /* AIConversationTurnsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationTurnsView.swift; sourceTree = "<group>"; };
+		A101002500000000000000B0 /* AISourceEdits.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISourceEdits.swift; sourceTree = "<group>"; };
+		A101002800000000000000B0 /* AISourceDiff.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AISourceDiff.swift; sourceTree = "<group>"; };
+		A101002700000000000000B0 /* AIJSXSurfaceData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIJSXSurfaceData.swift; sourceTree = "<group>"; };
+		A101002600000000000000B0 /* AIJSXCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIJSXCheck.swift; sourceTree = "<group>"; };
 		A101002200000000000000B0 /* AIConversationStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversationStore.swift; sourceTree = "<group>"; };
 		A101002100000000000000B0 /* AIConversation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIConversation.swift; sourceTree = "<group>"; };
 		A101000800000000000000B0 /* AIGenerateProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateProgressView.swift; sourceTree = "<group>"; };
@@ -569,7 +578,6 @@
 		A101001000000000000000B0 /* AIWidgetSkills.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIWidgetSkills.swift; sourceTree = "<group>"; };
 		A103000100000000000000B0 /* SettingAIView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingAIView.swift; sourceTree = "<group>"; };
 		A103000200000000000000B0 /* AIGenerateView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIGenerateView.swift; sourceTree = "<group>"; };
-		A103000300000000000000B0 /* AIReviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIReviewView.swift; sourceTree = "<group>"; };
 		A109000100000000000000B0 /* ScriptWidgetGallery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGallery.swift; sourceTree = "<group>"; };
 		A109000200000000000000B0 /* ScriptWidgetGalleryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetGalleryView.swift; sourceTree = "<group>"; };
 		A110000100000000000000B0 /* ScriptWidgetDataSources.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetDataSources.swift; sourceTree = "<group>"; };
@@ -961,6 +969,11 @@
 				A101000600000000000000B0 /* AgentLoop.swift */,
 				A101000700000000000000B0 /* AIGenerateSession.swift */,
 				A101002300000000000000B0 /* AIConversationSession.swift */,
+				A101002400000000000000B0 /* AIConversationTurnsView.swift */,
+				A101002500000000000000B0 /* AISourceEdits.swift */,
+				A101002800000000000000B0 /* AISourceDiff.swift */,
+				A101002700000000000000B0 /* AIJSXSurfaceData.swift */,
+				A101002600000000000000B0 /* AIJSXCheck.swift */,
 				A101002200000000000000B0 /* AIConversationStore.swift */,
 				A101002100000000000000B0 /* AIConversation.swift */,
 				A101000800000000000000B0 /* AIGenerateProgressView.swift */,
@@ -979,7 +992,6 @@
 			isa = PBXGroup;
 			children = (
 				A103000200000000000000B0 /* AIGenerateView.swift */,
-				A103000300000000000000B0 /* AIReviewView.swift */,
 			);
 			path = AIGenerate;
 			sourceTree = "<group>";
@@ -2097,12 +2109,16 @@
 				A102000600000000000000B0 /* AgentLoop.swift in Sources */,
 				A102000700000000000000B0 /* AIGenerateSession.swift in Sources */,
 				A102002300000000000000B0 /* AIConversationSession.swift in Sources */,
+				A102002400000000000000B0 /* AIConversationTurnsView.swift in Sources */,
+				A102002500000000000000B0 /* AISourceEdits.swift in Sources */,
+				A102002800000000000000B0 /* AISourceDiff.swift in Sources */,
+				A102002700000000000000B0 /* AIJSXSurfaceData.swift in Sources */,
+				A102002600000000000000B0 /* AIJSXCheck.swift in Sources */,
 				A102002200000000000000B0 /* AIConversationStore.swift in Sources */,
 				A102002100000000000000B0 /* AIConversation.swift in Sources */,
 				A102000800000000000000B0 /* AIGenerateProgressView.swift in Sources */,
 				A104000100000000000000B0 /* SettingAIView.swift in Sources */,
 				A104000200000000000000B0 /* AIGenerateView.swift in Sources */,
-				A104000300000000000000B0 /* AIReviewView.swift in Sources */,
 				F29119702793035E00B860B0 /* ScriptWidgetElementTagZStack.swift in Sources */,
 				D132336528E08C15002C26A2 /* ScriptLiveActivityManager.swift in Sources */,
 				F2B20CC425D2EF5E00B62DAC /* NameAutoImageView.swift in Sources */,

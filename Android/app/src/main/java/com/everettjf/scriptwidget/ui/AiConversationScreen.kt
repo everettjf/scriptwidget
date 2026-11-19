@@ -82,6 +82,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -109,6 +110,7 @@ import com.everettjf.scriptwidget.core.ai.AiConversation
 import com.everettjf.scriptwidget.core.ai.AiConversationLimits
 import com.everettjf.scriptwidget.core.ai.AiConversationSummary
 import com.everettjf.scriptwidget.core.ai.AiConversationTurn
+import com.everettjf.scriptwidget.core.ai.AiSourceDiff
 import com.everettjf.scriptwidget.core.ai.AiConversationTurns
 import com.everettjf.scriptwidget.core.ai.AiConversationVersion
 import com.everettjf.scriptwidget.core.ai.AiExamplePrompts
@@ -271,6 +273,14 @@ class AiConversationViewModel : ViewModel() {
         refreshDrafts(context)
     }
 
+    /** Opens a conversation that starts from the version on screen, with no earlier turn to send. */
+    fun continueFromHere(context: Context) {
+        if (isRunning) return
+        conversation = conversation.continuedFromCurrentVersion() ?: return
+        revision += 1
+        refreshDrafts(context)
+    }
+
     fun deleteDraft(context: Context, id: String) {
         val application = context.applicationContext
         viewModelScope.launch {
@@ -428,6 +438,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
     var menu by remember { mutableStateOf(false) }
     var showDrafts by remember { mutableStateOf(false) }
     var shownCode by remember { mutableStateOf<Pair<String, String>?>(null) }
+    var shownChanges by remember { mutableStateOf<String?>(null) }
     var askName by remember { mutableStateOf(false) }
     var confirmNetwork by remember { mutableStateOf<String?>(null) }
     var confirmApply by remember { mutableStateOf(false) }
@@ -509,11 +520,20 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             )
         },
         bottomBar = {
+          Column {
+            @Suppress("UNUSED_VARIABLE") val redrawNotice = model.revision
+            conversation.usageAdvice?.let { advice ->
+                Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(start = 16.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Text(advice.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    if (current != null) TextButton(enabled = !running, onClick = { draft = ""; model.continueFromHere(context) }) { Text("Start new from here") }
+                }
+            }
             Composer(
                 text = draft, onText = { draft = it.take(AiConversationLimits.MAX_REQUEST_CHARACTERS) }, running = running, enabled = ready && !model.isLoading,
                 placeholder = if (current == null) "Describe the widget you want…" else "Say what to change…",
                 onSend = { send() }, onStop = { model.stop(context) },
             )
+          }
         },
     ) { padding ->
         // Read here as well: this block is its own scope, and the conversation changes in place.
@@ -554,9 +574,28 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                     activity = model.activity, running = running,
                     onVersion = { model.selectVersion(context, it) }, onRetry = { model.retry(context, it) },
                     onFailedCode = { id -> conversation.turn(id)?.failedSource?.let { shownCode = "The attempt that did not run" to it } },
+                    onChanges = { shownChanges = it },
                     modifier = Modifier.weight(1f),
                 )
             }
+        }
+    }
+
+    shownChanges?.let { versionId ->
+        val version = conversation.version(versionId)
+        val parent = conversation.version(version?.parentId)
+        if (version == null || parent == null) shownChanges = null else {
+            val lines = remember(versionId) { AiSourceDiff.lines(parent.source, version.source) }
+            AlertDialog(
+                onDismissRequest = { shownChanges = null }, title = { Text("Changes in version ${version.number}") },
+                text = {
+                    if (lines == null) Text("These versions are too long to compare line by line.")
+                    else LazyColumn(Modifier.heightIn(max = 420.dp).horizontalScroll(rememberScrollState())) {
+                        items(lines) { line -> DiffLine(line) }
+                    }
+                },
+                confirmButton = { TextButton(onClick = { shownChanges = null }) { Text("Close") } },
+            )
         }
     }
 
@@ -715,6 +754,24 @@ private fun EmptyState(
     }
 }
 
+/** One line of a comparison. The sign is drawn as well as the color, so that the color is not the only cue. */
+@Composable
+private fun DiffLine(line: AiSourceDiff.Line) {
+    if (line.kind == AiSourceDiff.Kind.SKIPPED) {
+        Text(if (line.skipped == 1) "⋯ 1 unchanged line" else "⋯ ${line.skipped} unchanged lines", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
+        return
+    }
+    val (sign, tint, label) = when (line.kind) {
+        AiSourceDiff.Kind.ADDED -> Triple("+", Color(0xFF2E7D32).copy(alpha = 0.20f), "Added")
+        AiSourceDiff.Kind.REMOVED -> Triple("−", Color(0xFFC62828).copy(alpha = 0.18f), "Removed")
+        else -> Triple(" ", Color.Transparent, "Unchanged")
+    }
+    Text(
+        "$sign ${line.text}", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, softWrap = false,
+        modifier = Modifier.background(tint).padding(horizontal = 4.dp, vertical = 1.dp).semantics { contentDescription = "$label: ${line.text}" },
+    )
+}
+
 /**
  * One turn as the list draws it. The conversation changes in place, which Compose can not
  * see, so the screen makes these values anew whenever it changes and the rows compare them.
@@ -722,16 +779,20 @@ private fun EmptyState(
 private data class TurnUi(
     val id: String, val request: String, val status: AiConversationTurn.Status, val note: String?, val error: String?, val repairs: Int, val tokens: Int,
     val abandoned: Boolean, val manual: Boolean, val versionId: String?, val versionNumber: Int?, val isCurrent: Boolean, val hasFailedSource: Boolean,
+    /** Lines the version added and removed against the one it was made from; null when there is nothing to compare. */
+    val added: Int? = null, val removed: Int? = null,
 ) {
     companion object {
         fun of(conversation: AiConversation, turn: AiConversationTurn): TurnUi {
             val version = conversation.version(turn.versionId)
+            val changes = conversation.version(version?.parentId)?.let { parent -> AiSourceDiff.summary(parent.source, version!!.source) }?.takeIf { !it.isEmpty }
             return TurnUi(
                 turn.id, turn.request, turn.status, turn.note,
                 // The first line says what went wrong; the rest is the runtime's view of the source.
                 turn.errorSummary?.lineSequence()?.firstOrNull { it.isNotBlank() }?.trim(),
                 turn.repairs, turn.usage.totalTokens, turn.isAbandoned, turn.isManualEdit, version?.id, version?.number,
                 version != null && version.id == conversation.currentVersionId, turn.failedSource != null,
+                changes?.added, changes?.removed,
             )
         }
     }
@@ -740,13 +801,13 @@ private data class TurnUi(
 @Composable
 private fun TurnList(
     turns: List<TurnUi>, totalTokens: Int, activity: String?, running: Boolean,
-    onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, modifier: Modifier = Modifier,
+    onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, onChanges: (String) -> Unit, modifier: Modifier = Modifier,
 ) {
     val state = rememberLazyListState()
     // The newest turn stays in view while it changes.
     LaunchedEffect(turns.size, turns.lastOrNull(), activity) { if (turns.isNotEmpty()) state.animateScrollToItem(turns.size) }
     LazyColumn(modifier.fillMaxWidth(), state = state, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        items(turns, key = { it.id }) { turn -> TurnRow(turn, activity, running, onVersion, onRetry, onFailedCode) }
+        items(turns, key = { it.id }) { turn -> TurnRow(turn, activity, running, onVersion, onRetry, onFailedCode, onChanges) }
         item(key = "total") {
             if (totalTokens > 0) Text("$totalTokens tokens in this conversation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
             else Spacer(Modifier.size(1.dp))
@@ -755,19 +816,23 @@ private fun TurnList(
 }
 
 @Composable
-private fun VersionLine(turn: TurnUi, running: Boolean, onVersion: (String) -> Unit) {
+private fun VersionLine(turn: TurnUi, running: Boolean, onVersion: (String) -> Unit, onChanges: (String) -> Unit) {
     val versionId = turn.versionId ?: return
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp), tint = if (turn.isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
         Text("Version ${turn.versionNumber}", style = MaterialTheme.typography.labelLarge, color = if (turn.isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
         if (turn.isCurrent) Text("shown above", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
         else TextButton(enabled = !running, onClick = { onVersion(versionId) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) { Text("Show this version") }
+        if (turn.added != null && turn.removed != null) TextButton(
+            onClick = { onChanges(versionId) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
+            modifier = Modifier.semantics { contentDescription = "${turn.added} lines added, ${turn.removed} removed. Show the changes." },
+        ) { Text("+${turn.added} −${turn.removed}", fontFamily = FontFamily.Monospace) }
         if (turn.abandoned) Text("left behind", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
 @Composable
-private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit) {
+private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, onChanges: (String) -> Unit) {
     val faded = if (turn.abandoned) 0.55f else 1f
     if (turn.manual) {
         Column(Modifier.fillMaxWidth().alpha(faded), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -775,7 +840,7 @@ private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion
                 Icon(Icons.Default.Edit, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text("The widget's code as it is installed", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
             }
-            VersionLine(turn, running, onVersion)
+            VersionLine(turn, running, onVersion, onChanges)
         }
         return
     }
@@ -797,7 +862,7 @@ private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion
                     Icon(Icons.Default.AutoFixHigh, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text(if (turn.repairs == 1) "Fixed automatically 1 time" else "Fixed automatically ${turn.repairs} times", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
                 }
-                VersionLine(turn, running, onVersion)
+                VersionLine(turn, running, onVersion, onChanges)
             }
             AiConversationTurn.Status.UNCONVERGED -> {
                 Text("It did not run, so the widget is unchanged.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)

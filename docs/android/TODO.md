@@ -45,7 +45,8 @@ Scrolling lists, wallpaper colors and the automation entry point are done; see [
 
 
 - The AI conversation does not write code out as it arrives, shows one size at a time and has no place in the editor yet; the Mac app has all three.
-- AI generation and the Studio completions do not know `<list>` and the `material.` colors yet; the reference they use is the iOS one.
+- AI generation and the Studio completions do not know `<list>` and the `material.` colors yet; the reference they use is the iOS one. (The check for tags that do not exist does accept `<list>` on Android.)
+- Edit replies, the attribute check, the changed lines and the heavy-conversation notice have not been run with a live model on a device; see `docs/ai-conversation-plan.md`.
 - A way for a script to hand data to an action (a row's own identifier), so a list row can do more than toggle a stored value.
 - Sending broadcasts from a script to automation apps, after a separate security review.
 - Faster refresh with exact alarms or a foreground service, at a battery and permission cost.
