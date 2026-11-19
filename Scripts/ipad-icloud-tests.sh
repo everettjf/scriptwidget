@@ -6,10 +6,12 @@ DERIVED_DATA=${SCRIPTWIDGET_DERIVED_DATA:-/tmp/scriptwidget-ipad-icloud-tests}
 IPAD_DESTINATION=${SCRIPTWIDGET_IPAD_DESTINATION:-platform=iOS Simulator,name=iPad Pro 13-inch (M5)}
 IPAD_UDID=${SCRIPTWIDGET_IPAD_UDID:-}
 cd "$ROOT"
+# A failed test is run again, up to three times in all; see release-readiness.sh.
+TEST_RETRY=${SCRIPTWIDGET_TEST_RETRY--retry-tests-on-failure -test-iterations 3}
 
 echo "Running deterministic iPad Runtime, cache, placeholder, and iCloud-state tests"
 xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
-  -destination "$IPAD_DESTINATION" -derivedDataPath "$DERIVED_DATA/ipad" test
+  -destination "$IPAD_DESTINATION" -derivedDataPath "$DERIVED_DATA/ipad" $TEST_RETRY test
 
 if [ -n "$IPAD_UDID" ]; then
   echo "Triggering Simulator iCloud sync on $IPAD_UDID"

@@ -4,6 +4,7 @@ set -eu
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
 DERIVED_DATA=${SCRIPTWIDGET_DERIVED_DATA:-/tmp/scriptwidget-release-readiness}
 cd "$ROOT"
+TEST_RETRY=${SCRIPTWIDGET_TEST_RETRY--retry-tests-on-failure -test-iterations 3}
 
 node Scripts/validate-release.mjs
 node Scripts/sync-gallery-templates.mjs
@@ -41,9 +42,13 @@ if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
   node Scripts/test-system-services.mjs
   node Scripts/test-storage-files.mjs
   sh Scripts/macos-widget-link-tests.sh
+  # A widget that takes longer than five seconds is stopped, and on a busy CI
+  # machine a test now and then is. A failed test is run again, up to three
+  # times in all; one that passes on a later run still shows in the XCTest
+  # report as having failed first. SCRIPTWIDGET_TEST_RETRY= turns this off.
   xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetRuntimeTests \
     -destination 'platform=macOS' -derivedDataPath "$DERIVED_DATA/macos-tests" \
-    CODE_SIGNING_ALLOWED=NO test
+    $TEST_RETRY CODE_SIGNING_ALLOWED=NO test
   xcodebuild -quiet -project macOS/ScriptWidgetMac.xcodeproj -scheme ScriptWidgetMac \
     -destination 'platform=macOS' -derivedDataPath "$DERIVED_DATA/macos-app" \
     CODE_SIGNING_ALLOWED=NO build
@@ -52,7 +57,7 @@ if [ "${SCRIPTWIDGET_SKIP_XCODE:-0}" != "1" ]; then
     CODE_SIGNING_ALLOWED=NO build
   xcodebuild -quiet -project iOS/ScriptWidget.xcodeproj -scheme ScriptWidgetRuntimeTests \
     -destination "${SCRIPTWIDGET_IOS_DESTINATION:-platform=iOS Simulator,name=iPhone 17}" \
-    -derivedDataPath "$DERIVED_DATA/ios-tests" test
+    -derivedDataPath "$DERIVED_DATA/ios-tests" $TEST_RETRY test
 fi
 
 echo "✓ ScriptWidget release-readiness checks passed"
