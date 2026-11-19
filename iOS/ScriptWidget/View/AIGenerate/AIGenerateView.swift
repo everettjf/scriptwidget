@@ -40,7 +40,6 @@ private struct AIConversationScreen: View {
     let onOpen: (AIConversation) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var session: AIConversationSession
 
     @State private var draftText = ""
@@ -76,14 +75,17 @@ private struct AIConversationScreen: View {
         if conversation.currentVersion == nil && !session.isRunning { return 96 }
         return composerFocused ? 120 : 210
     }
-    private var isWide: Bool { horizontalSizeClass == .regular }
+    /// From this width on the conversation and the preview are side by side.
+    private static let sideBySideWidth: CGFloat = 720
     private var sortedVersions: [AIConversationVersion] {
         conversation.versions.sorted { $0.number < $1.number }
     }
 
     var body: some View {
-        Group {
-            if isWide {
+        // The layout follows the room there is, not the size class: an iPad
+        // window can be narrow and still be "regular".
+        GeometryReader { proxy in
+            if proxy.size.width >= Self.sideBySideWidth {
                 HStack(spacing: 0) {
                     chat
                         .frame(maxWidth: .infinity)
@@ -92,7 +94,7 @@ private struct AIConversationScreen: View {
                         previewPanel(stageHeight: 380, showsThumbnails: true)
                             .padding(16)
                     }
-                    .frame(width: 400)
+                    .frame(width: min(400, proxy.size.width * 0.42))
                     .background(StudioDesign.groupedBackground)
                 }
             } else {
