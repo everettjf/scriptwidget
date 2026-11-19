@@ -1,5 +1,7 @@
 # AI Generate — 设计文档
 
+Mac 上的多轮对话（版本、草稿、每轮发送的内容）见 [AI conversation](ai-conversation.md)；本文其余部分描述的是最初的单次生成设计，iPhone 和 iPad 目前仍是这种方式。
+
 生成效果回归：见 [AI quality testing](ai-quality-testing.md)，包含真实模型生成、深浅色原生截图、OCR 提示和无 API 调用的重放对照。
 
 ScriptWidget 默认使用 Apple Private Cloud Compute (PCC) 生成 Widget，不要求用户提供 API key。用户输入自然语言 prompt 后，模型生成 JSX，App 在本机 runtime 中自动“跑—看错—修”，最后进入审阅和预览态，由用户确认落盘。OpenAI 及兼容端点继续作为可选后端。

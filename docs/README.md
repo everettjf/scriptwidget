@@ -17,6 +17,7 @@ Build widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript 
 - [Scheduled widget states](timeline-api.md) — daily transitions, planned dates, read-only future entries and preview.
 - [Data API capability catalog](data-api-catalog.md) — which systems each API runs on, authorization, sync/async behavior, and editable preview samples.
 - [AI generation](ai-generate.md) — provider setup, prompting, iteration, privacy, and troubleshooting.
+- [AI conversation](ai-conversation.md) — the multi-turn AI window of the Mac app: versions, drafts, what is sent and what is kept.
 - [AI quality testing](ai-quality-testing.md) — bounded live generation, native snapshots, offline replay, and visual review.
 - [Apple PCC AI plan](apple-pcc-ai-plan.md) — feasibility, constraints, architecture, and zero-key rollout.
 - [Skills 1.0](skills.md) — reusable AI guidance, authoring, safe sharing, and package format.

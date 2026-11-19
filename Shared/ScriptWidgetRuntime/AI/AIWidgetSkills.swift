@@ -389,10 +389,16 @@ enum AIWidgetSkills {
 
     static var all: [AIWidgetSkill] { AIWidgetSkillManager.shared.allSkills() }
 
-    static func augment(_ prompt: String, selectedIDs: Set<String>) -> String {
+    /// The selected Skills as prompt text, or nil when none is selected.
+    /// Skills are text only: they add to a prompt and grant nothing.
+    static func instructions(selectedIDs: Set<String>) -> String? {
         let selected = all.filter { selectedIDs.contains($0.id) }
-        guard !selected.isEmpty else { return prompt }
-        let instructions = selected.map { "- \($0.title) v\($0.version):\n  \($0.instruction.replacingOccurrences(of: "\n", with: "\n  "))" }.joined(separator: "\n")
+        guard !selected.isEmpty else { return nil }
+        return selected.map { "- \($0.title) v\($0.version):\n  \($0.instruction.replacingOccurrences(of: "\n", with: "\n  "))" }.joined(separator: "\n")
+    }
+
+    static func augment(_ prompt: String, selectedIDs: Set<String>) -> String {
+        guard let instructions = instructions(selectedIDs: selectedIDs) else { return prompt }
         return """
         \(prompt)
 

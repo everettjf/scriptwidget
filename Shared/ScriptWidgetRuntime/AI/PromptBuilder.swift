@@ -80,6 +80,24 @@ struct AIMessage {
     let content: String
 }
 
+/// What one conversation turn sends to the model.
+struct AITurnContext {
+    struct Exchange: Equatable {
+        let request: String
+        let note: String?
+    }
+    /// Earlier applied turns, oldest first.
+    let history: [Exchange]
+    /// The widget as it is now; nil when the turn starts a new widget.
+    let currentCode: String?
+    /// The version before the current one, if any.
+    let previousCode: String?
+    let request: String
+    /// Formatted text of the selected Skills; nil for none.
+    let skillsText: String?
+    let size: AIWidgetSize
+}
+
 struct AICopilotChangeSummary: Equatable {
     let originalLines: Int
     let proposedLines: Int
@@ -280,7 +298,9 @@ enum PromptBuilder {
         if recentLogs.isEmpty {
             logBlock = "(no console output)"
         } else {
-            logBlock = recentLogs.suffix(10).joined(separator: "\n")
+            // A script may print anything, including what it read from the
+            // device, so only short tails of the last lines are sent.
+            logBlock = recentLogs.suffix(10).map { clip($0, 300) }.joined(separator: "\n")
         }
         return """
         Your previous code failed to run:
@@ -344,6 +364,91 @@ enum PromptBuilder {
         Preserve working behavior that is unrelated to the request. Use only documented
         ScriptWidget APIs. Return the FULL updated JSX only, with no markdown or explanation.
         """
+    }
+
+    /// One turn of a conversation: what was said before, the widget as it is
+    /// now, and the new request. The earlier turns travel as text inside this
+    /// one message, so the system prompt stays the same from turn to turn.
+    static func userPromptTurn(_ context: AITurnContext) -> String {
+        var parts: [String] = []
+        parts.append("""
+        You are working with the user on one ScriptWidget widget over several turns.
+        Widget size: \(context.size.rawValue)
+        Size hint: \(context.size.designHint)
+        """)
+
+        if let skills = context.skillsText, !skills.isEmpty {
+            parts.append("Apply these ScriptWidget skills in every turn:\n" + skills)
+        }
+
+        if !context.history.isEmpty {
+            let lines = context.history.enumerated().map { index, exchange -> String in
+                let request = clip(exchange.request, AIConversationLimits.historyRequestCharacters)
+                let note = clip(exchange.note ?? "Done.", AIConversationLimits.historyNoteCharacters)
+                return "\(index + 1). User: \(request)\n   You: \(note)"
+            }
+            parts.append("Earlier turns, oldest first (each one was applied):\n" + lines.joined(separator: "\n"))
+        }
+
+        if let previous = context.previousCode, !previous.isEmpty,
+           previous.count <= AIConversationLimits.previousSourceCharacters {
+            parts.append("""
+            The version before your last change, for reference only (the user may ask to bring something back):
+
+            ```jsx
+            \(previous)
+            ```
+            """)
+        }
+
+        if let current = context.currentCode, !current.isEmpty {
+            parts.append("""
+            Current working widget code:
+
+            ```jsx
+            \(current)
+            ```
+
+            The user now asks:
+            \(context.request)
+
+            Change only what the request needs and keep everything else as it is.
+            """)
+        } else {
+            parts.append("The user asks for a new widget:\n\(context.request)")
+        }
+
+        parts.append("""
+        Reply in exactly this form, which replaces the output rule above for this conversation:
+        SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
+        then the FULL widget code in one ```jsx fenced block. Nothing else.
+        """)
+        return parts.joined(separator: "\n\n")
+    }
+
+    /// Splits a turn reply into the model's note and the widget code. A reply
+    /// without the SUMMARY line or without a fence is still read as code.
+    static func parseTurnReply(_ raw: String) -> (note: String?, code: String) {
+        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fenceStart = text.range(of: "```")?.lowerBound ?? text.endIndex
+        var note: String?
+        var body = text
+        let head = text[..<fenceStart]
+        for line in head.split(whereSeparator: \.isNewline) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.lowercased().hasPrefix("summary:") else { continue }
+            let value = trimmed.dropFirst("summary:".count).trimmingCharacters(in: .whitespaces)
+            if !value.isEmpty { note = clip(value, 300) }
+            if fenceStart == text.endIndex, let range = text.range(of: String(line)) {
+                body.removeSubrange(range)
+            }
+            break
+        }
+        return (note, stripCodeFences(body))
+    }
+
+    static func clip(_ text: String, _ limit: Int) -> String {
+        text.count > limit ? String(text.prefix(limit)) + "…" : text
     }
 
     // Best-effort extraction: prefer content between matching ```jsx ...
