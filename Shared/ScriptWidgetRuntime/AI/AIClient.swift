@@ -13,7 +13,7 @@ import SwiftOpenAI
 import FoundationModels
 #endif
 
-struct AITokenUsage: Equatable {
+struct AITokenUsage: Equatable, Codable {
     var promptTokens: Int
     var completionTokens: Int
     var totalTokens: Int

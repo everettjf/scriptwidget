@@ -21,6 +21,8 @@ enum AgentLoopEvent {
     case ranFailed(iteration: Int, errorSummary: String, logs: [String])
     case ranSucceeded(iteration: Int)
     case tokensUsed(AITokenUsage)  // incremental
+    /// The model's one-sentence account of its change; conversation turns only.
+    case note(String)
 }
 
 struct AgentLoopRequest {
@@ -28,6 +30,8 @@ struct AgentLoopRequest {
         case fresh(userDescription: String)
         case refine(currentCode: String, refineInstruction: String)
         case copilot(currentCode: String, instruction: String, runtimeDiagnostic: String?)
+        /// One turn of a saved conversation; see AIConversationSession.
+        case turn(AITurnContext)
     }
     let mode: Mode
     let size: AIWidgetSize
@@ -75,7 +79,12 @@ final class AgentLoop {
                 )
             )
             latestCode = currentCode
+        case .turn(let context):
+            firstUserMessage = AIMessage(role: .user, content: PromptBuilder.userPromptTurn(context))
+            latestCode = context.currentCode
         }
+        let isTurn: Bool
+        if case .turn = request.mode { isTurn = true } else { isTurn = false }
 
         let package: ScriptWidgetPackage
         do {
@@ -128,7 +137,14 @@ final class AgentLoop {
                 return .cancelled(usage: cumulativeUsage)
             }
 
-            let jsx = PromptBuilder.stripCodeFences(chatResult.content)
+            let jsx: String
+            if isTurn {
+                let reply = PromptBuilder.parseTurnReply(chatResult.content)
+                jsx = reply.code
+                if let note = reply.note { await onEvent(.note(note)) }
+            } else {
+                jsx = PromptBuilder.stripCodeFences(chatResult.content)
+            }
             latestCode = jsx
             await onEvent(.produced(iteration: iteration, jsx: jsx))
 

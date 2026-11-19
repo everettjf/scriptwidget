@@ -1,0 +1,300 @@
+//
+//  AIConversationSession.swift
+//  ScriptWidget
+//
+//  Drives one multi-turn AI conversation for SwiftUI: sends a turn through
+//  the agent loop, keeps every successful result as a version, keeps the last
+//  good widget on screen when a turn fails, and saves after every change.
+//
+//  Generated code is untrusted. It only ever runs through AgentRuntimeBridge,
+//  in a temporary package, under the same runtime limits as any widget.
+//
+
+import Foundation
+#if canImport(Combine)
+import Combine
+#endif
+
+@MainActor
+final class AIConversationSession: ObservableObject {
+
+    enum Activity: Equatable {
+        case idle
+        case thinking(attempt: Int)
+        case running(attempt: Int)
+        case repairing(attempt: Int, errorSummary: String)
+    }
+
+    @Published private(set) var conversation: AIConversation
+    @Published private(set) var activity: Activity = .idle
+    /// The current version, rendered at the conversation's size.
+    @Published private(set) var previewElement: ScriptWidgetRuntimeElement?
+    /// The package the preview was rendered in; views need it to resolve files.
+    @Published private(set) var previewPackage: ScriptWidgetPackage?
+    /// Console output of each attempt of the newest turn, for the Logs view.
+    @Published private(set) var attemptLogs: [AttemptLog] = []
+
+    struct AttemptLog: Identifiable, Equatable {
+        let id = UUID()
+        let attempt: Int
+        let errorSummary: String?
+        let lines: [String]
+    }
+
+    var isRunning: Bool { activity != .idle }
+    var currentSource: String { conversation.currentVersion?.source ?? "" }
+
+    private let store: AIConversationStore
+    private let bridge: AgentRuntimeBridge
+    private let makeLoop: () -> AgentLoop
+    private let loadSettings: () -> AISettings
+    private let skillsText: (Set<String>) -> String?
+
+    /// The temporary preview folder, removed when the session goes away.
+    private let previewPackageURL: URL?
+
+    private(set) var currentTask: Task<Void, Never>?
+    private var previewTask: Task<Void, Never>?
+    /// Changes whenever a turn starts or is cancelled; late results are dropped.
+    private var generation = UUID()
+    private var previewGeneration = UUID()
+    private var pendingAttemptCode = ""
+
+    init(
+        conversation: AIConversation = AIConversation(),
+        store: AIConversationStore = .shared,
+        bridge: AgentRuntimeBridge = .shared,
+        makeLoop: @escaping () -> AgentLoop = { AgentLoop() },
+        loadSettings: @escaping () -> AISettings = { AISettingsStore.shared.load() },
+        skillsText: @escaping (Set<String>) -> String? = { AIWidgetSkills.instructions(selectedIDs: $0) }
+    ) {
+        self.conversation = conversation
+        self.store = store
+        self.bridge = bridge
+        self.makeLoop = makeLoop
+        self.loadSettings = loadSettings
+        self.skillsText = skillsText
+        let package = try? bridge.makeSandboxPackage(prefix: "chat-preview")
+        previewPackage = package
+        previewPackageURL = package?.path
+        if conversation.currentVersion != nil { refreshPreview() }
+    }
+
+    deinit {
+        if let previewPackageURL { try? FileManager.default.removeItem(at: previewPackageURL) }
+    }
+
+    // MARK: - turns
+
+    /// Sends a new request, continuing from the current version.
+    func send(_ text: String) {
+        let request = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !request.isEmpty, !isRunning else { return }
+
+        let base = conversation.currentVersion
+        let turn = conversation.beginTurn(request: request)
+        // Read after beginTurn: it drops the branch the user walked away from.
+        let exchanges = conversation.historyForPrompt()
+            .map { AITurnContext.Exchange(request: $0.request, note: $0.note) }
+        let context = AITurnContext(
+            history: exchanges,
+            currentCode: base?.source,
+            previousCode: conversation.version(base?.parentID)?.source,
+            request: turn.request,
+            skillsText: skillsText(Set(conversation.skillIDs)),
+            size: conversation.size
+        )
+        persist()
+        run(turnID: turn.id, context: context)
+    }
+
+    /// Sends a turn that did not succeed once more, from the version it started from.
+    func retry(turnID: UUID) {
+        guard !isRunning, let turn = conversation.turns.first(where: { $0.id == turnID }),
+              turn.status != .succeeded, turn.status != .running else { return }
+        if let base = turn.baseVersionID, conversation.version(base) != nil {
+            conversation.currentVersionID = base
+            refreshPreview()
+        }
+        send(turn.request)
+    }
+
+    func cancel() {
+        guard isRunning else { return }
+        generation = UUID()
+        currentTask?.cancel()
+        finishRunningTurns(as: .cancelled, message: nil)
+        activity = .idle
+        persist()
+    }
+
+    // MARK: - versions, size, skills
+
+    /// Shows another version. Nothing is sent to the provider.
+    func selectVersion(_ id: UUID) {
+        guard !isRunning, conversation.version(id) != nil, conversation.currentVersionID != id else { return }
+        conversation.currentVersionID = id
+        conversation.updatedAt = Date()
+        persist()
+        refreshPreview()
+    }
+
+    /// Renders the current version at another size, locally.
+    func setSize(_ size: AIWidgetSize) {
+        guard conversation.size != size else { return }
+        conversation.size = size
+        persist()
+        refreshPreview()
+    }
+
+    func setSkills(_ ids: Set<String>) {
+        conversation.skillIDs = ids.sorted()
+        persist()
+    }
+
+    /// Records that the current version was saved as a widget.
+    func markSaved(packageName: String) {
+        conversation.savedPackageName = packageName
+        conversation.updatedAt = Date()
+        persist()
+    }
+
+    // MARK: - private
+
+    private func run(turnID: UUID, context: AITurnContext) {
+        let generation = UUID()
+        self.generation = generation
+        attemptLogs = []
+        pendingAttemptCode = ""
+        activity = .thinking(attempt: 1)
+
+        let settings = loadSettings()
+        let request = AgentLoopRequest(
+            mode: .turn(context),
+            size: conversation.size,
+            settings: settings,
+            maxIterations: AIConversationLimits.maxAttemptsPerTurn
+        )
+        let loop = makeLoop()
+        currentTask = Task { [weak self] in
+            let outcome = await loop.run(request) { [weak self] event in
+                guard let self, self.generation == generation else { return }
+                self.apply(event: event, turnID: turnID)
+            }
+            guard let self, self.generation == generation else { return }
+            self.apply(outcome: outcome, turnID: turnID)
+        }
+    }
+
+    private func apply(event: AgentLoopEvent, turnID: UUID) {
+        switch event {
+        case .thinking(let attempt):
+            if case .repairing = activity { break }
+            activity = .thinking(attempt: attempt)
+        case .produced(_, let jsx):
+            pendingAttemptCode = jsx
+        case .running(let attempt):
+            activity = .running(attempt: attempt)
+        case .ranFailed(let attempt, let summary, let logs):
+            attemptLogs.append(AttemptLog(attempt: attempt, errorSummary: summary, lines: logs))
+            conversation.updateTurn(turnID) { $0.repairs += 1 }
+            activity = .repairing(attempt: attempt + 1, errorSummary: summary)
+        case .ranSucceeded(let attempt):
+            attemptLogs.append(AttemptLog(attempt: attempt, errorSummary: nil, lines: []))
+        case .tokensUsed(let usage):
+            conversation.updateTurn(turnID) { $0.usage = usage }
+        case .note(let note):
+            // The first note describes the change; repairs only fix it.
+            conversation.updateTurn(turnID) { if $0.note == nil { $0.note = note } }
+        }
+    }
+
+    private func apply(outcome: AgentLoopOutcome, turnID: UUID) {
+        activity = .idle
+        switch outcome {
+        case .succeeded(let jsx, let element, let usage):
+            guard jsx.utf8.count <= AIConversationLimits.maxSourceBytes else {
+                conversation.updateTurn(turnID) {
+                    $0.status = .unconverged
+                    $0.errorSummary = "The generated widget is larger than a conversation can keep."
+                    $0.usage = usage
+                }
+                break
+            }
+            let version = conversation.addVersion(source: jsx)
+            conversation.updateTurn(turnID) {
+                $0.status = .succeeded
+                $0.versionID = version.id
+                $0.usage = usage
+            }
+            showPreview(element: element, source: jsx)
+        case .exhausted(let lastJSX, let lastError, let usage):
+            conversation.updateTurn(turnID) {
+                $0.status = .unconverged
+                $0.errorSummary = lastError
+                $0.failedSource = lastJSX.map { String($0.prefix(AIConversationLimits.maxSourceBytes)) }
+                $0.usage = usage
+            }
+        case .cancelled(let usage):
+            conversation.updateTurn(turnID) {
+                $0.status = .cancelled
+                $0.usage = usage
+            }
+        case .failed(let message, let usage):
+            conversation.updateTurn(turnID) {
+                $0.status = .failed
+                $0.errorSummary = message
+                $0.usage = usage
+            }
+        }
+        conversation.updatedAt = Date()
+        persist()
+    }
+
+    private func finishRunningTurns(as status: AIConversationTurn.Status, message: String?) {
+        for turn in conversation.turns where turn.status == .running {
+            conversation.updateTurn(turn.id) {
+                $0.status = status
+                $0.errorSummary = message
+            }
+        }
+    }
+
+    private func showPreview(element: ScriptWidgetRuntimeElement, source: String) {
+        previewGeneration = UUID()
+        previewTask?.cancel()
+        if let previewPackage { _ = previewPackage.writeMainFile(content: source) }
+        previewElement = element
+    }
+
+    /// Runs the current version again in the preview package.
+    private func refreshPreview() {
+        guard let previewPackage, let version = conversation.currentVersion else {
+            previewElement = nil
+            return
+        }
+        let token = UUID()
+        previewGeneration = token
+        previewTask?.cancel()
+        let size = conversation.size
+        previewTask = Task { [weak self, bridge] in
+            let result = await bridge.run(jsx: version.source, in: previewPackage, size: size)
+            guard let self, self.previewGeneration == token else { return }
+            // A version only exists because it ran once; if it fails now (the
+            // network is gone, say) the element it does return is still shown.
+            self.previewElement = result.element
+        }
+    }
+
+    private func persist() {
+        // An empty conversation is not worth a file.
+        guard !conversation.turns.isEmpty else { return }
+        store.save(conversation)
+    }
+
+    /// Waits for the turn in flight and for the preview; for tests.
+    func settle() async {
+        await currentTask?.value
+        await previewTask?.value
+    }
+}
