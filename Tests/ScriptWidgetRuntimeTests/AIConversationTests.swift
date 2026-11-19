@@ -615,6 +615,53 @@ final class AIConversationTests: XCTestCase {
         XCTAssertNotNil(session.previewElement)
     }
 
+    /// One turn that needs the network, against a real provider and a real
+    /// public host (httpbin.org). Runs only with ROCKY_OPENAI_APIKEY set.
+    func testNetworkWidgetAgainstARealProviderWhenConfigured() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        func read(_ name: String) -> String? {
+            for key in [name, "TEST_RUNNER_\(name)"] {
+                if let value = environment[key]?.trimmingCharacters(in: .whitespacesAndNewlines), !value.isEmpty {
+                    return value
+                }
+            }
+            return nil
+        }
+        guard let key = read("ROCKY_OPENAI_APIKEY") else {
+            throw XCTSkip("ROCKY_OPENAI_APIKEY not set — skipping the live network-widget test.")
+        }
+        let profile = AIProfile(
+            id: "live-conversation", name: "live",
+            baseURL: read("ROCKY_OPENAI_BASEURL") ?? AIProfile.defaultBaseURL,
+            model: read("ROCKY_OPENAI_MODEL") ?? AIProfile.defaultModel,
+            apiKey: key, authMethod: .apiKey
+        )
+        let settings = AISettings(profile: profile, maxIterations: 20, temperature: 0.2)
+        let session = AIConversationSession(store: store, loadSettings: { settings }, skillsText: { _ in nil })
+
+        session.send("Fetch https://httpbin.org/uuid, which returns JSON like {\"uuid\": \"...\"}, and show the uuid in small text under the title Random ID. Show a short message if it can not be loaded.")
+        await session.settle()
+
+        let turn = try XCTUnwrap(session.conversation.turns.last)
+        let report = """
+        status: \(turn.status.rawValue), repairs: \(turn.repairs), tokens: \(turn.usage.totalTokens)
+        note: \(turn.note ?? "(none)")
+        error: \(turn.errorSummary ?? "(none)")
+        declared: \(session.currentDomains)
+        """
+        print(report)
+        if let folder = read("AI_CONVERSATION_LIVE_DIR") {
+            let output = URL(fileURLWithPath: folder, isDirectory: true)
+            try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+            try (turn.failedSource ?? session.currentSource)
+                .write(to: output.appendingPathComponent("network.jsx"), atomically: true, encoding: .utf8)
+            try report.write(to: output.appendingPathComponent("network-report.txt"), atomically: true, encoding: .utf8)
+        }
+        XCTAssertEqual(turn.status, .succeeded, turn.errorSummary ?? "")
+        XCTAssertEqual(session.currentDomains, ["httpbin.org"], "the widget declares the host it contacts")
+        XCTAssertTrue(session.currentSource.contains("httpbin.org"))
+    }
+
     // MARK: - window snapshot (macOS, on request)
 
     #if os(macOS)
