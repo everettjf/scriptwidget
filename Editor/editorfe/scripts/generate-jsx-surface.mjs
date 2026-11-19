@@ -53,6 +53,10 @@ export function jsxSurfaceText() {
   }
   for (const [name, properties] of tags) lines.push(["tag", name, ...properties.values()].join(" "));
   for (const [system, name, properties] of platformTags) lines.push([`tag@${system}`, name, ...properties].join(" "));
+  // Tags that draw no tag written inside them. Only those where a model is seen to try it and
+  // the native builder reads no children; the metadata's own flag is wider (a gauge may hold a label).
+  const leaves = ["Text", "Date", "Image", "Icon", "Label"].filter((name) => api.components[name]?.children === false);
+  lines.push(["leaf", ...leaves.map((name) => name.toLowerCase())].join(" "));
   return lines.join("\n");
 }
 

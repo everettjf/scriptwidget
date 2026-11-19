@@ -171,6 +171,10 @@ enum PromptBuilder {
             stroke thickness and padding. Do not apply frame="max" to
             every row: it expands height too. Use frame="max,24" for a
             full-width row with a fixed height when appropriate.
+            <text>, <date>, <image> and the other tags without children take
+            no tags inside them: write <date ... /> next to a <text>, not in it.
+            A linear $gradient needs both points, e.g. $gradient({type: "linear",
+            colors: ["#0f172a", "#166534"], startPoint: "top", endPoint: "bottom"}).
         13. Charts use data={$json([{label: "Mon", value: 3}])}, not JSX
             child marks. Keep chart axes legible: avoid a fixed dark
             background with default light-appearance axes. Prefer the

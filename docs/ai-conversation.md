@@ -117,6 +117,7 @@ ScriptWidget ignores an attribute it does not know, and a value outside a fixed 
 
 - a tag that ScriptWidget does not have;
 - an attribute that the tag does not have;
+- a tag written inside `<text>`, `<date>`, `<image>`, `<icon>` or `<label>`, which draw no tag inside them;
 - a value outside a fixed list, for the attributes that have one (`style` of `<date>`, `fontWeight`, `fontDesign`, `clip`, `backgroundMaterial`, `mode` of `<image>`, `axis`, `style` of `<progress>`).
 
 When it finds one, the AI is told what it wrote and what exists, and tries again; this counts as one of the three repairs. On the last attempt a widget that runs is kept as it is.

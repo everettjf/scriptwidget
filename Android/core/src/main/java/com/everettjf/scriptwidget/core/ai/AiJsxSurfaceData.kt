@@ -55,5 +55,6 @@ tag stat title value subtitle mutedColor
 tag button action onClick actionID
 tag toggle on onClick actionID stateKey
 tag@android list spacing
+leaf text date image icon label
 """.trim()
 }
