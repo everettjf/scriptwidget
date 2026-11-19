@@ -398,6 +398,12 @@ final class AIConversationTests: XCTestCase {
         XCTAssertEqual(AIJSXCheck.problems(in: "$render(<list spacing=\"4\"></list>)", surface: AIJSXCheck.parseSurface(AIJSXSurfaceData.text, system: "android")), [])
     }
 
+    func testTagInsideATagWithoutChildrenIsNamed() {
+        let nested = AIJSXCheck.problems(in: "$render(<vstack><text font=\"caption\"><date date=\"now\" style=\"date\" /></text></vstack>)")
+        XCTAssertEqual(nested, ["<text> takes no tags inside it, so the <date> in it is not shown. Put it next to the <text>, not in it."])
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack><text>{rows.map((row) => <Row />)} a < b</text><text>Plain {value}</text><date date=\"now\" /></vstack>)"), [])
+    }
+
     /// Every template and example in the app passes: the check must not cry wolf.
     func testEveryBundledWidgetPassesTheCheck() throws {
         let bundle = try XCTUnwrap(Bundle.main.url(forResource: "Script", withExtension: "bundle"))
@@ -501,8 +507,9 @@ final class AIConversationTests: XCTestCase {
         ConversationProviderStub.enqueue([reply("Added a second line.", Self.betterWidget)])
         session.retry(turnID: failed.id)
         await session.settle()
-        XCTAssertEqual(session.conversation.turns.count, 3)
-        XCTAssertEqual(session.conversation.turns[2].status, .succeeded)
+        XCTAssertEqual(session.conversation.turns.count, 2, "the new turn takes the place of the failed one")
+        XCTAssertEqual(session.conversation.turns[1].status, .succeeded)
+        XCTAssertFalse(session.conversation.turns.contains { $0.id == failed.id })
         XCTAssertEqual(session.currentSource, Self.betterWidget)
     }
 

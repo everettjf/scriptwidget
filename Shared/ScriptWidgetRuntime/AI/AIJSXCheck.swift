@@ -24,6 +24,8 @@ enum AIJSXCheck {
     struct Surface {
         let globals: [String: Set<String>?]
         let tags: [String: [String: Set<String>?]]
+        /// Tags that draw no tag written inside them.
+        let leaves: Set<String>
         /// Names in the order of the generated list, for messages.
         let globalNames: [String]
         let tagNames: [String]
@@ -42,6 +44,7 @@ enum AIJSXCheck {
         var globalNames: [String] = []
         var tagNames: [String] = []
         var attributeNames: [String: [String]] = [:]
+        var leaves: Set<String> = []
         func attribute(_ word: Substring) -> (String, Set<String>?) {
             guard let at = word.firstIndex(of: "=") else { return (String(word), nil) }
             let values = word[word.index(after: at)...].split(separator: "|").map(String.init)
@@ -50,7 +53,9 @@ enum AIJSXCheck {
         for line in text.split(whereSeparator: \.isNewline) {
             let words = line.split(separator: " ")
             guard words.count >= 2 else { continue }
-            if words[0] == "global" {
+            if words[0] == "leaf" {
+                leaves.formUnion(words.dropFirst().map(String.init))
+            } else if words[0] == "global" {
                 let (name, values) = attribute(words[1])
                 globals[name] = values
                 globalNames.append(name)
@@ -68,13 +73,14 @@ enum AIJSXCheck {
                 attributeNames[tag] = names
             }
         }
-        return Surface(globals: globals, tags: tags, globalNames: globalNames, tagNames: tagNames, attributeNames: attributeNames)
+        return Surface(globals: globals, tags: tags, leaves: leaves, globalNames: globalNames, tagNames: tagNames, attributeNames: attributeNames)
     }
 
     /// What is wrong with `source`, at most `maxProblems` sentences; empty when nothing is.
     static func problems(in source: String, surface: Surface = apple) -> [String] {
         var found: [String] = []
         func add(_ text: String) { if !found.contains(text) { found.append(text) } }
+        let scalars = Array(source.unicodeScalars)
         for tag in tags(in: source) {
             if found.count >= maxProblems { break }
             // A capital letter marks the script's own component, even one named like a tag; a dotted name is a member.
@@ -83,6 +89,9 @@ enum AIJSXCheck {
             guard let own = surface.tags[name] else {
                 add("<\(name)> is not a ScriptWidget tag. The tags are: \(surface.tagNames.joined(separator: ", ")).")
                 continue
+            }
+            if surface.leaves.contains(name), !tag.selfClosing, let inner = firstTagInside(scalars, from: tag.end) {
+                add("<\(name)> takes no tags inside it, so the <\(inner)> in it is not shown. Put it next to the <\(name)>, not in it.")
             }
             for attribute in tag.attributes {
                 if found.count >= maxProblems { break }
@@ -134,6 +143,9 @@ enum AIJSXCheck {
     struct Tag: Equatable {
         let name: String
         let attributes: [Attribute]
+        /// The index, in Unicode scalars, after the tag's `>`.
+        var end = 0
+        var selfClosing = false
     }
 
     private static let tagBeforeKeywords: Set<String> = [
@@ -196,10 +208,10 @@ enum AIJSXCheck {
             while index < length, isSpace(text[index]) { index += 1 }
             guard index < length else { return nil }
             let character = text[index]
-            if character == ">" { return (Tag(name: name, attributes: attributes), index + 1) }
+            if character == ">" { return (Tag(name: name, attributes: attributes, end: index + 1, selfClosing: false), index + 1) }
             if character == "/" {
                 guard index + 1 < length, text[index + 1] == ">" else { return nil }
-                return (Tag(name: name, attributes: attributes), index + 2)
+                return (Tag(name: name, attributes: attributes, end: index + 2, selfClosing: true), index + 2)
             }
             if character == "{" {
                 // {...spread}
@@ -242,6 +254,28 @@ enum AIJSXCheck {
                 return nil
             }
         }
+    }
+
+    /// The name of a tag written directly inside the tag whose `>` ends at
+    /// `from`, before that tag closes; nil when there is none. What stands in
+    /// `{...}` is passed over: it is computed, and not judged.
+    private static func firstTagInside(_ text: [Unicode.Scalar], from: Int) -> String? {
+        var index = from
+        while index < text.count {
+            let character = text[index]
+            if character == "{" {
+                guard let end = skipBraces(text, from: index) else { return nil }
+                index = end
+            } else if character == "<" {
+                guard index + 1 < text.count, isLetter(text[index + 1]) else { return nil }
+                var end = index + 1
+                while end < text.count, isLetter(text[end]) || isDigit(text[end]) || text[end] == "." || text[end] == "_" { end += 1 }
+                return string(text, index + 1, end)
+            } else {
+                index += 1
+            }
+        }
+        return nil
     }
 
     /// The index after the `}` that closes the `{` at `from`, or nil when it is not closed.

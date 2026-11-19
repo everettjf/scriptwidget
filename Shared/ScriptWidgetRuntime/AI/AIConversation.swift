@@ -50,13 +50,13 @@ struct AIConversationUsageAdvice: Equatable {
     var message: String {
         switch reason {
         case .heavyRequests(let tokens):
-            return "Each request now sends about \(tokens.formatted()) tokens. A new conversation from this version sends less."
+            return String(localized: "Each request now sends about \(tokens.formatted()) tokens. A new conversation from this version sends less.")
         case .heavyTotal(let tokens):
-            return "This conversation has used \(tokens.formatted()) tokens. A new conversation from this version starts small again."
+            return String(localized: "This conversation has used \(tokens.formatted()) tokens. A new conversation from this version starts small again.")
         case .versionsFull:
-            return "A conversation keeps \(AIConversationLimits.maxVersions) versions; the oldest are dropped from now on."
+            return String(localized: "A conversation keeps \(AIConversationLimits.maxVersions) versions; the oldest are dropped from now on.")
         case .historyFull:
-            return "The AI is told about the last \(AIConversationLimits.historyTurns) turns only; older requests are no longer sent."
+            return String(localized: "The AI is told about the last \(AIConversationLimits.historyTurns) turns only; older requests are no longer sent.")
         }
     }
 }

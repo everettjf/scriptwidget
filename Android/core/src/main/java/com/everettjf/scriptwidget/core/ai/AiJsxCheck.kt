@@ -16,7 +16,11 @@ package com.everettjf.scriptwidget.core.ai
  */
 object AiJsxCheck {
     /** Attribute name to its closed list of values, or null when any value goes. */
-    class Surface(val globals: Map<String, Set<String>?>, val tags: Map<String, Map<String, Set<String>?>>)
+    class Surface(
+        val globals: Map<String, Set<String>?>, val tags: Map<String, Map<String, Set<String>?>>,
+        /** Tags that draw no tag written inside them. */
+        val leaves: Set<String> = emptySet(),
+    )
 
     const val MAX_PROBLEMS = 5
 
@@ -27,6 +31,7 @@ object AiJsxCheck {
     fun parseSurface(text: String, system: String?): Surface {
         val globals = LinkedHashMap<String, Set<String>?>()
         val tags = LinkedHashMap<String, Map<String, Set<String>?>>()
+        val leaves = LinkedHashSet<String>()
         fun attribute(word: String): Pair<String, Set<String>?> {
             val at = word.indexOf('=')
             return if (at < 0) word to null else word.substring(0, at) to word.substring(at + 1).split("|").toSet()
@@ -35,12 +40,13 @@ object AiJsxCheck {
             val words = line.trim().split(" ").filter { it.isNotEmpty() }
             if (words.size < 2) continue
             when {
+                words[0] == "leaf" -> leaves += words.drop(1)
                 words[0] == "global" -> attribute(words[1]).let { globals[it.first] = it.second }
                 words[0] == "tag" || (system != null && words[0] == "tag@$system") ->
                     tags[words[1]] = words.drop(2).associate { attribute(it) }
             }
         }
-        return Surface(globals, tags)
+        return Surface(globals, tags, leaves)
     }
 
     /** What is wrong with [source], at most [MAX_PROBLEMS] sentences; empty when nothing is. */
@@ -55,6 +61,11 @@ object AiJsxCheck {
             if (own == null) {
                 found += "<$name> is not a ScriptWidget tag. The tags are: ${surface.tags.keys.joinToString(", ")}."
                 continue
+            }
+            if (name in surface.leaves && !tag.selfClosing) {
+                firstTagInside(source, tag.end)?.let { inner ->
+                    found += "<$name> takes no tags inside it, so the <$inner> in it is not shown. Put it next to the <$name>, not in it."
+                }
             }
             for (attribute in tag.attributes) {
                 if (found.size >= MAX_PROBLEMS) break
@@ -82,7 +93,7 @@ object AiJsxCheck {
     }
 
     internal class Attribute(val name: String, /** The value when it is written as a plain string. */ val literal: String?)
-    internal class Tag(val name: String, val attributes: List<Attribute>)
+    internal class Tag(val name: String, val attributes: List<Attribute>, /** The index after the tag's `>`. */ val end: Int = 0, val selfClosing: Boolean = false)
 
     private val TAG_BEFORE_KEYWORDS = setOf("return", "yield", "case", "default", "await", "else", "do", "in", "of", "typeof", "void", "delete", "new", "throw")
 
@@ -142,9 +153,9 @@ object AiJsxCheck {
             while (index < length && text[index].isWhitespace()) index += 1
             if (index >= length) return null
             val character = text[index]
-            if (character == '>') return Tag(name, attributes) to index + 1
+            if (character == '>') return Tag(name, attributes, index + 1, false) to index + 1
             if (character == '/') {
-                return if (index + 1 < length && text[index + 1] == '>') Tag(name, attributes) to index + 2 else null
+                return if (index + 1 < length && text[index + 1] == '>') Tag(name, attributes, index + 2, true) to index + 2 else null
             }
             if (character == '{') {
                 // {...spread}
@@ -182,6 +193,27 @@ object AiJsxCheck {
                 else -> return null
             }
         }
+    }
+
+    /**
+     * The name of a tag written directly inside the tag whose `>` ends at [from], before that tag closes;
+     * null when there is none. What stands in `{...}` is passed over: it is computed, and not judged.
+     */
+    private fun firstTagInside(text: String, from: Int): String? {
+        var index = from
+        while (index < text.length) {
+            when (text[index]) {
+                '{' -> index = skipBraces(text, index) ?: return null
+                '<' -> {
+                    if (index + 1 >= text.length || !text[index + 1].isAsciiLetter()) return null
+                    var end = index + 1
+                    while (end < text.length && (text[end].isAsciiLetter() || text[end] in '0'..'9' || text[end] == '.' || text[end] == '_')) end += 1
+                    return text.substring(index + 1, end)
+                }
+                else -> index += 1
+            }
+        }
+        return null
     }
 
     /** The index after the `}` that closes the `{` at [from], or null when it is not closed. */

@@ -40,7 +40,6 @@ private struct AIConversationScreen: View {
     let onOpen: (AIConversation) -> Void
 
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateObject private var session: AIConversationSession
 
     @State private var draftText = ""
@@ -49,7 +48,6 @@ private struct AIConversationScreen: View {
     @State private var shownCode: ShownCode?
     @State private var showingLogs = false
     @State private var showingSaveName = false
-    @State private var confirmingNetworkSave = false
     @State private var confirmingDelete = false
     @State private var isDebugMode = false
     @State private var profiles: [AIProfile] = []
@@ -76,14 +74,17 @@ private struct AIConversationScreen: View {
         if conversation.currentVersion == nil && !session.isRunning { return 96 }
         return composerFocused ? 120 : 210
     }
-    private var isWide: Bool { horizontalSizeClass == .regular }
+    /// From this width on the conversation and the preview are side by side.
+    private static let sideBySideWidth: CGFloat = 720
     private var sortedVersions: [AIConversationVersion] {
         conversation.versions.sorted { $0.number < $1.number }
     }
 
     var body: some View {
-        Group {
-            if isWide {
+        // The layout follows the room there is, not the size class: an iPad
+        // window can be narrow and still be "regular".
+        GeometryReader { proxy in
+            if proxy.size.width >= Self.sideBySideWidth {
                 HStack(spacing: 0) {
                     chat
                         .frame(maxWidth: .infinity)
@@ -92,7 +93,7 @@ private struct AIConversationScreen: View {
                         previewPanel(stageHeight: 380, showsThumbnails: true)
                             .padding(16)
                     }
-                    .frame(width: 400)
+                    .frame(width: min(400, proxy.size.width * 0.42))
                     .background(StudioDesign.groupedBackground)
                 }
             } else {
@@ -133,25 +134,23 @@ private struct AIConversationScreen: View {
         }
         .sheet(item: $shownCode) { codeSheet($0) }
         .sheet(isPresented: $showingLogs) { logsSheet }
+        // One dialog asks for the name and, for a widget that uses the network,
+        // names its hosts: a second dialog right after the first is dropped by iOS.
         .alert("Save Widget", isPresented: $showingSaveName) {
             TextField("Widget name", text: $saveName)
                 .textInputAutocapitalization(.words)
             Button("Cancel", role: .cancel) { }
-            Button("Save") {
-                if session.currentDomains.isEmpty { performSave() } else { confirmingNetworkSave = true }
+            if session.currentDomains.isEmpty {
+                Button("Save") { performSave() }
+            } else {
+                Button("Save and Allow") { performSave() }
             }
         } message: {
-            Text("Choose a name for your new widget.")
-        }
-        .confirmationDialog(
-            "Allow this widget to use the network?",
-            isPresented: $confirmingNetworkSave,
-            titleVisibility: .visible
-        ) {
-            Button("Save and Allow") { performSave() }
-            Button("Cancel", role: .cancel) { }
-        } message: {
-            Text("The AI wrote a widget that contacts: \(session.currentDomains.joined(separator: ", ")). Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration.")
+            if session.currentDomains.isEmpty {
+                Text("Choose a name for your new widget.")
+            } else {
+                Text("Choose a name for your new widget. The AI wrote a widget that contacts: \(session.currentDomains.joined(separator: ", ")). Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration.")
+            }
         }
         .confirmationDialog(
             "Delete this conversation?",

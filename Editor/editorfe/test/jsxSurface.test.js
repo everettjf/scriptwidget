@@ -13,5 +13,7 @@ test("the list names every tag in lower case and only checks values of closed li
   assert.ok(lines.includes("tag@android list spacing"));
   assert.ok(lines.includes("global font"), "font takes more forms than the metadata lists");
   assert.ok(lines.some((line) => line.startsWith("global weight=")));
-  assert.ok(lines.every((line) => /^(global|tag|tag@[a-z]+) /.test(line)));
+  assert.ok(lines.every((line) => /^(global|tag|tag@[a-z]+|leaf) /.test(line)));
+  const leaf = lines.find((line) => line.startsWith("leaf ")).split(" ");
+  assert.ok(leaf.includes("text") && leaf.includes("date") && !leaf.includes("vstack") && !leaf.includes("link"));
 });

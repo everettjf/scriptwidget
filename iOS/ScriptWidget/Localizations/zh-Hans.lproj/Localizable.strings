@@ -282,3 +282,11 @@
 "Allow and Apply" = "允许并应用";
 "Fix Runtime Error" = "修复运行错误";
 "May contact: %@" = "可能访问：%@";
+"Writing the widget…" = "正在写小组件…";
+"Running it…" = "正在运行…";
+"It needs a fix. Fixing, attempt %lld of %lld…" = "需要修复。正在修复，第 %lld 次，共 %lld 次…";
+"Each request now sends about %@ tokens. A new conversation from this version sends less." = "现在每次请求大约发送 %@ 个 token。从这个版本另开一段对话会少很多。";
+"This conversation has used %@ tokens. A new conversation from this version starts small again." = "这段对话已经用了 %@ 个 token。从这个版本另开一段对话可以重新变轻。";
+"A conversation keeps %lld versions; the oldest are dropped from now on." = "一段对话保留 %lld 个版本；从现在起最旧的会被丢弃。";
+"The AI is told about the last %lld turns only; older requests are no longer sent." = "AI 只会收到最近 %lld 轮；更早的请求不再发送。";
+"Choose a name for your new widget. The AI wrote a widget that contacts: %@. Saving gives it the network permission for these hosts only. You can change this later in the widget's configuration." = "给新的小组件起个名字。AI 写的这个小组件会访问：%@。保存后它只获得访问这些主机的联网权限，之后可以在小组件的配置里修改。";

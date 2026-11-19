@@ -50,6 +50,13 @@ class AiJsxCheckTest {
     }
 
     @Test
+    fun aTagInsideATagWithoutChildrenIsNamed() {
+        val nested = problems("${'$'}render(<vstack><text font=\"caption\"><date date=\"now\" style=\"date\" /></text></vstack>)")
+        assertEquals(listOf("<text> takes no tags inside it, so the <date> in it is not shown. Put it next to the <text>, not in it."), nested)
+        assertEquals(emptyList<String>(), problems("${'$'}render(<vstack><text>{rows.map((row) => <Row />)} a < b</text><text>Plain {value}</text><date date=\"now\" /></vstack>)"))
+    }
+
+    @Test
     fun theSameProblemIsReportedOnceAndTheListIsShort() {
         val many = (1..12).joinToString("") { "<text madeUp$it=\"1\">a</text>" } + "<text madeUp1=\"1\">a</text>"
         assertEquals(AiJsxCheck.MAX_PROBLEMS, problems("${'$'}render(<vstack>$many</vstack>)").size)
