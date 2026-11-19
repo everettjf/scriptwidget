@@ -27,5 +27,7 @@ test("native compiler fingerprint and entry wrapper match ScriptWidgetCompiler",
   assert.match(packageSwift, new RegExp(`static let compilerFingerprint = "${runtimeContract.nativeCompilerFingerprint}"`));
   assert.ok(runtimeSwift.includes('var result = "async function $main() { try {"'));
   assert.ok(runtimeSwift.includes('result += "} catch(e){ console.error(e); $error(`${e}`) } }"'));
-  assert.equal(wrappedSource("X"), "async function $main() { try {X} catch(e){ console.error(e); $error(`${e}`) } }");
+  assert.ok(runtimeSwift.includes('result += "\\n"'));
+  assert.equal(wrappedSource("X"), "async function $main() { try {X\n} catch(e){ console.error(e); $error(`${e}`) } }");
+  assert.equal(wrappedSource("X // note", "render"), "async function $main() { try {X // note\nawait render();} catch(e){ console.error(e); $error(`${e}`) } }");
 });
