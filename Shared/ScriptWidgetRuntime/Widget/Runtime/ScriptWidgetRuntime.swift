@@ -329,6 +329,11 @@ enum ScriptWidgetCompiler {
     static func wrappedSource(_ source: String, callFunction: String = "") -> String {
         var result = "async function $main() { try {"
         result += source
+        // A source may end in a `//` comment without a line break; what follows
+        // must not become part of that comment. A line break at the end moves
+        // no line number of the source. The fingerprint is not bumped for it:
+        // every artifact compiled before stays correct for its source.
+        result += "\n"
         if !callFunction.isEmpty { result += "await \(callFunction)();" }
         result += "} catch(e){ console.error(e); $error(`${e}`) } }"
         return result

@@ -35,6 +35,13 @@ test("missing $render text yields the native placeholder element", async () => {
   assert.equal(result.tree, '{"$element":"text","props":null,"children":["#UI Not Found#"]}');
 });
 
+test("a source that ends in a line comment without a line break runs", async () => {
+  // The wrapper's closing code used to land inside the comment.
+  const result = await run("$render(<text>ready</text>); // the end");
+  assert.equal(result.error, null);
+  assert.equal(result.tree, '{"$element":"text","props":null,"children":["ready"]}');
+});
+
 test("errors use the native categories", async () => {
   assert.equal((await run('throw new Error("boom")')).error.kind, "scriptException");
   assert.equal((await run("$render(<text>)")).error.kind, "scriptException");

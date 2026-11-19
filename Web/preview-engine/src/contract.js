@@ -42,6 +42,8 @@ export function makeError(kind, message) {
 export function wrappedSource(source, callFunction = "") {
   let result = "async function $main() { try {";
   result += source;
+  // A source may end in a `//` comment without a line break.
+  result += "\n";
   if (callFunction !== "") result += `await ${callFunction}();`;
   result += "} catch(e){ console.error(e); $error(`${e}`) } }";
   return result;

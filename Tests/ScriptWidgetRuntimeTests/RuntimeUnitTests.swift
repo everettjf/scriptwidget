@@ -905,6 +905,21 @@ final class CompiledArtifactTests: XCTestCase {
         XCTAssertTrue(artifact.javaScript.contains("$main"))
         XCTAssertNotNil(ScriptWidgetCompiledArtifactStore.load(package: package, source: source))
     }
+
+    /// The wrapper used to append its own closing code directly to the source,
+    /// so a last line that was a comment swallowed it and nothing compiled.
+    func testSourceEndingInALineCommentWithoutLineBreakCompiles() throws {
+        let source = "$render(<text>ready</text>); // the end"
+        let result = ScriptWidgetPrecompiler.compileNow(package: package, source: source)
+        guard case .success(let artifact) = result else {
+            return XCTFail("precompile failed: \(result)")
+        }
+        XCTAssertTrue(artifact.javaScript.contains("$main"))
+        XCTAssertEqual(
+            ScriptWidgetCompiler.wrappedSource("x // note", callFunction: "render"),
+            "async function $main() { try {x // note\nawait render();} catch(e){ console.error(e); $error(`${e}`) } }"
+        )
+    }
 }
 
 final class ExecutionSessionTests: XCTestCase {
