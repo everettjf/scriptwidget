@@ -359,6 +359,17 @@ and the full code when most of the widget changes. Never use both forms in one r
         return AiTurnReply(note, AiCandidate(if (source.isEmpty()) "" else source + "\n", candidate.manifestJson))
     }
 
+    /** Port of `previewOfPartialReply`: what the text written so far looks like as code. */
+    fun previewOfPartialReply(partial: String): String {
+        val open = partial.indexOf("```")
+        if (open < 0) return partial
+        val newline = partial.indexOf('\n', open + 3)
+        if (newline < 0) return ""
+        val code = partial.substring(newline + 1)
+        val close = code.indexOf("```")
+        return if (close >= 0) code.substring(0, close) else code
+    }
+
     fun clip(text: String, limit: Int): String = if (text.length > limit) text.take(limit) + "…" else text
 }
 

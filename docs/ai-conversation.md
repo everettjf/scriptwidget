@@ -72,10 +72,10 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 
 **Generate with AI** under New widget, and **Improve with AI** on a widget's page, open the conversation. It follows the rules on this page with these differences:
 
-- The preview is on top and the turns are below it. The reply appears when it is complete; code is not written out as it arrives.
+- The preview is on top and the turns are below it, with the widget drawn small at the three sizes under the preview; a tap shows that size. The code appears under the request as it arrives, for OpenAI-compatible servers and for Anthropic.
 - **+1 −1** on a version opens the changed lines, as on the Mac.
 - An installed widget is changed with **Apply to widget**, which asks first and names any host the version adds.
-- There is no editor panel. Code changed in the editor is taken over as a version the next time the conversation opens.
+- There is no panel beside the editor: a phone has no room for one. The editor's **Improve with AI** button saves the file and opens the conversation about that widget; code changed in the editor is taken over as a version, and after **Apply to widget** the editor shows the applied code when you come back.
 - Conversations stay in the app's no-backup directory on the device.
 
 More in the [Android notes](android/README.md#ai-conversation).
@@ -177,7 +177,7 @@ In the editor, the copy runs with the widget's own `widget.json` plus the declar
 
 ## Not in this version
 
-Code written out as it arrives on Android, an editor panel on Android, and translations of the conversation's own texts on the Mac and on Android (the Mac app has no translation yet; iPhone and iPad have Simplified Chinese). The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
+Translations of the conversation's own texts on the Mac and on Android (the Mac app has no translation yet; iPhone and iPad have Simplified Chinese). The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
 
 ## For contributors
 

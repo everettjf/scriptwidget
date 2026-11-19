@@ -62,6 +62,17 @@ class AiHttpResponse(val status: Int, val body: ByteArray) {
 fun interface AiTransport {
     /** @throws AiClientException for every failure, including cancellation. */
     fun execute(request: AiHttpRequest, cancellation: AiCancellation): AiHttpResponse
+
+    /**
+     * Like [execute], and hands the body of a successful response to [onBody] piece by piece as it
+     * arrives. The returned response still holds the whole body, under the same size limit. A
+     * transport that can not do this hands the body over once, at the end.
+     */
+    fun executeStreaming(request: AiHttpRequest, cancellation: AiCancellation, onBody: (ByteArray) -> Unit): AiHttpResponse {
+        val response = execute(request, cancellation)
+        if (response.status in 200..299) onBody(response.body)
+        return response
+    }
 }
 
 /**
@@ -71,7 +82,11 @@ fun interface AiTransport {
  * budgets and package host policy are meant for untrusted scripts.
  */
 class HttpsAiTransport : AiTransport {
-    override fun execute(request: AiHttpRequest, cancellation: AiCancellation): AiHttpResponse {
+    override fun execute(request: AiHttpRequest, cancellation: AiCancellation): AiHttpResponse = perform(request, cancellation, null)
+
+    override fun executeStreaming(request: AiHttpRequest, cancellation: AiCancellation, onBody: (ByteArray) -> Unit): AiHttpResponse = perform(request, cancellation, onBody)
+
+    private fun perform(request: AiHttpRequest, cancellation: AiCancellation, onBody: ((ByteArray) -> Unit)?): AiHttpResponse {
         val uri = try { URI(request.url) } catch (_: Exception) { throw AiClientException(AiErrorKind.INVALID_PROFILE, "The API base URL is invalid.") }
         if (!uri.scheme.orEmpty().equals("https", ignoreCase = true) || uri.host.isNullOrEmpty()) throw AiClientException(AiErrorKind.INVALID_PROFILE, "The API base URL must start with https://.")
         if (cancellation.isCancelled) throw cancelled()
@@ -99,7 +114,7 @@ class HttpsAiTransport : AiTransport {
             // Error bodies are only inspected for a short error code, so they get a much smaller budget.
             val limit = if (success) request.maximumResponseBytes else minOf(request.maximumResponseBytes, MAXIMUM_ERROR_BODY_BYTES)
             val stream: InputStream? = if (success) open.inputStream else open.errorStream
-            val body = stream?.use { read(it, limit, failWhenLarger = success) } ?: ByteArray(0)
+            val body = stream?.use { read(it, limit, failWhenLarger = success, onBody = if (success) onBody else null) } ?: ByteArray(0)
             if (cancellation.isCancelled) throw cancelled()
             return AiHttpResponse(status, body)
         } catch (error: AiClientException) {
@@ -120,7 +135,7 @@ class HttpsAiTransport : AiTransport {
         }
     }
 
-    private fun read(stream: InputStream, limit: Int, failWhenLarger: Boolean): ByteArray {
+    private fun read(stream: InputStream, limit: Int, failWhenLarger: Boolean, onBody: ((ByteArray) -> Unit)? = null): ByteArray {
         val buffer = ByteArrayOutputStream()
         val chunk = ByteArray(16 * 1024)
         while (true) {
@@ -132,6 +147,7 @@ class HttpsAiTransport : AiTransport {
                 break
             }
             buffer.write(chunk, 0, count)
+            onBody?.invoke(chunk.copyOf(count))
         }
         return buffer.toByteArray()
     }

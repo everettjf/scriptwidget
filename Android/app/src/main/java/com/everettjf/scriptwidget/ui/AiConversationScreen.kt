@@ -83,6 +83,9 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.height
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -213,6 +216,8 @@ class AiConversationViewModel : ViewModel() {
     var isMissing by mutableStateOf(false); private set
     /** What is happening in the running turn, in words. */
     var activity by mutableStateOf<String?>(null); private set
+    /** The end of the code being written, while a reply arrives; empty otherwise. */
+    var liveText by mutableStateOf(""); private set
     var drafts by mutableStateOf<List<AiConversationSummary>>(emptyList()); private set
 
     private var cancellation: AiCancellation? = null
@@ -320,6 +325,7 @@ class AiConversationViewModel : ViewModel() {
         cancellation = token
         val run = ++generation
         activity = "Preparing…"
+        liveText = ""
         changed(application)
         val target = installed
         val family = conversation.size.family
@@ -355,6 +361,7 @@ class AiConversationViewModel : ViewModel() {
             AiConversationTurns.applyOutcome(conversation, turnId, outcome)
             cancellation = null
             activity = null
+            liveText = ""
             changed(application)
         }
     }
@@ -362,8 +369,10 @@ class AiConversationViewModel : ViewModel() {
     private fun apply(turnId: String, event: AgentLoopEvent) {
         AiConversationTurns.applyEvent(conversation, turnId, event)
         when (event) {
-            is AgentLoopEvent.Thinking -> activity = if (event.iteration == 1) "Writing the widget…" else "It did not run. Fixing it, attempt ${event.iteration} of ${AiConversationLimits.MAX_ATTEMPTS_PER_TURN}…"
-            is AgentLoopEvent.Running -> activity = "Checking that it runs…"
+            is AgentLoopEvent.Thinking -> { liveText = ""; activity = if (event.iteration == 1) "Writing the widget…" else "It did not run. Fixing it, attempt ${event.iteration} of ${AiConversationLimits.MAX_ATTEMPTS_PER_TURN}…" }
+            is AgentLoopEvent.Running -> { activity = "Checking that it runs…"; liveText = "" }
+            // Only the last lines are kept: that is all the screen shows.
+            is AgentLoopEvent.Partial -> liveText = PromptBuilder.previewOfPartialReply(event.text).trimEnd().lines().takeLast(LIVE_LINES).joinToString("\n")
             else -> Unit
         }
         revision += 1
@@ -377,6 +386,7 @@ class AiConversationViewModel : ViewModel() {
         cancellation = null
         AiConversationTurns.applyOutcome(conversation, running.id, AgentLoopOutcome.Cancelled(running.usage))
         activity = null
+        liveText = ""
         changed(context)
     }
 
@@ -391,6 +401,8 @@ class AiConversationViewModel : ViewModel() {
     override fun onCleared() { cancellation?.cancel() }
 
     companion object {
+        /** How many lines of the code being written are shown. */
+        const val LIVE_LINES = 8
         /** The model a turn talks to. Tests put a scripted one here; nothing else changes it. */
         @Volatile internal var chatFactory: (com.everettjf.scriptwidget.core.ai.AiSettings, String) -> com.everettjf.scriptwidget.core.ai.AiChat =
             { settings, key -> AiClient().bind(settings, key) }
@@ -571,7 +583,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             } else {
                 TurnList(
                     turns = conversation.turns.map { TurnUi.of(conversation, it) }, totalTokens = conversation.totalUsage.totalTokens,
-                    activity = model.activity, running = running,
+                    activity = model.activity, live = model.liveText, running = running,
                     onVersion = { model.selectVersion(context, it) }, onRetry = { model.retry(context, it) },
                     onFailedCode = { id -> conversation.turn(id)?.failedSource?.let { shownCode = "The attempt that did not run" to it } },
                     onChanges = { shownChanges = it },
@@ -674,6 +686,21 @@ internal fun suggestedName(title: String): String {
     return name.replace(Regex("[/\\\\:*?\"<>|]"), " ").trim().ifBlank { "AI Widget" }.replaceFirstChar { it.uppercase() }
 }
 
+/** One size of the widget, drawn small, with its name. Running it costs nothing but time on the device. */
+@Composable
+private fun SizeThumbnail(option: AiWidgetSize, selected: Boolean, files: com.everettjf.scriptwidget.core.runtime.PackageFiles, revision: Int, dark: Boolean, onClick: () -> Unit) {
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(2.dp),
+        modifier = Modifier.clip(RoundedCornerShape(10.dp)).selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
+            .background(if (selected) MaterialTheme.colorScheme.secondaryContainer else Color.Transparent).padding(horizontal = 6.dp, vertical = 4.dp),
+    ) {
+        Box(Modifier.height(36.dp), contentAlignment = Alignment.Center) {
+            WidgetPreview(files = files, packageID = PREVIEW_PACKAGE_ID, family = option.family, dark = dark, revision = revision, maxHeight = if (option == AiWidgetSize.LARGE) 36f else 26f)
+        }
+        Text(option.displayName, style = MaterialTheme.typography.labelSmall, color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
 /** The widget as it is now, its size, its versions and the button that keeps it. */
 @Composable
 private fun PreviewPanel(
@@ -692,7 +719,8 @@ private fun PreviewPanel(
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                for (option in AiWidgetSize.entries) FilterChip(selected = size == option, onClick = { onSize(option) }, label = { Text(option.displayName) })
+                // The widget at every size, side by side; a tap shows that size above.
+                for (option in AiWidgetSize.entries) SizeThumbnail(option, selected = size == option, files = files, revision = version.number, dark = dark) { onSize(option) }
                 Spacer(Modifier.weight(1f))
                 IconButton(enabled = !running && previousId != null, onClick = { previousId?.let(onVersion) }) { Icon(Icons.Default.ChevronLeft, "Previous version") }
                 // Position among the versions that are kept, which is what the arrows move through.
@@ -800,14 +828,14 @@ private data class TurnUi(
 
 @Composable
 private fun TurnList(
-    turns: List<TurnUi>, totalTokens: Int, activity: String?, running: Boolean,
+    turns: List<TurnUi>, totalTokens: Int, activity: String?, live: String, running: Boolean,
     onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, onChanges: (String) -> Unit, modifier: Modifier = Modifier,
 ) {
     val state = rememberLazyListState()
     // The newest turn stays in view while it changes.
-    LaunchedEffect(turns.size, turns.lastOrNull(), activity) { if (turns.isNotEmpty()) state.animateScrollToItem(turns.size) }
+    LaunchedEffect(turns.size, turns.lastOrNull(), activity, live.isEmpty()) { if (turns.isNotEmpty()) state.animateScrollToItem(turns.size) }
     LazyColumn(modifier.fillMaxWidth(), state = state, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-        items(turns, key = { it.id }) { turn -> TurnRow(turn, activity, running, onVersion, onRetry, onFailedCode, onChanges) }
+        items(turns, key = { it.id }) { turn -> TurnRow(turn, activity, live, running, onVersion, onRetry, onFailedCode, onChanges) }
         item(key = "total") {
             if (totalTokens > 0) Text("$totalTokens tokens in this conversation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
             else Spacer(Modifier.size(1.dp))
@@ -832,7 +860,7 @@ private fun VersionLine(turn: TurnUi, running: Boolean, onVersion: (String) -> U
 }
 
 @Composable
-private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, onChanges: (String) -> Unit) {
+private fun TurnRow(turn: TurnUi, activity: String?, live: String, running: Boolean, onVersion: (String) -> Unit, onRetry: (String) -> Unit, onFailedCode: (String) -> Unit, onChanges: (String) -> Unit) {
     val faded = if (turn.abandoned) 0.55f else 1f
     if (turn.manual) {
         Column(Modifier.fillMaxWidth().alpha(faded), verticalArrangement = Arrangement.spacedBy(2.dp)) {
@@ -852,9 +880,18 @@ private fun TurnRow(turn: TurnUi, activity: String?, running: Boolean, onVersion
             )
         }
         when (turn.status) {
-            AiConversationTurn.Status.RUNNING -> Row(verticalAlignment = Alignment.CenterVertically) {
-                CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                Text(activity ?: "Working…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 10.dp))
+            AiConversationTurn.Status.RUNNING -> {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
+                    Text(activity ?: "Working…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 10.dp))
+                }
+                // The code as it arrives. A model that does not stream shows nothing here.
+                if (live.isNotEmpty()) Text(
+                    live, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    softWrap = false, overflow = TextOverflow.Clip, minLines = AiConversationViewModel.LIVE_LINES, maxLines = AiConversationViewModel.LIVE_LINES,
+                    modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(8.dp)
+                        .semantics { contentDescription = "Code being written" },
+                )
             }
             AiConversationTurn.Status.SUCCEEDED -> {
                 Text(turn.note ?: "Done.", style = MaterialTheme.typography.bodyLarge)

@@ -180,7 +180,9 @@ The three bundled examples are under Templates → Android only: Scrolling Check
 **Generate with AI** and **Improve with AI** open a conversation about one widget, as the Mac app's AI window does: describe it, look at the preview, ask for a change, look again. The rules are in [AI conversation](../ai-conversation.md); this is what is particular to Android.
 
 - One screen: the preview on top with its size and its versions, the turns below, the request field above the keyboard.
-- The reply is shown when it is complete. Code is not written out as it arrives.
+- The code of a reply is shown under the request as it arrives. Anthropic and OpenAI-compatible servers are asked for a streamed reply; a server that refuses the streamed form is asked again in the plain way, and the code then appears when it is complete.
+- Under the preview the widget is drawn small at the Small, Medium and Large sizes; a tap shows that size above. Every size is run on the phone and costs no tokens.
+- The editor has an **Improve with AI** button. It saves the file and opens the conversation about that widget. Coming back, the editor shows what **Apply to widget** wrote.
 - **Save widget** makes a new widget from the version on screen. For an installed widget the AI works on a copy in memory, and **Apply to widget** writes the version on screen into it. A version that contacts a host the widget may not reach yet is applied only after you agree, and the network permission for that host is added then. A conversation never removes a host a widget already has.
 - A conversation belongs to a widget by its installation, so it follows a rename and is deleted with the widget. Code changed elsewhere (the editor, a Gallery update) is taken over as a version the next time the conversation opens.
 - Conversations that are not saved as a widget are drafts, offered under **Continue a draft**. All conversations are files in the app's no-backup directory: they stay on the device and are not part of a device backup. They hold requests, notes and widget sources, never a key or a provider.
@@ -189,7 +191,7 @@ The three bundled examples are under Templates → Android only: Scrolling Check
 - A conversation that has grown heavy says so above the request field and offers **Start new from here**.
 
 ![The changed lines of a version](../images/ai-conversation-android-changes.png)
-- The Mac app's editor panel, the three sizes side by side and the list of providers are not on Android: there is one provider profile at a time, chosen in Settings → AI.
+- The Mac app's panel beside the editor and the list of providers are not on Android: the conversation is its own screen, and there is one provider profile at a time, chosen in Settings → AI.
 
 ### Synced documents and iPhone
 

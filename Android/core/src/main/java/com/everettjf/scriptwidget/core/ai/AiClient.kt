@@ -22,6 +22,12 @@ class AiChatResult(val content: String, val usage: AiTokenUsage, val truncated: 
 fun interface AiChat {
     /** @throws AiClientException on every failure, including cancellation. */
     fun chat(messages: List<AiMessage>, cancellation: AiCancellation): AiChatResult
+
+    /**
+     * Like [chat], and reports the reply as it is written: [onText] gets all of the text so far,
+     * on the calling thread. A model that can not stream reports nothing until it returns.
+     */
+    fun chatStream(messages: List<AiMessage>, cancellation: AiCancellation, onText: (String) -> Unit): AiChatResult = chat(messages, cancellation)
 }
 
 /**
@@ -44,7 +50,49 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
     }
 
     /** An [AiChat] bound to [settings] and [apiKey], for [AgentLoop]. */
-    fun bind(settings: AiSettings, apiKey: String): AiChat = AiChat { messages, cancellation -> chat(messages, settings, apiKey, cancellation) }
+    fun bind(settings: AiSettings, apiKey: String): AiChat = object : AiChat {
+        override fun chat(messages: List<AiMessage>, cancellation: AiCancellation): AiChatResult = chat(messages, settings, apiKey, cancellation)
+        override fun chatStream(messages: List<AiMessage>, cancellation: AiCancellation, onText: (String) -> Unit): AiChatResult =
+            chatStream(messages, settings, apiKey, cancellation, onText)
+    }
+
+    /**
+     * Sends [messages] asking for a streamed reply and reports the text so far through [onText].
+     * Port of `AIClient.chatStream`. A server that refuses the streamed form, answers it in the
+     * plain form, or sends nothing that can be read is asked once more in the plain way.
+     */
+    fun chatStream(messages: List<AiMessage>, settings: AiSettings, apiKey: String, cancellation: AiCancellation = AiCancellation(), onText: (String) -> Unit): AiChatResult {
+        val request = buildChatRequest(messages, settings, apiKey, stream = true)
+        if (cancellation.isCancelled) throw AiClientException(AiErrorKind.CANCELLED, "Cancelled.")
+        val events = AiStreamReader(settings.profile.kind.usesAnthropicMessages, onText)
+        val response = scrub(apiKey) {
+            try {
+                transport.executeStreaming(request, cancellation) { events.feed(it) }
+            } catch (error: AiClientException) {
+                // What was already read is not a reply; a stream that broke off is not retried.
+                throw error
+            } catch (_: Exception) {
+                if (cancellation.isCancelled) throw AiClientException(AiErrorKind.CANCELLED, "Cancelled.")
+                throw AiClientException(AiErrorKind.NETWORK, "The AI request could not be sent.")
+            }
+        }
+        return scrub(apiKey) {
+            if (response.status in listOf(401, 403, 429)) throw httpError(response)
+            events.finish()
+            when {
+                // The server would not stream: ask in the plain way.
+                response.status !in 200..299 -> chat(messages, settings, apiKey, cancellation)
+                events.refused -> throw AiClientException(AiErrorKind.REFUSED, "The model declined this request. Rephrase the description and try again.")
+                events.sawEvent && events.text.isNotBlank() -> {
+                    onText(events.text)
+                    AiChatResult(events.text, events.usage, events.truncated)
+                }
+                events.sawEvent -> throw AiClientException(AiErrorKind.EMPTY_RESPONSE, "The model returned an empty response.")
+                // A plain JSON body means the server ignored "stream".
+                else -> parseChatResponse(settings.profile.kind, response).also { onText(it.content) }
+            }
+        }
+    }
 
     /** Model identifiers the endpoint lists (`GET /v1/models`), sorted. Used by "Test connection". */
     fun listModels(profile: AiProfile, apiKey: String, cancellation: AiCancellation = AiCancellation()): List<String> {
@@ -61,7 +109,7 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
     }
 
     /** Builds the chat request for the profile's API style. Visible so its JSON shape can be tested. */
-    fun buildChatRequest(messages: List<AiMessage>, settings: AiSettings, apiKey: String): AiHttpRequest {
+    fun buildChatRequest(messages: List<AiMessage>, settings: AiSettings, apiKey: String, stream: Boolean = false): AiHttpRequest {
         val profile = settings.profile
         val base = endpoint(profile)
         val key = requireKey(apiKey)
@@ -84,6 +132,11 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
             path = "/v1/chat/completions"
             body.put("messages", JSONArray(messages.map { JSONObject().put("role", it.role.wire).put("content", it.content) }))
             body.put("temperature", settings.temperature)
+            if (stream) body.put("stream_options", JSONObject().put("include_usage", true))
+        }
+        if (stream) {
+            body.put("stream", true)
+            headers["Accept"] = "text/event-stream"
         }
         return AiHttpRequest("POST", base + path, headers, body.toString().toByteArray(Charsets.UTF_8), CONNECT_TIMEOUT_MILLISECONDS, CHAT_TIMEOUT_MILLISECONDS, MAXIMUM_RESPONSE_BYTES)
     }
@@ -205,5 +258,97 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
         /** Same 15 s as `AIClient.availableModels`. */
         const val MODELS_TIMEOUT_MILLISECONDS = 15_000
         private val ERROR_CODE = Regex("[A-Za-z0-9_.-]{1,64}")
+    }
+}
+
+/**
+ * Reads a server-sent event stream of either API style as its bytes arrive and keeps the text
+ * so far. Lines are split on the bytes, so a character that arrives in two pieces is not broken.
+ */
+internal class AiStreamReader(private val anthropic: Boolean, private val onText: (String) -> Unit) {
+    private val pending = java.io.ByteArrayOutputStream()
+    private val content = StringBuilder()
+    private var lastSent = 0L
+    private var input = 0
+    private var output = 0
+    private var total = 0
+
+    var sawEvent = false
+        private set
+    var truncated = false
+        private set
+    var refused = false
+        private set
+    val text: String get() = content.toString()
+    val usage: AiTokenUsage get() = AiTokenUsage(input, output, if (total > 0) total else input + output)
+
+    fun feed(bytes: ByteArray) {
+        for (byte in bytes) {
+            if (byte == '\n'.code.toByte()) {
+                line(String(pending.toByteArray(), Charsets.UTF_8).trimEnd('\r'))
+                pending.reset()
+            } else if (pending.size() < MAXIMUM_LINE_BYTES) {
+                pending.write(byte.toInt())
+            }
+        }
+    }
+
+    /** Reads a last line that did not end with a line break. */
+    fun finish() {
+        if (pending.size() > 0) line(String(pending.toByteArray(), Charsets.UTF_8).trimEnd('\r'))
+        pending.reset()
+    }
+
+    private fun line(line: String) {
+        if (!line.startsWith("data:")) return
+        val payload = line.substring(5).trim()
+        if (payload == "[DONE]" || payload.isEmpty()) return
+        val json = runCatching { JSONObject(payload) }.getOrNull() ?: return
+        sawEvent = true
+        val piece = if (anthropic) anthropicEvent(json) else chatCompletionEvent(json)
+        if (piece.isNullOrEmpty()) return
+        if (content.length + piece.length > AiClient.MAXIMUM_RESPONSE_BYTES) throw AiClientException(AiErrorKind.RESPONSE_TOO_LARGE, "The AI response exceeded the size limit.")
+        content.append(piece)
+        val now = System.nanoTime() / 1_000_000
+        if (now - lastSent >= 80) {
+            lastSent = now
+            onText(content.toString())
+        }
+    }
+
+    private fun chatCompletionEvent(json: JSONObject): String? {
+        json.optJSONObject("usage")?.let { usage ->
+            input = count(usage, "prompt_tokens"); output = count(usage, "completion_tokens"); total = count(usage, "total_tokens")
+        }
+        val choice = json.optJSONArray("choices")?.optJSONObject(0) ?: return null
+        if (choice.opt("finish_reason") == "length") truncated = true
+        return choice.optJSONObject("delta")?.opt("content") as? String
+    }
+
+    private fun anthropicEvent(json: JSONObject): String? {
+        when (json.optString("type")) {
+            "message_start" -> json.optJSONObject("message")?.optJSONObject("usage")?.let { usage ->
+                input = count(usage, "input_tokens") + count(usage, "cache_creation_input_tokens") + count(usage, "cache_read_input_tokens")
+            }
+            "message_delta" -> {
+                json.optJSONObject("usage")?.let { output = count(it, "output_tokens") }
+                when (json.optJSONObject("delta")?.opt("stop_reason")) {
+                    "max_tokens" -> truncated = true
+                    "refusal" -> refused = true
+                }
+            }
+            "content_block_delta" -> {
+                val delta = json.optJSONObject("delta") ?: return null
+                // Thinking and tool input are not widget code.
+                if (delta.optString("type") == "text_delta") return delta.opt("text") as? String
+            }
+        }
+        return null
+    }
+
+    private fun count(usage: JSONObject, key: String): Int = (usage.opt(key) as? Number)?.toInt()?.coerceAtLeast(0) ?: 0
+
+    private companion object {
+        const val MAXIMUM_LINE_BYTES = 1024 * 1024
     }
 }

@@ -78,12 +78,16 @@
 - 编辑器里的 Copilot 也改成了对话，从 Mac 的面板移植：AI 改的是副本，Apply 才写入文档，新域名先确认。
 - 对话界面的文字加了简体中文（iPhone、iPad）。
 
+## Android 原来的三项差距
+
+已经补上：回复逐字显示；预览下方并排画出三个尺寸，点一下切换；编辑器里有“Improve with AI”按钮，保存后进入这个 Widget 的对话，应用后回到编辑器会显示新代码。手机上没有地方放编辑器旁边的面板，所以对话仍然是单独一屏。Pixel 6 上的界面测试覆盖了这三项，用的是脚本模型。
+
 ## 还没有做的
 
 - **成批的多轮评测**：跑一次 `Scripts/ai-conversation-quality.sh`，看通过率和改动行数。需要密钥，由所有者通过环境变量提供。
 - **iPhone、iPad 真机**上没有跑过；模拟器和这台 Mac 上都点过了。
 - **Android 上真实模型的验证**。
-- **Android 的三项差距**：回复不逐字输出、一次只看一个尺寸、编辑器里没有 Copilot。记在 [`docs/android/TODO.md`](android/TODO.md)。
+- **Android 上的流式输出没有用真实服务商跑过**：Anthropic 和兼容 OpenAI 两种事件格式的读取只有按格式写的测试。
 - **Mac 和 Android 的对话界面没有中文**：Mac 应用整体还没有本地化，Android 的界面文字写在代码里，都需要先搭本地化的架子。iPhone 上只剩“已自动修复 N 次”一句是英文。
 - 上面“实测发现的问题”里的第 4、6 条。
 - **兼容 OpenAI 的服务商**下没有实际跑过：这台 Mac 上只配置了 Apple Private Cloud Compute，所以逐字输出和每轮 4 次尝试没有用真实服务商验证。

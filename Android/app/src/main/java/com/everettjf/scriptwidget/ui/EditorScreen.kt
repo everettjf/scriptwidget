@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.AutoFixHigh
 import androidx.compose.material.icons.filled.SwapHoriz
 import androidx.navigation.NavController
@@ -101,6 +102,23 @@ fun EditorScreen(navigation: NavController, name: String) {
         else studio.content { content -> if (content == null || write(content)) then() }
     }
 
+    // Coming back from the AI conversation, which may have applied a version: show what the file holds now.
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner, path) {
+        val observer = androidx.lifecycle.LifecycleEventObserver { _, event ->
+            if (event != androidx.lifecycle.Lifecycle.Event.ON_RESUME) return@LifecycleEventObserver
+            val onDisk = AppServices.library.find(installed.name)?.files?.readText(path) ?: return@LifecycleEventObserver
+            if (onDisk != saved) {
+                saved = onDisk
+                text = TextFieldValue(onDisk)
+                if (!plain) studio.open("${installed.installation}/$path", onDisk)
+                revision += 1
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
     BackHandler { saveThen { navigation.popBackStack() } }
 
     Scaffold(topBar = {
@@ -108,6 +126,8 @@ fun EditorScreen(navigation: NavController, name: String) {
             title = { Text(if (dirty) "$path •" else path, maxLines = 1) },
             navigationIcon = { IconButton(onClick = { saveThen { navigation.popBackStack() } }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
             actions = {
+                // The conversation about this widget takes what is saved here and gives a version back with Apply.
+                IconButton(onClick = { saveThen { navigation.navigate("ai/${android.net.Uri.encode(installed.name)}") } }) { Icon(Icons.Default.AutoAwesome, "Improve with AI") }
                 if (!plain) IconButton(onClick = { studio.format() }) { Icon(Icons.Default.AutoFixHigh, "Format") }
                 IconButton(onClick = { saveThen { plain = !plain; text = TextFieldValue(saved) } }) { Icon(Icons.Default.SwapHoriz, if (plain) "Use the Studio editor" else "Use the plain editor") }
                 IconButton(onClick = { saveThen { revision += 1; Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.PlayArrow, "Save and run") }

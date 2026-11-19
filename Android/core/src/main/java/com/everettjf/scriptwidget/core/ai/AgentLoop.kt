@@ -28,6 +28,8 @@ sealed class AgentLoopEvent {
     class RanSucceeded(val iteration: Int) : AgentLoopEvent()
     /** Cumulative token usage so far. */
     class TokensUsed(val usage: AiTokenUsage) : AgentLoopEvent()
+    /** In a conversation turn: the reply so far, while it is being written. */
+    class Partial(val iteration: Int, val text: String) : AgentLoopEvent()
     /** In a conversation turn: the model's one-sentence account of the candidate. */
     class Note(val iteration: Int, val text: String) : AgentLoopEvent()
 }
@@ -125,7 +127,8 @@ class AgentLoop(
             }
 
             val result = try {
-                chat.chat(messages, cancellation)
+                if (isTurn) chat.chatStream(messages, cancellation) { text -> onEvent(AgentLoopEvent.Partial(iteration, text)) }
+                else chat.chat(messages, cancellation)
             } catch (failure: AiClientException) {
                 if (cancellation.isCancelled || failure.kind == AiErrorKind.CANCELLED) return AgentLoopOutcome.Cancelled(usage)
                 return AgentLoopOutcome.Failed(failure.message ?: "The AI request failed.", usage)
