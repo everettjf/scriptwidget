@@ -1,10 +1,11 @@
 //
 //  AIConversationTurnsView.swift
-//  ScriptWidgetMac
+//  ScriptWidget
 //
 //  The turns of an AI conversation, one under the other: the request, what
 //  came of it, the version it made, and what to do when it did not work.
-//  Used by the AI window and by the editor's Copilot panel.
+//  Used by the AI window and the editor's Copilot panel on the Mac, and by
+//  the AI screen on iPhone and iPad.
 //
 
 import SwiftUI
@@ -84,7 +85,7 @@ struct AIConversationTurnsView: View {
                     .lineLimit(8, reservesSpace: true)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(8)
-                    .background(Color(nsColor: .textBackgroundColor).opacity(0.6), in: .rect(cornerRadius: 6))
+                    .background(Self.codeBackground.opacity(0.6), in: .rect(cornerRadius: 6))
                     .accessibilityLabel("Code being written")
             }
         case .succeeded:
@@ -143,7 +144,11 @@ struct AIConversationTurnsView: View {
                         .foregroundStyle(.secondary)
                 } else {
                     Button("Go to This Version") { session.selectVersion(version.id) }
+                        #if os(macOS)
                         .buttonStyle(.link)
+                        #else
+                        .buttonStyle(.borderless)
+                        #endif
                         .font(.caption)
                         .disabled(session.isRunning)
                 }
@@ -171,6 +176,13 @@ struct AIConversationTurnsView: View {
         }
     }
 
+    private static var codeBackground: Color {
+        #if os(macOS)
+        Color(nsColor: .textBackgroundColor)
+        #else
+        Color(uiColor: .secondarySystemGroupedBackground)
+        #endif
+    }
 
     private static func tail(of text: String, lines: Int) -> String {
         text.split(separator: "\n", omittingEmptySubsequences: false).suffix(lines).joined(separator: "\n")

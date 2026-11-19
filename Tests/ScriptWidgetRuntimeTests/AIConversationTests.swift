@@ -9,9 +9,11 @@
 //
 
 import XCTest
-#if os(macOS)
 import SwiftUI
+#if os(macOS)
 import AppKit
+#else
+import UIKit
 #endif
 @testable import ScriptWidget
 
@@ -174,6 +176,123 @@ final class AIConversationTests: XCTestCase {
         XCTAssertTrue(second.contains("<text>Hello</text>"), "the current source is sent")
         XCTAssertTrue(second.contains("Add a second line"))
         XCTAssertTrue(second.contains("Keep it tidy."), "skills apply to every turn")
+    }
+
+    // MARK: - edit replies
+
+    private func edit(_ summary: String, _ pairs: [(String, String)]) -> ConversationProviderStub.Reply {
+        let blocks = pairs.map { "<<<<<<< SEARCH\n\($0.0)\n=======\n\($0.1)\n>>>>>>> REPLACE" }.joined(separator: "\n")
+        return .content("SUMMARY: \(summary)\n```edit\n\(blocks)\n```")
+    }
+
+    func testEditBlocksAreReadAndAppliedInOrder() throws {
+        let reply = """
+        SUMMARY: Two changes.
+        ```edit
+        <<<<<<< SEARCH
+          <text>Hello</text>
+        =======
+          <text>Hi</text>
+          <text>there</text>
+        >>>>>>> REPLACE
+        <<<<<<< SEARCH
+        const a = 1;
+        =======
+        >>>>>>> REPLACE
+        ```
+        """
+        let edits = try XCTUnwrap(AISourceEdits.parse(reply))
+        XCTAssertEqual(edits, [
+            AISourceEdit(search: "  <text>Hello</text>", replace: "  <text>Hi</text>\n  <text>there</text>"),
+            AISourceEdit(search: "const a = 1;", replace: ""),
+        ])
+        let source = "const a = 1;\r\n$render(\n  <text>Hello</text>\n)"
+        XCTAssertEqual(try AISourceEdits.apply(edits, to: source), "\n$render(\n  <text>Hi</text>\n  <text>there</text>\n)\n")
+        XCTAssertNil(try AISourceEdits.parse("SUMMARY: x\n```jsx\n$render(<text>a</text>)\n```"), "a full reply has no edits")
+    }
+
+    func testEditThatIsMissingAmbiguousOrMalformedIsRefused() throws {
+        func reason(_ body: () throws -> Void) -> String {
+            do { try body() } catch { return (error as? AISourceEdits.Failure)?.reason ?? "other" }
+            return "none"
+        }
+        let source = "<text>a</text>\n<text>a</text>\n<text>b</text>\n"
+        XCTAssertTrue(reason { _ = try AISourceEdits.apply([AISourceEdit(search: "<text>c</text>", replace: "x")], to: source) }.contains("is not in the current code"))
+        XCTAssertTrue(reason { _ = try AISourceEdits.apply([AISourceEdit(search: "<text>a</text>", replace: "x")], to: source) }.contains("2 times"))
+        // Nothing is applied when a later edit fails.
+        XCTAssertTrue(reason {
+            _ = try AISourceEdits.apply([AISourceEdit(search: "<text>b</text>", replace: "x"), AISourceEdit(search: "nowhere", replace: "y")], to: source)
+        }.contains("edit 2"))
+        XCTAssertTrue(reason { _ = try AISourceEdits.parse("<<<<<<< SEARCH\na\n=======\nb") }.contains("no >>>>>>> REPLACE"))
+        XCTAssertTrue(reason { _ = try AISourceEdits.parse("<<<<<<< SEARCH\n\n=======\nb\n>>>>>>> REPLACE") }.contains("nothing in its SEARCH"))
+        XCTAssertTrue(reason { _ = try AISourceEdits.parse("<<<<<<< SEARCH\na\n>>>>>>> REPLACE") }.contains("ends without"))
+        let many = Array(repeating: "<<<<<<< SEARCH\na\n=======\nb\n>>>>>>> REPLACE", count: AISourceEdits.maxEdits + 1).joined(separator: "\n")
+        XCTAssertTrue(reason { _ = try AISourceEdits.parse(many) }.contains("more than"))
+    }
+
+    func testTurnPromptOffersEditBlocksOnlyWhenThereIsCodeToChange() {
+        func prompt(_ current: String?) -> String {
+            PromptBuilder.userPromptTurn(AITurnContext(
+                history: [], currentCode: current, previousCode: nil, request: "x",
+                skillsText: nil, size: .medium, currentDomains: [], runtimeDiagnostic: nil
+            ))
+        }
+        XCTAssertTrue(prompt("CODE").contains(AISourceEdits.searchMarker))
+        XCTAssertFalse(prompt(nil).contains(AISourceEdits.searchMarker))
+    }
+
+    func testTurnAnsweredWithEditBlocksChangesOnlyThatPlace() async {
+        ConversationProviderStub.enqueue([
+            reply("Made a greeting.", Self.goodWidget),
+            edit("Says Hi now.", [("<text>Hello</text>", "<text>Hi</text>")]),
+        ])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        session.send("Say Hi instead")
+        await session.settle()
+
+        let turn = session.conversation.turns[1]
+        XCTAssertEqual(turn.status, .succeeded, turn.errorSummary ?? "")
+        XCTAssertEqual(turn.note, "Says Hi now.")
+        XCTAssertEqual(turn.repairs, 0)
+        XCTAssertEqual(session.currentSource, "$render(<vstack><text>Hi</text></vstack>)\n")
+        XCTAssertEqual(texts(session.previewElement), ["Hi"])
+    }
+
+    func testEditThatDoesNotApplyIsSentBackAndTheFullCodeIsAccepted() async {
+        ConversationProviderStub.enqueue([
+            reply("Made a greeting.", Self.goodWidget),
+            edit("Says Hi now.", [("<text>Goodbye</text>", "<text>Hi</text>")]),
+            reply("Says Hi now.", Self.betterWidget),
+        ])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        session.send("Say Hi instead")
+        await session.settle()
+
+        let turn = session.conversation.turns[1]
+        XCTAssertEqual(turn.status, .succeeded, turn.errorSummary ?? "")
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(session.currentSource, Self.betterWidget)
+        let repair = ConversationProviderStub.bodies.last ?? ""
+        XCTAssertTrue(repair.contains("could not be applied"), "the model is told why")
+        XCTAssertTrue(repair.contains("is not in the current code"))
+    }
+
+    func testEditsThatNeverApplyLeaveTheWidgetAsItWas() async {
+        ConversationProviderStub.enqueue([reply("Made a greeting.", Self.goodWidget)])
+        ConversationProviderStub.enqueue(Array(repeating: edit("Tried.", [("nowhere", "x")]), count: 6))
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        session.send("Change it")
+        await session.settle()
+
+        XCTAssertEqual(session.conversation.turns[1].status, .unconverged)
+        XCTAssertEqual(session.currentSource, Self.goodWidget)
+        XCTAssertEqual(session.conversation.versions.count, 1)
     }
 
     func testChangeThatNeverRunsLeavesTheWidgetAndPreviewAsTheyWere() async {
@@ -821,20 +940,21 @@ final class AIConversationTests: XCTestCase {
         XCTAssertTrue(session.currentSource.contains("httpbin.org"))
     }
 
-    // MARK: - window snapshot (macOS, on request)
+    // MARK: - pictures of the window and the screen (on request)
 
-    #if os(macOS)
-    /// Writes pictures of the conversation window for review. Runs only when
-    /// AI_CONVERSATION_SNAPSHOT_DIR names a folder; it asserts nothing about looks.
-    func testWriteWindowSnapshotsWhenRequested() async throws {
+    private static func snapshotFolder() throws -> URL {
         let environment = ProcessInfo.processInfo.environment
         guard let folder = environment["AI_CONVERSATION_SNAPSHOT_DIR"]
                 ?? environment["TEST_RUNNER_AI_CONVERSATION_SNAPSHOT_DIR"] else {
-            throw XCTSkip("Set AI_CONVERSATION_SNAPSHOT_DIR to write window pictures")
+            throw XCTSkip("Set AI_CONVERSATION_SNAPSHOT_DIR to write pictures")
         }
         let output = URL(fileURLWithPath: folder, isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        return output
+    }
 
+    /// Two turns that worked and one that did not, as the pictures show them.
+    private static func sampleConversation() -> AIConversation {
         let card = """
         const today = new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" });
 
@@ -874,8 +994,15 @@ final class AIConversationTests: XCTestCase {
             $0.repairs = 3
             $0.usage = usage
         }
+        return conversation
+    }
 
-        try await snapshot(AIGenerateWindowView(conversation: conversation), to: output.appendingPathComponent("conversation.png"))
+    #if os(macOS)
+    /// Writes pictures of the conversation window for review. Runs only when
+    /// AI_CONVERSATION_SNAPSHOT_DIR names a folder; it asserts nothing about looks.
+    func testWriteWindowSnapshotsWhenRequested() async throws {
+        let output = try Self.snapshotFolder()
+        try await snapshot(AIGenerateWindowView(conversation: Self.sampleConversation()), to: output.appendingPathComponent("conversation.png"))
         try await snapshot(AIGenerateWindowView(), to: output.appendingPathComponent("empty.png"))
     }
 
@@ -898,6 +1025,35 @@ final class AIConversationTests: XCTestCase {
         let bitmap = try XCTUnwrap(host.bitmapImageRepForCachingDisplay(in: host.bounds))
         host.cacheDisplay(in: host.bounds, to: bitmap)
         try XCTUnwrap(bitmap.representation(using: .png, properties: [:])).write(to: url)
+    }
+    #else
+    /// Writes pictures of the conversation screen of the device the tests run
+    /// on, an iPhone or an iPad. Runs only when AI_CONVERSATION_SNAPSHOT_DIR
+    /// names a folder; it asserts nothing about looks.
+    func testWriteScreenSnapshotsWhenRequested() async throws {
+        let output = try Self.snapshotFolder()
+        let device = UIDevice.current.userInterfaceIdiom == .pad ? "ipad" : "iphone"
+        try await snapshot(NavigationStack { AIGenerateView(conversation: Self.sampleConversation()) },
+                           to: output.appendingPathComponent("\(device)-conversation.png"))
+        try await snapshot(NavigationStack { AIGenerateView() },
+                           to: output.appendingPathComponent("\(device)-empty.png"))
+    }
+
+    private func snapshot(_ view: some View, to url: URL) async throws {
+        guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene }).first else {
+            throw XCTSkip("No window scene to draw in")
+        }
+        let window = UIWindow(windowScene: scene)
+        window.rootViewController = UIHostingController(rootView: view)
+        window.overrideUserInterfaceStyle = .light
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true }
+        // The preview runs the widget off the main thread; give it time to arrive.
+        try await Task.sleep(nanoseconds: 3_000_000_000)
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        try XCTUnwrap(image.pngData()).write(to: url)
     }
     #endif
 

@@ -78,6 +78,8 @@ class AgentLoop(private val chat: AiChat) {
         val system = AiMessage(AiMessage.Role.SYSTEM, request.systemPrompt)
         val firstUser: AiMessage
         var latest: AiCandidate?
+        // In a turn: the code the model was shown last, which a reply written as edit blocks changes.
+        var editBase: String? = null
         when (val mode = request.mode) {
             is AgentLoopRequest.Mode.Fresh -> {
                 firstUser = AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptFirst(PromptBuilder.augmentWithSkills(mode.userDescription, request.skillsText), request.size))
@@ -93,6 +95,7 @@ class AgentLoop(private val chat: AiChat) {
             is AgentLoopRequest.Mode.Turn -> {
                 firstUser = AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptTurn(mode.context))
                 latest = null
+                editBase = mode.context.currentCode
             }
         }
         val isTurn = request.mode is AgentLoopRequest.Mode.Turn
@@ -134,7 +137,22 @@ class AgentLoop(private val chat: AiChat) {
                 val reply = PromptBuilder.parseTurnReply(result.content)
                 // A repair may leave the summary out; the first one still describes the turn.
                 reply.note?.let { note = it; onEvent(AgentLoopEvent.Note(iteration, it)) }
-                reply.candidate
+                val edited = try {
+                    AiSourceEdits.parse(result.content)?.let { edits ->
+                        val base = editBase
+                        if (base.isNullOrEmpty()) throw AiSourceEdits.Failure("there is no current code to change")
+                        AiSourceEdits.apply(edits, base)
+                    }
+                } catch (failure: AiSourceEdits.Failure) {
+                    // Refused whole: the model is told why and asked for all of the code.
+                    val summary = "The edit blocks could not be applied: ${failure.reason}. Reply with the full widget code instead."
+                    if (!editBase.isNullOrEmpty()) latest = AiCandidate(editBase!!, latest?.manifestJson)
+                    lastError = summary
+                    lastLogs = emptyList()
+                    onEvent(AgentLoopEvent.RanFailed(iteration, summary, emptyList()))
+                    continue
+                }
+                if (edited != null) AiCandidate(edited, reply.candidate.manifestJson) else reply.candidate
             } else AiOutput.extract(result.content)
             // Parse the declaration before anything runs: an invalid one is feedback for the model, never a guess.
             var declarationError: String? = null
@@ -143,6 +161,7 @@ class AgentLoop(private val chat: AiChat) {
             }
             val candidate = AiCandidate(extracted.source, declaration)
             latest = candidate
+            if (isTurn && candidate.source.isNotEmpty()) editBase = candidate.source
             onEvent(AgentLoopEvent.Produced(iteration, candidate.source, candidate.manifestJson))
 
             onEvent(AgentLoopEvent.Running(iteration))
