@@ -353,11 +353,15 @@ private struct StudioCopilotConversationView: View {
                 shownCode = ShownCode(title: "Version \(conversation.currentVersion?.number ?? 0)", code: session.currentSource)
             }
             .controlSize(.small)
-            Button("Apply to Editor", systemImage: "checkmark") {
+            // The panel is narrow: a longer title is cut off.
+            Button("Apply", systemImage: "checkmark") {
                 if hostsToAllow.isEmpty { apply(allowingHosts: false) } else { confirmingNetwork = true }
             }
             .buttonStyle(.borderedProminent)
             .controlSize(.small)
+            .fixedSize()
+            .help("Write this version into the editor")
+            .accessibilityLabel("Apply to Editor")
             .disabled(isApplying || !canWork)
         }
         .padding(10)
