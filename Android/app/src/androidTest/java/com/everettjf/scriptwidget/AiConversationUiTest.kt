@@ -65,11 +65,18 @@ class AiConversationUiTest {
         settings.activeKind = AiProviderKind.ANTHROPIC
         settings.save(AiProfile.defaults(AiProviderKind.ANTHROPIC), "scripted-model-no-real-key")
         AiConversationViewModel.chatFactory = { _, _ ->
-            AiChat { messages: List<AiMessage>, _: AiCancellation ->
-                requests += messages.last().content
-                gate?.await(20, TimeUnit.SECONDS)
-                Thread.sleep(400)
-                AiChatResult(replies.removeFirst(), AiTokenUsage(1200, 180, 1380))
+            object : AiChat {
+                override fun chat(messages: List<AiMessage>, cancellation: AiCancellation): AiChatResult = chatStream(messages, cancellation) {}
+                // The reply is written out in two pieces, as a model that streams would.
+                override fun chatStream(messages: List<AiMessage>, cancellation: AiCancellation, onText: (String) -> Unit): AiChatResult {
+                    requests += messages.last().content
+                    replies.firstOrNull()?.let { onText(it.take(it.length / 2)) }
+                    gate?.await(20, TimeUnit.SECONDS)
+                    Thread.sleep(400)
+                    val reply = replies.removeFirst()
+                    onText(reply)
+                    return AiChatResult(reply, AiTokenUsage(1200, 180, 1380))
+                }
             }
         }
     }
@@ -159,6 +166,7 @@ class AiConversationUiTest {
         tap(By.desc("Send"))
         wait(By.desc("Stop"))
         wait(By.text("Writing the widget…"))
+        assertTrue("the code so far is shown", wait(By.desc("Code being written")).text.contains("render"))
         picture("03-writing")
         gate!!.countDown(); gate = null
         wait(By.text("A dark clock card with the time and the date."))
@@ -257,5 +265,33 @@ class AiConversationUiTest {
         tap(By.text("Close"))
         val edited = AiServices.conversations(context).latest(saved.installation)!!.currentVersion!!.source
         assertTrue("only that line changed", edited.contains("12:45") && !edited.contains("12:30") && edited.contains("#15803d") && edited.contains("example.org"))
+        // The widget is drawn at the three sizes under the preview, besides the preview itself.
+        assertEquals(4, device.findObjects(By.desc("Widget preview")).size)
+
+        // The editor leads into the same conversation, and shows what was applied when it comes back.
+        tap(By.text("Apply to widget"))
+        tap(By.text("Apply"))
+        wait(By.text("In the widget"))
+        device.pressBack()
+        tap(By.text("Edit code"))
+        wait(By.desc("Improve with AI"))
+        picture("16-editor")
+        tap(By.desc("Improve with AI"))
+        wait(By.text("The time reads 12:45."))
+        replies += "SUMMARY: The time reads 13:00.\n```edit\n<<<<<<< SEARCH\n    <text font=\"title\" color=\"white\">12:45</text>\n=======\n" +
+            "    <text font=\"title\" color=\"white\">13:00</text>\n>>>>>>> REPLACE\n```"
+        ask("Make the time say 13:00")
+        wait(By.text("The time reads 13:00."))
+        tap(By.text("Apply to widget"))
+        tap(By.text("Apply"))
+        wait(By.text("In the widget"))
+        assertTrue(AppServices.library.find(saved.name)!!.files.readText("main.jsx")!!.contains("13:00"))
+        device.pressBack()
+        // Back in the editor, with the applied code; leaving it must not write the old code back.
+        wait(By.desc("Improve with AI"))
+        picture("17-editor-after-apply")
+        device.pressBack()
+        wait(By.text("Edit code"))
+        assertTrue("the editor did not overwrite the applied version", AppServices.library.find(saved.name)!!.files.readText("main.jsx")!!.contains("13:00"))
     }
 }
