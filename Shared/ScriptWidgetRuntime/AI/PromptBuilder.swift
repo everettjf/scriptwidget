@@ -96,6 +96,8 @@ struct AITurnContext {
     /// Formatted text of the selected Skills; nil for none.
     let skillsText: String?
     let size: AIWidgetSize
+    /// Hosts the current widget declares it contacts.
+    var currentDomains: [String] = []
 }
 
 struct AICopilotChangeSummary: Equatable {
@@ -409,6 +411,8 @@ enum PromptBuilder {
             \(current)
             ```
 
+            \(context.currentDomains.isEmpty ? "It declares no network use." : "Its network declaration: " + AINetworkDeclaration(domains: context.currentDomains).json)
+
             The user now asks:
             \(context.request)
 
@@ -421,15 +425,35 @@ enum PromptBuilder {
         parts.append("""
         Reply in exactly this form, which replaces the output rule above for this conversation:
         SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
-        then the FULL widget code in one ```jsx fenced block. Nothing else.
+        then the FULL widget code in one ```jsx fenced block.
+        If, and only if, the widget uses `fetch` or `$http`, end with one more fenced block
+        that declares every host it contacts:
+        ```json
+        {"permissions": ["network"], "networkDomains": ["api.example.com"]}
+        ```
+        Hosts are exact lowercase names or `*.example.com`. A host that is not declared is
+        blocked. No other permission can be declared. Nothing else.
         """)
         return parts.joined(separator: "\n\n")
     }
 
-    /// Splits a turn reply into the model's note and the widget code. A reply
-    /// without the SUMMARY line or without a fence is still read as code.
-    static func parseTurnReply(_ raw: String) -> (note: String?, code: String) {
-        let text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+    /// Splits a turn reply into the model's note, the widget code and the
+    /// network declaration, if any. A reply without the SUMMARY line or without
+    /// a fence is still read as code.
+    static func parseTurnReply(_ raw: String) -> (note: String?, code: String, declaration: String?) {
+        var text = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        // The declaration is the last ```json block; take it out first so that
+        // it can never be mistaken for the widget.
+        var declaration: String?
+        if let open = text.range(of: "```json", options: .backwards),
+           let close = text.range(of: "```", range: open.upperBound..<text.endIndex) {
+            declaration = String(text[open.upperBound..<close.lowerBound])
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            text.removeSubrange(open.lowerBound..<close.upperBound)
+            text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
         let fenceStart = text.range(of: "```")?.lowerBound ?? text.endIndex
         var note: String?
         var body = text
@@ -444,7 +468,24 @@ enum PromptBuilder {
             }
             break
         }
-        return (note, stripCodeFences(body))
+        return (note, stripCodeFences(body), declaration)
+    }
+
+    /// Added to a repair request inside a conversation, where the declaration
+    /// block is still allowed.
+    static let turnRepairSuffix = """
+
+    Keep the reply form of this conversation: the full code in one ```jsx block, then the
+    ```json network declaration block only if the widget uses the network.
+    """
+
+    /// What the text written so far looks like as code, for showing it while it arrives.
+    static func previewOfPartialReply(_ partial: String) -> String {
+        guard let open = partial.range(of: "```") else { return partial }
+        var code = partial[open.upperBound...]
+        if let newline = code.firstIndex(of: "\n") { code = code[code.index(after: newline)...] } else { return "" }
+        if let close = code.range(of: "```") { code = code[..<close.lowerBound] }
+        return String(code)
     }
 
     static func clip(_ text: String, _ limit: Int) -> String {

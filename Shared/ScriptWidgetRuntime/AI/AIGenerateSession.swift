@@ -170,7 +170,7 @@ final class AIGenerateSession: ObservableObject {
             ))
         case .tokensUsed(let u):
             usage = u
-        case .note:
+        case .note, .partial, .declared:
             break
         }
     }
