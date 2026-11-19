@@ -61,6 +61,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // `-PdevSuffix=.dev` installs a debug build beside the Play Store one on the same
+            // device, with its own data. Without it the debug build keeps the Play package name.
+            (project.findProperty("devSuffix") as String?)?.takeIf { it.isNotBlank() }?.let { applicationIdSuffix = it; versionNameSuffix = "-dev" }
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

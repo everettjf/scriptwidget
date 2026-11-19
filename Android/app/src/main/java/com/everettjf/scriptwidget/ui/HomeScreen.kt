@@ -126,7 +126,8 @@ fun HomeScreen(navigation: NavController) {
         topBar = { TopAppBar(title = { Text("My Widgets") }) },
         bottomBar = { MainBar(navigation, MainTab.WIDGETS) },
         floatingActionButton = {
-            ExtendedFloatingActionButton(onClick = { showAdd = true }, icon = { Icon(Icons.Default.Add, null) }, text = { Text("New widget") })
+            // Material hides the text of an extended button from screen readers; the icon carries the name.
+            ExtendedFloatingActionButton(onClick = { showAdd = true }, icon = { Icon(Icons.Default.Add, "New widget") }, text = { Text("New widget") })
         },
     ) { padding ->
         if (packages.isEmpty()) {

@@ -34,6 +34,7 @@ class AgentLoopTest {
         is AgentLoopEvent.RanFailed -> "failed${event.iteration}"
         is AgentLoopEvent.RanSucceeded -> "succeeded${event.iteration}"
         is AgentLoopEvent.TokensUsed -> "tokens${event.usage.totalTokens}"
+        is AgentLoopEvent.Note -> "note${event.iteration}"
     }
 
     @Test

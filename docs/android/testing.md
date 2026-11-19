@@ -6,7 +6,7 @@ What was run before handing this build to testers, and what was not.
 
 | Suite | Count | Where | Command |
 | --- | --- | --- | --- |
-| Unit tests | 474 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
+| Unit tests | 502 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
 | Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
 | App device tests | 56 | see below | `Android/scripts/device-test.sh app` |
 
@@ -23,6 +23,8 @@ The three Android-only features (scrolling `<list>`, `material.` colors, the aut
 The version was then renumbered to 1.0.0 (version code 1) with no code change: the 482 JVM tests passed, and the debug APK and the release bundle were built, the bundle signed with the upload key. The debug APK reports `versionName` 1.0.0 and `versionCode` 1. This build was not installed on a device and the device suites were not re-run. The Pixel 6 still has the earlier debug build (version code 8); Android refuses to install a lower version code over it, so that build must be uninstalled first, which removes its widgets.
 
 The app was then split into the `play` and `foss` flavors (14 November 2026; see [Android distribution](distribution.md)), moving the Firebase code out of the shared source. On the Pixel 6: the 482 JVM tests passed; the app suite passed as `foss` (63 tests; it has no push delivery test) and as `play` (64 tests), with the live-model, push-wait and picked-folder tests skipped as before. The core suite was not re-run, since `core` did not change. The signed `foss` release APK (28.5 MB, no Firebase or Google Play services classes, not debuggable) was installed in place of the debug build: it started, listed the starter widgets, drew the three Android-only template previews, and logged no crash. Widgets were not placed on the home screen from this APK.
+
+The AI conversation (19 November 2026) was run on the Pixel 6 only, as a debug copy installed beside the Play Store app (`-PdevSuffix=.dev`): the 502 JVM tests passed, both flavors built, and the app suite passed (66 tests; the live-model, push-wait and picked-folder tests skipped). Two of them are new: `AiConversationUiTest` drives the real screen with the real runtime and a scripted model through making a widget, a repaired change, a network widget, a change that never runs, an older version, saving, improving the saved widget and applying with a new host, and through Stop, Send again and drafts. It saves a picture of each step under the app's external files. The conversation was not run with a live model on a device: that copy has no key. The core device suite was not rerun; the core change is covered by JVM tests. The emulators were not used.
 
 | Device | Android | Core | App |
 | --- | --- | --- | --- |

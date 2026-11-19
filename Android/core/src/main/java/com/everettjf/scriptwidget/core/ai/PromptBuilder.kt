@@ -262,7 +262,102 @@ Preserve working behavior that is unrelated to the request. Use only documented 
 Return the FULL updated JSX only (plus the network declaration block only if it uses the network). No explanation.
 """.trim()
     }
+
+    /**
+     * Port of `userPromptTurn`: one turn of a conversation about a widget. The reply form it
+     * asks for (a SUMMARY line, the code, the declaration) replaces the system prompt's
+     * "only JSX" rule, so a turn can say what it changed.
+     */
+    fun userPromptTurn(context: AiTurnContext): String {
+        val parts = ArrayList<String>()
+        parts += "You are working with the user on one ScriptWidget widget over several turns.\nWidget size: ${context.size.family}\nSize hint: ${context.size.designHint}"
+        val skills = context.skillsText?.trim().orEmpty().take(MAXIMUM_SKILLS_CHARACTERS)
+        if (skills.isNotEmpty()) parts += "Apply these ScriptWidget skills in every turn:\n$skills"
+        if (context.history.isNotEmpty()) {
+            val lines = context.history.mapIndexed { index, exchange ->
+                "${index + 1}. User: ${clip(exchange.request, AiConversationLimits.HISTORY_REQUEST_CHARACTERS)}\n   You: ${clip(exchange.note ?: "Done.", AiConversationLimits.HISTORY_NOTE_CHARACTERS)}"
+            }
+            parts += "Earlier turns, oldest first (each one was applied):\n" + lines.joinToString("\n")
+        }
+        val previous = context.previousCode
+        if (!previous.isNullOrEmpty() && previous.length <= AiConversationLimits.PREVIOUS_SOURCE_CHARACTERS) {
+            parts += "The version before your last change, for reference only (the user may ask to bring something back):\n\n```jsx\n$previous\n```"
+        }
+        val current = context.currentCode
+        if (!current.isNullOrEmpty()) {
+            val declaration = if (context.currentDeclaration.isNullOrBlank()) "It declares no network use." else "Its network declaration: ${context.currentDeclaration}"
+            val diagnostic = if (context.runtimeDiagnostic.isNullOrBlank()) "" else "\n\nThe latest local ScriptWidget runtime diagnostic is:\n${clip(context.runtimeDiagnostic, 2_000)}"
+            parts += "Current working widget code:\n\n```jsx\n$current\n```\n\n$declaration$diagnostic\n\nThe user now asks:\n${context.request}\n\n" +
+                "Change only what the request needs and keep everything else as it is."
+        } else {
+            parts += "The user asks for a new widget:\n${context.request}"
+        }
+        parts += """
+Reply in exactly this form, which replaces the output rule above for this conversation:
+SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
+then the FULL widget code in one ```jsx fenced block.
+If, and only if, the widget uses `fetch` or `${'$'}http`, end with one more fenced block
+that declares every host it contacts:
+```json
+{"permissions": ["network"], "networkDomains": ["api.example.com"]}
+```
+Hosts are exact lowercase names or `*.example.com`. A host that is not declared is
+blocked. No other permission can be declared. Nothing else.
+""".trim()
+        return parts.joinToString("\n\n")
+    }
+
+    /** Added to a repair request inside a conversation, where the reply form still holds. */
+    const val TURN_REPAIR_SUFFIX = "\n\nKeep the reply form of this conversation: the full code in one ```jsx block, then the " +
+        "```json network declaration block only if the widget uses the network."
+
+    /**
+     * Port of `parseTurnReply`: the model's note, the widget code and the declaration, if any.
+     * A reply without the SUMMARY line or without a fence is still read as code. The code ends
+     * with a line break, like a file.
+     */
+    fun parseTurnReply(raw: String): AiTurnReply {
+        val candidate = AiOutput.extract(raw)
+        var note: String? = null
+        val fence = raw.indexOf("```")
+        val head = if (fence >= 0) raw.substring(0, fence) else raw
+        var source = candidate.source
+        for (line in head.lines()) {
+            val trimmed = line.trim()
+            if (!trimmed.lowercase().startsWith("summary:")) continue
+            val value = trimmed.substring("summary:".length).trim()
+            if (value.isNotEmpty()) note = clip(value, AiConversationLimits.NOTE_CHARACTERS)
+            // Without a fence the SUMMARY line is part of what was read as code.
+            if (fence < 0) source = source.replaceFirst(line, "").trim()
+            break
+        }
+        return AiTurnReply(note, AiCandidate(if (source.isEmpty()) "" else source + "\n", candidate.manifestJson))
+    }
+
+    fun clip(text: String, limit: Int): String = if (text.length > limit) text.take(limit) + "…" else text
 }
+
+/** What one turn of a conversation tells the model. Port of `AITurnContext`. */
+class AiTurnContext(
+    /** Earlier applied turns, oldest first. */
+    val history: List<Exchange>,
+    /** The widget as it is now; null when the turn starts a new widget. */
+    val currentCode: String?,
+    /** The version before the current one, if any. */
+    val previousCode: String?,
+    val request: String,
+    /** Formatted text of the enabled Skills; null for none. */
+    val skillsText: String?,
+    val size: AiWidgetSize,
+    /** Canonical network declaration of the current widget, if any. */
+    val currentDeclaration: String? = null,
+    val runtimeDiagnostic: String? = null,
+) {
+    class Exchange(val request: String, val note: String?)
+}
+
+/** A turn reply, split. */
+class AiTurnReply(val note: String?, val candidate: AiCandidate)
 
 /** A starter prompt shown on the generate screen. Port of `AIExamplePrompt`. */
 class AiExamplePrompt(val title: String, val size: AiWidgetSize, val prompt: String)

@@ -48,7 +48,7 @@ suspend fun renderPreview(files: PackageFiles, packageID: String, family: String
 @Composable
 fun WidgetPreview(
     files: PackageFiles, packageID: String, family: String, dark: Boolean, modifier: Modifier = Modifier, parameter: String = "",
-    buildDirectory: File? = null, revision: Int = 0, onResult: (ExecutionResult?) -> Unit = {},
+    buildDirectory: File? = null, revision: Int = 0, maxHeight: Float? = null, onResult: (ExecutionResult?) -> Unit = {},
 ) {
     val density = LocalDensity.current.density
     val state by produceState<PreviewState?>(initialValue = null, packageID, family, dark, parameter, revision) {
@@ -57,7 +57,8 @@ fun WidgetPreview(
     }
     val (width, height) = previewSizes[family] ?: previewSizes.getValue("medium")
     Box(
-        modifier.widthIn(max = width.dp).fillMaxWidth().aspectRatio(width / height).clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
+        // With a height limit the picture is drawn smaller, never cropped.
+        modifier.widthIn(max = (maxHeight?.let { minOf(width, it * width / height) } ?: width).dp).fillMaxWidth().aspectRatio(width / height).clip(RoundedCornerShape(22.dp)).background(MaterialTheme.colorScheme.surfaceVariant),
         contentAlignment = Alignment.Center,
     ) {
         val bitmap = state?.bitmap

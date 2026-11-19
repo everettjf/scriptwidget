@@ -2,6 +2,7 @@ package com.everettjf.scriptwidget.ai
 
 import android.content.Context
 import android.content.res.AssetManager
+import com.everettjf.scriptwidget.core.ai.AiConversationStore
 import com.everettjf.scriptwidget.core.ai.AiProfile
 import com.everettjf.scriptwidget.core.ai.AiProviderKind
 import com.everettjf.scriptwidget.core.ai.AiReference
@@ -62,6 +63,7 @@ class AiSettingsStore(context: Context, private val credentials: CredentialStore
 object AiServices {
     @Volatile private var instance: Holder? = null
     @Volatile private var cachedReference: AiReference? = null
+    @Volatile private var cachedConversations: AiConversationStore? = null
 
     private class Holder(val credentials: CredentialStore, val settings: AiSettingsStore)
 
@@ -72,6 +74,14 @@ object AiServices {
     fun credentials(context: Context): CredentialStore = holder(context).credentials
 
     fun settings(context: Context): AiSettingsStore = holder(context).settings
+
+    /**
+     * AI conversations, kept in the no-backup directory: they hold the user's requests and
+     * widget sources and stay on this device. They never hold a key or name a provider.
+     */
+    fun conversations(context: Context): AiConversationStore = cachedConversations ?: synchronized(this) {
+        cachedConversations ?: AiConversationStore(java.io.File(context.applicationContext.noBackupFilesDir, "ai-conversations")).also { cachedConversations = it }
+    }
 
     /**
      * The component/API reference for the system prompt, read from the same `Script.bundle`

@@ -260,7 +260,7 @@ fun DetailScreen(navigation: NavController, name: String) {
         text = { Text("The package and its saved data are removed from this device. Widgets showing it will ask you to choose another.") },
         confirmButton = { TextButton(onClick = {
             confirmDelete = false
-            runCatching { AppServices.library.delete(item.name); AppServices.runtime.storage.clear(item.installation) }
+            runCatching { AppServices.library.delete(item.name); AppServices.runtime.storage.clear(item.installation); com.everettjf.scriptwidget.ai.AiServices.conversations(context).deleteForPackage(item.installation) }
             // Grants, snapshots and scheduled reminders belong to the installation and go with it.
             runCatching { com.everettjf.scriptwidget.SystemModules.retireInstallation(context, item.installation) }
             runCatching { com.everettjf.scriptwidget.actions.SurfaceHooks.onPackageDeleted(context, item.installation) }

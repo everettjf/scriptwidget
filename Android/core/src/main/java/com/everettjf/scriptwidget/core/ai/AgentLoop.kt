@@ -5,7 +5,7 @@ sealed class AgentLoopOutcome {
     abstract val usage: AiTokenUsage
 
     /** The candidate compiled and rendered. [manifestJson] is its canonical package declaration, if any. */
-    class Succeeded(val source: String, val manifestJson: String?, override val usage: AiTokenUsage) : AgentLoopOutcome()
+    class Succeeded(val source: String, val manifestJson: String?, override val usage: AiTokenUsage, val note: String? = null) : AgentLoopOutcome()
 
     /** The iteration cap was reached; the last attempt is returned for manual repair. */
     class Exhausted(val lastSource: String?, val lastManifestJson: String?, val lastError: String?, override val usage: AiTokenUsage) : AgentLoopOutcome()
@@ -28,6 +28,8 @@ sealed class AgentLoopEvent {
     class RanSucceeded(val iteration: Int) : AgentLoopEvent()
     /** Cumulative token usage so far. */
     class TokensUsed(val usage: AiTokenUsage) : AgentLoopEvent()
+    /** In a conversation turn: the model's one-sentence account of the candidate. */
+    class Note(val iteration: Int, val text: String) : AgentLoopEvent()
 }
 
 /** What to generate. Port of `AgentLoopRequest`. */
@@ -45,6 +47,8 @@ class AgentLoopRequest(
         class Fresh(val userDescription: String) : Mode()
         /** Change an existing widget; [currentDeclaration] is its current network declaration JSON, if any. */
         class Refine(val currentCode: String, val instruction: String, val currentDeclaration: String? = null, val runtimeDiagnostic: String? = null) : Mode()
+        /** One turn of a conversation; Skills are part of [context], not of the request. */
+        class Turn(val context: AiTurnContext) : Mode()
     }
 }
 
@@ -86,7 +90,13 @@ class AgentLoop(private val chat: AiChat) {
                 )
                 latest = AiCandidate(mode.currentCode, mode.currentDeclaration)
             }
+            is AgentLoopRequest.Mode.Turn -> {
+                firstUser = AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptTurn(mode.context))
+                latest = null
+            }
         }
+        val isTurn = request.mode is AgentLoopRequest.Mode.Turn
+        var note: String? = null
         var lastError: String? = null
         var lastLogs: List<String> = emptyList()
 
@@ -100,7 +110,7 @@ class AgentLoop(private val chat: AiChat) {
                 listOf(
                     system, firstUser,
                     AiMessage(AiMessage.Role.ASSISTANT, previous.asAssistantMessage()),
-                    AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptFix(previous.source, error, lastLogs)),
+                    AiMessage(AiMessage.Role.USER, PromptBuilder.userPromptFix(previous.source, error, lastLogs) + if (isTurn) PromptBuilder.TURN_REPAIR_SUFFIX else ""),
                 )
             } else {
                 listOf(system, firstUser)
@@ -120,7 +130,12 @@ class AgentLoop(private val chat: AiChat) {
             onEvent(AgentLoopEvent.TokensUsed(usage))
             if (cancellation.isCancelled) return AgentLoopOutcome.Cancelled(usage)
 
-            val extracted = AiOutput.extract(result.content)
+            val extracted = if (isTurn) {
+                val reply = PromptBuilder.parseTurnReply(result.content)
+                // A repair may leave the summary out; the first one still describes the turn.
+                reply.note?.let { note = it; onEvent(AgentLoopEvent.Note(iteration, it)) }
+                reply.candidate
+            } else AiOutput.extract(result.content)
             // Parse the declaration before anything runs: an invalid one is feedback for the model, never a guess.
             var declarationError: String? = null
             val declaration = extracted.manifestJson?.let { text ->
@@ -145,7 +160,7 @@ class AgentLoop(private val chat: AiChat) {
 
             if (validation.ok) {
                 onEvent(AgentLoopEvent.RanSucceeded(iteration))
-                return AgentLoopOutcome.Succeeded(candidate.source, candidate.manifestJson, usage)
+                return AgentLoopOutcome.Succeeded(candidate.source, candidate.manifestJson, usage, note)
             }
             val summary = validation.errorSummary ?: "Runtime returned no element."
             lastError = summary
