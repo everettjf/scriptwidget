@@ -9,6 +9,7 @@
 //! program so that one file is installed and the command line can never be a
 //! different version from the service it talks to.
 
+mod ai;
 mod arguments;
 mod commands;
 mod desktop;
@@ -78,6 +79,13 @@ fn execute() -> i32 {
         print!("{}", commands::USAGE);
         return 0;
     }
+    if command == "ai" {
+        if arguments.len() == 1 || ai::wants_help(&arguments[1..]) {
+            print!("{}", ai::help());
+            return if arguments.len() == 1 { EXIT_USAGE } else { 0 };
+        }
+        return ai::run(&arguments[1..]).finish();
+    }
     // The commands that print lines for as long as they run, and the service itself.
     if let Some(code) = desktop::stream(&command, &arguments[1..]) {
         return code;
@@ -87,6 +95,14 @@ fn execute() -> i32 {
 }
 
 fn main() -> ExitCode {
+    // A key given for this run is taken out of the environment before any thread or child exists,
+    // so that nothing this program starts (secret-tool, the service, a browser for a link) inherits it.
+    let one_run_key = std::env::var_os(sw_core::ai::credentials::ENVIRONMENT_KEY);
+    if one_run_key.is_some() {
+        // SAFETY: the process has only this thread; nothing else reads or writes the environment yet.
+        unsafe { std::env::remove_var(sw_core::ai::credentials::ENVIRONMENT_KEY) };
+    }
+    ai::set_one_run_key(one_run_key);
     let worker = std::thread::Builder::new().name("scriptwidget".into()).stack_size(MAIN_STACK).spawn(execute);
     let code = match worker.map(|worker| worker.join()) {
         Ok(Ok(code)) => code,

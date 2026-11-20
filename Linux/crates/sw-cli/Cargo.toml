@@ -25,3 +25,5 @@ libc.workspace = true
 # The hand-written archives of sw-core's package tests (tests/packages_support) are reused here.
 flate2.workspace = true
 serde_json.workspace = true
+# The stand-in for an AI provider in tests/ai.rs speaks HTTPS, as the client requires: the TLS library sw-core already uses.
+rustls.workspace = true

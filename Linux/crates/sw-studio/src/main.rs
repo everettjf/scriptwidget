@@ -10,6 +10,16 @@ use sw_studio::model::Studio;
 use sw_studio::strings::{self, tf};
 
 fn main() -> ExitCode {
+    // A key given for this run is taken out of the environment before any thread or child exists,
+    // so that nothing the window starts (the scriptwidget command, a browser) inherits it.
+    let one_run_key = std::env::var_os(sw_core::ai::credentials::ENVIRONMENT_KEY);
+    if one_run_key.is_some() {
+        // SAFETY: the process has only this thread; nothing else reads or writes the environment yet.
+        unsafe { std::env::remove_var(sw_core::ai::credentials::ENVIRONMENT_KEY) };
+    }
+    if let Err(problem) = sw_studio::ai::set_one_run_key(one_run_key) {
+        eprintln!("warning: {problem}");
+    }
     strings::set_language(strings::detect(|name| std::env::var(name).ok()));
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let launch = match launch::parse(&arguments, std::env::current_dir().ok().as_deref()) {

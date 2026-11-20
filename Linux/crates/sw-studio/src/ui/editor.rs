@@ -8,6 +8,7 @@ use gpui_kit::component::button::{Button, ButtonVariants as _};
 use gpui_kit::component::input::{CompletionProvider, Editor, EditorState, InputEvent, Rope};
 use gpui_kit::component::scroll::ScrollableElement as _;
 use gpui_kit::component::{ActiveTheme as _, StyledExt as _, IconName, Selectable as _, Sizable as _, h_flex, v_flex};
+use gpui_kit::prelude::FluentBuilder as _;
 use gpui_kit::{App, AppContext as _, Context, Entity, Focusable as _, InteractiveElement as _, IntoElement, ParentElement as _, Result, SharedString, Styled as _, Subscription, Task, Window, div, px};
 use lsp_types::{CompletionContext, CompletionItem, CompletionItemKind, CompletionResponse, CompletionTextEdit, Documentation, Position, Range, TextEdit};
 
@@ -28,6 +29,8 @@ pub(super) struct EditorSession {
     /// The outcome of the last save, shown beside the file name.
     status: Option<(bool, String)>,
     pub pane: PreviewPane,
+    /// The AI conversation about this widget, when it is open beside the code.
+    pub ai: Option<super::ai::AiView>,
     _changes: Option<Subscription>,
 }
 
@@ -95,9 +98,15 @@ impl StudioWindow {
         };
         let path = path.filter(|path| files.contains(path)).unwrap_or_else(|| self.studio.entry(&card.name));
         // The preview keeps its size and appearance while moving between the files of one widget.
-        let pane = match self.editor.take() {
-            Some(previous) if previous.name == card.name => previous.pane,
-            _ => PreviewPane::new(card.families.clone(), self.dark(cx)),
+        // So does the AI conversation; one about another widget ends here.
+        let (pane, ai) = match self.editor.take() {
+            Some(previous) if previous.name == card.name => (previous.pane, previous.ai),
+            previous => {
+                if let Some(view) = previous.as_ref().and_then(|previous| previous.ai.as_ref()) {
+                    view.panel.cancel();
+                }
+                (PreviewPane::new(card.families.clone(), self.dark(cx)), None)
+            }
         };
         let text = self.studio.read_text(&card.name, &path).ok().flatten();
         let editor = text.map(|text| {
@@ -123,7 +132,7 @@ impl StudioWindow {
             let focus = editor.focus_handle(cx);
             window.defer(cx, move |window, cx| focus.focus(window, cx));
         }
-        self.editor = Some(EditorSession { name: card.name, files, path, editor, dirty: false, status: None, pane, _changes: changes });
+        self.editor = Some(EditorSession { name: card.name, files, path, editor, dirty: false, status: None, pane, ai, _changes: changes });
         self.page = Page::Editor;
         self.request_preview(true, cx);
     }
@@ -201,6 +210,7 @@ impl StudioWindow {
                     .child(div().font_semibold().truncate().child(SharedString::from(session.name.clone())))
                     .child(h_flex().gap_2().text_sm().child(div().text_color(muted).truncate().child(SharedString::from(session.path.clone()))).child(status)),
             )
+            .child(Button::new("editor-ai").label(t("ai.open")).map(|button| if session.ai.is_some() { button.primary() } else { button.outline() }).selected(session.ai.is_some()).on_click(cx.listener(|this, _, window, cx| this.toggle_ai(window, cx))))
             .child(Button::new("editor-export").label(t("action.export")).outline().on_click(cx.listener({
                 let name = name.clone();
                 move |this, _, window, cx| this.export(name.clone(), window, cx)
@@ -219,6 +229,6 @@ impl StudioWindow {
             Some(editor) => div().flex_1().min_w_0().h_full().child(Editor::new(editor).bordered(false).aria_label(t("editor.code")).h_full()),
             None => div().flex_1().min_w_0().h_full().p_6().text_color(muted).child(t("editor.binary")),
         };
-        v_flex().size_full().child(header).child(h_flex().flex_1().min_h_0().items_start().child(files).child(code).child(self.render_pane(&session.pane, cx))).into_any_element()
+        v_flex().size_full().child(header).child(h_flex().flex_1().min_h_0().items_start().child(files).child(code).children(session.ai.as_ref().map(|view| self.render_ai(view, cx))).child(self.render_pane(&session.pane, cx))).into_any_element()
     }
 }

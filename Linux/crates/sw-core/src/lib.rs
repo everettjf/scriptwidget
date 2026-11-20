@@ -7,6 +7,7 @@
 //! untrusted: package code only ever runs in a fresh execution context that
 //! reaches the host through the operations in [`executor`].
 
+pub mod ai;
 pub mod api;
 pub mod compiler;
 pub mod executor;

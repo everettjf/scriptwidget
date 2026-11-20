@@ -54,6 +54,9 @@ pub(super) enum Target {
 pub struct StudioWindow {
     pub(super) studio: Arc<Studio>,
     pub(super) api: Arc<ApiReference>,
+    /// The AI conversation and the provider settings (see [`crate::ai`]).
+    pub(super) ai: Arc<crate::ai::AiService>,
+    pub(super) ai_settings: Option<super::ai::AiSettingsForm>,
     pub(super) settings: Settings,
     cli: PathBuf,
     pub(super) page: Page,
@@ -112,6 +115,8 @@ impl StudioWindow {
         let settings = Settings::new(studio.paths().settings());
         let mut this = Self {
             api: Arc::new(ApiReference::embedded()),
+            ai: super::ai::service(studio.clone()),
+            ai_settings: None,
             refresh_minutes: settings.selected_interval(),
             settings,
             cli: service::command_line(|name| std::env::var_os(name), std::env::current_exe().ok().as_deref()),
@@ -183,6 +188,10 @@ impl StudioWindow {
     /// Goes to `target` without asking.
     pub(super) fn go(&mut self, target: Target, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(session) = self.editor.take() {
+            // A turn of the conversation that is still running ends with the page it was on.
+            if let Some(view) = &session.ai {
+                view.panel.cancel();
+            }
             self.retired.extend(session.pane.shown);
         }
         if let Some(session) = self.template.take() {
@@ -204,6 +213,7 @@ impl StudioWindow {
             }
             Target::Settings => {
                 self.refresh_minutes = self.settings.selected_interval();
+                self.load_ai_settings(window, cx);
                 self.page = Page::Settings;
             }
             Target::Template(reference) => self.open_template(&reference, window, cx),

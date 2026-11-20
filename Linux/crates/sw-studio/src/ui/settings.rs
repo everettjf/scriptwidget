@@ -37,6 +37,6 @@ impl StudioWindow {
             .child(div().text_sm().text_color(muted).child(t("settings.licence")))
             .child(div().text_sm().text_color(muted).child(t("settings.licences")))
             .child(h_flex().child(Button::new("settings-website").label(t("settings.website")).small().link().on_click(cx.listener(|_, _, _, cx| cx.open_url(WEBSITE)))));
-        div().id("settings").size_full().overflow_y_scrollbar().child(v_flex().p_6().gap_4().max_w(gpui_kit::px(760.)).child(div().text_2xl().font_semibold().child(t("settings.title"))).child(refresh).child(data).child(about))
+        div().id("settings").size_full().overflow_y_scrollbar().child(v_flex().p_6().gap_4().max_w(gpui_kit::px(760.)).child(div().text_2xl().font_semibold().child(t("settings.title"))).child(refresh).child(self.render_ai_settings(cx)).child(data).child(about))
     }
 }

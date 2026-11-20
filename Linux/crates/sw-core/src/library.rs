@@ -306,6 +306,11 @@ pub fn unsupported_api(source: &str) -> Option<String> {
     })
 }
 
+/// The script globals, without the dollar sign, that Linux does not implement in this release.
+pub fn unsupported_apis() -> &'static [&'static str] {
+    &UNSUPPORTED_APIS
+}
+
 /// True for a script global without the dollar sign, such as `health`, that Linux does not implement in this release.
 pub fn is_unsupported_api(name: &str) -> bool {
     UNSUPPORTED_APIS.contains(&name)

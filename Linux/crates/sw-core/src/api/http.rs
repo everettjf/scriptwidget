@@ -59,11 +59,13 @@ pub struct HttpTransport {
     resolver: Resolver,
     dialer: Arc<dyn Dialer>,
     tls: OnceLock<Result<Arc<ClientConfig>, String>>,
+    /// False for every transport a package's request can reach. See [`HttpTransport::for_user_endpoint`].
+    any_address: bool,
 }
 
 impl HttpTransport {
     pub fn new(resolver: Resolver) -> Self {
-        Self { resolver, dialer: Arc::new(SystemDialer), tls: OnceLock::new() }
+        Self { resolver, dialer: Arc::new(SystemDialer), tls: OnceLock::new(), any_address: false }
     }
 
     /// The transport over another network: tests route the public addresses
@@ -75,7 +77,23 @@ impl HttpTransport {
         if let Some(config) = tls {
             let _ = cell.set(Ok(config));
         }
-        Self { resolver, dialer, tls: cell }
+        Self { resolver, dialer, tls: cell, any_address: false }
+    }
+
+    /// The transport for an endpoint the user of this computer typed into the
+    /// application's own settings: the AI provider (see [`crate::ai::transport`]).
+    /// Such an endpoint may be a server in the user's own network, so the
+    /// addresses it resolves to are not required to be public. Everything
+    /// else holds: one exchange, no redirects, no proxy, TLS verified against
+    /// the host name, every wait bounded.
+    ///
+    /// Nothing a package does reaches a transport made here. `fetch`, `$http`,
+    /// `$weather`, Data Source Plugins and remote images use the transports of
+    /// [`HttpTransport::new`] and [`HttpTransport::with_parts`], which keep
+    /// the address check, and [`crate::api::fetch`] checks the addresses once
+    /// more before it calls a transport at all.
+    pub fn for_user_endpoint(resolver: Resolver, dialer: Arc<dyn Dialer>, tls: Option<Arc<ClientConfig>>) -> Self {
+        Self { any_address: true, ..Self::with_parts(resolver, dialer, tls) }
     }
 
     /// Opens the TCP connection for one request. The host is refused by name
@@ -97,13 +115,30 @@ impl HttpTransport {
         })
     }
 
+    /// [`HttpTransport::connect`] without the address check, for [`HttpTransport::for_user_endpoint`] only.
+    fn connect_any(resolver: &Resolver, dialer: &dyn Dialer, host: &str, port: u16, wait: &Wait) -> Result<TcpStream, FetchError> {
+        let addresses = resolver(unbracket(host)).map_err(|_| FetchError::Failed(format!("Could not resolve {host}")))?;
+        let mut last = None;
+        for address in addresses {
+            match dialer.dial(SocketAddr::new(address, port), wait.remaining()?) {
+                Ok(socket) => return Ok(socket),
+                Err(error) => last = Some(error),
+            }
+        }
+        Err(match last {
+            Some(error) if error.kind() == io::ErrorKind::TimedOut => wait.remaining().err().unwrap_or_else(|| FetchError::Transport(error.to_string())),
+            Some(error) => FetchError::Transport(error.to_string()),
+            None => FetchError::Transport("No address to connect to".into()),
+        })
+    }
+
     fn tls_config(&self) -> Result<Arc<ClientConfig>, FetchError> {
         self.tls.get_or_init(system_tls_config).clone().map_err(FetchError::Transport)
     }
 }
 
 /// TLS 1.2 and 1.3 with the certificate authorities the system trusts.
-fn system_tls_config() -> Result<Arc<ClientConfig>, String> {
+pub fn system_tls_config() -> Result<Arc<ClientConfig>, String> {
     let mut roots = RootCertStore::empty();
     let found = rustls_native_certs::load_native_certs();
     let (added, _ignored) = roots.add_parsable_certificates(found.certs);
@@ -138,7 +173,8 @@ impl Transport for HttpTransport {
         // Read before connecting, so a missing certificate store is reported without touching the network.
         let tls = if secure { Some(self.tls_config()?) } else { None };
 
-        let socket = Self::connect(&self.resolver, self.dialer.as_ref(), host, port, wait)?;
+        let connect = if self.any_address { Self::connect_any } else { Self::connect };
+        let socket = connect(&self.resolver, self.dialer.as_ref(), host, port, wait)?;
         let prepare = || -> io::Result<()> {
             socket.set_nodelay(true)?;
             socket.set_read_timeout(Some(POLL))?;

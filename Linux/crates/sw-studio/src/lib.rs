@@ -9,6 +9,7 @@
 //! picture `sw-render` draws; it compiles and runs it only inside the engine
 //! of `sw-core`, with the limits every run has.
 
+pub mod ai;
 pub mod completion;
 pub mod debounce;
 pub mod instance;

@@ -55,6 +55,21 @@ Library commands (use your data folder, or --data <dir>):
   templates                           List the bundled templates that run on Linux.
   doctor                              Check this installation.
 
+AI commands (use your data folder, or --data <dir>; scriptwidget ai --help says more):
+  ai show                             The provider, endpoint and model, and whether a key is stored.
+  ai set [--provider <name>] [--base-url <https://…>] [--model <name>]
+                                      Choose the provider: anthropic, openai or custom.
+  ai key set | ai key remove          Store the API key in the system keyring (read from standard
+                                      input, or typed without echo), or remove it.
+  ai models                           Ask the endpoint which models it lists.
+  ai new <request> [--name <name>] [--family <name>] [--no-apply] [--allow-new-hosts]
+                                      Start a conversation: make a new widget and install it.
+  ai continue <package> <request> [--no-apply] [--allow-new-hosts]
+                                      Continue the conversation about an installed widget and apply the change.
+  ai apply <conversation | package> [--name <name>] [--version <n>] [--allow-new-hosts]
+                                      Install or apply a version a conversation holds.
+  ai conversations [<id>]             List the conversations, or show one.
+
 Desktop commands (need the background service):
   add <package> [--family <name>]     Put a widget of an installed package on the desktop.
   remove <id>                         Take a widget off the desktop.

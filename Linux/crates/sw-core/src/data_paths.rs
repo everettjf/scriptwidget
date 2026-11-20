@@ -100,6 +100,16 @@ impl DataPaths {
     pub fn settings(&self) -> PathBuf {
         self.root.join("settings.json")
     }
+
+    /// The AI provider profile: endpoint and model, never a key (see [`crate::ai::profile_store`]).
+    pub fn ai_profile(&self) -> PathBuf {
+        self.root.join("ai-profile.json")
+    }
+
+    /// AI conversations, one file each (see [`crate::ai::conversation_store`]).
+    pub fn ai_conversations(&self) -> PathBuf {
+        self.root.join("AiConversations")
+    }
 }
 
 #[cfg(test)]
@@ -121,6 +131,8 @@ mod tests {
         assert_eq!(paths.plugins(), Path::new("/data/scriptwidget/Plugins"));
         assert_eq!(paths.widgets(), Path::new("/data/scriptwidget/widgets.json"));
         assert_eq!(paths.settings(), Path::new("/data/scriptwidget/settings.json"));
+        assert_eq!(paths.ai_profile(), Path::new("/data/scriptwidget/ai-profile.json"));
+        assert_eq!(paths.ai_conversations(), Path::new("/data/scriptwidget/AiConversations"));
     }
 
     #[test]

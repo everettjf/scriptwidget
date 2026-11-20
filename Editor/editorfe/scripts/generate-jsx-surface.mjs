@@ -1,5 +1,5 @@
 // Writes the list of JSX tags and attributes that the AI code check uses, as a
-// Swift file and a Kotlin file. Run by `npm run docs`.
+// Swift file, a Kotlin file and a Rust file. Run by `npm run docs`.
 //
 // The names are the union of Studio's API metadata and the web renderer's
 // coverage table, so that an attribute either of them knows is never reported.
@@ -88,6 +88,13 @@ internal object AiJsxSurfaceData {
 ${jsxSurfaceText()}
 """.trim()
 }
+`,
+  "Linux/crates/sw-core/src/ai/jsx_surface_data.rs": () => `// ${note}
+
+/// One line per general attribute ("global") and per tag ("tag"). An attribute with a closed list of values is written name=a|b|c.
+pub(crate) const TEXT: &str = r#"
+${jsxSurfaceText()}
+"#;
 `,
 };
 

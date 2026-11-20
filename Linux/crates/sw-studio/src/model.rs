@@ -157,6 +157,8 @@ pub struct PreviewResult {
 
 pub struct Studio {
     paths: DataPaths,
+    /// The folder with the bundled template groups, when the installation has one.
+    templates: Option<PathBuf>,
     library: Library,
     runtime: WidgetRuntime,
     renderer: WidgetRenderer,
@@ -175,7 +177,8 @@ impl Studio {
         let scripts = Arc::new(SharedScripts::new(runtime_files)?);
         Ok(Self {
             paths: paths.clone(),
-            library: Library::new(paths, templates),
+            library: Library::new(paths, templates.clone()),
+            templates,
             runtime: WidgetRuntime::new(scripts.clone(), paths)?,
             renderer: WidgetRenderer::new(scripts)?,
             engine: Mutex::new(()),
@@ -184,6 +187,29 @@ impl Studio {
 
     pub fn paths(&self) -> &DataPaths {
         &self.paths
+    }
+
+    pub(crate) fn library(&self) -> &Library {
+        &self.library
+    }
+
+    pub(crate) fn templates(&self) -> Option<&Path> {
+        self.templates.as_deref()
+    }
+
+    /// Compiles, runs and draws a candidate of an AI conversation in memory, as the preview would,
+    /// and says whether it is a widget (see [`sw_core::ai::candidates`]). Nothing is written.
+    /// Blocks for as long as the script runs: call it off the window's thread.
+    pub(crate) fn trial(&self, installed: Option<&InstalledPackage>, source: &str, declaration: Option<&str>, family: &str, dark: bool, baseline: Option<&str>) -> sw_core::ai::ValidationResult {
+        let draw = |request: &RunRequest, result: &sw_core::RunResult| -> Result<(), String> {
+            let presentation = Presentation::for_family(&request.family, 1.0).ok_or_else(|| format!("Unknown size {}", request.family))?;
+            match sw_render::render_run(&self.renderer, &self.runtime, request, result, &presentation) {
+                Ok(rendered) => rendered.failure.map_or(Ok(()), |failure| Err(failure.message)),
+                Err(failure) => Err(failure.message),
+            }
+        };
+        let _one_at_a_time = self.engine.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        sw_core::ai::candidates::AiCandidates::validate(&self.runtime, installed, source, declaration, family, dark, baseline, Some(&draw))
     }
 
     // My widgets

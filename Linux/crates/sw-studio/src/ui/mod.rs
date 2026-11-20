@@ -4,6 +4,7 @@
 //! writing archives, the `scriptwidget` child process) runs on background
 //! threads and comes back as a message.
 
+mod ai;
 mod editor;
 mod library;
 mod preview_pane;
