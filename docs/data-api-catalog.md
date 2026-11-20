@@ -16,15 +16,16 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 | `$dataSource` (Data Source Plugins) | Yes | Yes | Yes | Yes | Yes |
 | `$weather` | Yes | Yes | Yes | Yes | Yes |
 | `$calendar` | Yes | Yes | Yes, for calendars selected in the app | No | No |
-| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | No |
-| `$contacts`, `$documents` | Yes | Yes | Yes, for items picked in the app | No | No |
+| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | Pictures picked for the widget in the management window, no albums |
+| `$contacts` | Yes | Yes | Yes, for contacts picked in the app | No | No |
+| `$documents` | Yes | Yes | Yes, for files picked in the app | No | Files picked for the widget in the management window |
 | `$maps` | Yes | Yes | Geocoding and place search; no `snapshot` | No | No |
-| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | No |
-| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | No |
+| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | Yes, shown by the background service; delivery is inexact |
+| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | With a fine-grained token kept in the system keyring, no OAuth sign-in |
 | `$icloud` | Yes | Yes | A sync folder the user picks; cannot exchange data with an iPhone | No | No |
 | `$location` | Yes | No | Yes; widgets see the position saved while the app was open | No | No |
 | `$health` | Yes | No | Health Connect; no ring goals or stand time | No | No |
-| `$music` | Yes | No | The active media session of any app | No | No |
+| `$music` | Yes | No | The active media session of any app | No | The active MPRIS player, read only |
 | `$alarms` | Yes | No | Yes, inexact, no system alarm UI | No | No |
 | `$reminders` | Yes | Yes | No | No | No |
 | `$home` | Yes | No | No | No | No |
@@ -127,7 +128,7 @@ Existing data-method return formats are unchanged. Present manifests now undergo
 
 Runtime 1.4. Read-only Music app playback, not every audio player. Requires an installed owner, music permission and Music library approval in native Settings. current() is asynchronous and returns provider, state, hasItem, nullable title/artist/album/duration/position and capturedAt. State may be playing while details are absent (Home Sharing). Native player access is main-thread-only: synchronous hosts prepare one snapshot before JSC waits; background previews capture on the main queue. No playback/queue mutation, scans, artwork, credential or subscription inference. No live queries in future entries/Live Activities. Main system-player API is unavailable on macOS; Web supplies editable samples, never actual device access.
 
-**Runs on:** iPhone and iPad, Android (The active media session of any app). **Not on:** Mac, Windows, Linux.
+**Runs on:** iPhone and iPad, Android (The active media session of any app), Linux (The active MPRIS player, read only). **Not on:** Mac, Windows.
 
 ### `$music.isAvailable`
 
@@ -167,7 +168,7 @@ Default editable preview sample:
 
 Runtime 1.4: status(service) and profile(service) are asynchronous. Only provider: github. Unknown providers reject with service_operation. Requires an installed owner and services permission. profile additionally requires network and api.github.com in networkDomains, a native connected GitHub account and explicit owner grant. Native Settings handles credentials; scripts cannot log in or obtain tokens. profile returns service, subject, username, displayName, publicRepositories, privateRepositories, followers and following (missing values are null). No live queries in future entries or Live Activities. Eight shared data queries; native requests also share the eight concurrent/32 total network budget, while Web uses its existing preview network budget. Web uses editable best-state samples only; it never authenticates or sends these requests.
 
-**Runs on:** iPhone and iPad, Mac, Android (With a fine-grained token, no OAuth sign-in). **Not on:** Windows, Linux.
+**Runs on:** iPhone and iPad, Mac, Android (With a fine-grained token, no OAuth sign-in), Linux (With a fine-grained token kept in the system keyring, no OAuth sign-in). **Not on:** Windows.
 
 ### `$services.status`
 
@@ -450,7 +451,7 @@ Default editable preview sample:
 
 Requires photos permission and explicit native photo/album selection (none by default). Limited Photos authorization is supported. items({limit:1..4,offset:0..63,maxAgeSeconds:0..86400}) returns bounded, metadata-stripped JPEG thumbnails as image data URLs. Four 768px / 128KiB thumbnails at most; private snapshots expire after 24h and are rechecked against current access, selected sources and asset revisions. Cloud-only items report unavailableCount; download them in Photos first. Future timeline/Live Activity presentations read matching snapshots only. Web uses editable sample data and photosSelection IDs; no actual library access.
 
-**Runs on:** iPhone and iPad, Mac, Android (Individual photos picked in the app, no albums). **Not on:** Windows, Linux.
+**Runs on:** iPhone and iPad, Mac, Android (Individual photos picked in the app, no albums), Linux (Pictures picked for the widget in the management window, no albums). **Not on:** Windows.
 
 ### `$photos.isAvailable`
 
@@ -950,7 +951,7 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
-**Runs on:** iPhone and iPad, Mac, Android (delivery is inexact). **Not on:** Windows, Linux.
+**Runs on:** iPhone and iPad, Mac, Android (delivery is inexact), Linux (shown by the background service; delivery is inexact). **Not on:** Windows.
 
 ### `$notifications.status`
 
@@ -1109,7 +1110,7 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
-**Runs on:** iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+**Runs on:** iPhone and iPad, Mac, Android (for files picked in the app), Linux (Files picked for the widget in the management window). **Not on:** Windows.
 
 ### `$documents.list`
 
@@ -1171,7 +1172,7 @@ Default editable preview sample:
 
 Runtime 1.6. Installed widgets require manifest permission, explicit native System Access, system authorization where applicable, an active installation and bounded queries. Writes require a user action; future timelines and Live Activities cannot call this API. Web and CLI fixtures never access real device data.
 
-**Runs on:** iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+**Runs on:** iPhone and iPad, Mac, Android (for contacts picked in the app). **Not on:** Windows, Linux.
 
 ### `$contacts.selected`
 

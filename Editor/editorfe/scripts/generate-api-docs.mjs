@@ -18,7 +18,7 @@ const lines = [
   "",
   "## Which systems each component runs on",
   "",
-  "Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, except the scrolling `<list>`, which only Android has and which is not in this reference (see [ScriptWidget for Android](android/README.md)). What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.",
+  "Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, and so does `<list>`, which scrolls on Android only and is not in this reference (see [ScriptWidget for Android](android/README.md)): the other systems draw the rows that fit. What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.",
   "",
   ...componentTable,
   "",

@@ -10,6 +10,7 @@ States: **supported** renders like iPhone within measured tolerances; **approxim
 | `vstack` | supported |  |
 | `hstack` | supported |  |
 | `zstack` | supported |  |
+| `list` | supported | Scrolls on Android only. iPhone, iPad and Mac draw the rows that fit, from the top and at their own heights, and so does the preview; at most 100 rows |
 | `hgrid` | approximated | Lazy grid tracks; cells are centered |
 | `vgrid` | approximated | Lazy grid tracks; cells are centered |
 | `text` | supported |  |
@@ -66,6 +67,7 @@ Applied by every tag except `spacer` (frame only) and `Fragment`, in this order:
 | `vstack` | `spacing` | supported | Default spacing measured on iOS 27 |
 | `hstack` | `alignment` | supported |  |
 | `hstack` | `spacing` | supported |  |
+| `list` | `spacing` | supported | Gap between rows; default 0 |
 | `hgrid` | `columns` | supported | fixed, flexible, adaptive |
 | `hgrid` | `alignment` | approximated | Cells are centered |
 | `hgrid` | `spacing` | supported |  |

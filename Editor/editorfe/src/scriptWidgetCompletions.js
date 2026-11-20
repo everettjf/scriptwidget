@@ -1,4 +1,6 @@
+import { snippet } from "@codemirror/autocomplete";
 import { scriptWidgetAPI } from "./scriptWidgetAPI.js";
+import { editorAPI } from "./hostAPI.js";
 
 export { scriptWidgetAPI };
 
@@ -11,13 +13,43 @@ function componentSnippet(name, component) {
   return component.children ? `<${name}${attributes}>\n  \${}\n</${name}>` : `<${name}${attributes} />`;
 }
 
-export const scriptWidgetCompletionOptions = Object.entries(scriptWidgetAPI.components).map(([label, component]) => ({
-  label,
-  type: "class",
-  detail: `ScriptWidget · ${Object.keys(component.properties ?? {}).length} properties`,
-  info: component.documentation,
-  apply: componentSnippet(label, component),
-}));
+function componentOptions(components) {
+  return Object.entries(components).map(([label, component]) => ({
+    label,
+    type: "class",
+    detail: `ScriptWidget · ${Object.keys(component.properties ?? {}).length} properties`,
+    info: component.documentation,
+    template: componentSnippet(label, component),
+  }));
+}
+
+// An option's `template` is a CodeMirror snippet: "${}" marks where the
+// cursor goes. Inserting it as plain text would leave the marks in the code.
+// After a typed "<" the completion starts behind it, so the template's own
+// "<" is left out there.
+function insertable(options, afterOpeningBracket = false) {
+  return options.map((option) => {
+    if (typeof option.template !== "string") return option;
+    const template = afterOpeningBracket && option.template.startsWith("<") ? option.template.slice(1) : option.template;
+    return { ...option, apply: snippet(template) };
+  });
+}
+
+export const scriptWidgetCompletionOptions = componentOptions(scriptWidgetAPI.components);
+
+// The tags to offer: the constant above, with the host's own tags after it
+// when the host supplies some (see hostAPI.js).
+let hostOptionsFor = null;
+let hostOptions = scriptWidgetCompletionOptions;
+function tagOptions() {
+  const { api, extended } = editorAPI();
+  if (!extended) return scriptWidgetCompletionOptions;
+  if (hostOptionsFor !== api) {
+    hostOptionsFor = api;
+    hostOptions = componentOptions(api.components);
+  }
+  return hostOptions;
+}
 
 function activeOpeningTag(text) {
   const match = text.match(/<([A-Za-z][\w]*)\b([^<>]*)$/);
@@ -26,25 +58,32 @@ function activeOpeningTag(text) {
 }
 
 function propertyOptions(componentName, usedNames) {
-  const component = scriptWidgetAPI.components[componentName];
+  const api = editorAPI().api;
+  const component = api.components[componentName];
   if (!component) return [];
-  return Object.entries({ ...scriptWidgetAPI.globalProperties, ...(component.properties ?? {}) })
+  return Object.entries({ ...api.globalProperties, ...(component.properties ?? {}) })
     .filter(([name]) => !usedNames.has(name))
     .map(([label, property]) => ({
       label,
       type: "property",
       detail: property.required ? `${property.type} · required` : property.type,
       info: property.deprecated ? `Deprecated: ${property.deprecated}` : property.documentation,
-      apply: `${label}=${property.type.includes("number") || property.type === "boolean" ? `{\${}}` : `"\${}"`}`,
+      template: `${label}=${property.type.includes("number") || property.type === "boolean" ? `{\${}}` : `"\${}"`}`,
     }));
 }
 
 function enumValueOptions(text) {
   const match = text.match(/<([A-Za-z][\w]*)\b[^<>]*\b([A-Za-z][\w]*)\s*=\s*["']([^"']*)$/);
   if (!match) return null;
-  const definition = scriptWidgetAPI.components[match[1]]?.properties?.[match[2]] ?? scriptWidgetAPI.globalProperties[match[2]];
+  const { api, colors } = editorAPI();
+  const definition = api.components[match[1]]?.properties?.[match[2]] ?? api.globalProperties[match[2]];
+  // Color names the host adds, such as Android's "material.primary". Only a
+  // whole value is completed, not a part of "name,opacity" or of a gradient.
+  if (definition?.type === "color" && colors.length && /^[\w.]*$/.test(match[3])) {
+    return { typed: match[3], values: colors, type: "constant", validFor: /^[\w.]*$/ };
+  }
   if (!definition?.values) return null;
-  return { typed: match[3], values: definition.values };
+  return { typed: match[3], values: definition.values, type: "enum", validFor: /^[\w-]*$/ };
 }
 
 export function scriptWidgetCompletions(context) {
@@ -53,8 +92,8 @@ export function scriptWidgetCompletions(context) {
   if (enumContext) {
     return {
       from: context.pos - enumContext.typed.length,
-      options: enumContext.values.map((label) => ({ label, type: "enum" })),
-      validFor: /^[\w-]*$/,
+      options: enumContext.values.map((label) => ({ label, type: enumContext.type })),
+      validFor: enumContext.validFor,
     };
   }
 
@@ -62,7 +101,7 @@ export function scriptWidgetCompletions(context) {
   if (tag) {
     return {
       from: tag.from + 1,
-      options: scriptWidgetCompletionOptions,
+      options: insertable(tagOptions(), true),
       validFor: /^[A-Za-z]*$/,
     };
   }
@@ -73,7 +112,7 @@ export function scriptWidgetCompletions(context) {
     const usedNames = new Set([...openingTag.attributes.matchAll(/\b([A-Za-z][\w]*)\s*=/g)].map((match) => match[1]));
     return {
       from: word?.from ?? context.pos,
-      options: propertyOptions(openingTag.name, usedNames),
+      options: insertable(propertyOptions(openingTag.name, usedNames)),
       validFor: /^[A-Za-z][\w]*$/,
     };
   }
@@ -99,7 +138,7 @@ export function scriptWidgetCompletions(context) {
   if (!context.explicit) return null;
   return {
     from: context.pos,
-    options: scriptWidgetCompletionOptions,
+    options: insertable(tagOptions()),
     validFor: /^[A-Za-z]*$/,
   };
 }

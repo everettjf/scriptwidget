@@ -25,8 +25,8 @@ The browser preview in [Web Studio](web-studio-browser.md) is a design tool, not
 | Control Widgets | Yes | No | Quick Settings tiles | No | No |
 | Siri and Shortcuts actions | Yes | Yes | App shortcuts and the automation entry point; no voice | No | No |
 | Push-triggered refresh | On system versions that support it | On system versions that support it | The Google Play build only, through Firebase Cloud Messaging; the APK on GitHub has none | No | No |
-| Scrolling `<list>` | No, shows as an unknown tag | No | Yes | No | No |
-| Wallpaper colors (`material.<role>`) | No, the color is ignored | No | Yes | No | No |
+| Scrolling `<list>` | No scrolling; the rows that fit are drawn | No scrolling; the rows that fit are drawn | Yes | No scrolling; drawn in place and cut off at the bottom | No scrolling; drawn in place and cut off at the bottom |
+| Wallpaper colors (`material.<role>`) | No; the names give a fixed palette | No; the names give a fixed palette | Yes | No; the names give a fixed palette | No; the names give a fixed palette |
 | Automation entry point for other apps | No | No | Yes | No | No |
 
 ## Components
@@ -48,7 +48,8 @@ What a script draws with. Android, Windows and Linux use one shared renderer, so
 | `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
 | `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
 | The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
-| Scrolling `<list>` | No | No | Yes | No | No |
+| Scrolling `<list>` | Draws the rows that fit; no scrolling | Draws the rows that fit; no scrolling | Yes | Drawn in place and cut off at its bottom edge; no scrolling | Drawn in place and cut off at its bottom edge; no scrolling |
+| Wallpaper colors (`material.<role>`) | A fixed palette | A fixed palette | Yes | A fixed palette | A fixed palette |
 <!-- components:end -->
 
 ## Data APIs
@@ -60,15 +61,16 @@ What a script draws with. Android, Windows and Linux use one shared renderer, so
 | `$dataSource` (Data Source Plugins) | Yes | Yes | Yes | Yes | Yes |
 | `$weather` | Yes | Yes | Yes | Yes | Yes |
 | `$calendar` | Yes | Yes | Yes, for calendars selected in the app | No | No |
-| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | No |
-| `$contacts`, `$documents` | Yes | Yes | Yes, for items picked in the app | No | No |
+| `$photos` | Yes | Yes | Individual photos picked in the app, no albums | No | Pictures picked for the widget in the management window, no albums |
+| `$contacts` | Yes | Yes | Yes, for contacts picked in the app | No | No |
+| `$documents` | Yes | Yes | Yes, for files picked in the app | No | Files picked for the widget in the management window |
 | `$maps` | Yes | Yes | Geocoding and place search; no `snapshot` | No | No |
-| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | No |
-| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | No |
+| `$notifications` | Yes | Yes | Yes, delivery is inexact | No | Yes, shown by the background service; delivery is inexact |
+| `$services` (GitHub) | Yes | Yes | With a fine-grained token, no OAuth sign-in | No | With a fine-grained token kept in the system keyring, no OAuth sign-in |
 | `$icloud` | Yes | Yes | A sync folder the user picks; cannot exchange data with an iPhone | No | No |
 | `$location` | Yes | No | Yes; widgets see the position saved while the app was open | No | No |
 | `$health` | Yes | No | Health Connect; no ring goals or stand time | No | No |
-| `$music` | Yes | No | The active media session of any app | No | No |
+| `$music` | Yes | No | The active media session of any app | No | The active MPRIS player, read only |
 | `$alarms` | Yes | No | Yes, inexact, no system alarm UI | No | No |
 | `$reminders` | Yes | Yes | No | No | No |
 | `$home` | Yes | No | No | No | No |
@@ -83,7 +85,7 @@ This table is written by `npm run docs` in `Editor/editorfe` from `src/platformS
 | [ScriptWidget Studio](studio.md), with multi-size preview, Copilot, Skills and the Data Source Lab | Mac |
 | In-app editor, Gallery, Skills and AI generation | iPhone, iPad and Android |
 | Management window with a code editor and a live preview | Windows, Linux |
-| AI conversation in the management window and on the command line (`scriptwidget ai`) | Linux |
+| Gallery, Skills and the AI conversation, in the management window and on the command line (`scriptwidget gallery`, `skills`, `ai`) | Linux |
 | [Web Studio](web-studio-browser.md) | Any desktop browser |
 | [Command line](mac-cli.md) | Mac |
 | [Command line `scriptwidget`](linux/README.md#the-command-line) | Linux |

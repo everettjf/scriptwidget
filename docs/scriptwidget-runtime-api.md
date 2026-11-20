@@ -4,7 +4,7 @@
 
 ## Which systems each component runs on
 
-Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, except the scrolling `<list>`, which only Android has and which is not in this reference (see [ScriptWidget for Android](android/README.md)). What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.
+Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, and so does `<list>`, which scrolls on Android only and is not in this reference (see [ScriptWidget for Android](android/README.md)): the other systems draw the rows that fit. What a system draws differently is in this table; [Platform support](platform-support.md) has the same table beside the APIs and the widget features.
 
 | Component | iPhone and iPad | Mac | Android | Windows | Linux |
 | --- | --- | --- | --- | --- | --- |
@@ -20,7 +20,8 @@ Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, e
 | `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
 | `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
 | The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
-| Scrolling `<list>` | No | No | Yes | No | No |
+| Scrolling `<list>` | Draws the rows that fit; no scrolling | Draws the rows that fit; no scrolling | Yes | Drawn in place and cut off at its bottom edge; no scrolling | Drawn in place and cut off at its bottom edge; no scrolling |
+| Wallpaper colors (`material.<role>`) | A fixed palette | A fixed palette | Yes | A fixed palette | A fixed palette |
 
 ## Components
 

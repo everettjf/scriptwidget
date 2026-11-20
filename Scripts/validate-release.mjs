@@ -196,9 +196,10 @@ for (const command of ["./Scripts/release-readiness.sh", "./Scripts/device-matri
 async function walk(directory) {
   const result = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
-    if (["node_modules", ".git", ".claude", "build", "dist", "StudioEditor.bundle"].includes(entry.name)) continue;
+    // "target" is Cargo's build folder: after a local Linux build it holds too many files to walk.
+    if (["node_modules", ".git", ".claude", "build", "dist", "target", "StudioEditor.bundle"].includes(entry.name)) continue;
     const path = join(directory, entry.name);
-    if (entry.isDirectory()) result.push(...await walk(path)); else result.push(path);
+    if (entry.isDirectory()) { for (const inner of await walk(path)) result.push(inner); } else result.push(path);
   }
   return result;
 }

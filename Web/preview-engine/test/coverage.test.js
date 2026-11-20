@@ -22,7 +22,7 @@ test("every tag in the native element switch has a coverage entry", () => {
 
 test("every property a native builder reads has a coverage entry", () => {
   const files = {
-    "Elements/ScriptWidgetElementTagStack.swift": ["vstack", "hstack"],
+    "Elements/ScriptWidgetElementTagStack.swift": ["vstack", "hstack", "list"],
     "Elements/ScriptWidgetElementTagGrid.swift": ["hgrid", "vgrid"],
     "Elements/ScriptWidgetElementTagShape.swift": ["rect", "capsule", "ellipse", "circle"],
     "Elements/ScriptWidgetElementTagImage.swift": ["image"],
@@ -63,6 +63,14 @@ test("Studio completion metadata matches the coverage matrix", () => {
     const covered = generalProps[key] || Object.values(coverage.tags).some((entry) => entry.props[key]);
     assert.ok(covered, `documented property ${key} has no coverage entry`);
   }
+});
+
+test("<list> is a native tag with the attribute Android reads", () => {
+  assert.match(read("ScriptWidgetElementView.swift"), /case "list": return ScriptWidgetElementTagList\.buildView/);
+  assert.deepEqual(Object.keys(coverage.tags.list.props), ["spacing"]);
+  assert.equal(ignoredProp("list", "spacing"), null);
+  assert.equal(ignoredProp("list", "padding"), null);
+  assert.match(ignoredProp("list", "alignment"), /ignored/);
 });
 
 test("properties the native runtime never reads are reported as ignored", () => {

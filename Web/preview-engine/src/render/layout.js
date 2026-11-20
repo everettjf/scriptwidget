@@ -443,6 +443,23 @@ export class ListNode extends Node {
   }
 }
 
+/// The same list where nothing scrolls (iPhone, iPad, Mac): the rows keep
+/// their natural heights and a row that does not fit completely is not drawn.
+/// The first row is always drawn, cut off at the bottom edge if it is taller.
+export class FittingListNode extends ListNode {
+  constructor(children, spacing) { super(children, spacing); this.rows = children; }
+  size(pw, ph) {
+    const drawn = this.children;
+    this.children = this.rows;
+    try { return super.size(pw, ph); } finally { this.children = drawn; }
+  }
+  place(x, y, width, height) {
+    this.children = this.rows;
+    super.place(x, y, width, height);
+    this.children = this.rows.filter((row, index) => index === 0 || row.frame.y + row.frame.height <= height + 0.01);
+  }
+}
+
 function mergedEdge(children, side) {
   // The largest text edge wins; SF Symbol edges count only without text.
   const edges = children.map((child) => child.edge(side)).filter(Boolean);

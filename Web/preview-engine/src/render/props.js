@@ -108,17 +108,41 @@ export function setPlatform(name) {
 
 const palette = () => (currentPlatform === "macos" ? macSystemColors : systemColors);
 
-/// Colors the host takes from the system theme (Android's wallpaper-based
-/// Material colors): { light: { primary: [r, g, b, a], ... }, dark: { ... } }.
-/// Scripts name them "material.<role>". Without a host palette the names are
-/// unknown, exactly as on iPhone, and the prop is ignored.
+/// The "material.<role>" color names. Android takes them from the wallpaper and
+/// hands them over as { light: { primary: [r, g, b, a], ... }, dark: { ... } }.
+/// Every other system has no such colors and draws the fixed table below: the
+/// browser preview of iPhone, iPad and Mac, and Windows and Linux, which supply
+/// no palette. A role that a supplied palette leaves out (Android before 14
+/// defines none of them) comes from the table too. `null` means that no render
+/// is running; the names are unknown then.
 let hostColors = null;
 export function setHostColors(colors) {
   const previous = hostColors;
-  hostColors = colors && typeof colors === "object" ? colors : null;
+  hostColors = colors === null ? null : (colors && typeof colors === "object" ? colors : {});
   return previous;
 }
 const hostColorPrefix = "material.";
+
+/// The fixed colors of the 25 roles: the baseline Material 3 scheme. Compared
+/// value by value with androidx.compose.material3.tokens (ColorLightTokens,
+/// ColorDarkTokens and PaletteTokens, "VERSION: v0_210") at
+/// https://github.com/androidx/androidx/tree/e4f55394b8035b5eb550f17ec130243c7cb9f64d/compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/tokens
+/// The roles and their order are those of Android's ThemeColors. The Swift
+/// runtime has the same table (ScriptWidgetMaterialPalette); its test
+/// testBrowserPreviewHasTheSamePalette reads the two lines below, so keep their form.
+const materialTable = (text) => {
+  const words = text.split(" ");
+  const table = {};
+  for (let index = 0; index < words.length; index += 2) {
+    const hex = parseInt(words[index + 1], 16);
+    table[words[index]] = Object.freeze([hex >> 16, (hex >> 8) & 0xff, hex & 0xff, 1]);
+  }
+  return Object.freeze(table);
+};
+export const fixedMaterialColors = Object.freeze({
+  light: materialTable("primary 6750A4 onPrimary FFFFFF primaryContainer EADDFF onPrimaryContainer 21005D secondary 625B71 onSecondary FFFFFF secondaryContainer E8DEF8 onSecondaryContainer 1D192B tertiary 7D5260 onTertiary FFFFFF tertiaryContainer FFD8E4 onTertiaryContainer 31111D background FEF7FF onBackground 1D1B20 surface FEF7FF onSurface 1D1B20 surfaceVariant E7E0EC onSurfaceVariant 49454F surfaceContainerLowest FFFFFF surfaceContainerLow F7F2FA surfaceContainer F3EDF7 surfaceContainerHigh ECE6F0 surfaceContainerHighest E6E0E9 outline 79747E outlineVariant CAC4D0"),
+  dark: materialTable("primary D0BCFF onPrimary 381E72 primaryContainer 4F378B onPrimaryContainer EADDFF secondary CCC2DC onSecondary 332D41 secondaryContainer 4A4458 onSecondaryContainer E8DEF8 tertiary EFB8C8 onTertiary 492532 tertiaryContainer 633B48 onTertiaryContainer FFD8E4 background 141218 onBackground E6E0E9 surface 141218 onSurface E6E0E9 surfaceVariant 49454F onSurfaceVariant CAC4D0 surfaceContainerLowest 0F0D13 surfaceContainerLow 1D1B20 surfaceContainer 211F26 surfaceContainerHigh 2B2930 surfaceContainerHighest 36343B outline 938F99 outlineVariant 49454F"),
+});
 export const systemBackground = (appearance) => systemBackgrounds[currentPlatform][appearance];
 
 /// Color(hex:): trims non-alphanumerics, scans leading hex digits, and treats
@@ -138,8 +162,12 @@ export function hexColor(value) {
 
 function builtinColor(name, appearance) {
   if (name.startsWith(hostColorPrefix)) {
-    const value = hostColors?.[appearance]?.[name.slice(hostColorPrefix.length)];
-    return Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item)) ? value : null;
+    if (hostColors === null) return null;
+    const role = name.slice(hostColorPrefix.length);
+    const value = hostColors[appearance]?.[role];
+    if (Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item))) return value;
+    const fixed = fixedMaterialColors[appearance];
+    return fixed && Object.hasOwn(fixed, role) ? fixed[role] : null;
   }
   return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? palette()[appearance][name] : null;
 }

@@ -56,5 +56,9 @@ test("editor metadata stays aligned with the authoritative native runtime switch
   const source = await readFile(new URL("../../../Shared/ScriptWidgetRuntime/Widget/Component/ScriptWidgetElementView.swift", import.meta.url), "utf8");
   const runtimeTags = [...source.matchAll(/case "([a-z]+)"\s*:/g)].map((match) => match[1]).sort();
   const metadataTags = Object.keys(scriptWidgetAPI.components).map((name) => name.toLowerCase()).sort();
-  assert.deepEqual(metadataTags, runtimeTags);
+  // <list> scrolls on Android only; the Apple runtime draws the rows that fit. It is not in the static
+  // metadata: a host that has it describes it to the editor itself (hostAPI.js, the Android bridge).
+  const hostDescribed = ["list"];
+  for (const tag of hostDescribed) assert.ok(runtimeTags.includes(tag) && !metadataTags.includes(tag), tag);
+  assert.deepEqual(metadataTags, runtimeTags.filter((tag) => !hostDescribed.includes(tag)));
 });

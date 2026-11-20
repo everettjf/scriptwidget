@@ -26,8 +26,11 @@ const closedValues = new Set([
 // Names the runtime reads that the metadata does not list.
 const extraGlobals = { weight: api.globalProperties.fontWeight.values, key: null };
 
-// Tags that only one system has: [system, tag, attributes].
+// Tags that the check accepts on one system only: [system, tag, attributes].
+// The other systems draw a <list> too (the rows that fit, without scrolling),
+// but their prompts do not teach it, so the check there still reports it.
 const platformTags = [["android", "list", ["spacing"]]];
+const platformTagNames = new Set(platformTags.map(([, name]) => name));
 
 function entry(owner, name, property) {
   const values = closedValues.has(`${owner}.${name}`) ? property?.values : null;
@@ -47,6 +50,7 @@ export function jsxSurfaceText() {
   }
   for (const [name, row] of Object.entries(coverage.tags)) {
     if (name !== name.toLowerCase()) continue; // Fragment is not written as a tag
+    if (platformTagNames.has(name)) continue; // written below, for its system only
     const properties = tags.get(name) ?? new Map();
     for (const key of Object.keys(row.props ?? {})) if (!properties.has(key) && !globals.has(key)) properties.set(key, key);
     tags.set(name, properties);

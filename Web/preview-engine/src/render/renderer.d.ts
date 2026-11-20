@@ -22,8 +22,11 @@ export function renderWidget(treeJSON: string, options?: {
   animationElapsed?: number | null;
   reduceTransparency?: boolean;
   reduceMotion?: boolean;
-  /// Android host only: turns on the scrolling <list> and the "material.<role>" color names.
-  /// `colors` maps each role to [red, green, blue, alpha] (0-255, alpha 0-1) for both appearances.
+  /// The QuickJS hosts only (Android, Windows, Linux): <list> becomes a list the host scrolls or cuts off,
+  /// and `colors` supplies the "material.<role>" color names: it maps each role to
+  /// [red, green, blue, alpha] (0-255, alpha 0-1) for both appearances (Android's wallpaper colors).
+  /// Without this option the renderer draws what iPhone, iPad and Mac draw: the rows of a <list> that fit.
+  /// A role that `colors` does not supply, on any system, is a fixed color: the baseline Material 3 scheme.
   android?: { colors?: { light?: Record<string, number[]>; dark?: Record<string, number[]> } | null } | null;
 }): Promise<RenderedWidget>;
 

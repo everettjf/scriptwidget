@@ -130,10 +130,23 @@ var __swRenderBundle = (() => {
   var hostColors = null;
   function setHostColors(colors) {
     const previous = hostColors;
-    hostColors = colors && typeof colors === "object" ? colors : null;
+    hostColors = colors === null ? null : colors && typeof colors === "object" ? colors : {};
     return previous;
   }
   var hostColorPrefix = "material.";
+  var materialTable = (text) => {
+    const words = text.split(" ");
+    const table2 = {};
+    for (let index = 0; index < words.length; index += 2) {
+      const hex = parseInt(words[index + 1], 16);
+      table2[words[index]] = Object.freeze([hex >> 16, hex >> 8 & 255, hex & 255, 1]);
+    }
+    return Object.freeze(table2);
+  };
+  var fixedMaterialColors = Object.freeze({
+    light: materialTable("primary 6750A4 onPrimary FFFFFF primaryContainer EADDFF onPrimaryContainer 21005D secondary 625B71 onSecondary FFFFFF secondaryContainer E8DEF8 onSecondaryContainer 1D192B tertiary 7D5260 onTertiary FFFFFF tertiaryContainer FFD8E4 onTertiaryContainer 31111D background FEF7FF onBackground 1D1B20 surface FEF7FF onSurface 1D1B20 surfaceVariant E7E0EC onSurfaceVariant 49454F surfaceContainerLowest FFFFFF surfaceContainerLow F7F2FA surfaceContainer F3EDF7 surfaceContainerHigh ECE6F0 surfaceContainerHighest E6E0E9 outline 79747E outlineVariant CAC4D0"),
+    dark: materialTable("primary D0BCFF onPrimary 381E72 primaryContainer 4F378B onPrimaryContainer EADDFF secondary CCC2DC onSecondary 332D41 secondaryContainer 4A4458 onSecondaryContainer E8DEF8 tertiary EFB8C8 onTertiary 492532 tertiaryContainer 633B48 onTertiaryContainer FFD8E4 background 141218 onBackground E6E0E9 surface 141218 onSurface E6E0E9 surfaceVariant 49454F onSurfaceVariant CAC4D0 surfaceContainerLowest 0F0D13 surfaceContainerLow 1D1B20 surfaceContainer 211F26 surfaceContainerHigh 2B2930 surfaceContainerHighest 36343B outline 938F99 outlineVariant 49454F")
+  });
   var systemBackground = (appearance) => systemBackgrounds[currentPlatform][appearance];
   function hexColor(value) {
     const hex = value.replace(/^[^A-Za-z0-9]+|[^A-Za-z0-9]+$/g, "");
@@ -165,8 +178,12 @@ var __swRenderBundle = (() => {
   }
   function builtinColor(name, appearance) {
     if (name.startsWith(hostColorPrefix)) {
-      const value = hostColors?.[appearance]?.[name.slice(hostColorPrefix.length)];
-      return Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item)) ? value : null;
+      if (hostColors === null) return null;
+      const role = name.slice(hostColorPrefix.length);
+      const value = hostColors[appearance]?.[role];
+      if (Array.isArray(value) && value.length === 4 && value.every((item) => typeof item === "number" && Number.isFinite(item))) return value;
+      const fixed = fixedMaterialColors[appearance];
+      return fixed && Object.hasOwn(fixed, role) ? fixed[role] : null;
     }
     return Object.prototype.hasOwnProperty.call(systemColors.light, name) ? palette()[appearance][name] : null;
   }
@@ -607,6 +624,7 @@ var __swRenderBundle = (() => {
       vstack: { state: "supported", props: { alignment: s(), spacing: s("Default spacing measured on iOS 27") } },
       hstack: { state: "supported", props: { alignment: s(), spacing: s() } },
       zstack: { state: "supported", props: {} },
+      list: { state: "supported", note: "Scrolls on Android only. iPhone, iPad and Mac draw the rows that fit, from the top and at their own heights, and so does the preview; at most 100 rows", props: { spacing: s("Gap between rows; default 0") } },
       hgrid: { state: "approximated", note: "Lazy grid tracks; cells are centered", props: { columns: s("fixed, flexible, adaptive"), alignment: a("Cells are centered"), spacing: s() } },
       vgrid: { state: "approximated", note: "Lazy grid tracks; cells are centered", props: { columns: s("fixed, flexible, adaptive"), alignment: a("Cells are centered"), spacing: s() } },
       text: { state: "supported", props: { ...fontProps(), font: s("SF metrics on Apple systems; fallback fonts elsewhere"), color: s(), alignment: s() } },
@@ -1774,6 +1792,26 @@ ${join(moved)}`;
       this.contentHeight = cursor;
     }
   };
+  var FittingListNode = class extends ListNode {
+    constructor(children, spacing) {
+      super(children, spacing);
+      this.rows = children;
+    }
+    size(pw, ph) {
+      const drawn = this.children;
+      this.children = this.rows;
+      try {
+        return super.size(pw, ph);
+      } finally {
+        this.children = drawn;
+      }
+    }
+    place(x, y, width, height) {
+      this.children = this.rows;
+      super.place(x, y, width, height);
+      this.children = this.rows.filter((row, index) => index === 0 || row.frame.y + row.frame.height <= height + 0.01);
+    }
+  };
   function mergedEdge(children, side) {
     const edges = children.map((child) => child.edge(side)).filter(Boolean);
     const text = edges.filter((edge) => !edge.symbol);
@@ -2117,7 +2155,10 @@ ${join(moved)}`;
     textMeasurer = null,
     resolveImageURL = null,
     gifPreparer = null,
-    // Android only: { colors } turns on the scrolling <list> and the "material.<role>" color names.
+    // The QuickJS hosts (Android, Windows, Linux): <list> becomes a scrolling list for the host, and
+    // { colors } supplies the "material.<role>" color names (Android's wallpaper colors). Without the
+    // option the renderer draws what iPhone, iPad and Mac draw: the rows of a <list> that fit. A name
+    // the host does not supply is a fixed color everywhere (fixedMaterialColors in props.js).
     android = null
   } = {}) {
     const fixedNow = typeof now === "number" && Number.isFinite(now) ? now : null;
@@ -2717,14 +2758,16 @@ ${join(moved)}`;
           break;
         }
         case "list": {
-          if (!android) {
-            report("warning", "tag.android_only", '<list> scrolls on Android only; iPhone shows "UnknownTagName"');
-            return new DecorationNode(text("UnknownTagName", defaultFont(), null), { background: { color: color("pink") } });
-          }
           let rows = buildChildren(element, "v");
           if (rows.length > maximumListRows) {
             report("warning", "list.truncated", `<list> shows its first ${maximumListRows} rows`);
             rows = rows.slice(0, maximumListRows);
+          }
+          if (!android) {
+            report("info", "tag.approximated", "<list> scrolls on Android only; iPhone, iPad and Mac draw the rows that fit");
+            content = new FittingListNode(rows, reader.double("spacing") ?? 0);
+            content.clipsRows = true;
+            break;
           }
           for (const row of rows) row.listRow = true;
           content = new ListNode(rows, reader.double("spacing") ?? 0);
@@ -3125,6 +3168,7 @@ ${join(moved)}`;
         Object.assign(element.style, { overflowX: "hidden", overflowY: "auto" });
       }
       if (node.listRow) element.dataset.swListRow = "1";
+      if (node.clipsRows) element.style.overflow = "hidden";
       parent.appendChild(element);
       if (node.draw) {
         node.draw(node, element);
@@ -3209,7 +3253,7 @@ ${join(moved)}`;
       }
     }
     const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
-    const previousColors = setHostColors(android?.colors ?? null);
+    const previousColors = setHostColors(android?.colors ?? {});
     try {
       const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
       const [w, h] = rootNode.size(size.width, size.height);

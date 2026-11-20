@@ -1,5 +1,5 @@
 import { syntaxTree } from "@codemirror/language";
-import { scriptWidgetAPI } from "./scriptWidgetCompletions.js";
+import { editorAPI } from "./hostAPI.js";
 
 function childNodes(node, name) {
   const children = [];
@@ -14,8 +14,8 @@ function openingTags(state) {
   syntaxTree(state).iterate({
     enter(node) {
       if (node.name !== "JSXOpenTag" && node.name !== "JSXSelfClosingTag") return;
-      const identifiers = childNodes(node, "JSXIdentifier");
-      const nameNode = identifiers[0];
+      // A tag written in lower case, such as a host's <list>, is a JSXBuiltin.
+      const nameNode = childNodes(node, "JSXIdentifier")[0] ?? childNodes(node, "JSXBuiltin")[0];
       if (!nameNode) return;
       tags.push({
         name: state.doc.sliceString(nameNode.from, nameNode.to),
@@ -37,6 +37,7 @@ function openingTags(state) {
 
 export function scriptWidgetDiagnostics(view) {
   const diagnostics = [];
+  const scriptWidgetAPI = editorAPI().api;
   for (const tag of openingTags(view.state)) {
     const component = scriptWidgetAPI.components[tag.name];
     if (!component) continue; // Custom components are part of the public runtime.
@@ -83,7 +84,7 @@ export function scriptWidgetDiagnostics(view) {
 export function scriptWidgetHover(view, position) {
   const tag = openingTags(view.state).find((candidate) => position >= candidate.from && position <= candidate.to);
   if (!tag) return null;
-  const component = scriptWidgetAPI.components[tag.name];
+  const component = editorAPI().api.components[tag.name];
   if (!component) return null;
   return {
     pos: tag.from,

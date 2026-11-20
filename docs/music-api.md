@@ -1,7 +1,7 @@
 # Music app playback
 
 <!-- platforms:start -->
-> **Runs on:** iPhone and iPad, Android (The active media session of any app). **Not on:** Mac, Windows, Linux. Details and limits: [Platform support](platform-support.md).
+> **Runs on:** iPhone and iPad, Android (The active media session of any app), Linux (The active MPRIS player, read only). **Not on:** Mac, Windows. Details and limits: [Platform support](platform-support.md).
 <!-- platforms:end -->
 
 Runtime API 1.4 adds the read-only `$music` namespace. An installed Package 2.0 widget must declare `"permissions": ["music"]`. Music library authorization is requested by a person in ScriptWidget Settings, never by imported JavaScript. No network permission is needed.

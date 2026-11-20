@@ -43,7 +43,7 @@ export function lucideIconFor(systemName) {
   return null;
 }
 import {
-  AspectNode, DecorationNode, FixedNode, FlexibleNode, FrameNode, GridNode, ListNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
+  AspectNode, DecorationNode, FittingListNode, FixedNode, FlexibleNode, FrameNode, GridNode, ListNode, Node, PaddingNode, SpacerNode, StackNode, TextNode,
   ZStackNode, createTextMeasurer, fillText,
 } from "./layout.js";
 
@@ -173,7 +173,10 @@ export async function renderWidget(treeJSON, {
   now = null, animations = "live", animationElapsed = null, reduceTransparency = false, reduceMotion = false,
   // Native hosts (Android) supply these; the web hosts use the defaults.
   size: explicitSize = null, textMeasurer = null, resolveImageURL = null, gifPreparer = null,
-  // Android only: { colors } turns on the scrolling <list> and the "material.<role>" color names.
+  // The QuickJS hosts (Android, Windows, Linux): <list> becomes a scrolling list for the host, and
+  // { colors } supplies the "material.<role>" color names (Android's wallpaper colors). Without the
+  // option the renderer draws what iPhone, iPad and Mac draw: the rows of a <list> that fit. A name
+  // the host does not supply is a fixed color everywhere (fixedMaterialColors in props.js).
   android = null,
 } = {}) {
   // Milliseconds since 1970 for a fixed clock (snapshot tests), or null.
@@ -781,15 +784,17 @@ export async function renderWidget(treeJSON, {
         break;
       }
       case "list": {
-        // Android has scrolling widgets; iPhone does not know the tag.
-        if (!android) {
-          report("warning", "tag.android_only", '<list> scrolls on Android only; iPhone shows "UnknownTagName"');
-          return new DecorationNode(text("UnknownTagName", defaultFont(), null), { background: { color: color("pink") } });
-        }
         let rows = buildChildren(element, "v");
         if (rows.length > maximumListRows) {
           report("warning", "list.truncated", `<list> shows its first ${maximumListRows} rows`);
           rows = rows.slice(0, maximumListRows);
+        }
+        if (!android) {
+          // iPhone, iPad and Mac cannot scroll a widget: the rows that fit are drawn.
+          report("info", "tag.approximated", "<list> scrolls on Android only; iPhone, iPad and Mac draw the rows that fit");
+          content = new FittingListNode(rows, reader.double("spacing") ?? 0);
+          content.clipsRows = true;
+          break;
         }
         for (const row of rows) row.listRow = true;
         content = new ListNode(rows, reader.double("spacing") ?? 0);
@@ -1215,6 +1220,8 @@ export async function renderWidget(treeJSON, {
     // For hosts that scroll the list with their own views (Android).
     if (node.list) { element.dataset.swList = JSON.stringify({ contentHeight: node.contentHeight }); Object.assign(element.style, { overflowX: "hidden", overflowY: "auto" }); }
     if (node.listRow) element.dataset.swListRow = "1";
+    // Where nothing scrolls (iPhone, iPad, Mac) the list cuts off what reaches past it.
+    if (node.clipsRows) element.style.overflow = "hidden";
     parent.appendChild(element);
     if (node.draw) {
       node.draw(node, element);
@@ -1297,7 +1304,9 @@ export async function renderWidget(treeJSON, {
   }
 
   const previousPlatform = setPlatform(deviceProfiles[profile]?.platform ?? "ios");
-  const previousColors = setHostColors(android?.colors ?? null);
+  // Android takes the names from the wallpaper; a role it does not supply, and every role on
+  // Windows, Linux, iPhone, iPad and Mac, is the fixed palette.
+  const previousColors = setHostColors(android?.colors ?? {});
   try {
     const rootNode = build(root, "z", { isRoot: root.tag !== "Fragment" });
     const [w, h] = rootNode.size(size.width, size.height);

@@ -4,7 +4,7 @@ import { executePackageInNode } from "../src/node.js";
 import { parseColor, parsePaint, setHostColors } from "../src/render/props.js";
 import { FixedNode, ListNode, SpacerNode, StackNode } from "../src/render/layout.js";
 
-test("material color names resolve only when the host supplies a palette", () => {
+test("material color names resolve only during a render, and to the host palette when it has the role", () => {
   assert.equal(parseColor("material.primary"), null);
   assert.equal(parseColor("material.primary,0.5", "dark"), null);
   const previous = setHostColors({ light: { primary: [10, 20, 30, 1] }, dark: { primary: [200, 210, 220, 1] } });
@@ -14,7 +14,7 @@ test("material color names resolve only when the host supplies a palette", () =>
     assert.deepEqual(parseColor("material.primary", "dark"), [200, 210, 220, 1]);
     assert.deepEqual(parseColor("material.primary,0.5"), [10, 20, 30, 0.5]);
     assert.deepEqual(parsePaint("material.primary", "dark"), { color: [200, 210, 220, 1] });
-    // A role the host does not define, and names outside the prefix, stay unknown.
+    // A role that does not exist, and names outside the prefix, stay unknown.
     assert.equal(parseColor("material.unknownRole"), null);
     assert.equal(parseColor("material."), null);
     assert.equal(parseColor("materialprimary"), null);
@@ -25,10 +25,16 @@ test("material color names resolve only when the host supplies a palette", () =>
   assert.equal(parseColor("material.primary"), null);
 });
 
-test("a malformed host palette never yields a color", () => {
-  for (const colors of [{ light: { primary: "red" } }, { light: { primary: [1, 2, 3] } }, { light: { primary: [1, 2, 3, NaN] } }, { light: null }, "x", 7]) {
+test("a malformed host palette never yields its own color: the role is the fixed one", () => {
+  for (const colors of [{ light: { primary: "red" } }, { light: { primary: [1, 2, 3] } }, { light: { primary: [1, 2, 3, NaN] } }, { light: null }, {}, "x", 7]) {
     const previous = setHostColors(colors);
-    try { assert.equal(parseColor("material.primary"), null); } finally { setHostColors(previous); }
+    try {
+      assert.deepEqual(parseColor("material.primary"), [0x67, 0x50, 0xa4, 1]);
+      assert.deepEqual(parseColor("material.primary,0.5", "dark"), [0xd0, 0xbc, 0xff, 0.5]);
+      assert.equal(parseColor("material.unknownRole"), null);
+      assert.equal(parseColor("material.constructor"), null);
+      assert.equal(parseColor("material.primary", "sepia"), null);
+    } finally { setHostColors(previous); }
   }
 });
 

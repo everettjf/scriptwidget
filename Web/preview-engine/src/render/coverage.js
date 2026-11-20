@@ -31,6 +31,7 @@ export const coverage = Object.freeze({
     vstack: { state: "supported", props: { alignment: s(), spacing: s("Default spacing measured on iOS 27") } },
     hstack: { state: "supported", props: { alignment: s(), spacing: s() } },
     zstack: { state: "supported", props: {} },
+    list: { state: "supported", note: "Scrolls on Android only. iPhone, iPad and Mac draw the rows that fit, from the top and at their own heights, and so does the preview; at most 100 rows", props: { spacing: s("Gap between rows; default 0") } },
     hgrid: { state: "approximated", note: "Lazy grid tracks; cells are centered", props: { columns: s("fixed, flexible, adaptive"), alignment: a("Cells are centered"), spacing: s() } },
     vgrid: { state: "approximated", note: "Lazy grid tracks; cells are centered", props: { columns: s("fixed, flexible, adaptive"), alignment: a("Cells are centered"), spacing: s() } },
     text: { state: "supported", props: { ...fontProps(), font: s("SF metrics on Apple systems; fallback fonts elsewhere"), color: s(), alignment: s() } },

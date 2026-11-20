@@ -4,7 +4,7 @@
 
 ## Which systems each component runs on
 
-Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, except the scrolling `<list>`, which only Android has and which is not in this reference (see [ScriptWidget for Android](https://github.com/everettjf/scriptwidget/blob/main/docs/android/README.md)). What a system draws differently is in this table; [Platform support](https://github.com/everettjf/scriptwidget/blob/main/docs/platform-support.md) has the same table beside the APIs and the widget features.
+Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, and so does `<list>`, which scrolls on Android only and is not in this reference (see [ScriptWidget for Android](https://github.com/everettjf/scriptwidget/blob/main/docs/android/README.md)): the other systems draw the rows that fit. What a system draws differently is in this table; [Platform support](https://github.com/everettjf/scriptwidget/blob/main/docs/platform-support.md) has the same table beside the APIs and the widget features.
 
 | Component | iPhone and iPad | Mac | Android | Windows | Linux |
 | --- | --- | --- | --- | --- | --- |
@@ -16,11 +16,12 @@ Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, e
 | `<icon>` and `systemName` images | Yes | Yes | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder |
 | `<date>` | Yes | Yes | `timer` and a `time` of now tick by themselves; `relative`, `offset` and `date` are redrawn at each refresh | A timer is redrawn every second and a clock time every minute | A timer is redrawn every second and a clock time every minute |
 | `<gif>` | Animated in the app's preview; in a widget the system decides and may hold one frame | The first frame | Up to 24 sampled frames | The first frame | Animated on the desktop, at most 60 frames |
-| The `animation` property (clock hands, swing) | Moves in the app's preview; in a widget the system schedules it and may hold one frame | Standard clock hands show the time without moving; the others stay at rest | Standard clock hands are a system clock; swing and custom intervals play as frames | The first frame | The first frame |
+| The `animation` property (clock hands, swing) | Moves in the app's preview; in a widget the system schedules it and may hold one frame | Standard clock hands show the time without moving; the others stay at rest | Standard clock hands are a system clock; swing and custom intervals play as frames | The first frame | Moves on the desktop: clock hands follow the time, swings and custom intervals play at up to 20 frames a second; `render` and the previews show one frame |
 | `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
 | `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
 | The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
-| Scrolling `<list>` | No | No | Yes | No | No |
+| Scrolling `<list>` | Draws the rows that fit; no scrolling | Draws the rows that fit; no scrolling | Yes | Drawn in place and cut off at its bottom edge; no scrolling | Drawn in place and cut off at its bottom edge; no scrolling |
+| Wallpaper colors (`material.<role>`) | A fixed palette | A fixed palette | Yes | A fixed palette | A fixed palette |
 
 ## Components
 
@@ -36,7 +37,7 @@ Arrange children vertically.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -62,7 +63,7 @@ Arrange children horizontally.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -88,7 +89,7 @@ Overlay children.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -113,7 +114,7 @@ Vertical lazy grid.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -140,7 +141,7 @@ Horizontal lazy grid.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -167,7 +168,7 @@ Display text content.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -193,7 +194,7 @@ Display a formatted date.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -220,7 +221,7 @@ Display a bundled, remote, or SF Symbol image.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -253,7 +254,7 @@ Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -279,7 +280,7 @@ Flexible layout space.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -305,7 +306,7 @@ Rectangle shape.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -332,7 +333,7 @@ Filled rounded rectangle.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -358,7 +359,7 @@ Capsule shape.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -385,7 +386,7 @@ Ellipse shape.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -412,7 +413,7 @@ Circle shape.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -439,7 +440,7 @@ Display a gauge or instrument.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -477,7 +478,7 @@ Render chart data.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -508,7 +509,7 @@ Open a URL when selected.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -534,7 +535,7 @@ Horizontal or vertical separator.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -561,7 +562,7 @@ Fixed-length line.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -589,7 +590,7 @@ SF Symbol icon.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -616,7 +617,7 @@ Text paired with an SF Symbol.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -643,7 +644,7 @@ Linear or circular progress.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -674,7 +675,7 @@ Circular progress ring.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -702,7 +703,7 @@ Compact status badge.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -729,7 +730,7 @@ Outlined metadata chip.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -757,7 +758,7 @@ Title, value, and subtitle statistic.
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -786,7 +787,7 @@ Interactive widget button. Use actionID to share a declared Package 2.0 action w
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
@@ -814,7 +815,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 | `font` | `enum` | No | Semantic text style. Values: `largeTitle`, `title`, `title2`, `title3`, `headline`, `subheadline`, `body`, `callout`, `footnote`, `caption`, `caption2` |
 | `fontWeight` | `enum` | No | Font weight. Values: `ultraLight`, `thin`, `light`, `regular`, `medium`, `semibold`, `bold`, `heavy`, `black` |
 | `fontDesign` | `enum` | No | Font design. Values: `default`, `rounded`, `serif`, `monospaced` |
-| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), or flexible frame ("max", "max,48"). |
+| `frame` | `number|string` | No | Square size (64 or "64"), width,height ("64,48"), fill both directions ("max"), full width with a fixed height ("max,48") or full height with a fixed width ("64,max"). An alignment may follow: "max,leading", "64,48,topLeading", "max,48,leading", "64,max,top"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>. |
 | `padding` | `number|string` | No | Padding amount or edge description. |
 | `corner` | `number` | No | Corner radius. |
 | `opacity` | `number` | No | Opacity from 0 through 1. |
