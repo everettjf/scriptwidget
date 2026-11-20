@@ -89,10 +89,11 @@ struct AIConversationTurnsView: View {
                     .accessibilityLabel("Code being written")
             }
         case .succeeded:
-            Text(turn.note ?? "Done.")
+            Text(turn.note ?? String(localized: "Done."))
                 .textSelection(.enabled)
             if turn.repairs > 0 {
-                Label("Fixed automatically \(turn.repairs) time\(turn.repairs == 1 ? "" : "s")", systemImage: "wrench.and.screwdriver")
+                // One key; its singular and plural forms are in Localizable.stringsdict.
+                Label("Fixed automatically \(turn.repairs) times", systemImage: "wrench.and.screwdriver")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -110,12 +111,12 @@ struct AIConversationTurnsView: View {
             HStack {
                 retryButton(turn, title: "Try Again")
                 if let code = turn.failedSource, !code.isEmpty {
-                    Button("Show Its Code") { showCode("Code That Did Not Run", code) }
+                    Button("Show Its Code") { showCode(String(localized: "Code That Did Not Run"), code) }
                         .controlSize(.small)
                 }
             }
         case .failed:
-            Label(turn.errorSummary ?? "The AI provider could not complete the request.", systemImage: "wifi.exclamationmark")
+            Label(turn.errorSummary ?? String(localized: "The AI provider could not complete the request."), systemImage: "wifi.exclamationmark")
                 .foregroundStyle(.red)
                 .textSelection(.enabled)
             retryButton(turn, title: "Retry")
@@ -153,7 +154,7 @@ struct AIConversationTurnsView: View {
                         .disabled(session.isRunning)
                 }
                 if let parent = session.conversation.version(version.parentID) {
-                    AIVersionChangesButton(title: "Changes in Version \(version.number)", old: parent.source, new: version.source)
+                    AIVersionChangesButton(title: String(localized: "Changes in Version \(version.number)"), old: parent.source, new: version.source)
                 }
                 if turn.isAbandoned {
                     Text("left behind")

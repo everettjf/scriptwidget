@@ -64,6 +64,7 @@ struct ScriptWidgetElementView: View {
             switch tag {
             case "hstack": return ScriptWidgetElementTagStack.buildViewHStack(element, context)
             case "vstack": return ScriptWidgetElementTagStack.buildViewVStack(element, context)
+            case "list": return ScriptWidgetElementTagList.buildView(element, context)
             case "zstack": return ScriptWidgetElementTagZStack.buildView(element, context)
             case "hgrid": return ScriptWidgetElementTagGrid.buildViewHGrid(element, context)
             case "vgrid": return ScriptWidgetElementTagGrid.buildViewVGrid(element, context)

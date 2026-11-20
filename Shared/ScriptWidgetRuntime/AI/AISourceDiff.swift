@@ -136,17 +136,18 @@ struct AISourceDiffView: View {
     private func row(_ line: AISourceDiff.Line) -> some View {
         switch line.kind {
         case .skipped(let count):
-            Text("⋯ \(count) unchanged line\(count == 1 ? "" : "s")")
+            // Singular and plural forms are in Localizable.stringsdict.
+            Text("⋯ \(count) unchanged lines")
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 4)
         case .same:
-            code(" ", line.text, background: .clear, label: "Unchanged")
+            code(" ", line.text, background: .clear, label: String(localized: "Unchanged"))
         case .added:
-            code("+", line.text, background: Color.green.opacity(0.18), label: "Added")
+            code("+", line.text, background: Color.green.opacity(0.18), label: String(localized: "Added"))
         case .removed:
-            code("−", line.text, background: Color.red.opacity(0.16), label: "Removed")
+            code("−", line.text, background: Color.red.opacity(0.16), label: String(localized: "Removed"))
         }
     }
 
@@ -165,7 +166,7 @@ struct AISourceDiffView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(background)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(label): \(text)")
+        .accessibilityLabel(Text(verbatim: "\(label): \(text)"))
     }
 }
 
@@ -182,7 +183,7 @@ struct AIVersionChangesButton: View {
             Button {
                 isShown = true
             } label: {
-                Text("+\(summary.added) −\(summary.removed)")
+                Text(verbatim: "+\(summary.added) −\(summary.removed)")
                     .font(.caption.monospacedDigit())
             }
             #if os(macOS)
@@ -196,7 +197,7 @@ struct AIVersionChangesButton: View {
                     HStack {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(title).font(.headline)
-                            Text("\(summary.added) line\(summary.added == 1 ? "" : "s") added, \(summary.removed) removed")
+                            Text("\(summary.added) lines added, \(summary.removed) removed")
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }

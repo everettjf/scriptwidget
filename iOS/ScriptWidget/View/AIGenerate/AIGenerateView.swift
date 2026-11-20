@@ -331,7 +331,7 @@ private struct AIConversationScreen: View {
                                 session.setSize(example.size)
                                 composerFocused = true
                             } label: {
-                                Label(example.title, systemImage: example.symbol)
+                                Label(LocalizedStringKey(example.title), systemImage: example.symbol)
                                     .font(.caption)
                                     .padding(.horizontal, 10)
                                     .padding(.vertical, 7)
@@ -360,7 +360,8 @@ private struct AIConversationScreen: View {
                                         Text(draft.title.isEmpty ? "Untitled" : draft.title)
                                             .lineLimit(1)
                                             .foregroundStyle(.primary)
-                                        Text("\(draft.versionCount) version\(draft.versionCount == 1 ? "" : "s") · \(draft.updatedAt.formatted(.relative(presentation: .named)))")
+                                        // The singular and plural forms are in Localizable.stringsdict.
+                                        Text("\(draft.versionCount) versions · \(draft.updatedAt.formatted(.relative(presentation: .named)))")
                                             .font(.caption)
                                             .foregroundStyle(.secondary)
                                     }

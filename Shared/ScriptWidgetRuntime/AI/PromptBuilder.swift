@@ -437,7 +437,7 @@ enum PromptBuilder {
         let canEdit = !(context.currentCode ?? "").isEmpty
         parts.append("""
         Reply in exactly this form, which replaces the output rule above for this conversation:
-        SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
+        SUMMARY: one short sentence saying what you made or changed, written in the language of the request below (a request in English gets an English sentence)
         \(canEdit ? editReplyRule : "then the FULL widget code in one ```jsx fenced block.")
         If, and only if, the widget uses `fetch` or `$http`, end with one more fenced block
         that declares every host it contacts:

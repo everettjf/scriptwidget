@@ -91,6 +91,7 @@
 		A27000022F270001008B90A2 /* AppConfigFrequency.swift in Sources */ = {isa = PBXBuildFile; fileRef = F0C7ECF72AD0759F0039D30D /* AppConfigFrequency.swift */; };
 		B165542F120D2E511D4012B9 /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */; };
 		A102003100000000000000B0 /* AIConversationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101003100000000000000B0 /* AIConversationTests.swift */; };
+		A102003200000000000000B0 /* AIProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A101003200000000000000B0 /* AIProviderTests.swift */; };
 		BFD2727EF994405AAC85396D /* ReloadWidgetAppIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */; };
 		C803FC625CDC9D9CC69F403D /* ScriptWidgetRuntimeStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9CAE338C670B4A70B52A6CFD /* ScriptWidgetRuntimeStorage.swift */; };
 		ED7E5FDCF5026E15675F9A4E /* ScriptWidgetStorageLock.swift in Sources */ = {isa = PBXBuildFile; fileRef = 99619D8E19192386E982EC46 /* ScriptWidgetStorageLock.swift */; };
@@ -470,6 +471,7 @@
 		22BF70AC62DF40ECA1BBF311 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */; };
 		8550C3EB28C979FF44096ABB /* FeedbackEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = A099D7CF8857E8E2EF87DB0D /* FeedbackEmail.swift */; };
 		F14347EA2F051BF99F5CA4E5 /* FeedbackEmailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 84BEED0B493EBDAF95729EC2 /* FeedbackEmailButton.swift */; };
+		A1A0000700000000000000B0 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = A1A0000300000000000000B0 /* Localizable.stringsdict */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -546,6 +548,7 @@
 		3ABFAA06102A6639A8AECACE /* ScriptWidgetServiceAuthorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetServiceAuthorization.swift; sourceTree = "<group>"; };
 		6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIGenerationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIGenerationTests.swift; sourceTree = "<group>"; };
 		A101003100000000000000B0 /* AIConversationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIConversationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIConversationTests.swift; sourceTree = "<group>"; };
+		A101003200000000000000B0 /* AIProviderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIProviderTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIProviderTests.swift; sourceTree = "<group>"; };
 		750919EB639B4EB3B07D27FC /* ReloadWidgetAppIntent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReloadWidgetAppIntent.swift; sourceTree = "<group>"; };
 		95D38A9C0960C28615553017 /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
 		99DD0AE0F4C799D5DFEE8E76 /* PackageCacheTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = PackageCacheTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/PackageCacheTests.swift; sourceTree = "<group>"; };
@@ -876,6 +879,7 @@
 		903FF2D5FB884143B154AA20 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 		A099D7CF8857E8E2EF87DB0D /* FeedbackEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmail.swift"; sourceTree = SOURCE_ROOT; };
 		84BEED0B493EBDAF95729EC2 /* FeedbackEmailButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmailButton.swift"; sourceTree = SOURCE_ROOT; };
+		A1A0000400000000000000B0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = ../Shared/ScriptWidgetRuntime/Localizations/en.lproj/Localizable.stringsdict; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -950,6 +954,7 @@
 				8B54AAAD0C7EFDF340B91B82 /* RuntimeDeliveryTests.swift */,
 				6A6FE5687E8CD01E2ED9C23C /* AIGenerationTests.swift */,
 				A101003100000000000000B0 /* AIConversationTests.swift */,
+				A101003200000000000000B0 /* AIProviderTests.swift */,
 				E9ABF8F095487FE21DB73700 /* RuntimeExecutionTests.swift */,
 				4504B2C47E011F6AE74734CD /* BrowserPreviewParityTests.swift */,
 				99DD0AE0F4C799D5DFEE8E76 /* PackageCacheTests.swift */,
@@ -1189,6 +1194,7 @@
 				D18AAC3D252A12D20065386A /* Info.plist */,
 				D1403D962552FE5C0076F87C /* ScriptWidget-Bridging-Header.h */,
 				D1907212256159B700F855C7 /* ScriptWidget.entitlements */,
+				A1A0000300000000000000B0 /* Localizable.stringsdict */,
 				D18AAC35252A12D20065386A /* Preview Content */,
 			);
 			path = ScriptWidget;
@@ -2007,6 +2013,7 @@
 				F29119842793035E00B860B0 /* support.bundle in Resources */,
 				F2C5C63027AF5C3200797C5B /* lightblue@3x.png in Resources */,
 				D18AAC34252A12D20065386A /* Assets.xcassets in Resources */,
+				A1A0000700000000000000B0 /* Localizable.stringsdict in Resources */,
 				F277CB9227CA73BB003AB97D /* newicon4@2x.png in Resources */,
 				F277CB8E27CA73BB003AB97D /* newicon7@2x.png in Resources */,
 				F277CB9327CA73BB003AB97D /* newicon3@2x.png in Resources */,
@@ -2066,6 +2073,7 @@
 				A120000600000000000000B0 /* WebStudioServerTests.swift in Sources */,
 				B165542F120D2E511D4012B9 /* AIGenerationTests.swift in Sources */,
 				A102003100000000000000B0 /* AIConversationTests.swift in Sources */,
+				A102003200000000000000B0 /* AIProviderTests.swift in Sources */,
 				84C1353FBC065F971E23478C /* PackageCacheTests.swift in Sources */,
 				0A3A531AF5AC4D499D95C0F1 /* SystemServiceTests.swift in Sources */,
 				CE64AF58A011259D931CFF8F /* RuntimeExecutionTests.swift in Sources */,
@@ -2450,6 +2458,14 @@
 				F2534B4127AA9C50000A4F98 /* en */,
 			);
 			name = PhotoPicker.storyboard;
+			sourceTree = "<group>";
+		};
+		A1A0000300000000000000B0 /* Localizable.stringsdict */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A1A0000400000000000000B0 /* en */,
+			);
+			name = Localizable.stringsdict;
 			sourceTree = "<group>";
 		};
 /* End PBXVariantGroup section */

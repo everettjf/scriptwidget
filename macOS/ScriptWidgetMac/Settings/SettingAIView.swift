@@ -50,6 +50,7 @@ struct SettingAIView: View {
                 Menu {
                     Button("Apple PCC") { addProfile(.makeApplePrivateCloudCompute()) }
                     Button("Ollama") { addProfile(.makeOllama()) }
+                    Button("Anthropic") { addProfile(.makeAnthropic()) }
                     Button("OpenAI-compatible") { addProfile(.makeDefault(named: "Custom API")) }
                 } label: {
                     Image(systemName: "plus")
@@ -105,7 +106,7 @@ struct SettingAIView: View {
 
             VStack(alignment: .leading, spacing: 1) {
                 HStack(spacing: 4) {
-                    Text(profile.name.isEmpty ? "Unnamed" : profile.name)
+                    Text(profile.name.isEmpty ? String(localized: "Unnamed") : profile.name)
                         .font(.body)
                     if profile.providerKind == .applePrivateCloudCompute {
                         Text("PCC")
@@ -319,6 +320,7 @@ private struct AIProfileEditorPane: View {
 
     private static let providerPresets: [(label: String, host: String, models: [String])] = [
         ("OpenAI",   "https://api.openai.com", ["gpt-4o-mini", "gpt-4o", "gpt-4.1-mini", "gpt-4.1", "o4-mini"]),
+        ("Anthropic", AIProfile.anthropicBaseURL, AIProfile.anthropicSuggestedModels),
         ("DeepSeek", "https://api.deepseek.com", ["deepseek-flash", "deepseek-v4-pro"]),
         ("xAI",      "https://api.x.ai", ["grok-2-latest", "grok-2-mini"]),
         ("Ollama",   "http://localhost:11434", []),
@@ -356,7 +358,7 @@ private struct AIProfileEditorPane: View {
                             Button(preset.label) {
                                 apiKey = ""
                                 authMethod = preset.label == "Ollama" ? .none : .apiKey
-                                providerKind = preset.label == "Ollama" ? .ollama : .openAICompatible
+                                providerKind = preset.label == "Ollama" ? .ollama : preset.label == "Anthropic" ? .anthropic : .openAICompatible
                                 model = ""
                                 baseURL = preset.host
                                 if let first = preset.models.first {
@@ -372,6 +374,10 @@ private struct AIProfileEditorPane: View {
                     TextField("API Base URL", text: $baseURL)
                         .textFieldStyle(.roundedBorder)
                         .onChange(of: baseURL) { endpointChanged() }
+                    if providerKind == .anthropic {
+                        Text("Uses the Anthropic Messages API. Choose another provider above for an OpenAI-compatible endpoint.")
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                 }
 
                 Section("Model") {
@@ -408,21 +414,24 @@ private struct AIProfileEditorPane: View {
                 }
 
                 Section("Authentication") {
-                    Picker("Method", selection: $authMethod) {
-                        Text("None").tag(AIAuthMethod.none)
-                        Text("API Key").tag(AIAuthMethod.apiKey)
-                        Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
+                    // The Messages API takes a key and nothing else.
+                    if providerKind != .anthropic {
+                        Picker("Method", selection: $authMethod) {
+                            Text("None").tag(AIAuthMethod.none)
+                            Text("API Key").tag(AIAuthMethod.apiKey)
+                            Text("OpenAI OAuth").tag(AIAuthMethod.oauth)
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: authMethod) { persist() }
                     }
-                    .pickerStyle(.segmented)
-                    .onChange(of: authMethod) { persist() }
 
                     if authMethod == .apiKey {
                         HStack {
                             Group {
                                 if apiKeyVisible {
-                                    TextField("sk-...", text: $apiKey)
+                                    TextField(keyPlaceholder, text: $apiKey)
                                 } else {
-                                    SecureField("sk-...", text: $apiKey)
+                                    SecureField(keyPlaceholder, text: $apiKey)
                                 }
                             }
                             .textFieldStyle(.roundedBorder)
@@ -470,8 +479,12 @@ private struct AIProfileEditorPane: View {
         .onAppear(perform: load)
     }
 
+    /// Shown in the empty key field; not a text to translate.
+    private var keyPlaceholder: String { providerKind == .anthropic ? "sk-ant-..." : "sk-..." }
+
     private var modelSuggestions: [String] {
         if providerKind == .ollama { return [] }
+        if providerKind == .anthropic { return AIProfile.anthropicSuggestedModels }
         let host = URL(string: AIProfile(
             id: "", name: "", baseURL: baseURL, model: "", apiKey: "", authMethod: .apiKey
         ).normalizedBaseURL)?.host ?? ""
@@ -571,9 +584,9 @@ private struct AIProfileEditorPane: View {
                 let ids = try await AIClient.shared.availableModels(profile: snapshot)
                 guard currentSnapshot() == snapshot else { loadingModels = false; return }
                 discoveredModels = ids
-                modelListMessage = ids.isEmpty ? "No models found. Install a model in Ollama or enter a model name manually." : "Models loaded. Select one or enter a name manually."
+                modelListMessage = ids.isEmpty ? String(localized: "No models found. Install a model in Ollama or enter a model name manually.") : String(localized: "Models loaded. Select one or enter a name manually.")
             } catch {
-                if currentSnapshot() == snapshot { modelListMessage = "Could not load models. Check the server and authentication, or enter the model name manually." }
+                if currentSnapshot() == snapshot { modelListMessage = String(localized: "Could not load models. Check the server and authentication, or enter the model name manually.") }
             }
             loadingModels = false
         }
@@ -638,7 +651,7 @@ private struct AIProfileEditorPane: View {
                 let result = try await AIClient.shared.chat(messages: messages, settings: combined)
                 await MainActor.run {
                     testPhase = .success
-                    testMessage = "OK — \(result.content.prefix(60)) (\(result.usage.totalTokens) tokens)"
+                    testMessage = String(localized: "OK — \(String(result.content.prefix(60))) (\(result.usage.totalTokens) tokens)")
                 }
             } catch {
                 await MainActor.run {

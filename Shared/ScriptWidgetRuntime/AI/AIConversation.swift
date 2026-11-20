@@ -20,6 +20,8 @@ enum AIConversationLimits {
     static let maxRequestCharacters = 4_000
     static let maxSourceBytes = 256 * 1024
     static let maxFileBytes = 12 * 1024 * 1024
+    /// An error kept with a turn is cut to this many characters, as on Android and Linux.
+    static let errorCharacters = 600
     /// History sent to the model: the newest turns, shortened.
     static let historyTurns = 12
     static let historyRequestCharacters = 500

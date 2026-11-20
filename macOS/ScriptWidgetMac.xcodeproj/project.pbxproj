@@ -55,6 +55,7 @@
 		966888252E454500AEA7852C /* ScriptWidgetRuntimeLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 124FAA64786342F5A3432631 /* ScriptWidgetRuntimeLocation.swift */; };
 		A10633E3A2F1C708E2078A33 /* AIGenerationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */; };
 		A202003100000000000000B0 /* AIConversationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201003100000000000000B0 /* AIConversationTests.swift */; };
+		A202003200000000000000B0 /* AIProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201003200000000000000B0 /* AIProviderTests.swift */; };
 		A20000112F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000102F200001008B90A2 /* ClockHandRotationEffect.swift */; };
 		A20000122F200001008B90A2 /* ClockHandRotationEffect.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000102F200001008B90A2 /* ClockHandRotationEffect.swift */; };
 		A202000100000000000000B0 /* AISettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = A201000100000000000000B0 /* AISettings.swift */; };
@@ -310,6 +311,7 @@
 		9257A378DFB04A718B883187 /* ScriptWidgetStorageFiles.swift in Sources */ = {isa = PBXBuildFile; fileRef = 64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */; };
 		984EB063C68BCF2CD8D4C953 /* FeedbackEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */; };
 		F023E4E9A30D14FA0652EA6B /* FeedbackEmailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */; };
+		A2A0000700000000000000B0 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = A2A0000300000000000000B0 /* Localizable.stringsdict */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -350,6 +352,7 @@
 		A43E23B1BB04A5AC18DEC1B1 /* BrowserPreviewParityTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = BrowserPreviewParityTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/BrowserPreviewParityTests.swift; sourceTree = "<group>"; };
 		28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIGenerationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIGenerationTests.swift; sourceTree = "<group>"; };
 		A201003100000000000000B0 /* AIConversationTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIConversationTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIConversationTests.swift; sourceTree = "<group>"; };
+		A201003200000000000000B0 /* AIProviderTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = AIProviderTests.swift; path = ../Tests/ScriptWidgetRuntimeTests/AIProviderTests.swift; sourceTree = "<group>"; };
 		539EC132F05468E207A652AD /* ScriptWidgetRuntimeTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = ScriptWidgetRuntimeTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5A89B7992F0FB0A0008B90A2 /* ScriptWidgetElementTagGif.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetElementTagGif.swift; sourceTree = "<group>"; };
 		5A89B79C2F0FB0B5008B90A2 /* SwingAnimationModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwingAnimationModifier.swift; sourceTree = "<group>"; };
@@ -548,6 +551,7 @@
 		64423A310BE1421199E81550 /* ScriptWidgetStorageFiles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptWidgetStorageFiles.swift; sourceTree = "<group>"; };
 		18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmail.swift"; sourceTree = SOURCE_ROOT; };
 		39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmailButton.swift"; sourceTree = SOURCE_ROOT; };
+		A2A0000400000000000000B0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = ../Shared/ScriptWidgetRuntime/Localizations/en.lproj/Localizable.stringsdict; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -702,6 +706,7 @@
 				6DBFC205E7AE664442A28C84 /* RuntimeDeliveryTests.swift */,
 				28F68F47C00CF93E4CBA1F1E /* AIGenerationTests.swift */,
 				A201003100000000000000B0 /* AIConversationTests.swift */,
+				A201003200000000000000B0 /* AIProviderTests.swift */,
 				1492D936BBC23E9D0195DE26 /* RuntimeExecutionTests.swift */,
 				A43E23B1BB04A5AC18DEC1B1 /* BrowserPreviewParityTests.swift */,
 				7CF0C59766F5837DEC033FB9 /* PackageCacheTests.swift */,
@@ -1060,6 +1065,7 @@
 				F246160D279CFAFF00C3D90F /* Info.plist */,
 				F29118D12792B0D200B860B0 /* StudioEditor.bundle */,
 				F29117E6279101DF00B860B0 /* macOS.entitlements */,
+				A2A0000300000000000000B0 /* Localizable.stringsdict */,
 			);
 			path = ScriptWidgetMac;
 			sourceTree = "<group>";
@@ -1328,6 +1334,7 @@
 				D1995CF029536BB800D1BD94 /* Apple ][.ttf in Resources */,
 				F0C613172AE9589100877D9F /* OneSlot.ttf in Resources */,
 				F29117EC279101DF00B860B0 /* Assets.xcassets in Resources */,
+				A2A0000700000000000000B0 /* Localizable.stringsdict in Resources */,
 				F0C613112AE9587A00877D9F /* Larabiefont Free.ttf in Resources */,
 				F29118D22792B0D200B860B0 /* StudioEditor.bundle in Resources */,
 				D1995CEE29536BB800D1BD94 /* support.bundle in Resources */,
@@ -1358,6 +1365,7 @@
 			files = (
 				A10633E3A2F1C708E2078A33 /* AIGenerationTests.swift in Sources */,
 				A202003100000000000000B0 /* AIConversationTests.swift in Sources */,
+				A202003200000000000000B0 /* AIProviderTests.swift in Sources */,
 				C43EFB088718FE26BF9B393F /* PackageCacheTests.swift in Sources */,
 				DD4971B1EBB047D7A8B6AA34 /* SystemServiceTests.swift in Sources */,
 				EBAE7DF1351F9A6ECE2E2AE2 /* RuntimeExecutionTests.swift in Sources */,
@@ -1663,6 +1671,17 @@
 			targetProxy = 8DBFDD2D44D8236C59632EE1 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+		A2A0000300000000000000B0 /* Localizable.stringsdict */ = {
+			isa = PBXVariantGroup;
+			children = (
+				A2A0000400000000000000B0 /* en */,
+			);
+			name = Localizable.stringsdict;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		BC5B157FC574C195A7C5794A /* Debug */ = {

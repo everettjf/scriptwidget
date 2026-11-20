@@ -11,6 +11,7 @@ import Foundation
 
 struct AIExamplePrompt: Identifiable {
     let id = UUID()
+    /// Shown through `LocalizedStringKey`; the translations are in Localizable.strings.
     let title: String
     let symbol: String    // SF Symbol name
     let size: AIWidgetSize

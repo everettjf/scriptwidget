@@ -190,7 +190,8 @@ enum AIOpenAIOAuthService {
             "code_verifier": verifier,
             "redirect_uri": redirectURI,
         ])
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // The request carries a code or a refresh token; a redirect is not followed.
+        let (data, response) = try await URLSession.shared.data(for: request, delegate: AINoRedirectDelegate())
         guard let http = response as? HTTPURLResponse else {
             throw AIOpenAIOAuthError.invalidTokenResponse
         }
@@ -217,7 +218,8 @@ enum AIOpenAIOAuthService {
             "client_id": clientID,
             "refresh_token": refreshToken,
         ])
-        let (data, response) = try await URLSession.shared.data(for: request)
+        // The request carries a code or a refresh token; a redirect is not followed.
+        let (data, response) = try await URLSession.shared.data(for: request, delegate: AINoRedirectDelegate())
         guard let http = response as? HTTPURLResponse else {
             throw AIOpenAIOAuthError.invalidTokenResponse
         }

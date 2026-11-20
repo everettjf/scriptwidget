@@ -118,7 +118,7 @@ private struct AIConversationWindowContent: View {
                 .foregroundStyle(.tint)
             VStack(alignment: .leading, spacing: 2) {
                 HStack(spacing: 6) {
-                    Text(conversation.title.isEmpty ? "New AI Widget" : conversation.title)
+                    Text(conversation.title.isEmpty ? String(localized: "New AI Widget") : conversation.title)
                         .font(.title3.weight(.semibold))
                         .lineLimit(1)
                     if !conversation.turns.isEmpty {
@@ -138,7 +138,7 @@ private struct AIConversationWindowContent: View {
             if profiles.count > 1 {
                 Picker("Provider", selection: $activeProfileID) {
                     ForEach(profiles) { profile in
-                        Text(profile.name.isEmpty ? "Unnamed" : profile.name).tag(profile.id)
+                        Text(profile.name.isEmpty ? String(localized: "Unnamed") : profile.name).tag(profile.id)
                     }
                 }
                 .labelsHidden()
@@ -247,7 +247,7 @@ private struct AIConversationWindowContent: View {
                         session.setSize(example.size)
                         composerFocused = true
                     } label: {
-                        Label(example.title, systemImage: example.symbol)
+                        Label(LocalizedStringKey(example.title), systemImage: example.symbol)
                             .font(.caption)
                     }
                     .buttonStyle(.bordered)
@@ -264,7 +264,7 @@ private struct AIConversationWindowContent: View {
                             Button { open(draft) } label: {
                                 HStack {
                                     Image(systemName: "doc.text")
-                                    Text(draft.title.isEmpty ? "Untitled" : draft.title)
+                                    Text(draft.title.isEmpty ? String(localized: "Untitled") : draft.title)
                                         .lineLimit(1)
                                     Spacer()
                                     Text(draft.updatedAt, format: .relative(presentation: .named))
@@ -305,7 +305,7 @@ private struct AIConversationWindowContent: View {
                 }
                 Section("Examples") {
                     ForEach(AIExamplePrompts.all) { example in
-                        Button(example.title, systemImage: example.symbol) {
+                        Button(LocalizedStringKey(example.title), systemImage: example.symbol) {
                             draftText = example.prompt
                             if conversation.versions.isEmpty { session.setSize(example.size) }
                         }
@@ -417,7 +417,7 @@ private struct AIConversationWindowContent: View {
             HStack {
                 Button("Code", systemImage: "curlybraces") {
                     shownCode = ShownCode(
-                        title: "Version \(conversation.currentVersion?.number ?? 0)",
+                        title: String(localized: "Version \(conversation.currentVersion?.number ?? 0)"),
                         code: session.currentSource
                     )
                 }
@@ -653,7 +653,7 @@ private struct AIConversationWindowContent: View {
     }
 
     private func draftLabel(_ draft: AIConversationSummary) -> String {
-        draft.title.isEmpty ? "Untitled" : draft.title
+        draft.title.isEmpty ? String(localized: "Untitled") : draft.title
     }
 
     private func open(_ draft: AIConversationSummary) {
@@ -689,13 +689,13 @@ private struct AIConversationWindowContent: View {
     private func performSave() {
         let trimmed = saveName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            saveError = "Widget name can not be empty."
+            saveError = String(localized: "Widget name can not be empty.")
             return
         }
         // Resolve the name first so that the package just created can be found again.
         let packageName = sharedScriptManager.getValidPackageName(recommendPackageName: trimmed)
         guard !packageName.isEmpty else {
-            saveError = "This name can not be used for a widget, or the widget library is not available."
+            saveError = String(localized: "This name can not be used for a widget, or the widget library is not available.")
             return
         }
         let result = sharedScriptManager.createScript(
@@ -718,7 +718,7 @@ private struct AIConversationWindowContent: View {
                 let written = package.writeManifest(manifest)
                 if !written.0 { warning = written.1 }
             } else {
-                warning = "The widget's configuration could not be read."
+                warning = String(localized: "The widget's configuration could not be read.")
             }
         }
         session.markSaved(
@@ -728,7 +728,7 @@ private struct AIConversationWindowContent: View {
         NotificationCenter.default.post(name: SharedAppStore.scriptCreateNotification, object: nil)
         WidgetCenter.shared.reloadAllTimelines()
         if let warning {
-            saveError = "The widget was saved, but its network permission could not be added: \(warning) Add it in the widget's configuration."
+            saveError = String(localized: "The widget was saved, but its network permission could not be added: \(warning) Add it in the widget's configuration.")
         } else {
             dismiss()
         }

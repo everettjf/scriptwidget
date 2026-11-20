@@ -6182,3 +6182,249 @@ extension LibrarySessionExecutionTests {
         XCTAssertEqual(try Data(contentsOf: oldStore.appendingPathComponent("version")), Data("damaged profile".utf8))
     }
 }
+
+/// `<list>` and the `material.<role>` colors come from Android. Here a list
+/// draws the rows that fit and the colors are a fixed palette, so a widget
+/// written for Android still shows something sensible.
+final class AndroidTagFallbackTests: XCTestCase {
+    private static let repository = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+
+    private func makePackage(files: [String: String] = [:]) throws -> ScriptWidgetPackage {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("AndroidTagFallback-\(UUID().uuidString)", isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        for (name, text) in files { try text.write(to: directory.appendingPathComponent(name), atomically: true, encoding: .utf8) }
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        return ScriptWidgetPackage(path: directory, readonly: false)
+    }
+
+    private func execute(_ source: String, package: ScriptWidgetPackage, size: String = "medium") async throws -> (ScriptWidgetRuntimeElement, ScriptWidgetElementContext) {
+        let runtime = ScriptWidgetRuntime(package: package, environments: ["widget-size": size, "widget-param": ""])
+        #if DEBUG
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent("AndroidTagFallbackStorage-\(ProcessInfo.processInfo.processIdentifier)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        runtime.runningState?.storageContainerForTesting = root
+        runtime.runningState?.storageDefaultsForTesting = UserDefaults(suiteName: "app.scriptwidget.android.fallback.\(ProcessInfo.processInfo.processIdentifier)")
+        #endif
+        let result = await Task.detached { runtime.executeJSXSyncForWidget(source) }.value
+        XCTAssertNil(result.1, result.1?.displayMessage ?? "")
+        let element = try XCTUnwrap(result.0)
+        return (element, ScriptWidgetElementContext(runtime: runtime, debugMode: false, scriptName: "Android fallback", scriptParameter: "", package: package))
+    }
+
+    /// The picture of an element at one pixel per point, as RGBA bytes.
+    @MainActor
+    private func picture(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext, width: Int, height: Int, dark: Bool = false, scale: CGFloat = 1) throws -> (image: CGImage, pixel: (Int, Int) -> [UInt8]) {
+        let view = ScriptWidgetElementView(element: element, context: context)
+            .frame(width: CGFloat(width), height: CGFloat(height))
+            .background(dark ? Color.black : Color.white)
+            .environment(\.colorScheme, dark ? .dark : .light)
+        let renderer = ImageRenderer(content: view)
+        renderer.scale = scale
+        let image = try XCTUnwrap(renderer.cgImage)
+        let columns = image.width, rows = image.height
+        var bytes = [UInt8](repeating: 0, count: columns * rows * 4)
+        let bitmap = try XCTUnwrap(CGContext(data: &bytes, width: columns, height: rows, bitsPerComponent: 8, bytesPerRow: columns * 4,
+                                             space: XCTUnwrap(CGColorSpace(name: CGColorSpace.sRGB)), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue))
+        bitmap.draw(image, in: CGRect(x: 0, y: 0, width: columns, height: rows))
+        let copy = bytes
+        return (image, { x, y in Array(copy[(y * columns + x) * 4 ..< (y * columns + x) * 4 + 4]) })
+    }
+
+    private func isRed(_ pixel: [UInt8]) -> Bool { pixel[0] > 200 && pixel[1] < 60 && pixel[2] < 60 }
+    private func isBlue(_ pixel: [UInt8]) -> Bool { pixel[2] > 200 && pixel[0] < 60 && pixel[1] < 60 }
+    private func isWhite(_ pixel: [UInt8]) -> Bool { pixel[0] > 240 && pixel[1] > 240 && pixel[2] > 240 }
+
+    private func children(_ element: ScriptWidgetRuntimeElement, tag: String) -> [ScriptWidgetRuntimeElement] {
+        element.childrenAsElements().flatMap { ($0.tagAsString() == tag ? [$0] : []) + children($0, tag: tag) }
+    }
+
+    @MainActor
+    func testListDrawsTheRowsThatFitAtTheirOwnHeights() async throws {
+        // Thirty rows of 20 points with 5 between them, in 90 points: three fit (0-20, 25-45, 50-70).
+        let source = ##"$render(<list spacing="5">{Array.from({ length: 30 }, () => <rect color="#ff0000" frame="50,20" />)}</list>);"##
+        let (element, context) = try await execute(source, package: makePackage())
+        XCTAssertEqual(element.tagAsString(), "list")
+        XCTAssertEqual(element.childrenAsElements().count, 30)
+        let (_, pixel) = try picture(element, context, width: 100, height: 90)
+        for y in [2, 10, 18, 27, 35, 43, 52, 60, 68] { XCTAssertTrue(isRed(pixel(10, y)), "row expected at y \(y): \(pixel(10, y))") }
+        // The gaps keep their size, so no row was squeezed.
+        for y in [22, 23, 47, 48] { XCTAssertTrue(isWhite(pixel(10, y)), "gap expected at y \(y): \(pixel(10, y))") }
+        // The fourth row would reach from 75 to 95: it is left out, not cut off.
+        for y in [72, 76, 80, 85, 89] { XCTAssertTrue(isWhite(pixel(10, y)), "nothing expected at y \(y): \(pixel(10, y))") }
+        // The rows start at the leading edge and keep their width.
+        XCTAssertTrue(isRed(pixel(1, 10)) && isRed(pixel(48, 10)) && isWhite(pixel(52, 10)))
+    }
+
+    @MainActor
+    func testListTakesTheRoomItsParentLeavesAndReadsTheGeneralAttributes() async throws {
+        let source = #"""
+        $render(
+          <vstack frame="max,topLeading" alignment="leading" spacing="0">
+            <rect color="#0000ff" frame="100,30" />
+            <list padding="5" background="#0000ff">{Array.from({ length: 40 }, () => <rect color="#ff0000" frame="20,20" />)}</list>
+          </vstack>
+        );
+        """#
+        let (element, context) = try await execute(source, package: makePackage())
+        let (_, pixel) = try picture(element, context, width: 100, height: 100)
+        // The header keeps its height; the list fills the 70 points below it, to the full width.
+        XCTAssertTrue(isBlue(pixel(50, 15)) && isBlue(pixel(98, 33)) && isBlue(pixel(98, 98)) && isBlue(pixel(2, 98)))
+        // Inside the padding, 60 points hold three rows of 20 and no part of a fourth.
+        XCTAssertTrue(isRed(pixel(10, 37)) && isRed(pixel(10, 93)) && isBlue(pixel(10, 97)) && isBlue(pixel(30, 60)))
+    }
+
+    @MainActor
+    func testFirstRowOfAShortListIsCutOffAndAnEmptyListDrawsNothing() async throws {
+        let (tall, tallContext) = try await execute(##"$render(<list><rect color="#ff0000" frame="50,200" /><rect color="#0000ff" frame="50,20" /></list>);"##, package: makePackage())
+        let (_, pixel) = try picture(tall, tallContext, width: 100, height: 60)
+        XCTAssertTrue(isRed(pixel(10, 2)) && isRed(pixel(10, 58)))
+        let (empty, emptyContext) = try await execute("$render(<list></list>);", package: makePackage())
+        let (_, emptyPixel) = try picture(empty, emptyContext, width: 40, height: 40)
+        XCTAssertTrue(isWhite(emptyPixel(20, 20)))
+        // A list is not an unknown tag any more.
+        XCTAssertFalse(String(describing: ScriptWidgetElementView.buildView(element: empty, context: emptyContext)).contains("UnknownTagName"))
+    }
+
+    @MainActor
+    func testButtonAndToggleInARowAreBuiltAsElsewhere() async throws {
+        let source = #"""
+        function tapped() {}
+        $render(
+          <list spacing="4">
+            <button onClick="tapped"><rect color="#ff0000" frame="60,20" /></button>
+            <button action="reload"><rect color="#0000ff" frame="60,20" /></button>
+            <toggle on={true} onClick="tapped"><text>Row</text></toggle>
+          </list>
+        );
+        """#
+        let (element, context) = try await execute(source, package: makePackage())
+        let buttons = children(element, tag: "button")
+        XCTAssertEqual(buttons.count, 2)
+        XCTAssertEqual(buttons[0].getPropString("onClick"), "tapped")
+        XCTAssertEqual(buttons[1].getPropString("action"), "reload")
+        XCTAssertEqual(children(element, tag: "toggle").first?.getPropString("onClick"), "tapped")
+        XCTAssertTrue(context.canExecuteActions)
+        // The rows are the views the button builder makes, in the order written. (The picture leaves the
+        // toggle out: ImageRenderer draws a placeholder for the system switch on iPhone.)
+        let buttonsOnly = ##"$render(<list spacing="4"><button action="reload"><rect color="#ff0000" frame="60,20" /></button><button action="reload"><rect color="#0000ff" frame="60,20" /></button></list>);"##
+        let (rows, rowsContext) = try await execute(buttonsOnly, package: makePackage())
+        let (_, pixel) = try picture(rows, rowsContext, width: 160, height: 120)
+        let reds = (0..<120).filter { y in (0..<160).contains { isRed(pixel($0, y)) } }
+        let blues = (0..<120).filter { y in (0..<160).contains { isBlue(pixel($0, y)) } }
+        XCTAssertGreaterThanOrEqual(reds.count, 18); XCTAssertGreaterThanOrEqual(blues.count, 18)
+        XCTAssertLessThan(try XCTUnwrap(reds.last), try XCTUnwrap(blues.first))
+    }
+
+    @available(iOS 17.0, macOS 14.0, *)
+    private func rgb(_ color: Color, dark: Bool) -> (red: Int, green: Int, blue: Int, opacity: Double) {
+        var environment = EnvironmentValues()
+        environment.colorScheme = dark ? .dark : .light
+        let resolved = color.resolve(in: environment)
+        let channel = { (linear: Float) -> Int in
+            let value = Double(linear)
+            return Int(((value <= 0.0031308 ? value * 12.92 : 1.055 * pow(value, 1 / 2.4) - 0.055) * 255).rounded())
+        }
+        return (channel(resolved.linearRed), channel(resolved.linearGreen), channel(resolved.linearBlue), Double(resolved.opacity))
+    }
+
+    func testEveryMaterialRoleIsAFixedColorInLightAndDark() throws {
+        guard #available(iOS 17.0, macOS 14.0, *) else { throw XCTSkip("Color.resolve(in:) needs iOS 17 or macOS 14") }
+        let expected = ["primary", "onPrimary", "primaryContainer", "onPrimaryContainer", "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer",
+                        "tertiary", "onTertiary", "tertiaryContainer", "onTertiaryContainer", "background", "onBackground", "surface", "onSurface",
+                        "surfaceVariant", "onSurfaceVariant", "surfaceContainerLowest", "surfaceContainerLow", "surfaceContainer", "surfaceContainerHigh",
+                        "surfaceContainerHighest", "outline", "outlineVariant"]
+        XCTAssertEqual(ScriptWidgetMaterialPalette.roles.map(\.name), expected, "the roles of Android's ThemeColors, in its order")
+        // The Android host names the same roles.
+        let kotlin = try String(contentsOf: Self.repository.appendingPathComponent("Android/core/src/main/java/com/everettjf/scriptwidget/core/api/ThemeColors.kt"), encoding: .utf8)
+        for role in expected { XCTAssertTrue(kotlin.contains("\"\(role)\" to "), role) }
+        for role in ScriptWidgetMaterialPalette.roles {
+            for dark in [false, true] {
+                let hex = dark ? role.dark : role.light
+                let color = try XCTUnwrap(ScriptWidgetAttributeColor.getColorFromColorValue("material.\(role.name)"), role.name)
+                let value = rgb(color, dark: dark)
+                XCTAssertEqual([value.red, value.green, value.blue], [Int(hex >> 16) & 0xFF, Int(hex >> 8) & 0xFF, Int(hex) & 0xFF], "\(role.name) \(dark ? "dark" : "light")")
+                XCTAssertEqual(value.opacity, 1, accuracy: 0.001)
+                let half = rgb(try XCTUnwrap(ScriptWidgetAttributeColor.getColorFromColorValue("material.\(role.name),0.5")), dark: dark)
+                XCTAssertEqual([half.red, half.green, half.blue], [value.red, value.green, value.blue])
+                XCTAssertEqual(half.opacity, 0.5, accuracy: 0.001)
+            }
+            XCTAssertNotNil(ScriptWidgetAttributeColor("material.\(role.name)").color)
+        }
+        XCTAssertNotEqual(rgb(try XCTUnwrap(ScriptWidgetMaterialPalette.color(named: "material.surface")), dark: false).red,
+                          rgb(try XCTUnwrap(ScriptWidgetMaterialPalette.color(named: "material.surface")), dark: true).red)
+    }
+
+    func testUnknownMaterialRoleStaysIgnored() {
+        for name in ["material.unknownRole", "material.", "material", "materialprimary", "material.Primary", "material.primary.x", "Material.primary", " material.primary"] {
+            XCTAssertNil(ScriptWidgetAttributeColor.getColorFromColorValue(name), name)
+            XCTAssertNil(ScriptWidgetAttributeColor.getColorFromColorValue(name + ",0.5"), name)
+            XCTAssertNil(ScriptWidgetAttributeColor(name).color, name)
+        }
+        // The other names are what they were.
+        XCTAssertEqual(ScriptWidgetAttributeColor.getColorFromColorValue("primary"), .primary)
+        XCTAssertEqual(ScriptWidgetAttributeColor.getColorFromColorValue("secondary"), .secondary)
+        XCTAssertNil(ScriptWidgetAttributeColor.getColorFromColorValue("surface"))
+    }
+
+    func testBrowserPreviewHasTheSamePalette() throws {
+        let props = try String(contentsOf: Self.repository.appendingPathComponent("Web/preview-engine/src/render/props.js"), encoding: .utf8)
+        let tables = try NSRegularExpression(pattern: #"(light|dark): materialTable\("([^"]+)"\)"#).matches(in: props, range: NSRange(props.startIndex..., in: props)).map { match -> (String, [String]) in
+            (String(props[try XCTUnwrap(Range(match.range(at: 1), in: props))]), props[try XCTUnwrap(Range(match.range(at: 2), in: props))].split(separator: " ").map(String.init))
+        }
+        XCTAssertEqual(tables.map(\.0), ["light", "dark"])
+        for (mode, words) in tables {
+            let native = ScriptWidgetMaterialPalette.roles.flatMap { [$0.name, String(format: "%06X", mode == "dark" ? $0.dark : $0.light)] }
+            XCTAssertEqual(words, native, mode)
+        }
+    }
+
+    /// The Android templates, as a widget written only for Android would run them: with their Android branch.
+    @MainActor
+    func testAndroidOnlyTemplatesRenderHere() async throws {
+        let templates = Self.repository.appendingPathComponent("Android/app/src/main/assets/Script.android/android")
+        let output = FileManager.default.temporaryDirectory.appendingPathComponent("ScriptWidgetAndroidFallback", isDirectory: true)
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        #if os(macOS)
+        let platform = "mac"
+        #else
+        let platform = "ios"
+        #endif
+        for name in ["Scrolling Checklist", "Wallpaper Colors"] {
+            let directory = templates.appendingPathComponent(name)
+            let main = try String(contentsOf: directory.appendingPathComponent("main.jsx"), encoding: .utf8)
+            XCTAssertTrue(main.contains(#"$system.platform() === "android""#), name)
+            let source = main.replacingOccurrences(of: #"$system.platform() === "android""#, with: "true")
+            let package = try makePackage(files: ["main.jsx": source, "widget.json": String(contentsOf: directory.appendingPathComponent("widget.json"), encoding: .utf8)])
+            for dark in [false, true] {
+                let (element, context) = try await execute(source, package: package, size: "large")
+                if name == "Scrolling Checklist" { XCTAssertEqual(children(element, tag: "list").first?.childrenAsElements().count, 20) }
+                let (image, pixel) = try picture(element, context, width: 338, height: 354, dark: dark, scale: 2)
+                // The background is material.surfaceContainer, light F3EDF7 and dark 211F26.
+                let corner = pixel(8, image.height - 8), wanted: [UInt8] = dark ? [0x21, 0x1F, 0x26] : [0xF3, 0xED, 0xF7]
+                for index in 0..<3 { XCTAssertEqual(Int(corner[index]), Int(wanted[index]), accuracy: 3, "\(name) \(dark ? "dark" : "light") background \(corner)") }
+                // Something is drawn on it, and nowhere in the pink of an unknown tag.
+                var other = 0, pink = 0
+                for y in stride(from: 0, to: image.height, by: 2) { for x in stride(from: 0, to: image.width, by: 2) {
+                    let value = pixel(x, y)
+                    if abs(Int(value[0]) - Int(wanted[0])) > 24 || abs(Int(value[2]) - Int(wanted[2])) > 24 { other += 1 }
+                    if value[0] > 240 && (30...80).contains(value[1]) && (60...130).contains(value[2]) { pink += 1 }
+                } }
+                XCTAssertGreaterThan(other, 300, name)
+                // On iPhone ImageRenderer draws a red and yellow placeholder for each system switch.
+                #if os(macOS)
+                XCTAssertEqual(pink, 0, name)
+                #else
+                if name != "Scrolling Checklist" { XCTAssertEqual(pink, 0, name) }
+                #endif
+                #if os(macOS)
+                let png = try XCTUnwrap(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
+                #else
+                let png = try XCTUnwrap(UIImage(cgImage: image).pngData())
+                #endif
+                let file = output.appendingPathComponent("\(name.replacingOccurrences(of: " ", with: "-"))-\(platform)-\(dark ? "dark" : "light").png")
+                try png.write(to: file, options: .atomic)
+                print("Android fallback picture: \(file.path)")
+            }
+        }
+    }
+}

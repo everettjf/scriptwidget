@@ -9,7 +9,7 @@ import SwiftUI
 
 struct EditorPanelTabLabel: View {
     let imageName: String
-    let label: String
+    let label: LocalizedStringKey
     
     var body: some View {
         HStack {
@@ -70,7 +70,7 @@ private struct StudioCopilotView: View {
         Group {
             if package.hasManifest && manifest == nil {
                 // A widget.json that can not be read is never treated as absent.
-                unavailable("This widget's widget.json can not be read, so the AI can not work on it. Fix it in the Config tab first.")
+                unavailable(String(localized: "This widget's widget.json can not be read, so the AI can not work on it. Fix it in the Config tab first."))
             } else {
                 StudioCopilotConversationView(
                     scriptModel: scriptModel,
@@ -414,7 +414,7 @@ private struct StudioCopilotConversationView: View {
             guard requestID == token else { return }
             isReading = false
             guard let snapshot else {
-                if next != nil { statusMessage = "The editor is not ready yet." }
+                if next != nil { statusMessage = String(localized: "The editor is not ready yet.") }
                 return
             }
             knownEditorContent = snapshot.content
@@ -435,7 +435,7 @@ private struct StudioCopilotConversationView: View {
             ? PreviewDiagnosticStore.shared.diagnostic(for: package.path.standardizedFileURL.path)
             : nil
         statusMessage = fixCurrentError && diagnostic == nil
-            ? "No runtime error was recorded; asking the AI to look at the code."
+            ? String(localized: "No runtime error was recorded; asking the AI to look at the code.")
             : nil
         draftText = ""
         lookAtEditor { _ in
@@ -452,7 +452,7 @@ private struct StudioCopilotConversationView: View {
         let token = UUID()
         requestID = token
         isApplying = true
-        statusMessage = "Applying and saving…"
+        statusMessage = String(localized: "Applying and saving…")
         EditorService.requestSnapshot(target: StudioEditorTarget(editorID: editorID, documentID: documentID)) { snapshot in
             guard requestID == token else { return }
             guard let snapshot else {
@@ -464,7 +464,7 @@ private struct StudioCopilotConversationView: View {
                 isApplying = false
                 knownEditorContent = snapshot.content
                 session.adoptEditorSource(snapshot.content)
-                statusMessage = "The file changed in the editor, so nothing was applied. The conversation now continues from the editor's code."
+                statusMessage = String(localized: "The file changed in the editor, so nothing was applied. The conversation now continues from the editor's code.")
                 return
             }
             if allowingHosts, !hostsToAllow.isEmpty, var updated = package.readManifest() {
@@ -473,7 +473,7 @@ private struct StudioCopilotConversationView: View {
                 let written = package.writeManifest(updated)
                 guard written.0 else {
                     isApplying = false
-                    statusMessage = "The network permission could not be added, so nothing was applied: \(written.1)"
+                    statusMessage = String(localized: "The network permission could not be added, so nothing was applied: \(written.1)")
                     return
                 }
             }

@@ -77,6 +77,68 @@ class ScriptWidgetElementTagStack {
     }
 }
 
+/// `<list>`: on Android a vertical stack that scrolls inside the widget. A
+/// widget cannot scroll here, so the rows are drawn from the top at their own
+/// heights, with the list's `spacing` between them, and a row that does not
+/// fit completely is not drawn. The list takes the room it is offered, as on
+/// Android, and reads the same attributes: `spacing` and the general ones.
+struct ScriptWidgetElementTagList {
+    /// As many rows as Android lays out.
+    static let maximumRows = 100
+
+    static func buildView(_ element: ScriptWidgetRuntimeElement, _ context: ScriptWidgetElementContext) -> AnyView {
+        let rows = Array(element.childrenAsElements().prefix(maximumRows))
+        let spacing = element.getPropDouble("spacing").flatMap { $0.isFinite ? CGFloat(max(0, $0)) : nil } ?? 0
+        return AnyView(
+            ScriptWidgetFittingRows(spacing: spacing) {
+                ForEach(rows) { item -> AnyView in
+                    return ScriptWidgetElementView.buildView(element: item, context: context)
+                }
+            }
+            .clipped()
+            .modifier(ScriptWidgetAttributeGeneralModifier(element, context))
+        )
+    }
+}
+
+/// Stacks rows from the top, leading-aligned, each at its natural height.
+struct ScriptWidgetFittingRows: Layout {
+    let spacing: CGFloat
+
+    /// Where a row that does not fit is put: out of sight, so that it is
+    /// neither drawn nor tappable over the views below the list.
+    static let hiddenOffset: CGFloat = 100_000
+
+    private static func offered(_ value: CGFloat?) -> CGFloat? {
+        guard let value, value.isFinite else { return nil }
+        return max(0, value)
+    }
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = Self.offered(proposal.width), height = Self.offered(proposal.height)
+        if let width, let height { return CGSize(width: width, height: height) }
+        let sizes = subviews.map { $0.sizeThatFits(ProposedViewSize(width: width, height: nil)) }
+        return CGSize(
+            width: width ?? sizes.reduce(0) { max($0, $1.width) },
+            height: height ?? sizes.reduce(0) { $0 + $1.height } + spacing * CGFloat(max(0, sizes.count - 1))
+        )
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let rowProposal = ProposedViewSize(width: bounds.width, height: nil)
+        var cursor: CGFloat = 0
+        var fits = true
+        for (index, row) in subviews.enumerated() {
+            if index > 0 { cursor += spacing }
+            let height = row.sizeThatFits(rowProposal).height
+            // The first row is always drawn; the clip cuts it off if it is taller than the list.
+            if index > 0, cursor + height > bounds.height + 0.01 { fits = false }
+            row.place(at: CGPoint(x: bounds.minX, y: bounds.minY + cursor + (fits ? 0 : Self.hiddenOffset)), anchor: .topLeading, proposal: rowProposal)
+            cursor += height
+        }
+    }
+}
+
 /// Flatten only noninteractive, fixed-size solid cells. Other stacks retain
 /// their normal view hierarchy and all authored modifiers.
 struct ScriptWidgetRectangleColumn: View {

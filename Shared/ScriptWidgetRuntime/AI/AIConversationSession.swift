@@ -255,8 +255,9 @@ final class AIConversationSession: ObservableObject {
         case .tokensUsed(let usage):
             conversation.updateTurn(turnID) { $0.usage = usage }
         case .note(let note):
-            // The first note describes the change; repairs only fix it.
-            conversation.updateTurn(turnID) { if $0.note == nil { $0.note = note } }
+            // The newest note wins: it describes the attempt that is kept. A repair
+            // that leaves the summary out keeps the one before it.
+            conversation.updateTurn(turnID) { $0.note = note }
         }
     }
 
@@ -283,7 +284,7 @@ final class AIConversationSession: ObservableObject {
         case .exhausted(let lastJSX, let lastError, let usage):
             conversation.updateTurn(turnID) {
                 $0.status = .unconverged
-                $0.errorSummary = lastError
+                $0.errorSummary = lastError.map(Self.clipError)
                 $0.failedSource = lastJSX.map { String($0.prefix(AIConversationLimits.maxSourceBytes)) }
                 $0.usage = usage
             }
@@ -295,12 +296,16 @@ final class AIConversationSession: ObservableObject {
         case .failed(let message, let usage):
             conversation.updateTurn(turnID) {
                 $0.status = .failed
-                $0.errorSummary = message
+                $0.errorSummary = Self.clipError(message)
                 $0.usage = usage
             }
         }
         conversation.updatedAt = Date()
         persist()
+    }
+
+    private static func clipError(_ text: String) -> String {
+        PromptBuilder.clip(text, AIConversationLimits.errorCharacters)
     }
 
     private func finishRunningTurns(as status: AIConversationTurn.Status, message: String?) {

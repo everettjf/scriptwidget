@@ -514,6 +514,89 @@ final class AIConversationTests: XCTestCase {
         XCTAssertTrue(ConversationProviderStub.bodies[1].contains("failed to run"))
     }
 
+    /// The note is the one of the attempt that was kept: a repair that writes a
+    /// new summary replaces the first, as on Android and Linux.
+    func testNoteOfARepairedTurnDescribesTheAttemptThatWasKept() async {
+        ConversationProviderStub.enqueue([
+            reply("Made a chart.", Self.brokenWidget),
+            reply("Made a list instead of a chart.", Self.goodWidget),
+        ])
+        let session = makeSession()
+        session.send("Show my week")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded)
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(turn.note, "Made a list instead of a chart.")
+    }
+
+    func testReplyCutOffAtTheOutputLimitIsNotRunAndIsSentBack() async {
+        // The cut-off text would run as it is; it is still not taken as whole.
+        ConversationProviderStub.enqueue([
+            .truncated("SUMMARY: Made a greeting.\n```jsx\n\(Self.betterWidget)\n```"),
+            reply("Made a shorter greeting.", Self.goodWidget),
+        ])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded)
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(session.currentSource, Self.goodWidget)
+        XCTAssertEqual(session.attemptLogs.first?.errorSummary,
+                       "The reply was cut off at the output limit. Return a shorter, complete widget.")
+        XCTAssertTrue(ConversationProviderStub.bodies[1].contains("cut off at the output limit"))
+    }
+
+    func testReplyWithoutCodeIsSentBack() async {
+        ConversationProviderStub.enqueue([
+            .content("SUMMARY: I would make a greeting."),
+            reply("Made a greeting.", Self.goodWidget),
+        ])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .succeeded)
+        XCTAssertEqual(turn.repairs, 1)
+        XCTAssertEqual(session.attemptLogs.first?.errorSummary, "The reply contained no JSX code.")
+        XCTAssertTrue(ConversationProviderStub.bodies[1].contains("The reply contained no JSX code."))
+        XCTAssertEqual(session.currentSource, Self.goodWidget)
+    }
+
+    func testReplyWithoutCodeLeavesTheCodeToChangeAsItWas() async {
+        ConversationProviderStub.enqueue([
+            reply("Made a greeting.", Self.goodWidget),
+            .content("SUMMARY: I would add a line."),
+            edit("Added a line.", [("<text>Hello</text>", "<text>Hello</text><text>World</text>")]),
+        ])
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+        session.send("Add a second line")
+        await session.settle()
+
+        XCTAssertEqual(session.conversation.turns[1].status, .succeeded)
+        XCTAssertEqual(session.conversation.turns[1].repairs, 1)
+        XCTAssertTrue(session.currentSource.contains("<text>World</text>"), "the edit applied to the code from before the empty reply")
+    }
+
+    func testErrorKeptWithATurnIsCutToSixHundredCharacters() async {
+        let noisy = "throw new Error(\"\(String(repeating: "x", count: 3_000))\");\n"
+        ConversationProviderStub.enqueue(Array(repeating: .content(noisy), count: AIConversationLimits.maxAttemptsPerTurn))
+        let session = makeSession()
+        session.send("A greeting card")
+        await session.settle()
+
+        let turn = session.conversation.turns[0]
+        XCTAssertEqual(turn.status, .unconverged)
+        XCTAssertEqual(turn.errorSummary?.count, AIConversationLimits.errorCharacters + 1, "600 characters and the mark that it was cut")
+        XCTAssertTrue(turn.errorSummary?.hasSuffix("…") ?? false)
+    }
+
     func testProviderErrorKeepsTheConversationUsableAndRetryWorks() async {
         ConversationProviderStub.enqueue([reply("Made a greeting.", Self.goodWidget), .status(500)])
         let session = makeSession()
@@ -1452,6 +1535,8 @@ final class ConversationProviderStub: URLProtocol {
         case hang
         /// Answered only in the plain form; the streamed form gets HTTP 400.
         case plainOnly(String)
+        /// The text, ended by the provider at its output limit.
+        case truncated(String)
     }
 
     private static let lock = NSLock()
@@ -1509,12 +1594,14 @@ final class ConversationProviderStub: URLProtocol {
             return
         case .status(let code):
             respond(code, Data("{}".utf8))
-        case .content(let content), .plainOnly(let content):
+        case .content(let content), .plainOnly(let content), .truncated(let content):
+            var finish = "stop"
+            if case .some(.truncated) = next { finish = "length" }
             let usage: [String: Any] = ["prompt_tokens": 10, "completion_tokens": 5, "total_tokens": 15]
             guard wantsStream else {
                 let payload: [String: Any] = [
                     "id": "stub", "object": "chat.completion", "created": 1, "model": "stub-model",
-                    "choices": [["index": 0, "message": ["role": "assistant", "content": content], "finish_reason": "stop"]],
+                    "choices": [["index": 0, "message": ["role": "assistant", "content": content], "finish_reason": finish]],
                     "usage": usage,
                 ]
                 respond(200, (try? JSONSerialization.data(withJSONObject: payload)) ?? Data())
@@ -1529,6 +1616,7 @@ final class ConversationProviderStub: URLProtocol {
                 let chunk: [String: Any] = ["choices": [["index": 0, "delta": ["content": String(piece)]]]]
                 events += "data: " + Self.json(chunk) + "\n\n"
             }
+            events += "data: " + Self.json(["choices": [["index": 0, "delta": [:] as [String: Any], "finish_reason": finish]]]) + "\n\n"
             events += "data: " + Self.json(["choices": [], "usage": usage]) + "\n\n"
             events += "data: [DONE]\n\n"
             respond(200, Data(events.utf8), contentType: "text/event-stream")

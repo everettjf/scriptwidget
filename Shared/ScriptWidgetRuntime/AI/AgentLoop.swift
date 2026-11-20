@@ -220,13 +220,24 @@ final class AgentLoop {
             } else {
                 jsx = PromptBuilder.stripCodeFences(chatResult.content)
             }
-            latestCode = jsx
+            let hasCode = !jsx.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            // A reply without code leaves the code to change as it was.
+            if hasCode || latestCode == nil { latestCode = jsx }
             await onEvent(.produced(iteration: iteration, jsx: jsx))
 
-            if let declarationError {
-                lastError = declarationError
+            // None of these is run: the model is told what is wrong and asked again.
+            let notRunnable: String?
+            if !hasCode {
+                notRunnable = "The reply contained no JSX code."
+            } else if chatResult.truncated {
+                notRunnable = "The reply was cut off at the output limit. Return a shorter, complete widget."
+            } else {
+                notRunnable = declarationError
+            }
+            if let notRunnable {
+                lastError = notRunnable
                 lastLogs = []
-                await onEvent(.ranFailed(iteration: iteration, errorSummary: declarationError, logs: []))
+                await onEvent(.ranFailed(iteration: iteration, errorSummary: notRunnable, logs: []))
                 continue
             }
 

@@ -34,6 +34,8 @@ enum AIProviderKind: String, Codable {
     case applePrivateCloudCompute
     case openAICompatible
     case ollama
+    /// The Anthropic Messages API (`/v1/messages`, `x-api-key`).
+    case anthropic
 }
 
 struct AIProfile: Identifiable, Equatable {
@@ -73,6 +75,16 @@ struct AIProfile: Identifiable, Equatable {
         )
     }
 
+    static let anthropicBaseURL = "https://api.anthropic.com"
+    static let anthropicDefaultModel = "claude-fable-5-2"
+    /// The same list as Android's `AiProviderKind.ANTHROPIC`.
+    static let anthropicSuggestedModels = ["claude-fable-5-2", "claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
+
+    static func makeAnthropic() -> AIProfile {
+        AIProfile(id: UUID().uuidString, name: "Anthropic", baseURL: anthropicBaseURL, model: anthropicDefaultModel,
+                  apiKey: "", authMethod: .apiKey, providerKind: .anthropic)
+    }
+
     static func makeOllama() -> AIProfile {
         AIProfile(id: UUID().uuidString, name: "Ollama", baseURL: "http://localhost:11434", model: "",
                   apiKey: "", authMethod: .none, providerKind: .ollama)
@@ -84,13 +96,16 @@ struct AIProfile: Identifiable, Equatable {
               let host = components.host, !host.isEmpty,
               components.user == nil, components.password == nil,
               components.query == nil, components.fragment == nil,
-              !components.path.hasSuffix("/chat/completions") else { return nil }
+              !components.path.hasSuffix("/chat/completions"),
+              !components.path.hasSuffix("/messages") else { return nil }
         return components.url
     }
 
     var isConfigured: Bool {
         if providerKind == .applePrivateCloudCompute { return true }
         guard endpointURL != nil, !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return false }
+        // The Messages API always takes a key.
+        if providerKind == .anthropic { return !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
         if authMethod == .none { return true }
         if authMethod == .oauth && !isOpenAIHost { return false }
         return !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
@@ -110,7 +125,11 @@ struct AIProfile: Identifiable, Equatable {
     var normalizedBaseURL: String {
         let trimmed = baseURL.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
-            return providerKind == .ollama ? "http://localhost:11434" : AIProfile.defaultBaseURL
+            switch providerKind {
+            case .ollama: return "http://localhost:11434"
+            case .anthropic: return AIProfile.anthropicBaseURL
+            default: return AIProfile.defaultBaseURL
+            }
         }
         // SwiftOpenAI appends /v1 itself.
         var normalized = trimmed
