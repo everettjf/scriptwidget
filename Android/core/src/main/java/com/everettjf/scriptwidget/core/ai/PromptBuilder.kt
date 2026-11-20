@@ -93,6 +93,23 @@ object AndroidPromptNotes {
         return lines.toList()
     }
 
+    /**
+     * What only Android has: the scrolling `<list>` and the `material.<role>` colors. The
+     * reference is built from the examples the Apple apps ship, which show neither. Kept short:
+     * the full description is under "Only on Android" in `docs/android/README.md`.
+     */
+    fun androidOnlyLines(): List<String> = listOf(
+        "`<list spacing=\"4\">{rows}</list>` is a vertical stack that scrolls inside the widget; each child is a row. " +
+            "Use it when the rows may not all fit: one list per widget, at most 100 rows, in a vstack under any title. " +
+            "It takes `spacing` and the general props; <link>, <button> and <toggle> work in a row.",
+        "Wallpaper colors: every color prop takes \"material.<role>\" (also \"material.primary,0.5\", and in a \$gradient); " +
+            "the system supplies the light and the dark value. Roles: primary, onPrimary, primaryContainer, onPrimaryContainer, " +
+            "the same four for secondary and tertiary, background, onBackground, surface, onSurface, surfaceVariant, onSurfaceVariant, " +
+            "surfaceContainer (also with Lowest, Low, High or Highest appended), outline, outlineVariant. " +
+            "Text takes the \"on\" role of its background, e.g. background=\"material.surfaceContainer\" with color=\"material.onSurface\". " +
+            "Use them when the user asks to follow the wallpaper or the system colors.",
+    )
+
     /** The budgets the Android runtime enforces on every run. */
     fun runtimeLimitLines(): List<String> = listOf(
         "A run must finish within 5 seconds, including all awaited network calls.",
@@ -113,8 +130,8 @@ object PromptBuilder {
     const val MAXIMUM_SKILLS_CHARACTERS = 64 * 1024
 
     /**
-     * The system prompt: generation rules, the Android limits and unsupported
-     * list, then the component/API reference.
+     * The system prompt: generation rules, the Android limits, the unsupported
+     * list, what only Android has, then the component/API reference.
      *
      * The rules follow the Swift prompt. Rules about capabilities Android does
      * not implement (iCloud, Calendar, Photos, Health, Music, Reminders,
@@ -202,6 +219,8 @@ object PromptBuilder {
         for (line in runtimeLimits) out.append("- ").append(line).append('\n')
         out.append("\nNOT SUPPORTED ON ANDROID (never use these; if the request needs one, render a short explanation instead):\n")
         for (line in unsupported) out.append("- ").append(line).append('\n')
+        out.append("\nONLY ON ANDROID (use these although the REFERENCE does not show them):\n")
+        for (line in AndroidPromptNotes.androidOnlyLines()) out.append("- ").append(line).append('\n')
         out.append('\n').append(reference.combined)
         return out.toString()
     }

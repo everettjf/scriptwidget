@@ -38,6 +38,48 @@ class PackageStoreTest {
     private fun import(archive: ByteArray, suggested: String? = null) = store.importArchive(archive.inputStream(), suggested)
     private fun export(name: String) = ByteArrayOutputStream().also { store.exportArchive(name, it) }.toByteArray()
 
+    // bundled templates without widget.json
+
+    private fun bundled(name: String, main: String, meta: String? = null): JSONObject {
+        val files = LinkedHashMap<String, ByteArray>().apply { put("main.jsx", main.toByteArray()); if (meta != null) put("meta.json", meta.toByteArray()) }
+        return JSONObject(store.bundledManifest(name, files))
+    }
+
+    private fun strings(manifest: JSONObject, key: String) = manifest.getJSONArray(key).let { array -> List(array.length()) { array.getString(it) } }
+
+    @Test
+    fun bundledManifestDeclaresTheHostsNamedInTheSource() {
+        val main = "// https://atomsprout.com/scriptwidget\nconst url = \"https://ZenQuotes.io/api/today\";\nconst other = `http://api.example.com/\${id}`;\nconst result = await fetch(url);\n"
+        val manifest = bundled("Daily Quote", main, "{\"description\":\"A quote\",\"category\":\"productivity\"}")
+        assertEquals(listOf("network"), strings(manifest, "permissions"))
+        assertEquals(listOf("api.example.com", "zenquotes.io"), strings(manifest, "networkDomains"))
+        assertEquals("A quote", manifest.getString("description"))
+        assertTrue(manifest.getString("id").matches(Regex("local\\.[0-9a-f-]{36}")))
+        // The copy is created with this manifest and keeps it.
+        val created = store.create("Daily Quote", main, manifest.toString())
+        assertEquals(listOf("api.example.com", "zenquotes.io"), strings(JSONObject(File(created.directory, "widget.json").readText()), "networkDomains"))
+    }
+
+    @Test
+    fun bundledManifestOfATemplateWithoutUrlsHasNoNetworkPermission() {
+        val manifest = bundled("Clock", "// see https://example.com\n\$render(<text>hi</text>)\n")
+        assertEquals(emptyList<String>(), strings(manifest, "permissions"))
+        assertEquals(emptyList<String>(), strings(manifest, "networkDomains"))
+    }
+
+    @Test
+    fun bundledManifestLeavesOutHostsThatCannotBeDeclaredAndNeverGrantsAWildcard() {
+        val manifest = bundled("Odd", "fetch(`https://api.\${region}.example.com/x`); fetch(\"http://localhost/x\"); fetch(\"http://192.168.1.1/x\"); fetch(\"https://-bad.example.com\"); fetch(\"https://*.example.com/x\");\n")
+        assertEquals(emptyList<String>(), strings(manifest, "permissions"))
+        assertEquals(emptyList<String>(), strings(manifest, "networkDomains"))
+    }
+
+    @Test
+    fun bundledManifestReadsOnlyScriptFiles() {
+        val files = mapOf("main.jsx" to "\$render(<text>hi</text>)".toByteArray(), "notes.txt" to "https://example.org".toByteArray(), "lib/api.js" to "var u = 'https://data.example.org/v1';".toByteArray())
+        assertEquals(listOf("data.example.org"), strings(JSONObject(store.bundledManifest("Files", files)), "networkDomains"))
+    }
+
     // create / list
 
     @Test

@@ -87,6 +87,31 @@ class AiProfileAndPromptTest {
     }
 
     @Test
+    fun systemPromptDescribesTheListAndTheWallpaperColorsBriefly() {
+        val prompt = PromptBuilder.systemPrompt(AiReference.EMPTY)
+        val start = prompt.indexOf("ONLY ON ANDROID")
+        assertTrue(start > prompt.indexOf("NOT SUPPORTED ON ANDROID"))
+        val section = prompt.substring(start)
+        assertTrue(section.contains("<list spacing=\"4\">"))
+        assertTrue(section.contains("at most 100 rows"))
+        assertTrue(section.contains("\"material.<role>\""))
+        assertTrue(section.contains("background=\"material.surfaceContainer\" with color=\"material.onSurface\""))
+        // What the section shows is what the code check accepts on Android.
+        assertEquals(emptyList<String>(), AiJsxCheck.problems("\$render(<vstack background=\"material.surfaceContainer\"><list spacing=\"4\"><text color=\"material.onSurface\">a</text></list></vstack>)", AiJsxCheck.ANDROID))
+        // Every role is either named or covered by one of the two short forms.
+        val named = setOf("primary", "onPrimary", "primaryContainer", "onPrimaryContainer", "background", "onBackground", "surface", "onSurface", "surfaceVariant", "onSurfaceVariant", "surfaceContainer", "outline", "outlineVariant")
+        for (role in named) assertTrue(role, Regex("\\b$role\\b").containsMatchIn(section))
+        val expanded = named + listOf("secondary", "tertiary").flatMap { family ->
+            val capital = family.replaceFirstChar { it.uppercase() }
+            listOf(family, "on$capital", "${family}Container", "on${capital}Container")
+        } +
+            listOf("Lowest", "Low", "High", "Highest").map { "surfaceContainer$it" }
+        assertEquals(com.everettjf.scriptwidget.core.api.ThemeColors.roleNames.toSet(), expanded.toSet())
+        // The prompt is already long; this section must stay small (about 250 tokens).
+        assertTrue("${section.length} characters", section.length < 1_100)
+    }
+
+    @Test
     fun referenceIsSortedCappedAndSkipsAndroidUnsupportedExamples() {
         val long = (1..60).joinToString("\n") { "line $it" }
         val reference = AiReference.build(

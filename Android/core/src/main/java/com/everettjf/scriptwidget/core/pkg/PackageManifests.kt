@@ -62,5 +62,32 @@ internal object PackageManifests {
         return manifest
     }
 
+    /**
+     * The manifest for a template shipped with the app that has no `widget.json`. A copy in the
+     * library always has a manifest, and a manifest without `network` stops every request, so the
+     * hosts the template names in its own source are declared for it: exact names only, never a
+     * wildcard, and nothing when a host is built at run time. This is only for the templates the
+     * app ships, never for an imported package.
+     */
+    fun bundledManifest(name: String, files: Map<String, ByteArray>): JSONObject {
+        val manifest = legacyManifest(name, files[LEGACY_METADATA]?.toString(Charsets.UTF_8)).put("id", freshId())
+        val hosts = sortedSetOf<String>()
+        for ((path, content) in files) {
+            if (!path.endsWith(".js") && !path.endsWith(".jsx")) continue
+            for (line in content.toString(Charsets.UTF_8).split('\n')) {
+                if (line.trimStart().startsWith("//")) continue
+                for (match in sourceUrl.findAll(line)) {
+                    val host = match.groupValues[1].lowercase(Locale.ROOT)
+                    if (declarableHost.matches(host)) hosts += host
+                }
+            }
+        }
+        if (hosts.isNotEmpty()) manifest.put("permissions", JSONArray(listOf("network"))).put("networkDomains", JSONArray(hosts))
+        return manifest
+    }
+
+    private val sourceUrl = Regex("https?://([A-Za-z0-9.-]+)")
+    private val declarableHost = Regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)*\\.[a-z]{2,}$")
+
     fun encode(manifest: JSONObject): ByteArray = (manifest.toString(2) + "\n").toByteArray(Charsets.UTF_8)
 }

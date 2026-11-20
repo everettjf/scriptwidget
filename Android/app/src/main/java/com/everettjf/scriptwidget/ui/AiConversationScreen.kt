@@ -84,6 +84,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.foundation.layout.height
 import androidx.compose.ui.semantics.contentDescription
@@ -98,6 +99,7 @@ import androidx.lifecycle.compose.LifecycleEventEffect
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import com.everettjf.scriptwidget.R
 import com.everettjf.scriptwidget.AppServices
 import com.everettjf.scriptwidget.InstalledPackage
 import com.everettjf.scriptwidget.ai.AiServices
@@ -223,6 +225,8 @@ class AiConversationViewModel : ViewModel() {
     private var cancellation: AiCancellation? = null
     private var generation = 0
     private var opened = false
+    /** The application, for the texts of [activity]; set when a turn starts. */
+    private var strings: Context? = null
 
     val isRunning: Boolean get() = conversation.isRunning
 
@@ -324,7 +328,8 @@ class AiConversationViewModel : ViewModel() {
         val token = AiCancellation()
         cancellation = token
         val run = ++generation
-        activity = "Preparing…"
+        strings = application
+        activity = application.getString(R.string.ai_activity_preparing)
         liveText = ""
         changed(application)
         val target = installed
@@ -337,7 +342,7 @@ class AiConversationViewModel : ViewModel() {
                     val settings = AiServices.settings(application).load()
                     settings.profile.validationError()?.let { return@withContext AgentLoopOutcome.Failed(it, AiTokenUsage.ZERO) }
                     val key = AiServices.credentials(application).get(settings.profile.kind.id)
-                        ?: return@withContext AgentLoopOutcome.Failed("No API key is set. Open Settings → AI to add one.", AiTokenUsage.ZERO)
+                        ?: return@withContext AgentLoopOutcome.Failed(application.getString(R.string.ai_no_key), AiTokenUsage.ZERO)
                     val baseline = target?.let { PlatformSupport.unsupported(it.manifest, it.files).toSet() } ?: emptySet()
                     // Skills are read when the turn is sent, so a Skill switched on mid-conversation applies from the next turn.
                     val context = mode.context
@@ -369,8 +374,8 @@ class AiConversationViewModel : ViewModel() {
     private fun apply(turnId: String, event: AgentLoopEvent) {
         AiConversationTurns.applyEvent(conversation, turnId, event)
         when (event) {
-            is AgentLoopEvent.Thinking -> { liveText = ""; activity = if (event.iteration == 1) "Writing the widget…" else "It did not run. Fixing it, attempt ${event.iteration} of ${AiConversationLimits.MAX_ATTEMPTS_PER_TURN}…" }
-            is AgentLoopEvent.Running -> { activity = "Checking that it runs…"; liveText = "" }
+            is AgentLoopEvent.Thinking -> { liveText = ""; activity = if (event.iteration == 1) strings?.getString(R.string.ai_activity_writing) else strings?.getString(R.string.ai_activity_fixing, event.iteration, AiConversationLimits.MAX_ATTEMPTS_PER_TURN) }
+            is AgentLoopEvent.Running -> { activity = strings?.getString(R.string.ai_activity_checking); liveText = "" }
             // Only the last lines are kept: that is all the screen shows.
             is AgentLoopEvent.Partial -> liveText = PromptBuilder.previewOfPartialReply(event.text).trimEnd().lines().takeLast(LIVE_LINES).joinToString("\n")
             else -> Unit
@@ -463,7 +468,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
     val current = conversation.currentVersion
     val running = model.isRunning
 
-    if (model.isMissing) { Text("This widget is no longer installed.", Modifier.padding(32.dp)); return }
+    if (model.isMissing) { Text(stringResource(R.string.ai_missing), Modifier.padding(32.dp)); return }
 
     fun leave() { model.stop(context); navigation.popBackStack() }
 
@@ -479,8 +484,8 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             model.bind(context, saved, source)
             WidgetScheduler.refreshPackage(context, saved.installation)
             if (open) navigation.navigate("package/${Uri.encode(saved.name)}") { popUpTo("home") }
-            else Toast.makeText(context, "Applied to ${saved.displayName}", Toast.LENGTH_SHORT).show()
-        }.onFailure { Toast.makeText(context, it.message ?: "Could not save the widget", Toast.LENGTH_LONG).show() }
+            else Toast.makeText(context, context.getString(R.string.ai_applied_to, saved.displayName), Toast.LENGTH_SHORT).show()
+        }.onFailure { Toast.makeText(context, it.message ?: context.getString(R.string.ai_save_failed), Toast.LENGTH_LONG).show() }
     }
 
     fun saveNew(newName: String, version: AiConversationVersion) {
@@ -511,22 +516,22 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                 title = {
                     @Suppress("UNUSED_VARIABLE") val redrawTitle = model.revision
                     Column {
-                        Text(if (installed != null) installed.displayName else conversation.title.ifEmpty { "New AI widget" }, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                        Text(if (installed != null) installed.displayName else conversation.title.ifEmpty { stringResource(R.string.ai_title_new) }, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(
-                            if (installed != null) "AI conversation" else if (conversation.turns.isEmpty()) "Describe it, then keep asking for changes" else "Draft",
+                            if (installed != null) stringResource(R.string.ai_subtitle_installed) else if (conversation.turns.isEmpty()) stringResource(R.string.ai_subtitle_empty) else stringResource(R.string.ai_subtitle_draft),
                             style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1,
                         )
                     }
                 },
-                navigationIcon = { IconButton(onClick = { leave() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
+                navigationIcon = { IconButton(onClick = { leave() }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.ai_back)) } },
                 actions = {
                     @Suppress("UNUSED_VARIABLE") val redrawActions = model.revision
-                    if (installed == null && model.drafts.isNotEmpty()) IconButton(enabled = !running, onClick = { showDrafts = true }) { Icon(Icons.Default.History, "Drafts") }
-                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, "More") }
+                    if (installed == null && model.drafts.isNotEmpty()) IconButton(enabled = !running, onClick = { showDrafts = true }) { Icon(Icons.Default.History, stringResource(R.string.ai_drafts)) }
+                    IconButton(onClick = { menu = true }) { Icon(Icons.Default.MoreVert, stringResource(R.string.ai_more)) }
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
-                        DropdownMenuItem(text = { Text("New conversation") }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; draft = ""; model.startNew(context) })
-                        if (installed == null) DropdownMenuItem(text = { Text("Delete this draft") }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; model.deleteDraft(context, conversation.id) })
-                        DropdownMenuItem(text = { Text("AI settings") }, onClick = { menu = false; navigation.navigate("settings") })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_new)) }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; draft = ""; model.startNew(context) })
+                        if (installed == null) DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_delete_draft)) }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; model.deleteDraft(context, conversation.id) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_settings)) }, onClick = { menu = false; navigation.navigate("settings") })
                     }
                 },
             )
@@ -537,12 +542,12 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             conversation.usageAdvice?.let { advice ->
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(start = 16.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(advice.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
-                    if (current != null) TextButton(enabled = !running, onClick = { draft = ""; model.continueFromHere(context) }) { Text("Start new from here") }
+                    if (current != null) TextButton(enabled = !running, onClick = { draft = ""; model.continueFromHere(context) }) { Text(stringResource(R.string.ai_start_new_from_here)) }
                 }
             }
             Composer(
                 text = draft, onText = { draft = it.take(AiConversationLimits.MAX_REQUEST_CHARACTERS) }, running = running, enabled = ready && !model.isLoading,
-                placeholder = if (current == null) "Describe the widget you want…" else "Say what to change…",
+                placeholder = if (current == null) stringResource(R.string.ai_placeholder_new) else stringResource(R.string.ai_placeholder_change),
                 onSend = { send() }, onStop = { model.stop(context) },
             )
           }
@@ -553,9 +558,9 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
         Column(Modifier.padding(padding).fillMaxSize()) {
             if (!ready && profile != null) Card(colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.tertiaryContainer), modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("Set up an AI provider", style = MaterialTheme.typography.titleSmall)
-                    Text("Choose a provider and enter its API key in Settings → AI. The key is stored encrypted on this device.", style = MaterialTheme.typography.bodySmall)
-                    TextButton(onClick = { navigation.navigate("settings") }) { Text("Open Settings") }
+                    Text(stringResource(R.string.ai_setup_title), style = MaterialTheme.typography.titleSmall)
+                    Text(stringResource(R.string.ai_setup_text), style = MaterialTheme.typography.bodySmall)
+                    TextButton(onClick = { navigation.navigate("settings") }) { Text(stringResource(R.string.ai_open_settings)) }
                 }
             }
 
@@ -568,7 +573,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                     installed = installed, dark = dark, running = running,
                     applied = installed != null && model.installedSource == current.source,
                     onSize = { model.setSize(context, it) }, onVersion = { model.selectVersion(context, it) },
-                    onCode = { shownCode = "Version ${current.number}" to current.source },
+                    onCode = { shownCode = context.getString(R.string.ai_version, current.number) to current.source },
                     onSave = { if (installed == null) askName = true else confirmApply = true },
                 )
             }
@@ -585,7 +590,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                     turns = conversation.turns.map { TurnUi.of(conversation, it) }, totalTokens = conversation.totalUsage.totalTokens,
                     activity = model.activity, live = model.liveText, running = running,
                     onVersion = { model.selectVersion(context, it) }, onRetry = { model.retry(context, it) },
-                    onFailedCode = { id -> conversation.turn(id)?.failedSource?.let { shownCode = "The attempt that did not run" to it } },
+                    onFailedCode = { id -> conversation.turn(id)?.failedSource?.let { shownCode = context.getString(R.string.ai_failed_attempt_title) to it } },
                     onChanges = { shownChanges = it },
                     modifier = Modifier.weight(1f),
                 )
@@ -599,14 +604,14 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
         if (version == null || parent == null) shownChanges = null else {
             val lines = remember(versionId) { AiSourceDiff.lines(parent.source, version.source) }
             AlertDialog(
-                onDismissRequest = { shownChanges = null }, title = { Text("Changes in version ${version.number}") },
+                onDismissRequest = { shownChanges = null }, title = { Text(stringResource(R.string.ai_changes_title, version.number)) },
                 text = {
-                    if (lines == null) Text("These versions are too long to compare line by line.")
+                    if (lines == null) Text(stringResource(R.string.ai_changes_too_long))
                     else LazyColumn(Modifier.heightIn(max = 420.dp).horizontalScroll(rememberScrollState())) {
                         items(lines) { line -> DiffLine(line) }
                     }
                 },
-                confirmButton = { TextButton(onClick = { shownChanges = null }) { Text("Close") } },
+                confirmButton = { TextButton(onClick = { shownChanges = null }) { Text(stringResource(R.string.ai_close)) } },
             )
         }
     }
@@ -618,40 +623,40 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                 Text(code, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace,
                     modifier = Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()).horizontalScroll(rememberScrollState()))
             },
-            confirmButton = { TextButton(onClick = { shownCode = null }) { Text("Close") } },
+            confirmButton = { TextButton(onClick = { shownCode = null }) { Text(stringResource(R.string.ai_close)) } },
         )
     }
 
-    if (askName && current != null) NameDialog("Save as a widget", suggestedName(conversation.title), onDismiss = { askName = false }) { newName ->
+    if (askName && current != null) NameDialog(stringResource(R.string.ai_save_as_title), suggestedName(conversation.title), onDismiss = { askName = false }) { newName ->
         askName = false
         if (current.networkDomains.isEmpty()) saveNew(newName, current) else confirmNetwork = newName
     }
     confirmNetwork?.let { newName ->
         if (current != null) AlertDialog(
-            onDismissRequest = { confirmNetwork = null }, title = { Text("Allow this widget to use the network?") },
-            text = { Text("The AI wrote a widget that contacts: ${current.networkDomains.joinToString(", ")}. Saving gives it the network permission for these hosts only.") },
-            confirmButton = { TextButton(onClick = { confirmNetwork = null; saveNew(newName, current) }) { Text("Save and allow") } },
-            dismissButton = { TextButton(onClick = { confirmNetwork = null }) { Text("Cancel") } },
+            onDismissRequest = { confirmNetwork = null }, title = { Text(stringResource(R.string.ai_network_title)) },
+            text = { Text(stringResource(R.string.ai_network_text, current.networkDomains.joinToString(", "))) },
+            confirmButton = { TextButton(onClick = { confirmNetwork = null; saveNew(newName, current) }) { Text(stringResource(R.string.ai_save_and_allow)) } },
+            dismissButton = { TextButton(onClick = { confirmNetwork = null }) { Text(stringResource(R.string.ai_cancel)) } },
         )
     }
     if (confirmApply && current != null && installed != null) {
         val added = AiCandidates.newHosts(installed, current.networkDomains)
         AlertDialog(
-            onDismissRequest = { confirmApply = false }, title = { Text("Apply version ${current.number} to ${installed.displayName}?") },
+            onDismissRequest = { confirmApply = false }, title = { Text(stringResource(R.string.ai_apply_title, current.number, installed.displayName)) },
             text = {
                 Text(
-                    "${AiCandidates.entryOf(installed)} is replaced with this version. Widgets on the home screen showing it are redrawn." +
-                        if (added.isEmpty()) "" else "\n\nThis version contacts ${added.joinToString(", ")}. Applying adds the network permission for these hosts to the widget.",
+                    stringResource(R.string.ai_apply_text, AiCandidates.entryOf(installed)) +
+                        if (added.isEmpty()) "" else "\n\n" + stringResource(R.string.ai_apply_text_hosts, added.joinToString(", ")),
                 )
             },
-            confirmButton = { TextButton(onClick = { confirmApply = false; apply(installed, current) }) { Text(if (added.isEmpty()) "Apply" else "Allow and apply") } },
-            dismissButton = { TextButton(onClick = { confirmApply = false }) { Text("Cancel") } },
+            confirmButton = { TextButton(onClick = { confirmApply = false; apply(installed, current) }) { Text(if (added.isEmpty()) stringResource(R.string.ai_apply) else stringResource(R.string.ai_allow_and_apply)) } },
+            dismissButton = { TextButton(onClick = { confirmApply = false }) { Text(stringResource(R.string.ai_cancel)) } },
         )
     }
     if (showDrafts) ModalBottomSheet(onDismissRequest = { showDrafts = false }) {
         Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
-            Text("Drafts", style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
-            Text("Conversations you have not saved as a widget. They stay on this device.", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
+            Text(stringResource(R.string.ai_drafts), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+            Text(stringResource(R.string.ai_drafts_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(horizontal = 20.dp))
             LazyColumn(Modifier.heightIn(max = 420.dp).padding(top = 8.dp)) {
                 items(model.drafts, key = { it.id }) { item ->
                     DraftRow(item, onOpen = { showDrafts = false; model.openDraft(context, item.id) }, onDelete = { model.deleteDraft(context, item.id) })
@@ -665,14 +670,14 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
 private fun DraftRow(item: AiConversationSummary, onOpen: () -> Unit, onDelete: (() -> Unit)?) {
     Row(Modifier.fillMaxWidth().clickable(onClick = onOpen).padding(start = 20.dp, end = 8.dp, top = 6.dp, bottom = 6.dp), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(item.title.ifEmpty { "Untitled" }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
+            Text(item.title.ifEmpty { stringResource(R.string.ai_untitled) }, maxLines = 1, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyLarge)
             Text(
-                (if (item.versionCount == 0) "No version yet" else if (item.versionCount == 1) "1 version" else "${item.versionCount} versions") + " · " +
-                    (if (System.currentTimeMillis() - item.updatedAt < DateUtils.MINUTE_IN_MILLIS) "just now" else DateUtils.getRelativeTimeSpanString(item.updatedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)),
+                (if (item.versionCount == 0) stringResource(R.string.ai_no_version) else counted(item.versionCount, R.string.ai_versions_one, R.string.ai_versions_other)) + " · " +
+                    (if (System.currentTimeMillis() - item.updatedAt < DateUtils.MINUTE_IN_MILLIS) stringResource(R.string.ai_just_now) else DateUtils.getRelativeTimeSpanString(item.updatedAt, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS)),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
-        if (onDelete != null) IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, "Delete draft ${item.title}") }
+        if (onDelete != null) IconButton(onClick = onDelete) { Icon(Icons.Default.DeleteOutline, stringResource(R.string.ai_delete_draft, item.title)) }
     }
 }
 
@@ -686,6 +691,17 @@ internal fun suggestedName(title: String): String {
     return name.replace(Regex("[/\\\\:*?\"<>|]"), " ").trim().ifBlank { "AI Widget" }.replaceFirstChar { it.uppercase() }
 }
 
+/** A text with a count in it: the singular for 1, as English needs when it stands in for another language. */
+@Composable
+private fun counted(count: Int, one: Int, other: Int): String = stringResource(if (count == 1) one else other, count)
+
+/** The name of a size in the user's language. */
+private fun sizeName(size: AiWidgetSize): Int = when (size) {
+    AiWidgetSize.SMALL -> R.string.ai_size_small
+    AiWidgetSize.MEDIUM -> R.string.ai_size_medium
+    AiWidgetSize.LARGE -> R.string.ai_size_large
+}
+
 /** One size of the widget, drawn small, with its name. Running it costs nothing but time on the device. */
 @Composable
 private fun SizeThumbnail(option: AiWidgetSize, selected: Boolean, files: com.everettjf.scriptwidget.core.runtime.PackageFiles, revision: Int, dark: Boolean, onClick: () -> Unit) {
@@ -697,7 +713,7 @@ private fun SizeThumbnail(option: AiWidgetSize, selected: Boolean, files: com.ev
         Box(Modifier.height(36.dp), contentAlignment = Alignment.Center) {
             WidgetPreview(files = files, packageID = PREVIEW_PACKAGE_ID, family = option.family, dark = dark, revision = revision, maxHeight = if (option == AiWidgetSize.LARGE) 36f else 26f)
         }
-        Text(option.displayName, style = MaterialTheme.typography.labelSmall, color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(sizeName(option)), style = MaterialTheme.typography.labelSmall, color = if (selected) MaterialTheme.colorScheme.onSecondaryContainer else MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -715,29 +731,30 @@ private fun PreviewPanel(
             Box(contentAlignment = Alignment.TopEnd) {
                 WidgetPreview(files = files, packageID = PREVIEW_PACKAGE_ID, family = size.family, dark = dark, revision = version.number, maxHeight = 190f)
                 if (running) Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), modifier = Modifier.padding(8.dp)) {
-                    Text("Version ${version.number} while the AI works", style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
+                    Text(stringResource(R.string.ai_version_while_working, version.number), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                 }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 // The widget at every size, side by side; a tap shows that size above.
                 for (option in AiWidgetSize.entries) SizeThumbnail(option, selected = size == option, files = files, revision = version.number, dark = dark) { onSize(option) }
                 Spacer(Modifier.weight(1f))
-                IconButton(enabled = !running && previousId != null, onClick = { previousId?.let(onVersion) }) { Icon(Icons.Default.ChevronLeft, "Previous version") }
+                IconButton(enabled = !running && previousId != null, onClick = { previousId?.let(onVersion) }) { Icon(Icons.Default.ChevronLeft, stringResource(R.string.ai_previous_version)) }
                 // Position among the versions that are kept, which is what the arrows move through.
-                Text("$position of $count", style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.semantics { contentDescription = "Version ${version.number}, $position of $count" })
-                IconButton(enabled = !running && nextId != null, onClick = { nextId?.let(onVersion) }) { Icon(Icons.Default.ChevronRight, "Next version") }
+                val positionDescription = stringResource(R.string.ai_position_description, version.number, position, count)
+                Text(stringResource(R.string.ai_position, position, count), style = MaterialTheme.typography.labelLarge, maxLines = 1, modifier = Modifier.semantics { contentDescription = positionDescription })
+                IconButton(enabled = !running && nextId != null, onClick = { nextId?.let(onVersion) }) { Icon(Icons.Default.ChevronRight, stringResource(R.string.ai_next_version)) }
             }
             if (version.networkDomains.isNotEmpty()) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Language, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("May contact: ${version.networkDomains.joinToString(", ")}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp))
+                Text(stringResource(R.string.ai_may_contact, version.networkDomains.joinToString(", ")), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp))
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                TextButton(onClick = onCode) { Icon(Icons.Default.Code, null, Modifier.size(18.dp)); Text("Code", Modifier.padding(start = 6.dp)) }
+                TextButton(onClick = onCode) { Icon(Icons.Default.Code, null, Modifier.size(18.dp)); Text(stringResource(R.string.ai_code), Modifier.padding(start = 6.dp)) }
                 Spacer(Modifier.weight(1f))
                 if (installed != null && applied) Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.primary)
-                    Text("In the widget", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp, end = 8.dp))
-                } else Button(enabled = !running, onClick = onSave) { Text(if (installed == null) "Save widget" else "Apply to widget") }
+                    Text(stringResource(R.string.ai_in_widget), style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp, end = 8.dp))
+                } else Button(enabled = !running, onClick = onSave) { Text(if (installed == null) stringResource(R.string.ai_save_widget) else stringResource(R.string.ai_apply_to_widget)) }
             }
         }
     }
@@ -752,30 +769,29 @@ private fun EmptyState(
 ) {
     Column(modifier.fillMaxWidth().verticalScroll(rememberScrollState()).padding(16.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         if (installed == null) {
-            Text("What should the widget show?", style = MaterialTheme.typography.titleMedium)
-            Text("Describe it in your own words. You see it as soon as it runs, and can keep asking for changes: “make the title smaller”, “use a green background”.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Text("Try an example", style = MaterialTheme.typography.labelLarge)
+            Text(stringResource(R.string.ai_empty_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.ai_empty_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.ai_try_example), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for (example in AiExamplePrompts.all) AssistChip(enabled = enabled, onClick = { onExample(example) }, label = { Text(example.title) })
             }
             if (drafts.isNotEmpty()) {
-                Text("Continue a draft", style = MaterialTheme.typography.labelLarge)
+                Text(stringResource(R.string.ai_continue_draft), style = MaterialTheme.typography.labelLarge)
                 Card(Modifier.fillMaxWidth()) {
                     Column {
                         for (item in drafts.take(3)) DraftRow(item, onOpen = { onDraft(item.id) }, onDelete = null)
-                        if (drafts.size > 3) TextButton(onClick = onAllDrafts, modifier = Modifier.padding(horizontal = 12.dp)) { Text("All ${drafts.size} drafts") }
+                        if (drafts.size > 3) TextButton(onClick = onAllDrafts, modifier = Modifier.padding(horizontal = 12.dp)) { Text(stringResource(R.string.ai_all_drafts, drafts.size)) }
                     }
                 }
             }
         } else {
-            Text("Ask for a change", style = MaterialTheme.typography.titleMedium)
-            Text("The AI works on a copy. ${installed.displayName} stays as it is until you tap Apply to widget.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.ai_change_title), style = MaterialTheme.typography.titleMedium)
+            Text(stringResource(R.string.ai_change_text, installed.displayName), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         profile?.let { active ->
             val host = runCatching { URI(active.normalizedBaseUrl).host }.getOrNull().orEmpty()
             Text(
-                "${active.kind.displayName} · ${active.model.ifBlank { "no model" }}. Your requests and the widget's code are sent to ${host.ifEmpty { "the configured server" }}. " +
-                    "A change that does not run is repaired up to three times; each try is a request the provider bills.",
+                stringResource(R.string.ai_provider_note, active.kind.displayName, active.model.ifBlank { stringResource(R.string.ai_no_model) }, host.ifEmpty { stringResource(R.string.ai_configured_server) }),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -786,17 +802,18 @@ private fun EmptyState(
 @Composable
 private fun DiffLine(line: AiSourceDiff.Line) {
     if (line.kind == AiSourceDiff.Kind.SKIPPED) {
-        Text(if (line.skipped == 1) "⋯ 1 unchanged line" else "⋯ ${line.skipped} unchanged lines", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
+        Text(counted(line.skipped, R.string.ai_unchanged_lines_one, R.string.ai_unchanged_lines_other), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(vertical = 4.dp))
         return
     }
     val (sign, tint, label) = when (line.kind) {
-        AiSourceDiff.Kind.ADDED -> Triple("+", Color(0xFF2E7D32).copy(alpha = 0.20f), "Added")
-        AiSourceDiff.Kind.REMOVED -> Triple("−", Color(0xFFC62828).copy(alpha = 0.18f), "Removed")
-        else -> Triple(" ", Color.Transparent, "Unchanged")
+        AiSourceDiff.Kind.ADDED -> Triple("+", Color(0xFF2E7D32).copy(alpha = 0.20f), stringResource(R.string.ai_diff_added))
+        AiSourceDiff.Kind.REMOVED -> Triple("−", Color(0xFFC62828).copy(alpha = 0.18f), stringResource(R.string.ai_diff_removed))
+        else -> Triple(" ", Color.Transparent, stringResource(R.string.ai_diff_unchanged))
     }
+    val description = stringResource(R.string.ai_diff_line_description, label, line.text)
     Text(
         "$sign ${line.text}", style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, softWrap = false,
-        modifier = Modifier.background(tint).padding(horizontal = 4.dp, vertical = 1.dp).semantics { contentDescription = "$label: ${line.text}" },
+        modifier = Modifier.background(tint).padding(horizontal = 4.dp, vertical = 1.dp).semantics { contentDescription = description },
     )
 }
 
@@ -837,7 +854,7 @@ private fun TurnList(
     LazyColumn(modifier.fillMaxWidth(), state = state, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 16.dp, vertical = 12.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
         items(turns, key = { it.id }) { turn -> TurnRow(turn, activity, live, running, onVersion, onRetry, onFailedCode, onChanges) }
         item(key = "total") {
-            if (totalTokens > 0) Text("$totalTokens tokens in this conversation", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
+            if (totalTokens > 0) Text(stringResource(R.string.ai_total_tokens, totalTokens), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.fillMaxWidth().padding(top = 2.dp))
             else Spacer(Modifier.size(1.dp))
         }
     }
@@ -846,16 +863,17 @@ private fun TurnList(
 @Composable
 private fun VersionLine(turn: TurnUi, running: Boolean, onVersion: (String) -> Unit, onChanges: (String) -> Unit) {
     val versionId = turn.versionId ?: return
+    val changesDescription = if (turn.added != null && turn.removed != null) stringResource(R.string.ai_changes_description, turn.added, turn.removed) else ""
     Row(verticalAlignment = Alignment.CenterVertically) {
         Icon(Icons.Default.CheckCircle, null, Modifier.size(16.dp), tint = if (turn.isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("Version ${turn.versionNumber}", style = MaterialTheme.typography.labelLarge, color = if (turn.isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
-        if (turn.isCurrent) Text("shown above", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
-        else TextButton(enabled = !running, onClick = { onVersion(versionId) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) { Text("Show this version") }
+        Text(stringResource(R.string.ai_version, turn.versionNumber ?: 0), style = MaterialTheme.typography.labelLarge, color = if (turn.isCurrent) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
+        if (turn.isCurrent) Text(stringResource(R.string.ai_shown_above), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp))
+        else TextButton(enabled = !running, onClick = { onVersion(versionId) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp)) { Text(stringResource(R.string.ai_show_this_version)) }
         if (turn.added != null && turn.removed != null) TextButton(
             onClick = { onChanges(versionId) }, contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 8.dp),
-            modifier = Modifier.semantics { contentDescription = "${turn.added} lines added, ${turn.removed} removed. Show the changes." },
+            modifier = Modifier.semantics { contentDescription = changesDescription },
         ) { Text("+${turn.added} −${turn.removed}", fontFamily = FontFamily.Monospace) }
-        if (turn.abandoned) Text("left behind", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
+        if (turn.abandoned) Text(stringResource(R.string.ai_left_behind), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 4.dp))
     }
 }
 
@@ -866,7 +884,7 @@ private fun TurnRow(turn: TurnUi, activity: String?, live: String, running: Bool
         Column(Modifier.fillMaxWidth().alpha(faded), verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Edit, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                Text("The widget's code as it is installed", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
+                Text(stringResource(R.string.ai_installed_code), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
             }
             VersionLine(turn, running, onVersion, onChanges)
         }
@@ -883,46 +901,47 @@ private fun TurnRow(turn: TurnUi, activity: String?, live: String, running: Bool
             AiConversationTurn.Status.RUNNING -> {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     CircularProgressIndicator(Modifier.size(16.dp), strokeWidth = 2.dp)
-                    Text(activity ?: "Working…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 10.dp))
+                    Text(activity ?: stringResource(R.string.ai_working), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 10.dp))
                 }
                 // The code as it arrives. A model that does not stream shows nothing here.
+                val liveDescription = stringResource(R.string.ai_code_being_written)
                 if (live.isNotEmpty()) Text(
                     live, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     softWrap = false, overflow = TextOverflow.Clip, minLines = AiConversationViewModel.LIVE_LINES, maxLines = AiConversationViewModel.LIVE_LINES,
                     modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(8.dp)).background(MaterialTheme.colorScheme.surfaceContainerHighest).padding(8.dp)
-                        .semantics { contentDescription = "Code being written" },
+                        .semantics { contentDescription = liveDescription },
                 )
             }
             AiConversationTurn.Status.SUCCEEDED -> {
-                Text(turn.note ?: "Done.", style = MaterialTheme.typography.bodyLarge)
+                Text(turn.note ?: stringResource(R.string.ai_done), style = MaterialTheme.typography.bodyLarge)
                 if (turn.repairs > 0) Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(Icons.Default.AutoFixHigh, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text(if (turn.repairs == 1) "Fixed automatically 1 time" else "Fixed automatically ${turn.repairs} times", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
+                    Text(counted(turn.repairs, R.string.ai_fixed_one, R.string.ai_fixed_other), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 6.dp))
                 }
                 VersionLine(turn, running, onVersion, onChanges)
             }
             AiConversationTurn.Status.UNCONVERGED -> {
-                Text("It did not run, so the widget is unchanged.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                Text(stringResource(R.string.ai_did_not_run), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
                 turn.error?.let { Text(it, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 3, overflow = TextOverflow.Ellipsis) }
                 Row {
-                    TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text("Try again") }
-                    if (turn.hasFailedSource) TextButton(onClick = { onFailedCode(turn.id) }) { Text("Show its code") }
+                    TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text(stringResource(R.string.ai_try_again)) }
+                    if (turn.hasFailedSource) TextButton(onClick = { onFailedCode(turn.id) }) { Text(stringResource(R.string.ai_show_its_code)) }
                 }
             }
             AiConversationTurn.Status.FAILED -> {
-                Text(turn.error ?: "The request could not be completed.", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
-                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text("Retry") }
+                Text(turn.error ?: stringResource(R.string.ai_request_failed), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.error)
+                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text(stringResource(R.string.ai_retry)) }
             }
             AiConversationTurn.Status.CANCELLED -> {
-                Text("Stopped. The widget is unchanged.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text("Send again") }
+                Text(stringResource(R.string.ai_stopped), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text(stringResource(R.string.ai_send_again)) }
             }
             AiConversationTurn.Status.INTERRUPTED -> {
-                Text("The app closed before this finished. The widget is unchanged.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text("Send again") }
+                Text(stringResource(R.string.ai_interrupted), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TextButton(enabled = !running, onClick = { onRetry(turn.id) }) { Text(stringResource(R.string.ai_send_again)) }
             }
         }
-        if (turn.tokens > 0 && turn.status != AiConversationTurn.Status.RUNNING) Text("${turn.tokens} tokens", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (turn.tokens > 0 && turn.status != AiConversationTurn.Status.RUNNING) Text(stringResource(R.string.ai_tokens, turn.tokens), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
@@ -936,8 +955,8 @@ private fun Composer(text: String, onText: (String) -> Unit, running: Boolean, e
                 keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Sentences), modifier = Modifier.weight(1f),
             )
             Spacer(Modifier.width(8.dp))
-            if (running) FilledTonalIconButton(onClick = onStop, modifier = Modifier.padding(bottom = 4.dp)) { Icon(Icons.Default.Stop, "Stop") }
-            else FilledIconButton(enabled = enabled && text.isNotBlank(), onClick = onSend, modifier = Modifier.padding(bottom = 4.dp)) { Icon(Icons.AutoMirrored.Filled.Send, "Send") }
+            if (running) FilledTonalIconButton(onClick = onStop, modifier = Modifier.padding(bottom = 4.dp)) { Icon(Icons.Default.Stop, stringResource(R.string.ai_stop)) }
+            else FilledIconButton(enabled = enabled && text.isNotBlank(), onClick = onSend, modifier = Modifier.padding(bottom = 4.dp)) { Icon(Icons.AutoMirrored.Filled.Send, stringResource(R.string.ai_send)) }
         }
     }
 }

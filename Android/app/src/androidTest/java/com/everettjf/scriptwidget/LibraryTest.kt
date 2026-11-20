@@ -87,6 +87,37 @@ class LibraryTest {
         assertNotNull(AppServices.library.findByInstallation(renamed.installation))
     }
 
+    /**
+     * Most bundled templates have no widget.json. The copy in the library always has one, and a
+     * manifest without `network` stops every request, so the copy must declare the hosts the
+     * template names, and no others.
+     */
+    @Test fun aCopyOfABundledTemplateThatUsesTheNetworkDeclaresItsOwnHostsOnly() {
+        val bundled = AppServices.library.bundled()
+        val expected = mapOf(
+            "template/Daily Quote" to listOf("zenquotes.io"),
+            "template/Currency Pulse" to listOf("open.er-api.com"),
+            "template/Weather" to listOf("api.open-meteo.com"),
+            "api/http" to listOf("api.github.com", "jsonplaceholder.typicode.com"),
+        )
+        for ((key, hosts) in expected) {
+            val item = bundled.first { "${it.group}/${it.name}" == key }
+            assertFalse("$key is expected to ship without widget.json", AppServices.library.bundledFiles(item).containsKey("widget.json"))
+            val installed = AppServices.library.installBundled(item).also { created += it.name }
+            val result = AppServices.runtime.run(RunRequest(installed.files, installed.installation, buildDirectory = installed.buildDirectory))
+            // The request itself may fail when the device is offline; it may not be refused by the manifest.
+            val message = result.execution.error?.message.orEmpty()
+            assertFalse("$key: $message", message.contains("not declared in widget.json"))
+            assertEquals(key, listOf("network"), installed.permissions)
+            val domains = installed.manifest!!.getJSONArray("networkDomains")
+            assertEquals(key, hosts, List(domains.length()) { domains.getString(it) })
+        }
+        // A template that names no host gets no network permission.
+        val offline = AppServices.library.installBundled(bundled.first { it.group == "template" && it.name == "Month Calendar" }).also { created += it.name }
+        assertEquals(emptyList<String>(), offline.permissions)
+        assertEquals(0, offline.manifest!!.getJSONArray("networkDomains").length())
+    }
+
     @Test fun everyBundledTemplateInstallsAndRendersWithoutAnInternalError() {
         val failures = ArrayList<String>()
         val bundled = AppServices.library.bundled()

@@ -114,6 +114,14 @@ class PackageStore(libraryRoot: File, stagingRoot: File, private val limits: Arc
     }
 
     /**
+     * The `widget.json` text for a template shipped with the app that has none, to pass to
+     * [create]: the legacy manifest plus `network` and the exact hosts the template's own source
+     * names. Never use it for a package that came from outside the app.
+     */
+    fun bundledManifest(name: String, files: Map<String, ByteArray>): String =
+        PackageManifests.encode(PackageManifests.bundledManifest(name, files)).toString(Charsets.UTF_8)
+
+    /**
      * Imports a `.swt` archive and returns the installed package.
      *
      * The archive is preflighted and extracted by [PackageArchive.extract]. The installed

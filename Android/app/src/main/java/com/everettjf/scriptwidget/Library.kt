@@ -120,8 +120,11 @@ class Library(private val context: Context) {
     fun installBundled(bundled: BundledPackage): InstalledPackage {
         val files = bundledFiles(bundled)
         val source = files["main.jsx"]?.toString(Charsets.UTF_8) ?: error("Template has no main.jsx")
+        val name = store.uniqueName(bundled.name)
+        // A template without widget.json gets one that declares the hosts it names; see bundledManifest.
         val manifest = files["widget.json"]?.toString(Charsets.UTF_8)
-        val created = store.create(store.uniqueName(bundled.name), source, manifest)
+            ?: store.bundledManifest(name, files)
+        val created = store.create(name, source, manifest)
         for ((path, bytes) in files) if (path != "main.jsx" && path != "widget.json") store.writeFile(created.name, path, bytes)
         return describe(created.directory)
     }
