@@ -121,8 +121,11 @@ struct ScriptCodeEditorView: View {
             .navigationTitle(self.dataObject.scriptModel.name)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    leadingButtons
+                // No item at all when it would be empty: an empty toolbar item is drawn as a blank button.
+                if self.mode != .creator {
+                    ToolbarItem(placement: .navigationBarLeading) {
+                        leadingButtons
+                    }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     trailingButtons(showsInlinePanel: showsInlinePanel)

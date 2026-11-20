@@ -50,13 +50,17 @@ struct ScriptCodePreviewView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             
-            ScriptPackageHorizontalFileView(model: state.model, currentFilePath: state.filePath) { file in
-                // preview refresh
-                print("change file : \(file.name)")
-                self.filePath = file.path
-                state.changeFile(file.path)
+            // Beside the editor the files are already listed above the code, so the strip is only shown
+            // when the preview stands alone (the sheet, which is also the one with a close button).
+            if showsCloseButton {
+                ScriptPackageHorizontalFileView(model: state.model, currentFilePath: state.filePath) { file in
+                    // preview refresh
+                    print("change file : \(file.name)")
+                    self.filePath = file.path
+                    state.changeFile(file.path)
+                }
+                .padding(.bottom, 5)
             }
-            .padding(.bottom, 5)
             
             Group {
                 if widgetSizeType == 7 {
