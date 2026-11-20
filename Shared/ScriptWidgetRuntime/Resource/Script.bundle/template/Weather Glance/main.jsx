@@ -97,11 +97,11 @@ const Days = ({ barWidth }) => (
       const scale = barWidth / (highest - lowest);
       return (
         <hstack spacing="10">
-          <text font="subheadline" fontWeight="medium" color="white" frame="48,leading">
+          <text font="subheadline" fontWeight="medium" color="white" frame="48,max,leading">
             {label}
           </text>
           <icon systemName={icon} size="16" color={iconColor(icon)} frame="24" />
-          <text font="subheadline" color={soft} frame="28,trailing">
+          <text font="subheadline" color={soft} frame="28,max,trailing">
             {low}°
           </text>
           {/* A faint track; over it, an invisible rect pushes the colored range into place. */}
@@ -121,7 +121,7 @@ const Days = ({ barWidth }) => (
               <spacer />
             </hstack>
           </zstack>
-          <text font="subheadline" fontWeight="medium" color="white" frame="28,trailing">
+          <text font="subheadline" fontWeight="medium" color="white" frame="28,max,trailing">
             {high}°
           </text>
         </hstack>

@@ -398,6 +398,31 @@ final class AIConversationTests: XCTestCase {
         XCTAssertEqual(AIJSXCheck.problems(in: "$render(<list spacing=\"4\"></list>)", surface: AIJSXCheck.parseSurface(AIJSXSurfaceData.text, system: "android")), [])
     }
 
+    /// The three spellings the DeepSeek batch run produced, and the rest of the frame grammar.
+    func testFrameTheRuntimeWouldNotReadIsNamed() {
+        let auto = AIJSXCheck.problems(in: "$render(<vstack><hstack frame=\"max,auto\" spacing=\"6\"><text>a</text></hstack></vstack>)")
+        XCTAssertEqual(auto, [
+            "frame=\"max,auto\" on <hstack> is not a frame ScriptWidget reads; it would be ignored or centered. "
+                + "Write it without spaces as one of: \"max\", \"max,leading\", \"60\", \"60,40\", \"60,40,leading\", "
+                + "\"max,40\", \"max,40,leading\", \"60,max\", \"60,max,leading\". The alignments are: center, leading, trailing, top, bottom, "
+                + "topLeading, topTrailing, bottomLeading, bottomTrailing. There is no \"auto\": for a row as wide as the widget "
+                + "and as tall as its content, put a <spacer/> inside an <hstack>.",
+        ])
+        for read in ["max", "max,center", "max,leading", "max,max", "60", "12.5", "0", "36,4", "max,24", "60,max",
+                     "60,40,topLeading", "max,24,bottomTrailing", "60,max,trailing", "10,,20"] {
+            XCTAssertTrue(AIJSXCheck.frameIsRead(read), read)
+            XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack frame=\"\(read)\"></vstack>)"), [], read)
+        }
+        for dropped in ["", "auto", "-4", "max,", "max,auto", "max, leading", "60, 60", "60,leading", "leading,max", "max,max,center",
+                        "60,40,middle", "60,40,center,top", "full", "100%", "1e3"] {
+            XCTAssertFalse(AIJSXCheck.frameIsRead(dropped), dropped)
+        }
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack frame={\"60, 60\"}></vstack>)").count, 1)
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack frame={side}><circle frame={48} /><spacer frame=\"8\" /></vstack>)"), [],
+                       "a value that is computed, or written as a number, is not judged")
+        XCTAssertEqual(AIJSXCheck.problems(in: "$render(<vstack><hstack frame=\"max,auto\" /><hstack frame=\"max,auto\" /></vstack>)").count, 1)
+    }
+
     func testTagInsideATagWithoutChildrenIsNamed() {
         let nested = AIJSXCheck.problems(in: "$render(<vstack><text font=\"caption\"><date date=\"now\" style=\"date\" /></text></vstack>)")
         XCTAssertEqual(nested, ["<text> takes no tags inside it, so the <date> in it is not shown. Put it next to the <text>, not in it."])

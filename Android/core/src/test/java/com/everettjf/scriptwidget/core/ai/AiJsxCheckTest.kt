@@ -1,6 +1,7 @@
 package com.everettjf.scriptwidget.core.ai
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -47,6 +48,37 @@ class AiJsxCheckTest {
         assertTrue(problems("return <text fontWeight={\"huge\"}>a</text>")[0].contains("fontWeight=\"huge\""))
         assertEquals("a value that is computed is not judged", emptyList<String>(), problems("${'$'}render(<text fontWeight={weight}>a</text>)"))
         assertTrue(AiJsxCheck.summary("${'$'}render(<row/>)")!!.startsWith("The code uses tags or attributes that ScriptWidget does not have:\n- "))
+    }
+
+    /** The three spellings the DeepSeek batch run produced, and the rest of the frame grammar. Same text as the Swift test. */
+    @Test
+    fun aFrameTheRuntimeWouldNotReadIsNamed() {
+        val auto = problems("${'$'}render(<vstack><hstack frame=\"max,auto\" spacing=\"6\"><text>a</text></hstack></vstack>)")
+        assertEquals(
+            listOf(
+                "frame=\"max,auto\" on <hstack> is not a frame ScriptWidget reads; it would be ignored or centered. " +
+                    "Write it without spaces as one of: \"max\", \"max,leading\", \"60\", \"60,40\", \"60,40,leading\", " +
+                    "\"max,40\", \"max,40,leading\", \"60,max\", \"60,max,leading\". The alignments are: center, leading, trailing, top, bottom, " +
+                    "topLeading, topTrailing, bottomLeading, bottomTrailing. There is no \"auto\": for a row as wide as the widget " +
+                    "and as tall as its content, put a <spacer/> inside an <hstack>.",
+            ),
+            auto,
+        )
+        for (read in listOf("max", "max,center", "max,leading", "max,max", "60", "12.5", "0", "36,4", "max,24", "60,max",
+            "60,40,topLeading", "max,24,bottomTrailing", "60,max,trailing", "10,,20")) {
+            assertTrue(read, AiJsxCheck.frameIsRead(read))
+            assertEquals(read, emptyList<String>(), problems("${'$'}render(<vstack frame=\"$read\"></vstack>)"))
+        }
+        for (dropped in listOf("", "auto", "-4", "max,", "max,auto", "max, leading", "60, 60", "60,leading", "leading,max", "max,max,center",
+            "60,40,middle", "60,40,center,top", "full", "100%", "1e3")) {
+            assertFalse(dropped, AiJsxCheck.frameIsRead(dropped))
+        }
+        assertEquals(1, problems("${'$'}render(<vstack frame={\"60, 60\"}></vstack>)").size)
+        assertEquals(
+            "a value that is computed, or written as a number, is not judged", emptyList<String>(),
+            problems("${'$'}render(<vstack frame={side}><circle frame={48} /><spacer frame=\"8\" /></vstack>)"),
+        )
+        assertEquals(1, problems("${'$'}render(<vstack><hstack frame=\"max,auto\" /><hstack frame=\"max,auto\" /></vstack>)").size)
     }
 
     @Test

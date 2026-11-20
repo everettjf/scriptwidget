@@ -75,14 +75,62 @@ object AiJsxCheck {
                     found += "<$name> has no attribute \"${attribute.name}\"; it would be ignored. Its attributes are: $names."
                     continue
                 }
-                val allowed = own[attribute.name] ?: surface.globals[attribute.name] ?: continue
                 val value = attribute.literal ?: continue
+                if (attribute.name == "frame" && !frameIsRead(value)) {
+                    found += "frame=\"$value\" on <$name> is not a frame ScriptWidget reads; it would be ignored or centered. $FRAME_HELP"
+                    continue
+                }
+                val allowed = own[attribute.name] ?: surface.globals[attribute.name] ?: continue
                 if (value !in allowed) {
                     found += "${attribute.name}=\"$value\" on <$name> is not one of its values; it would be ignored. Use one of: ${allowed.joinToString(", ")}."
                 }
             }
         }
         return found.toList()
+    }
+
+    private val FRAME_ALIGNMENTS = setOf("center", "leading", "trailing", "top", "bottom", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing")
+
+    const val FRAME_HELP = "Write it without spaces as one of: \"max\", \"max,leading\", \"60\", \"60,40\", \"60,40,leading\", " +
+        "\"max,40\", \"max,40,leading\", \"60,max\", \"60,max,leading\". The alignments are: center, leading, trailing, top, bottom, " +
+        "topLeading, topTrailing, bottomLeading, bottomTrailing. There is no \"auto\": for a row as wide as the widget " +
+        "and as tall as its content, put a <spacer/> inside an <hstack>."
+
+    /**
+     * Whether the runtime reads [value] as written. Follows `parseFrame` of the
+     * shared renderer: a value it drops, and an alignment it does not know and
+     * replaces with center, are both "not read".
+     */
+    fun frameIsRead(value: String): Boolean {
+        val parts = value.split(",").filter { it.isNotEmpty() }
+        fun number(text: String) = frameNumber(text) != null
+        fun alignment(text: String) = text in FRAME_ALIGNMENTS
+        return when (parts.size) {
+            1 -> value == "max" || (parts[0] == value && (frameNumber(value) ?: -1.0) >= 0)
+            2 -> {
+                val (a, b) = parts
+                if (number(a)) number(b) || b == "max" else a == "max" && (number(b) || b == "max" || alignment(b))
+            }
+            3 -> {
+                val (a, b, c) = parts
+                alignment(c) && ((number(a) && (number(b) || b == "max")) || (a == "max" && number(b)))
+            }
+            else -> false
+        }
+    }
+
+    /** A plain decimal such as 60, -4 or 12.5; nothing else, and no spaces. */
+    private fun frameNumber(text: String): Double? {
+        var digits = 0
+        var dots = 0
+        text.forEachIndexed { index, character ->
+            when {
+                character in '0'..'9' -> digits += 1
+                character == '.' -> dots += 1
+                !(index == 0 && (character == '-' || character == '+')) -> return null
+            }
+        }
+        return if (digits > 0 && dots <= 1) text.toDoubleOrNull() else null
     }
 
     /** One line for the model, or null when [source] has no problem. */

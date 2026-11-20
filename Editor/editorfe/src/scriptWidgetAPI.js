@@ -20,7 +20,7 @@ export const scriptWidgetAPI = {
     "font": { "type": "enum", "values": ["largeTitle", "title", "title2", "title3", "headline", "subheadline", "body", "callout", "footnote", "caption", "caption2"], "documentation": "Semantic text style." },
     "fontWeight": { "type": "enum", "values": ["ultraLight", "thin", "light", "regular", "medium", "semibold", "bold", "heavy", "black"], "documentation": "Font weight." },
     "fontDesign": { "type": "enum", "values": ["default", "rounded", "serif", "monospaced"], "documentation": "Font design." },
-    "frame": { "type": "number|string", "documentation": "Square size (64 or \"64\"), width,height (\"64,48\"), or flexible frame (\"max\", \"max,48\")." },
+    "frame": { "type": "number|string", "documentation": "Square size (64 or \"64\"), width,height (\"64,48\"), fill both directions (\"max\"), full width with a fixed height (\"max,48\") or full height with a fixed width (\"64,max\"). An alignment may follow: \"max,leading\", \"64,48,topLeading\", \"max,48,leading\", \"64,max,top\"; one of center, leading, trailing, top, bottom, topLeading, topTrailing, bottomLeading, bottomTrailing. No spaces; a value in another form is ignored, and an unknown alignment is read as center. There is no form for full width with the content's own height: put a <spacer/> in an <hstack>." },
     "padding": { "type": "number|string", "documentation": "Padding amount or edge description." },
     "corner": { "type": "number", "documentation": "Corner radius." },
     "opacity": { "type": "number", "documentation": "Opacity from 0 through 1." },

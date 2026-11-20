@@ -175,6 +175,10 @@ object PromptBuilder {
                 frame="max" to every row: it expands height too. Use
                 frame="max,24" for a full-width row with a fixed height
                 when appropriate.
+                frame="max,leading" fills both directions and aligns the content
+                (center, leading, trailing, top, bottom, topLeading, ...). There
+                is no "auto" and no space after the comma: for a full-width row
+                as tall as its content, put a <spacer/> inside the <hstack>.
                 <text>, <date>, <image> and the other tags without children take
                 no tags inside them: write <date ... /> next to a <text>, not in it.
                 A linear ${'$'}gradient needs both points, e.g. ${'$'}gradient({type: "linear",

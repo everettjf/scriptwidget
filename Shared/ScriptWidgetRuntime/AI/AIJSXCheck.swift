@@ -102,6 +102,10 @@ enum AIJSXCheck {
                     add("<\(name)> has no attribute \"\(attribute.name)\"; it would be ignored. Its attributes are: \(names).")
                     continue
                 }
+                if attribute.name == "frame", let value = attribute.literal, !frameIsRead(value) {
+                    add("frame=\"\(value)\" on <\(name)> is not a frame ScriptWidget reads; it would be ignored or centered. \(frameHelp)")
+                    continue
+                }
                 // The tag's own list wins over the general one, as in the Kotlin port.
                 guard let allowed = (ownValues ?? nil) ?? (globalValues ?? nil), let value = attribute.literal else { continue }
                 if !allowed.contains(value) {
@@ -111,6 +115,51 @@ enum AIJSXCheck {
             }
         }
         return found
+    }
+
+    static let frameAlignments: Set<String> = [
+        "center", "leading", "trailing", "top", "bottom", "topLeading", "topTrailing", "bottomLeading", "bottomTrailing",
+    ]
+
+    static let frameHelp = "Write it without spaces as one of: \"max\", \"max,leading\", \"60\", \"60,40\", \"60,40,leading\", "
+        + "\"max,40\", \"max,40,leading\", \"60,max\", \"60,max,leading\". The alignments are: center, leading, trailing, top, bottom, "
+        + "topLeading, topTrailing, bottomLeading, bottomTrailing. There is no \"auto\": for a row as wide as the widget "
+        + "and as tall as its content, put a <spacer/> inside an <hstack>."
+
+    /// Whether the runtime reads `value` as written. Follows
+    /// ScriptWidgetAttributeFrameModifier: a value it drops, and an alignment
+    /// it does not know and replaces with center, are both "not read".
+    static func frameIsRead(_ value: String) -> Bool {
+        let parts = value.split(separator: ",").map(String.init)
+        func number(_ text: String) -> Bool { frameNumber(text) != nil }
+        func alignment(_ text: String) -> Bool { frameAlignments.contains(text) }
+        switch parts.count {
+        case 1:
+            if value == "max" { return true }
+            guard parts[0] == value, let side = frameNumber(value) else { return false }
+            return side >= 0
+        case 2:
+            let (a, b) = (parts[0], parts[1])
+            if number(a) { return number(b) || b == "max" }
+            return a == "max" && (number(b) || b == "max" || alignment(b))
+        case 3:
+            let (a, b, c) = (parts[0], parts[1], parts[2])
+            guard alignment(c) else { return false }
+            return (number(a) && (number(b) || b == "max")) || (a == "max" && number(b))
+        default:
+            return false
+        }
+    }
+
+    /// A plain decimal such as 60, -4 or 12.5; nothing else, and no spaces.
+    private static func frameNumber(_ text: String) -> Double? {
+        var digits = 0
+        var dots = 0
+        for (index, scalar) in text.unicodeScalars.enumerated() {
+            if isDigit(scalar) { digits += 1 } else if scalar == "." { dots += 1 } else if !(index == 0 && (scalar == "-" || scalar == "+")) { return nil }
+        }
+        guard digits > 0, dots <= 1 else { return nil }
+        return Double(text)
     }
 
     /// One text for the model, or nil when `source` has no problem.
