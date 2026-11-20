@@ -6410,12 +6410,10 @@ final class AndroidTagFallbackTests: XCTestCase {
                     if value[0] > 240 && (30...80).contains(value[1]) && (60...130).contains(value[2]) { pink += 1 }
                 } }
                 XCTAssertGreaterThan(other, 300, name)
-                // On iPhone ImageRenderer draws a red and yellow placeholder for each system switch.
-                #if os(macOS)
-                XCTAssertEqual(pink, 0, name)
-                #else
+                // ImageRenderer draws a red and yellow placeholder for each system switch on iPhone, and
+                // on the Mac of the CI runner (594 such pixels there), though not on every Mac. The
+                // checklist is the template with switches, so the color check is left to the other one.
                 if name != "Scrolling Checklist" { XCTAssertEqual(pink, 0, name) }
-                #endif
                 #if os(macOS)
                 let png = try XCTUnwrap(NSBitmapImageRep(cgImage: image).representation(using: .png, properties: [:]))
                 #else
