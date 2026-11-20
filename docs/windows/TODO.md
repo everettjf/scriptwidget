@@ -50,6 +50,21 @@ Known gaps in the code:
 - **Deleting a single file of a package** is not offered in the editor; the package folder can be opened instead.
 - **Tile images** are not scale-specific: the 200% images are used at every scale.
 
+## Aligning with the other platforms
+
+Written on 19 November 2026 from a Mac, while the same work was done for Linux and Android; nothing here was started. It needs a Windows 11 PC. The plan for all platforms is in [the alignment plan](../platform-parity-plan.md).
+
+- **AI conversation.** Port `Linux/crates/sw-core/src/ai` (itself a port of `Android/core/.../core/ai`) into `ScriptWidget.Core`: profiles, the streaming client for Anthropic and OpenAI-compatible endpoints, edits and diffs, the JSX check, the prompt, the repair loop on the Windows executor, saved conversations. Then `swcli ai …` as `scriptwidget ai …` on Linux, and a conversation panel beside the editor and an AI section in the settings of the management window, as `Linux/crates/sw-studio/src/ai.rs` and `ui/ai.rs`.
+  - The key goes to the Windows credential locker (`PasswordVault`) or DPAPI, never to settings, packages, prompts or conversations; a test must show a saved profile and a saved conversation hold no key.
+  - The provider address is `https://` only and redirects are not followed, as on Android and Linux.
+  - `Editor/editorfe/scripts/generate-jsx-surface.mjs` writes the tag and attribute list for Swift, Kotlin and Rust; add a C# output instead of copying the list.
+  - The prompt needs a "not supported on Windows" section, built from the same list that filters the templates.
+- **`animation` and `<gif>` playback.** `Linux/crates/sw-render/src/motion.rs` computes the pose of an animated element for an instant from the record the shared renderer already writes, and `Linux/crates/sw-host/src/schedule.rs` (`motion_plan`) turns swings and custom intervals into a cycle of at most 60 pictures, one every 50 ms. Port both to the Win2D renderer and the desktop host; decode GIF frames in the host as Linux does.
+- **Skills and Gallery**, after they exist on Linux: the same stores, the same verification (path, byte count, SHA-256, the one trusted root), a page for each in the management window.
+- **Copies of bundled templates** already declare their hosts (`Library.BundledManifest`); Android now does the same.
+- **The template list still shows "Local Weather (Location)"**, which cannot run: the filter reads only `main.jsx`. Linux has the same gap.
+- **`frame` values the runtime ignores** are reported by the AI check on Apple and Android since 19 November 2026 (`frame="max,auto"`, a space after the comma). The C# check should follow when the AI port is made.
+
 ## After the preview
 
 - **Send to phone.** A QR code or reverse pairing so a widget moves to the phone without a file; needs an `import` handler in the iPhone and Android apps with its own security review. Until then, export a `.swt` file.
