@@ -101,6 +101,8 @@ public sealed class ScriptExecutor(SharedScripts scripts)
         using var completions = new BlockingCollection<Completion>();
         var gate = new object();
         var nativeLogs = new List<LogEntry>();
+        // Only operation names are retained: URLs, headers and bodies never enter diagnostics.
+        var pending = new Dictionary<int, string>();
         string? finished = null;
         var cancelled = false;
 
@@ -124,6 +126,7 @@ public sealed class ScriptExecutor(SharedScripts scripts)
                     var id = job.OptInt("id");
                     var name = job.OptString("operation");
                     var module = request.Modules.FirstOrDefault(item => item.Handles(name));
+                    pending[id] = name;
                     if (module is null) completions.Add(new Completion(id, false, Json.Quote($"Unsupported operation {name}")));
                     else
                     {
@@ -180,7 +183,11 @@ public sealed class ScriptExecutor(SharedScripts scripts)
                     engine.RunJobs();
                     finished ??= Failure("resourceLimit", "Script exceeded the 5-second execution limit");
                 }
-                else engine.Call(token, "resolve", completion.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), completion.OK ? "1" : "0", completion.Json);
+                else
+                {
+                    pending.Remove(completion.ID);
+                    engine.Call(token, "resolve", completion.ID.ToString(System.Globalization.CultureInfo.InvariantCulture), completion.OK ? "1" : "0", completion.Json);
+                }
             }
         }
         catch (JsException error)
@@ -196,7 +203,19 @@ public sealed class ScriptExecutor(SharedScripts scripts)
             request.Session.Cancellation.Cancel();
             engine.Dispose();
         }
-        return Decode(finished!, nativeLogs);
+        var decoded = Decode(finished!, nativeLogs);
+        if (decoded.Error is { Kind: "resourceLimit", Message: "Script exceeded the 5-second execution limit" })
+        {
+            var seconds = (request.TimeoutMilliseconds / 1000.0).ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+            var waitingForNetwork = pending.Values.Any(name => name is "fetch" or "http.request" or "weather.forecast" || name.StartsWith("datasource.", StringComparison.Ordinal));
+            return new ExecutionResult
+            {
+                Tree = decoded.Tree, Logs = decoded.Logs, Diagnostics = decoded.Diagnostics,
+                Error = new ExecutionError("resourceLimit", $"Script exceeded the {seconds}-second execution limit" +
+                    (waitingForNetwork ? " while a network request was still pending. Check the service connection or use cached data." : "")),
+            };
+        }
+        return decoded;
     }
 
     private static string? CompiledImport(ExecutionRequest request, string? relativePath)

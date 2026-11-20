@@ -1,0 +1,25 @@
+<UserControl x:Class="ScriptWidget.Studio.AI.AiSettingsControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:s="using:ScriptWidget.Studio.Services">
+    <StackPanel Spacing="10" Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+        <TextBlock Text="{s:T Key=ai.providers}" Style="{StaticResource BodyStrongTextBlockStyle}"/>
+        <TextBlock Text="{s:T Key=ai.providers.detail}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"/>
+        <ComboBox x:Name="Profiles" HorizontalAlignment="Stretch" SelectionChanged="OnProfile" AutomationProperties.Name="{s:T Key=ai.providers}"/>
+        <ComboBox x:Name="Provider" Header="{s:T Key=ai.provider}" HorizontalAlignment="Stretch" SelectionChanged="OnProvider" AutomationProperties.Name="{s:T Key=ai.provider}"/>
+        <TextBlock Text="{s:T Key=ai.local.detail}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"/>
+        <TextBox x:Name="ProfileName" Header="{s:T Key=ai.profileName}" MaxLength="80"/>
+        <TextBox x:Name="BaseUrl" Header="{s:T Key=ai.baseUrl}" MaxLength="2048"/>
+        <TextBox x:Name="Model" Header="{s:T Key=ai.model}" MaxLength="200"/>
+        <PasswordBox x:Name="Key" Header="{s:T Key=ai.key}" PlaceholderText="{s:T Key=ai.key.hint}" MaxLength="4096" PasswordRevealMode="Hidden"/>
+        <TextBlock x:Name="KeyStatus" FontSize="12"/>
+        <StackPanel Orientation="Horizontal" Spacing="8">
+            <Button Content="{s:T Key=ai.provider.new}" Click="OnNew"/>
+            <Button Content="{s:T Key=ai.provider.save}" Click="OnSave"/>
+            <Button x:Name="TestButton" Content="{s:T Key=ai.models}" Click="OnModels"/>
+            <Button x:Name="RemoveButton" Content="{s:T Key=action.remove}" Click="OnRemove"/>
+        </StackPanel>
+        <ComboBox x:Name="Models" Visibility="Collapsed" HorizontalAlignment="Stretch" SelectionChanged="OnModel" AutomationProperties.Name="{s:T Key=ai.model}"/>
+        <InfoBar x:Name="Message" IsOpen="False" IsClosable="True"/>
+    </StackPanel>
+</UserControl>

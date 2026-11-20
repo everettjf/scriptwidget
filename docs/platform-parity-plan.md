@@ -1,8 +1,8 @@
 # 各平台功能对齐：计划与进度
 
-更新日期：2026-11-19。打勾的项是代码做完并按各自一节所写验证过的；真实模型、真机和 Windows 都没有验证，细节在各平台的测试记录里。目标：同一个 Package 2.0 小组件在 iPhone、iPad、Mac、Android、Linux 上能做的事尽量一样，创作工具（AI、Gallery、Skills）每个平台都有。什么在哪里能用，以 [Platform support](platform-support.md) 为准；这一页只写还要做什么、按什么顺序、在哪里验证。
+更新日期：2026-11-20。打勾的项按各自一节所写验证过；Windows 本轮的真实 DeepSeek 测试和本地回归见 [Windows 测试记录](windows/testing.md)，真机和桌面交互的未验部分单独列出。目标：同一个 Package 2.0 小组件在各平台能做的事尽量一样，创作工具（AI、Gallery、Skills）每个平台都有。什么在哪里能用，以 [Platform support](platform-support.md) 为准。
 
-Windows 不在这一轮：要在 Windows 电脑上做，条目列在最后。
+Windows 已在 Windows 11 x64 开发机开始对齐，当前工作树尚未发布，进度列在最后。
 
 ## 界面语言：只用英文（2026-11-19 的决定）
 
@@ -127,7 +127,9 @@ Windows 不在这一轮：要在 Windows 电脑上做，条目列在最后。
 
 ## 留给 Windows 电脑的
 
-AI 生成、Gallery、Skills；`<gif>` 和 `animation` 的播放（渲染器已经给出位置，Linux 的 `sw-render/src/motion.rs` 可以照着移植）；`$music`、`$notifications`、`$location`；内置模板过滤；商店认证的结果。详见 [Windows to-do](windows/TODO.md)。
+2026-11-20：AI 核心、CLI、编辑器对话面板和服务商设置、Gallery、Skills、桌面动画均已实现。真实 DeepSeek 跑过生成、多轮修改、已有错误代码的修复、保存和三个尺寸渲染；还测过保留未应用草稿、拒绝覆盖手工修改、重开后继续最新手工源码。模型密钥存 Windows Credential Locker。共享 JSX 清单生成器增加 C# 输出，模板过滤和不支持 API 的提示词共用一份名单。完整 Release Core 回归 375 项全部通过，无跳过。
+
+新 AI 界面的实际操作在锁屏处暂停，未记为通过。AOT 安装包、安装器及桌面压力检查的最终结果见 [Windows 测试记录](windows/testing.md)。ARM64 真机、混合 DPI、真实登录恢复和 Store 签名安装仍需对应环境。`$music`、`$notifications`、`$location` 继续保持不支持，不属于这次创作工具对齐。详见 [Windows to-do](windows/TODO.md)。
 
 ## 顺序的理由
 

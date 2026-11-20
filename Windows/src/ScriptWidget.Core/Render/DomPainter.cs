@@ -450,6 +450,8 @@ public sealed partial class DomPainter
     }
 
     public List<GifSlot> GifSlots { get; } = [];
+    /// <summary>Paint saved animation records at this time, keeping normal paint order and hit testing.</summary>
+    public long? AnimationMilliseconds { get; init; }
     /// <summary>Filled when <see cref="LiveMotion"/> is on.</summary>
     public List<MotionSlot> MotionSlots { get; } = [];
     /// <summary>Draw animated views into <see cref="MotionSlots"/> instead of the widget bitmap.</summary>
@@ -529,7 +531,16 @@ public sealed partial class DomPainter
         canvas.Save();
         canvas.Translate(x, y);
 
-        if (Transform(style, width, height) is { } matrix) { canvas.Concat(matrix); local.PreConcat(matrix); }
+        IReadOnlyDictionary<string, string> transformStyle = style;
+        if (AnimationMilliseconds is { } milliseconds && ParseObject(Get(node.Dataset, "swAnimation")) is { } animated)
+        {
+            var pose = AnimationPose.At(animated, milliseconds);
+            var transform = animated.OptString("kind") == "swing"
+                ? FormattableString.Invariant($"translate({pose.X}px,{pose.Y}px)")
+                : FormattableString.Invariant($"rotate({pose.Degrees}deg)");
+            transformStyle = new Dictionary<string, string>(style) { ["transform"] = transform };
+        }
+        if (Transform(transformStyle, width, height) is { } matrix) { canvas.Concat(matrix); local.PreConcat(matrix); }
 
         var shadow = Css.DropShadow(Get(style, "filter"));
         var opacity = Opacity(style);
@@ -612,6 +623,7 @@ public sealed partial class DomPainter
         var side = reach * 2f + 4f;
         var pixels = (int)MathF.Ceiling(side * pixelScale);
         if (pixels <= 0 || pixels > 1024) return false;
+        if (MotionSlots.Count >= 16 || MotionSlots.Sum(slot => (long)slot.Pixels.Length) + (long)pixels * pixels * 4 > AnimationScene.MaximumLayerBytes / 2) return false;
         // Tap targets inside a moving view are not tracked; the view is drawn only.
         var saved = new List<HitRegion>(HitRegions);
         var opacity = Opacity(style);

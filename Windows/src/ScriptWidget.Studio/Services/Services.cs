@@ -16,6 +16,9 @@ public static class AppServices
 {
     public static DataPaths Paths { get; } = new();
     public static Library Library { get; } = new(Paths);
+    public static ScriptWidget.Core.Skills.SkillStore Skills { get; } = new(Paths.Skills);
+    private static readonly ScriptWidget.Core.Gallery.GalleryHttpTransport GalleryTransport = new();
+    public static ScriptWidget.Core.Gallery.GalleryService Gallery { get; } = new(Paths, Library, Skills, GalleryTransport);
     public static HostSettings Settings { get; } = new(Paths.Settings);
     private static readonly Lazy<WidgetRuntime> LazyRuntime = new(() => new WidgetRuntime(Paths));
     /// <summary>Scripts and rendering run one at a time on this thread, never on the UI thread.</summary>

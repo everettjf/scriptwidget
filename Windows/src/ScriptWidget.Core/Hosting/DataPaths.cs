@@ -34,6 +34,10 @@ public sealed class DataPaths
     /// <summary>Compiled artifacts, remote images and other data that can be rebuilt.</summary>
     public string Cache => Path.Combine(Root, "Cache");
     public string Plugins => Path.Combine(Root, "Plugins");
+    public string Skills => Path.Combine(Root, "Skills");
+    public string Gallery => Path.Combine(Root, "Gallery");
+    public string AiProfiles => Path.Combine(Root, "ai-profiles.json");
+    public string AiConversations => Path.Combine(Root, "AiConversations");
     /// <summary>The widgets placed on the desktop.</summary>
     public string Widgets => Path.Combine(Root, "widgets.json");
     public string Settings => Path.Combine(Root, "settings.json");

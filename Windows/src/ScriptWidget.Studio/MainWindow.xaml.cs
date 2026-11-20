@@ -10,7 +10,7 @@ namespace ScriptWidget.Studio;
 /// <summary>The management window: the user's widgets, the templates, the editor and the settings.</summary>
 public sealed partial class MainWindow : Window
 {
-    public static MainWindow Current { get; private set; } = null!;
+    public new static MainWindow Current { get; private set; } = null!;
     private readonly DispatcherTimer toastTimer = new() { Interval = TimeSpan.FromSeconds(4) };
 
     public MainWindow()
@@ -22,6 +22,9 @@ public sealed partial class MainWindow : Window
         TemplatesItem.Content = Loc.T("nav.templates");
         ComponentsItem.Content = Loc.T("nav.components");
         ApisItem.Content = Loc.T("nav.apis");
+        SkillsItem.Content = Loc.T("nav.skills");
+        GalleryItem.Content = Loc.T("nav.gallery");
+        AiItem.Content = Loc.T("nav.ai");
         SettingsItem.Content = Loc.T("nav.settings");
         var icon = Path.Combine(AppContext.BaseDirectory, "ScriptWidget.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
@@ -51,10 +54,13 @@ public sealed partial class MainWindow : Window
         (ContentFrame.Content as EditorPage)?.SaveNow();
         switch (item.Tag as string)
         {
+            case "ai": ContentFrame.Navigate(typeof(AiPage)); break;
             case "library": ContentFrame.Navigate(typeof(LibraryPage)); break;
             case "templates": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Templates); break;
             case "components": ContentFrame.Navigate(typeof(TemplatesPage), TemplatesPage.Components); break;
             case "apis": ContentFrame.Navigate(typeof(ApisPage)); break;
+            case "skills": ContentFrame.Navigate(typeof(SkillsPage)); break;
+            case "gallery": ContentFrame.Navigate(typeof(GalleryPage)); break;
             case "settings": ContentFrame.Navigate(typeof(SettingsPage)); break;
         }
     }
@@ -68,7 +74,7 @@ public sealed partial class MainWindow : Window
 
     public void ShowLibrary()
     {
-        if (Navigation.SelectedItem == LibraryItem) ContentFrame.Navigate(typeof(LibraryPage));
+        if (ReferenceEquals(Navigation.SelectedItem, LibraryItem)) ContentFrame.Navigate(typeof(LibraryPage));
         else Navigation.SelectedItem = LibraryItem;
     }
 
@@ -119,6 +125,9 @@ public sealed partial class MainWindow : Window
     public EditorPage? EditorPage => ContentFrame.Content as EditorPage;
 
     public void ShowSettings() => Navigation.SelectedItem = SettingsItem;
+    public void ShowAi() => Navigation.SelectedItem = AiItem;
+    public void ShowSkills() => Navigation.SelectedItem = SkillsItem;
+    public void ShowGallery() => Navigation.SelectedItem = GalleryItem;
 
     /// <summary>A short message at the bottom of the window.</summary>
     public void Notify(string message, InfoBarSeverity severity = InfoBarSeverity.Success)

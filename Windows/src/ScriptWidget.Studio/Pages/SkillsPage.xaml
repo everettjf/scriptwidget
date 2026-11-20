@@ -1,0 +1,30 @@
+<Page x:Class="ScriptWidget.Studio.Pages.SkillsPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:s="using:ScriptWidget.Studio.Services">
+    <Grid Padding="28,24" RowSpacing="16">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel Spacing="6">
+                <TextBlock Text="{s:T Key=skills.title}" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock Text="{s:T Key=skills.detail}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="{s:T Key=skills.import}" Click="OnImport" VerticalAlignment="Top"/>
+        </Grid>
+        <Grid Grid.Row="1" ColumnSpacing="20">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="340"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <ListView x:Name="Skills" SelectionChanged="OnSelectionChanged" AutomationProperties.Name="{s:T Key=skills.title}"/>
+            <Grid Grid.Column="1" RowSpacing="12">
+                <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+                <TextBlock x:Name="NameText" Text="{s:T Key=skills.choose}" Style="{StaticResource SubtitleTextBlockStyle}" TextWrapping="Wrap"/>
+                <TextBlock x:Name="SummaryText" Grid.Row="1" TextWrapping="Wrap"/>
+                <TextBox x:Name="Instructions" Grid.Row="2" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap" FontFamily="Cascadia Mono, Consolas" AutomationProperties.Name="{s:T Key=skills.choose}"/>
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="10">
+                    <Button x:Name="ExportButton" Content="{s:T Key=skills.export}" Click="OnExport" IsEnabled="False"/>
+                    <Button x:Name="RemoveButton" Content="{s:T Key=skills.remove}" Click="OnRemove" IsEnabled="False"/>
+                </StackPanel>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

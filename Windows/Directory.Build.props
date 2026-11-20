@@ -13,7 +13,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
     <NoWarn>$(NoWarn);NU1903;CA1416</NoWarn>
-    <Version>0.1.0</Version>
+    <Version>0.1.1</Version>
     <Company>AtomSprout</Company>
     <Product>ScriptWidget</Product>
     <!-- Win2D needs the Windows App SDK next to the program when it is not installed from an MSIX package. -->

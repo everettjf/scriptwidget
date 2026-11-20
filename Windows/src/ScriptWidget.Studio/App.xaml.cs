@@ -39,6 +39,9 @@ public partial class App : Application
         else if (request.Page == "apis") window.ShowApis();
         else if (request.Page is { } page && page.StartsWith("template:", StringComparison.Ordinal)) window.ShowDetail(page["template:".Length..]);
         else if (request.Page == "settings") window.ShowSettings();
+        else if (request.Page == "ai") window.ShowAi();
+        else if (request.Page == "skills") window.ShowSkills();
+        else if (request.Page == "gallery") window.ShowGallery();
         if (request.Screenshot is { } picture) _ = CaptureAsync(picture);
     }
 

@@ -39,6 +39,15 @@ jobs:
       - name: Test
         working-directory: Windows
         run: dotnet test tests/ScriptWidget.Core.Tests -c Release --nologo --logger "console;verbosity=normal" --logger "trx;LogFileName=tests.trx"
+      - name: Offline creation CLI acceptance
+        shell: pwsh
+        run: powershell -NoProfile -File Windows/scripts/creation-check.ps1 -Output "$env:RUNNER_TEMP\creation-check"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-creation-check
+          path: ${{ runner.temp }}/creation-check
+          if-no-files-found: ignore
       # The engine binding (swcore.c) under AddressSanitizer. The rest of the suite is not run this
       # way: compiling packages with Babel inside a sanitized QuickJS hosted by .NET does not finish.
       - name: Engine binding tests with AddressSanitizer in swcore
@@ -112,6 +121,15 @@ jobs:
       - name: Test
         working-directory: Windows
         run: dotnet test tests/ScriptWidget.Core.Tests -c Release -p:Platform=ARM64 --nologo --logger "console;verbosity=normal"
+      - name: Offline creation CLI acceptance
+        shell: pwsh
+        run: powershell -NoProfile -File Windows/scripts/creation-check.ps1 -Output "$env:RUNNER_TEMP\creation-check"
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: windows-arm64-creation-check
+          path: ${{ runner.temp }}/creation-check
+          if-no-files-found: ignore
       - name: Desktop check
         shell: pwsh
         run: |

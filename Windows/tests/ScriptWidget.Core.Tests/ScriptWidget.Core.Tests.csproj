@@ -13,5 +13,6 @@
     <Using Include="Xunit" />
     <Content Include="..\assets\**" Link="testassets\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
     <Content Include="..\fixtures\**" Link="fixtures\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" Visible="false" />
+    <Content Include="..\..\..\Gallery\index.json" Link="fixtures\gallery-index.json" CopyToOutputDirectory="PreserveNewest" Visible="false" />
   </ItemGroup>
 </Project>

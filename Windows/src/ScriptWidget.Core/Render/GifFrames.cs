@@ -28,7 +28,7 @@ public static class GifSampler
     /// </summary>
     public static GifFrames? Sample(byte[] data, int width, int height, long maximumBytes)
     {
-        if (data.Length > MaximumInputBytes || width <= 0 || height <= 0) return null;
+        if (data.Length > MaximumInputBytes || width <= 0 || height <= 0 || maximumBytes < 8) return null;
         try { return Decode(data, width, height, maximumBytes); }
         catch (Exception) { return null; }
     }
@@ -43,7 +43,7 @@ public static class GifSampler
         using var stream = new MemoryStream(data, false).AsRandomAccessStream();
         var decoder = Wait(BitmapDecoder.CreateAsync(BitmapDecoder.GifDecoderId, stream));
         var total = (int)decoder.FrameCount;
-        if (total < 2) return null;
+        if (total < 2 || total > 256) return null;
         var movieWidth = 0;
         var movieHeight = 0;
         try
@@ -59,9 +59,13 @@ public static class GifSampler
 
         var frames = new List<Frame>(total);
         var duration = 0;
+        long decodedBytes = 0;
         for (var index = 0; index < total; index++)
         {
             var frame = Wait(decoder.GetFrameAsync((uint)index));
+            var frameBytes = (long)frame.PixelWidth * frame.PixelHeight * 4;
+            decodedBytes += frameBytes;
+            if (frameBytes > 16 * 1024 * 1024 || decodedBytes > 32 * 1024 * 1024) return null;
             var properties = Wait(frame.BitmapProperties.GetPropertiesAsync(new List<string> { "/grctlext/Delay", "/grctlext/Disposal", "/imgdesc/Left", "/imgdesc/Top" }));
             var pixels = Wait(frame.GetPixelDataAsync(BitmapPixelFormat.Bgra8, BitmapAlphaMode.Premultiplied, new BitmapTransform(), ExifOrientationMode.IgnoreExifOrientation, ColorManagementMode.DoNotColorManage)).DetachPixelData();
             // GIF delays are hundredths of a second.
@@ -74,13 +78,14 @@ public static class GifSampler
         if (movieHeight <= 0) movieHeight = frames.Max(frame => frame.Top + frame.Height);
         if (movieWidth <= 0 || movieHeight <= 0 || (long)movieWidth * movieHeight > 16L * 1024 * 1024) return null;
 
-        var count = Math.Clamp(duration / MinimumInterval, 2, MaximumFrames);
+        var count = (int)Math.Min(Math.Clamp(duration / MinimumInterval, 2, MaximumFrames), maximumBytes / 4);
         // Fit inside the box, then shrink further until every frame together fits the budget.
         var scale = Math.Min((float)width / movieWidth, (float)height / movieHeight);
         long Bytes(float s) => (long)(movieWidth * s) * (long)(movieHeight * s) * 4L * count;
         if (Bytes(scale) > maximumBytes) scale *= (float)Math.Sqrt((double)maximumBytes / Bytes(scale));
         var frameWidth = Math.Max(1, (int)(movieWidth * scale));
         var frameHeight = Math.Max(1, (int)(movieHeight * scale));
+        if ((long)frameWidth * frameHeight * 4 * count > maximumBytes) return null;
 
         // Compose the frames in order; a sample shows the frame on screen at its time.
         var canvas = new byte[movieWidth * movieHeight * 4];

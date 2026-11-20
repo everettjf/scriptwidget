@@ -36,6 +36,8 @@ public sealed class RenderRequest
     public bool LiveLists { get; init; }
     /// <summary>System theme colors behind the <c>material.&lt;role&gt;</c> names; null gives the fixed Material 3 baseline colors. Android supplies the wallpaper palette; Windows hosts leave it off.</summary>
     public JsonObject? Colors { get; init; }
+    /// <summary>Save the layout for native animation ticks on the desktop.</summary>
+    public bool DesktopAnimation { get; init; }
 }
 
 public sealed class RenderOutput
@@ -54,6 +56,7 @@ public sealed class RenderOutput
     public required JsonArray Diagnostics { get; init; }
     public required long LayoutMilliseconds { get; init; }
     public required long PaintMilliseconds { get; init; }
+    public AnimationScene? Animation { get; init; }
 
     /// <summary>The bitmap as PNG data.</summary>
     public byte[] EncodePng() => PngEncoder.Encode(Pixels, PixelWidth, PixelHeight);
@@ -331,6 +334,9 @@ public sealed partial class WidgetRenderer : IDisposable
         }
     }
 
+    /// <summary>Composites prepared animation layers without package evaluation or another layout.</summary>
+    public AnimationFrame Animate(AnimationScene scene, long milliseconds) => worker.Run(() => scene.Draw(text, milliseconds));
+
     /// <summary>The element tree the layout records for a request, as JSON text; for tests and diagnosis.</summary>
     internal string Layout(RenderRequest request) => worker.Run(() =>
     {
@@ -414,6 +420,7 @@ public sealed partial class WidgetRenderer : IDisposable
                 Diagnostics = rendered.OptArray("diagnostics") ?? new JsonArray(),
                 LayoutMilliseconds = layoutMilliseconds,
                 PaintMilliseconds = (long)System.Diagnostics.Stopwatch.GetElapsedTime(paintStart).TotalMilliseconds,
+                Animation = request.DesktopAnimation ? new AnimationScene(root, request, scale, pixelWidth, pixelHeight) : null,
             };
         }
         finally

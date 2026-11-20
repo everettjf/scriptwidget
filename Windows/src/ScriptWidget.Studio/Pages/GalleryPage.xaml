@@ -1,0 +1,31 @@
+<Page x:Class="ScriptWidget.Studio.Pages.GalleryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:s="using:ScriptWidget.Studio.Services">
+    <Grid Padding="28,24" RowSpacing="16">
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
+        <Grid ColumnSpacing="16">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <StackPanel Spacing="6">
+                <TextBlock Text="{s:T Key=gallery.title}" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock Text="{s:T Key=gallery.detail}" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+            </StackPanel>
+            <Button x:Name="ReloadButton" Grid.Column="1" Content="{s:T Key=gallery.reload}" Click="OnReload" VerticalAlignment="Top"/>
+        </Grid>
+        <InfoBar x:Name="Status" Grid.Row="1" IsClosable="False"/>
+        <Grid Grid.Row="2" ColumnSpacing="24">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="340"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+            <ListView x:Name="Items" SelectionChanged="OnSelectionChanged" AutomationProperties.Name="{s:T Key=gallery.title}"/>
+            <ScrollViewer Grid.Column="1">
+                <StackPanel Spacing="16">
+                    <TextBlock x:Name="NameText" Text="{s:T Key=gallery.choose}" Style="{StaticResource SubtitleTextBlockStyle}" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="SummaryText" TextWrapping="Wrap"/>
+                    <TextBlock x:Name="MetadataText" TextWrapping="Wrap" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    <HyperlinkButton x:Name="SourceLink" Content="{s:T Key=gallery.source}" Visibility="Collapsed"/>
+                    <Button x:Name="InstallButton" Content="{s:T Key=gallery.install}" IsEnabled="False" Click="OnInstall" Style="{StaticResource AccentButtonStyle}"/>
+                    <ProgressRing x:Name="Busy" IsActive="False" Width="24" Height="24" HorizontalAlignment="Left"/>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

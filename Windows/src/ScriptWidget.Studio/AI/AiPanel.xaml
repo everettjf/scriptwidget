@@ -1,0 +1,62 @@
+<UserControl x:Class="ScriptWidget.Studio.AI.AiPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:s="using:ScriptWidget.Studio.Services">
+    <Grid Padding="16" RowSpacing="8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        <Grid ColumnSpacing="8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <ComboBox x:Name="Conversations" HorizontalAlignment="Stretch" SelectionChanged="OnConversation" AutomationProperties.Name="{s:T Key=ai.conversations}"/>
+            <Button x:Name="NewButton" Grid.Column="1" Content="{s:T Key=ai.new}" Click="OnNew"/>
+            <Button x:Name="ForkButton" Grid.Column="2" Content="{s:T Key=ai.fork}" Click="OnFork"/>
+        </Grid>
+        <Grid Grid.Row="1" ColumnSpacing="8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <ComboBox x:Name="Versions" HorizontalAlignment="Stretch" SelectionChanged="OnVersion" AutomationProperties.Name="{s:T Key=ai.versions}"/>
+            <Button x:Name="SkillsButton" Grid.Column="1" Content="{s:T Key=nav.skills}" Click="OnSkills"/>
+            <Button x:Name="ApplyButton" Grid.Column="2" Content="{s:T Key=ai.apply}" Click="OnApply"/>
+        </Grid>
+        <Pivot Grid.Row="2" x:Name="Tabs" SelectionChanged="OnTab">
+            <PivotItem Header="{s:T Key=ai.conversation}" AutomationProperties.Name="{s:T Key=ai.conversation}">
+                <ScrollViewer>
+                    <StackPanel Spacing="10" Padding="0,8">
+                        <TextBlock x:Name="History" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                        <TextBlock x:Name="Streaming" TextWrapping="Wrap" MaxHeight="240" FontFamily="Cascadia Mono, Consolas" FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+            <PivotItem Header="{s:T Key=editor.preview}" AutomationProperties.Name="{s:T Key=editor.preview}">
+                <ScrollViewer>
+                    <StackPanel Spacing="12" Padding="0,8">
+                        <ComboBox x:Name="Family" SelectionChanged="OnFamily" AutomationProperties.Name="{s:T Key=editor.size}"/>
+                        <Viewbox Stretch="Uniform" StretchDirection="DownOnly" MaxHeight="340" HorizontalAlignment="Center">
+                            <Image x:Name="Picture" Stretch="Fill" AutomationProperties.Name="{s:T Key=editor.preview}"/>
+                        </Viewbox>
+                        <TextBlock x:Name="PreviewError" TextWrapping="Wrap"/>
+                        <TextBlock Text="{s:T Key=ai.review}" TextWrapping="Wrap" Style="{StaticResource CaptionTextBlockStyle}"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+            <PivotItem Header="{s:T Key=ai.changes}" AutomationProperties.Name="{s:T Key=ai.changes}">
+                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
+                    <TextBlock x:Name="Changes" FontFamily="Cascadia Mono, Consolas" FontSize="12" IsTextSelectionEnabled="True"/>
+                </ScrollViewer>
+            </PivotItem>
+        </Pivot>
+        <StackPanel Grid.Row="3" Spacing="6">
+            <InfoBar x:Name="Message" IsOpen="False" IsClosable="True"/>
+            <TextBox x:Name="Request" AcceptsReturn="True" TextWrapping="Wrap" MinHeight="72" MaxHeight="150" MaxLength="4000" PlaceholderText="{s:T Key=ai.request}" AutomationProperties.Name="{s:T Key=ai.request}"/>
+            <TextBlock Text="{s:T Key=ai.disclosure}" TextWrapping="Wrap" FontSize="11" Foreground="{ThemeResource TextFillColorSecondaryBrush}"/>
+        </StackPanel>
+        <Grid Grid.Row="4" ColumnSpacing="8">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <TextBlock x:Name="Status" TextWrapping="Wrap" VerticalAlignment="Center" FontSize="12"/>
+            <Button x:Name="RetryButton" Grid.Column="1" Content="{s:T Key=ai.retry}" Click="OnRetry"/>
+            <Button x:Name="CancelButton" Grid.Column="2" Content="{s:T Key=action.cancel}" Click="OnCancel" IsEnabled="False"/>
+            <Button x:Name="SendButton" Grid.Column="3" Content="{s:T Key=ai.send}" Click="OnSend" Style="{StaticResource AccentButtonStyle}"/>
+        </Grid>
+    </Grid>
+</UserControl>

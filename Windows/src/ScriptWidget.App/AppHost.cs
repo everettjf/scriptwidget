@@ -29,6 +29,8 @@ internal sealed class WidgetController(WidgetPlacement placement, WidgetWindow w
     public long NextRun { get; set; } = long.MaxValue;
     /// <summary>When to redraw the same tree because a date in it changed; long.MaxValue when it has none.</summary>
     public long NextRedraw { get; set; } = long.MaxValue;
+    public AnimationScene? Animation { get; set; }
+    public long NextAnimation { get; set; } = long.MaxValue;
     public bool Busy { get; set; }
     public bool Placed { get; set; }
     /// <summary>Requests that arrived while a refresh was running.</summary>
@@ -236,10 +238,11 @@ internal sealed unsafe class AppHost : NativeWindow
         if (controller.Busy)
         {
             if (action is not null) controller.PendingAction = action;
-            if (!redrawOnly || action is not null) controller.RunAgain = true;
+            controller.RunAgain = true;
             return;
         }
         controller.Busy = true;
+        controller.NextAnimation = long.MaxValue;
         var placement = controller.Placement;
         var family = placement.Family;
         var parameter = placement.Parameter;
@@ -274,27 +277,40 @@ internal sealed unsafe class AppHost : NativeWindow
                         if (result.Execution.Error is { } error) Log.Write($"widget {installed.Name}: {error.Kind}");
                     }
                 }
-                if (output is null && request is not null && result is not null) output = engine.Render(request, result, (float)width, (float)height, (float)scale);
+                if (output is null && request is not null && result is not null) output = engine.Render(request, result, (float)width, (float)height, (float)scale, liveAnimation: true);
             }
             catch (Exception error) when (error is not OutOfMemoryException)
             {
                 Log.Write($"refresh failed: {error.GetType().Name}: {error.Message}");
             }
+            AnimationScene? animation = null;
+            AnimationFrame? firstFrame = null;
+            if (output is not null)
+            {
+                var candidate = output.Animation;
+                if (candidate?.IsAnimated == true)
+                {
+                    try { firstFrame = runtime.Value.Renderer.Animate(candidate, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()); animation = candidate; }
+                    catch (Exception error) when (error is not OutOfMemoryException) { Log.Write($"animation failed: {error.GetType().Name}"); }
+                }
+            }
             var finishedRequest = request;
             var finishedResult = result;
-            ui.Post(() => Apply(controller, output, finishedRequest, finishedResult, scale));
+            ui.Post(() => Apply(controller, output, finishedRequest, finishedResult, scale, animation, firstFrame));
         });
     }
 
     /// <summary>Shows a finished render and schedules the next one. Runs on the UI thread.</summary>
-    private void Apply(WidgetController controller, RenderOutput? output, RunRequest? request, RunResult? result, double scale)
+    private void Apply(WidgetController controller, RenderOutput? output, RunRequest? request, RunResult? result, double scale, AnimationScene? animation, AnimationFrame? firstFrame)
     {
         controller.Busy = false;
         if (!widgets.ContainsKey(controller.Placement.ID)) return;
         if (output is not null)
         {
-            controller.Window.SetBitmap(output.Pixels, output.PixelWidth, output.PixelHeight);
-            controller.HitRegions = output.HitRegions;
+            controller.Animation = animation;
+            controller.Window.SetBitmap(firstFrame?.Pixels ?? output.Pixels, output.PixelWidth, output.PixelHeight);
+            controller.NextAnimation = animation is not null ? Environment.TickCount64 + animation.IntervalMilliseconds : long.MaxValue;
+            controller.HitRegions = firstFrame?.HitRegions ?? output.HitRegions;
             controller.RenderedScale = output.Scale;
             if (!controller.Placed) { controller.Placed = true; layer.Reassert(); }
         }
@@ -318,6 +334,38 @@ internal sealed unsafe class AppHost : NativeWindow
             QueueRefresh(controller, action);
         }
         ArmTimer();
+    }
+
+    private void QueueAnimation(WidgetController controller)
+    {
+        if (controller.Busy || controller.Animation is not { } animation) return;
+        controller.Busy = true;
+        controller.NextAnimation = long.MaxValue;
+        work.Add(() =>
+        {
+            AnimationFrame? frame = null;
+            try { frame = runtime.Value.Renderer.Animate(animation, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()); }
+            catch (Exception error) when (error is not OutOfMemoryException) { Log.Write($"animation failed: {error.GetType().Name}"); }
+            ui.Post(() =>
+            {
+                controller.Busy = false;
+                if (!widgets.ContainsKey(controller.Placement.ID)) return;
+                if (frame is not null)
+                {
+                    controller.Window.SetBitmap(frame.Pixels, controller.Window.Width, controller.Window.Height);
+                    controller.HitRegions = frame.HitRegions;
+                }
+                controller.NextAnimation = frame is not null ? Environment.TickCount64 + animation.IntervalMilliseconds : long.MaxValue;
+                if (controller.RunAgain || controller.PendingAction is not null)
+                {
+                    var action = controller.PendingAction;
+                    controller.RunAgain = false;
+                    controller.PendingAction = null;
+                    QueueRefresh(controller, action);
+                }
+                ArmTimer();
+            });
+        });
     }
 
     /// <summary>
@@ -413,7 +461,7 @@ internal sealed unsafe class AppHost : NativeWindow
     {
         if (Handle == 0) return;
         var earliest = long.MaxValue;
-        foreach (var controller in widgets.Values) earliest = Math.Min(earliest, Math.Min(controller.NextRun, controller.NextRedraw));
+        foreach (var controller in widgets.Values) earliest = Math.Min(earliest, Math.Min(controller.NextAnimation, Math.Min(controller.NextRun, controller.NextRedraw)));
         // Nothing to draw for a while: schedule the release of the layout engine and its script heap.
         if (earliest - Environment.TickCount64 > 2 * 60_000) Win32.SetTimer(Handle, TrimTimer, TrimDelayMilliseconds, 0);
         else Win32.KillTimer(Handle, TrimTimer);
@@ -436,6 +484,7 @@ internal sealed unsafe class AppHost : NativeWindow
         {
             if (now >= controller.NextRun) { controller.NextRun = long.MaxValue; controller.NextRedraw = long.MaxValue; QueueRefresh(controller); }
             else if (now >= controller.NextRedraw) { controller.NextRedraw = long.MaxValue; QueueRefresh(controller, redrawOnly: true); }
+            else if (now >= controller.NextAnimation) QueueAnimation(controller);
         }
         ArmTimer();
     }

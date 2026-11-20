@@ -14,6 +14,9 @@
                         SelectionChanged="OnSelectionChanged"
                         ItemInvoked="OnItemInvoked">
             <NavigationView.MenuItems>
+                <NavigationViewItem x:Name="AiItem" Tag="ai">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
                 <NavigationViewItem x:Name="LibraryItem" Tag="library">
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE80F;" />
@@ -33,6 +36,12 @@
                     <NavigationViewItem.Icon>
                         <FontIcon Glyph="&#xE943;" />
                     </NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="GalleryItem" Tag="gallery">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE719;" /></NavigationViewItem.Icon>
+                </NavigationViewItem>
+                <NavigationViewItem x:Name="SkillsItem" Tag="skills">
+                    <NavigationViewItem.Icon><FontIcon Glyph="&#xE734;" /></NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>
             <NavigationView.FooterMenuItems>

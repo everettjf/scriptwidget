@@ -28,6 +28,7 @@ public sealed partial class EditorPage : Page
     private string previewed = "\0";
     private bool previewRunning, previewQueued, polling, switching;
     private int previewOptions;
+    private bool assistantOpened;
 
     public EditorPage()
     {
@@ -208,6 +209,34 @@ public sealed partial class EditorPage : Page
     }
 
     private void OnFormat(object sender, RoutedEventArgs arguments) => editor?.Format();
+
+    private async void OnAi(object sender, RoutedEventArgs arguments)
+    {
+        await SaveAsync();
+        if (current != saved) { AiToggle.IsChecked = false; return; }
+        var show = AiToggle.IsChecked == true;
+        PreviewPane.Visibility = show ? Visibility.Collapsed : Visibility.Visible;
+        Assistant.Visibility = show ? Visibility.Visible : Visibility.Collapsed;
+        if (!show || assistantOpened) return;
+        assistantOpened = true;
+        Assistant.ReadEditor = async () =>
+        {
+            await SaveAsync();
+            if (current != saved) throw new ScriptWidget.Core.AI.AiException("unsaved_changes", Loc.T("ai.saveFirst"));
+            return package is null ? null : AppServices.Library.FindByInstallation(package.Installation);
+        };
+        Assistant.Applied = updated =>
+        {
+            package = updated;
+            var selected = path;
+            path = null;
+            saved = current = "";
+            LoadFiles(selected);
+            previewOptions++;
+            QueuePreview();
+        };
+        Assistant.Open(package);
+    }
 
     private async void OnExport(object sender, RoutedEventArgs arguments)
     {

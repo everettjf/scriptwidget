@@ -19,7 +19,9 @@
 # the tray menu, how the widgets look against the wallpaper).
 param(
     [string] $HostPath,
-    [string] $Output = (Join-Path $env:TEMP 'scriptwidget-desktop-check')
+    [string] $Output = (Join-Path $env:TEMP 'scriptwidget-desktop-check'),
+    [ValidateRange(0, 1800)] [int] $AnimationStressSeconds = 0,
+    [ValidateRange(1, 12)] [int] $AnimationStressCopies = 1
 )
 $ErrorActionPreference = 'Stop'
 $windows = Resolve-Path (Join-Path $PSScriptRoot '..')
@@ -65,6 +67,9 @@ public static class SwCheck {
 $data = Join-Path $Output 'data'
 if (Test-Path $Output) { Remove-Item $Output -Recurse -Force }
 New-Item -ItemType Directory -Force $Output | Out-Null
+New-Item -ItemType Directory -Force $data | Out-Null
+# A foreground full-screen app on the development machine must not make animation tests idle.
+[IO.File]::WriteAllText((Join-Path $data 'settings.json'), '{"pauseWhenBusy":false,"refreshMinutes":1440}', (New-Object Text.UTF8Encoding $false))
 $env:SCRIPTWIDGET_DATA = $data
 $env:SCRIPTWIDGET_VERBOSE = '1'
 $script:failures = 0
@@ -77,6 +82,16 @@ function LogLines { if (Test-Path "$data\host.log") { Get-Content "$data\host.lo
 function Wait-Log([string] $pattern, [int] $from, [int] $seconds = 8) {
     for ($i = 0; $i -lt $seconds * 4; $i++) { if ((LogLines | Select-Object -Skip $from) -match $pattern) { return $true }; Start-Sleep -Milliseconds 250 }
     return $false
+}
+function Wait-WidgetCapture([IntPtr[]] $previous, [string] $picture) {
+    $until = (Get-Date).AddSeconds(15)
+    while ((Get-Date) -lt $until) {
+        foreach ($candidate in [SwCheck]::Find('ScriptWidgetWidget')) {
+            if ($previous -notcontains $candidate -and [SwCheck]::Capture($candidate, $picture) -gt 0.05) { return $candidate }
+        }
+        Start-Sleep -Milliseconds 100
+    }
+    throw 'The new widget did not produce a nonempty native window capture within 15 seconds.'
 }
 
 # "Show desktop", acted out with a stand-in for the desktop window (the real one is not touched).
@@ -229,6 +244,115 @@ try {
     $answer = Send-Host @{ command = 'debug-invoke'; target = $newest.id; path = @(6) }
     Start-Sleep -Seconds 1
     Check 'the widget menu removes the widget' ($answer.ok -and @(Widget-List).Count -eq $before -and @([SwCheck]::Find('ScriptWidgetWidget')).Count -eq $before)
+
+    # Animation plays from the saved layout. Repainting must not re-run package code.
+    [byte[]] $gifBytes = @(
+        0x47,0x49,0x46,0x38,0x39,0x61,0x01,0x00,0x01,0x00,0x80,0x00,0x00,0xFF,0x00,0x00,0x00,0x00,0xFF,
+        0x21,0xF9,0x04,0x00,0x14,0x00,0x00,0x00,0x2C,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x02,0x02,0x44,0x01,0x00,
+        0x21,0xF9,0x04,0x00,0x14,0x00,0x00,0x00,0x2C,0x00,0x00,0x00,0x00,0x01,0x00,0x01,0x00,0x00,0x02,0x02,0x4C,0x01,0x00,0x3B
+    )
+    $animatedSource = Join-Path $Output 'animation-source'
+    New-Item -ItemType Directory -Force (Join-Path $animatedSource 'image') | Out-Null
+    [IO.File]::WriteAllBytes((Join-Path $animatedSource 'image/test.gif'), $gifBytes)
+    $animationCode = @'
+$storage.setString("animationRuns", String(Number($storage.getString("animationRuns") || 0) + 1));
+$render(<zstack frame="max" background="#111827"><gif file="test.gif" frame="100,100" /><rect frame="24,70" color="#fb7185" animation="swing" /><circle frame="12,12" color="white" /></zstack>);
+'@
+    [IO.File]::WriteAllText((Join-Path $animatedSource 'main.jsx'), $animationCode, (New-Object Text.UTF8Encoding $false))
+    [IO.File]::WriteAllText((Join-Path $animatedSource 'widget.json'), '{"formatVersion":2,"id":"com.example.animation-check","name":"animation-source","version":"1.0.0","runtimeVersion":"1.0","entry":"main.jsx","supportedFamilies":["systemSmall"],"permissions":["storage"],"networkDomains":[],"plugins":[]}', (New-Object Text.UTF8Encoding $false))
+    $windowsBeforeAnimation = @([SwCheck]::Find('ScriptWidgetWidget'))
+    & $cli pack $animatedSource (Join-Path $Output 'animation.swt') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Animation fixture could not be packed.' }
+    & $cli install (Join-Path $Output 'animation.swt') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'Animation fixture could not be installed.' }
+    $beforeAnimation = (LogLines).Count
+    $addedAnimation = (& $cli add 'animation-source' --family small | Out-String | ConvertFrom-Json)
+    Check 'an animated widget is added and drawn' ($addedAnimation.ok -and (Wait-Log 'drawn ' $beforeAnimation))
+    $animatedWindow = Wait-WidgetCapture $windowsBeforeAnimation (Join-Path $Output 'animation-ready.png')
+    $animationHashes = @()
+    for ($frame = 0; $frame -lt 6; $frame++) {
+        Start-Sleep -Milliseconds 150
+        $picture = Join-Path $Output "animation-$frame.png"
+        [void][SwCheck]::Capture($animatedWindow, $picture)
+        $animationHashes += (Get-FileHash -LiteralPath $picture -Algorithm SHA256).Hash
+    }
+    Check 'animation changes the actual widget pixels' (@($animationHashes | Select-Object -Unique).Count -ge 3)
+    $animationIds = @($addedAnimation.id)
+    for ($copy = 1; $copy -lt $AnimationStressCopies; $copy++) {
+        $beforeCopy = (LogLines).Count
+        $addedCopy = (& $cli add 'animation-source' --family small | Out-String | ConvertFrom-Json)
+        Check "animation stress copy $($copy + 1) is drawn" ($addedCopy.ok -and (Wait-Log 'drawn ' $beforeCopy))
+        $animationIds += $addedCopy.id
+    }
+    if ($AnimationStressSeconds -gt 0) {
+        $samples = @()
+        $csv = Join-Path $Output 'animation-samples.csv'
+        $process.Refresh()
+        $cpuStart = $process.TotalProcessorTime.TotalSeconds
+        $watch = [Diagnostics.Stopwatch]::StartNew()
+        while ($watch.Elapsed.TotalSeconds -lt $AnimationStressSeconds) {
+            Start-Sleep -Milliseconds 500
+            $process.Refresh()
+            $sample = [pscustomobject]@{ seconds = $watch.Elapsed.TotalSeconds; privateBytes = $process.PrivateMemorySize64; workingSet = $process.WorkingSet64; handles = $process.HandleCount; cpuSeconds = $process.TotalProcessorTime.TotalSeconds - $cpuStart }
+            $samples += $sample
+            $sample | Export-Csv -LiteralPath $csv -NoTypeInformation -Append
+        }
+        $cpuSeconds = $process.TotalProcessorTime.TotalSeconds - $cpuStart
+        $report = [ordered]@{
+            durationSeconds = $watch.Elapsed.TotalSeconds
+            cpuSeconds = $cpuSeconds
+            oneCorePercent = 100 * $cpuSeconds / $watch.Elapsed.TotalSeconds
+            animatedWidgetCount = $AnimationStressCopies
+            hostSha256 = (Get-FileHash -LiteralPath $HostPath -Algorithm SHA256).Hash.ToLowerInvariant()
+            samples = $samples
+        }
+        $report | ConvertTo-Json -Depth 5 | Set-Content (Join-Path $Output 'animation-performance.json') -Encoding UTF8
+        $warm = $samples | Where-Object { $_.seconds -ge [Math]::Min(10, $AnimationStressSeconds / 3) } | Select-Object -First 1
+        Check 'animation remains running through the stress interval' (-not $process.HasExited)
+        Check 'animation private memory stays within 64 MiB of its warm sample' (($samples[-1].privateBytes - $warm.privateBytes) -lt 64MB)
+        Check 'animation handles stay within 64 of the warm sample' (($samples[-1].handles - $warm.handles) -lt 64)
+        Check 'all stress widget windows remain' (@([SwCheck]::Find('ScriptWidgetWidget')).Count -eq $windowsBeforeAnimation.Count + $AnimationStressCopies)
+    }
+    $animationRuns = Get-ChildItem "$data\Storage" -Recurse -Filter '*.json' | ForEach-Object { (Get-Content -LiteralPath $_.FullName -Raw | ConvertFrom-Json).animationRuns.v } | Where-Object { $_ }
+    Check 'animation ticks do not run the script again' ($animationRuns -eq [string]$AnimationStressCopies)
+    [SwCheck]::PostMessage($hostWindow, 0x02B1, [IntPtr]7, [IntPtr]0) | Out-Null
+    Start-Sleep -Milliseconds 300
+    [void][SwCheck]::Capture($animatedWindow, (Join-Path $Output 'animation-locked-0.png'))
+    Start-Sleep -Milliseconds 500
+    [void][SwCheck]::Capture($animatedWindow, (Join-Path $Output 'animation-locked-1.png'))
+    Check 'animation pauses while the session is locked' ((Get-FileHash (Join-Path $Output 'animation-locked-0.png')).Hash -eq (Get-FileHash (Join-Path $Output 'animation-locked-1.png')).Hash)
+    [SwCheck]::PostMessage($hostWindow, 0x02B1, [IntPtr]8, [IntPtr]0) | Out-Null
+    Start-Sleep -Milliseconds 600
+    [void][SwCheck]::Capture($animatedWindow, (Join-Path $Output 'animation-resumed.png'))
+    Check 'animation resumes after unlocking' ((Get-FileHash (Join-Path $Output 'animation-resumed.png')).Hash -ne (Get-FileHash (Join-Path $Output 'animation-locked-1.png')).Hash)
+    foreach ($animationId in $animationIds) { Send-Host @{ command = 'remove'; id = $animationId } | Out-Null }
+    Check 'removing an animated widget removes its window' (@([SwCheck]::Find('ScriptWidgetWidget')).Count -eq $windowsBeforeAnimation.Count)
+
+    # A GIF-only widget must change too; the swing above cannot hide a decoder/AOT failure.
+    $gifSource = Join-Path $Output 'gif-source'
+    New-Item -ItemType Directory -Force (Join-Path $gifSource 'image') | Out-Null
+    [IO.File]::WriteAllBytes((Join-Path $gifSource 'image/test.gif'), $gifBytes)
+    [IO.File]::WriteAllText((Join-Path $gifSource 'main.jsx'), '$render(<zstack frame="max" background="#111827"><gif file="test.gif" frame="100,100" /></zstack>);', (New-Object Text.UTF8Encoding $false))
+    [IO.File]::WriteAllText((Join-Path $gifSource 'widget.json'), '{"formatVersion":2,"id":"com.example.gif-check","name":"gif-source","version":"1.0.0","runtimeVersion":"1.0","entry":"main.jsx","supportedFamilies":["systemSmall"],"permissions":[],"networkDomains":[],"plugins":[]}', (New-Object Text.UTF8Encoding $false))
+    & $cli pack $gifSource (Join-Path $Output 'gif.swt') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'GIF fixture could not be packed.' }
+    & $cli install (Join-Path $Output 'gif.swt') | Out-Null
+    if ($LASTEXITCODE -ne 0) { throw 'GIF fixture could not be installed.' }
+    $beforeGif = (LogLines).Count
+    $windowsBeforeGif = @([SwCheck]::Find('ScriptWidgetWidget'))
+    $addedGif = (& $cli add 'gif-source' --family small | Out-String | ConvertFrom-Json)
+    Check 'a GIF widget is added and drawn' ($addedGif.ok -and (Wait-Log 'drawn ' $beforeGif))
+    $gifWindow = Wait-WidgetCapture $windowsBeforeGif (Join-Path $Output 'gif-ready.png')
+    $gifHashes = @()
+    for ($frame = 0; $frame -lt 6; $frame++) {
+        Start-Sleep -Milliseconds 150
+        $picture = Join-Path $Output "gif-$frame.png"
+        [void][SwCheck]::Capture($gifWindow, $picture)
+        $gifHashes += (Get-FileHash -LiteralPath $picture -Algorithm SHA256).Hash
+    }
+    Check 'GIF playback changes the actual widget pixels' (@($gifHashes | Select-Object -Unique).Count -ge 2)
+    Send-Host @{ command = 'remove'; id = $addedGif.id } | Out-Null
+    Check 'removing a GIF widget removes its window' (@([SwCheck]::Find('ScriptWidgetWidget')).Count -eq $windowsBeforeAnimation.Count)
 
     Check 'the host is still running at the end' (-not $process.HasExited)
     # Quit from the tray menu ends the program by itself.

@@ -1,5 +1,6 @@
 bin/
 obj/
+TestResults/
 .vs/
 *.user
 # Built by scripts/build-native.ps1

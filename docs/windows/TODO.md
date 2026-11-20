@@ -30,7 +30,7 @@ The installer on GitHub Releases:
 
 Decisions and accounts:
 
-- **Partner Center.** The name is reserved and submission `1152921505702441674` for Store ID `9MVR97B9C938` entered certification on 18 November 2026. Check its result and handle any certification feedback. Build future Store packages with the identity recorded in [testing.md](testing.md); the script's defaults remain for local testing only.
+- **Partner Center.** On 20 November 2026 the live dashboard confirmed submission 1 is in Microsoft Store. Update draft submission `1152921505702462477` was created for the 0.1.1 release. Build Store packages with the identity recorded in [testing.md](testing.md); the script's defaults remain for local testing only.
 - **Store policy 10.2.2.** The submitted descriptions explicitly disclose user-written/imported JavaScript and JSX widgets; certification notes explain the interpreter, permissions and limitations. Microsoft's policy assessment is pending.
 - **Store listing.** English and Simplified Chinese text, four screenshots per language, native app icons and the privacy link were submitted. Verify the live listings and the Store-signed install after approval. Add a Windows-specific privacy section covering local package data and user-selected network services.
 
@@ -38,7 +38,7 @@ Known gaps in the code:
 
 - **The reference has no entry for `console`, `$getenv`, `$render`, `$import` and the animation attributes**; those are listed with their example only.
 
-- **A slow request is reported as "Script exceeded the 5-second execution limit".** The message does not say that the script was waiting for the network. Daily Quote's preview failed this way four times in the management window on 17 November 2026 and then never again; the cause was not found (see the test notes).
+- **Daily Quote's intermittent slow preview.** Execution deadline errors now identify pending network operations and the configured duration without disclosing URLs or credentials. The original intermittent service delay was not reproduced; the diagnostic change does not claim to fix that remote delay.
 - **The code editor's own toolbar (Layout, Theme, Assets) shows on a template's read-only code**, where it does nothing useful. It belongs to the shared editor bundle.
 - **Animation Clock at the small size** wraps its text one letter per line.
 
@@ -51,27 +51,33 @@ Known gaps in the code:
 
 ## Aligning with the other platforms
 
-Written on 19 November 2026 from a Mac, while the same work was done for Linux and Android; nothing here was started. It needs a Windows 11 PC. The plan for all platforms is in [the alignment plan](../platform-parity-plan.md).
+Started on the Windows 11 x64 Dev PC on 19 November 2026. The plan for all platforms is in [the alignment plan](../platform-parity-plan.md). Work below remains in progress until its implementation and relevant tests are recorded in [testing.md](testing.md).
+
+| Step | Current evidence / remaining work |
+| --- | --- |
+| Current Windows baseline | Shared assets and native engine rebuilt; 239 baseline Core tests passed; current Debug and Release solution builds pass with 0 warnings/errors. Studio library and templates inspected through Computer Use in English. |
+| Template filtering and network diagnostics | Nested `.js`, `.jsx` and `.mjs` files checked; pending network calls identified in execution deadline errors without URLs or credentials. Nine new regression cases passed. |
+| Desktop animation | Native painting of the saved layout, including GIF frames, clock hands, swings, clipping, stacking and moving hit regions. Twelve renderer/pose tests pass. Debug and final AOT desktop checks pass, including GIF-only changed pixels, no package reruns, posted lock/unlock and removal. The AOT 30-second resource sample passes; measurements are in testing.md. |
+| Skills | Store, strict validator, transactional archive import/export, CLI, Studio page and AI prompt integration implemented. 25 tests passed. Real CLI round trip and built-in instructions inspected in Studio. |
+| Gallery | Strict trusted-root catalog, bounded verified downloads, offline cache, transactional widget/Skill installs, explicit updates, CLI and Studio page implemented. 27 tests passed. Live 25-item catalog, verified widget and Skill installation, and Studio catalog/details checked. |
+| AI | Core, CLI, streaming providers, bounded repair loop, generated C# JSX surface, saved conversations/versions, diffs, editor panel and settings implemented. Real DeepSeek generation, continuation, broken-code repair, apply/fork and three-size rendering pass. Unlocked UI acceptance covers send/cancel/retry, conversation Skills, version selection, fork, diffs, three preview sizes, manual editor changes and explicit Apply. A reproduced WinUI version-selection crash and preview/accessibility issues were fixed and retested. See testing.md. |
+| Release checks | All 389 Release Core tests pass, none skipped. Repeatable CLI acceptance passes 41 offline checks and 60 with real Gallery/DeepSeek. The non-Xcode release gate passes. Updated x64 MSIX/NSIS artifacts are local; their exact checks are in testing.md. No release was published. |
 
 - **For the owner: remove the Simplified Chinese Store listing.** The interface is English only since 19 November 2026 and the package now declares English only, but the Microsoft Store listing was submitted in English and Simplified Chinese. The owner decided on 19 November 2026 to delete the Chinese listing in Partner Center himself; nothing in the repository does it.
-- **After the Chinese interface was removed** (19 November 2026, edited on a Mac: the texts of the management window, the desktop host and the installer, `zh-cn` in the package manifest, `zh-Hans` in the satellite resource languages): on a Windows PC, build, run the tests, `Windows/scripts/desktop-check.ps1` and `Windows/scripts/installer-check.ps1`, and look once at the management window, the tray menu and the installer's pages. Nothing of this was built or run on Windows.
-- **AI conversation.** Port `Linux/crates/sw-core/src/ai` (itself a port of `Android/core/.../core/ai`) into `ScriptWidget.Core`: profiles, the streaming client for Anthropic and OpenAI-compatible endpoints, edits and diffs, the JSX check, the prompt, the repair loop on the Windows executor, saved conversations. Then `swcli ai …` as `scriptwidget ai …` on Linux, and a conversation panel beside the editor and an AI section in the settings of the management window, as `Linux/crates/sw-studio/src/ai.rs` and `ui/ai.rs`.
-  - The key goes to the Windows credential locker (`PasswordVault`) or DPAPI, never to settings, packages, prompts or conversations; a test must show a saved profile and a saved conversation hold no key.
-  - The provider address is `https://` only and redirects are not followed, as on Android and Linux.
-  - `Editor/editorfe/scripts/generate-jsx-surface.mjs` writes the tag and attribute list for Swift, Kotlin and Rust; add a C# output instead of copying the list.
-  - The prompt needs a "not supported on Windows" section, built from the same list that filters the templates.
-- **`animation` and `<gif>` playback.** `Linux/crates/sw-render/src/motion.rs` computes the pose of an animated element for an instant from the record the shared renderer already writes, and `Linux/crates/sw-host/src/schedule.rs` (`motion_plan`) turns swings and custom intervals into a cycle of at most 60 pictures, one every 50 ms. Port both to the Win2D renderer and the desktop host; decode GIF frames in the host as Linux does.
-- **Skills and Gallery**, after they exist on Linux: the same stores, the same verification (path, byte count, SHA-256, the one trusted root), a page for each in the management window.
+- **AI UI acceptance on the Dev PC is recorded in testing.md.** Real requests and model loading use the existing Credential Locker key; it was not displayed or changed. The earlier lock-screen captures remain excluded. Continue hardware/display acceptance separately.
+- **Local AI connections are implemented.** Ollama and LM Studio presets support loopback HTTP, optional tokens, model discovery before selection, streaming and cancellation. Actual LM Studio model listing passed in the CLI and Studio; only an embedding model was installed, so real local chat inference remains unverified. Ollama was not installed. Deterministic socket/runner tests cover local generation and native validation. See testing.md.
+- **Finish distribution visual/hardware acceptance.** Current AOT host and installer automation pass. Inspect English installer pages while unlocked, and keep the owner-only Store certification/listing follow-up separate. Real ARM64, mixed-DPI and login/logout need suitable hardware/session access.
+- **Before submitting these new features to the Store**, update the submission's capability descriptions and privacy disclosures for user-configured AI providers. The 18 November preview submission did not include AI generation; the local 0.1.1 test build has not been submitted.
+- **Publication copy is prepared** in [release-draft.md](release-draft.md): English changes, Windows privacy section, Store listing additions and certification notes. Owner review, Company website publication and Partner Center submission remain separate actions.
+- **Failure recovery and extended stress coverage are implemented.** Provider/key metadata failures have compensation tests and applied widgets stay visible after conversation-file failures. Four GIF/swing widgets passed a 30-minute resource phase; a subsequent capture-readiness race in the test harness was fixed and the complete short rerun passes. See testing.md for exact measurements and the distinction between these results.
 - **Copies of bundled templates** already declare their hosts (`Library.BundledManifest`); Android now does the same.
-- **The template list still shows "Local Weather (Location)"**, which cannot run: the filter reads only `main.jsx`. Linux has the same gap.
-- **`frame` values the runtime ignores** are reported by the AI check on Apple and Android since 19 November 2026 (`frame="max,auto"`, a space after the comma). The C# check should follow when the AI port is made.
+- **Template filtering:** fixed on Windows: the filter checks nested source files as well as `main.jsx`. The actual list is covered by a temporary-library regression test.
+- **`frame` values the runtime ignores** are now reported by the C# AI check as on Apple/Android, with regression cases for `frame="max,auto"` and spaces after commas.
 
 ## After the preview
 
 - **Send to phone.** A QR code or reverse pairing so a widget moves to the phone without a file; needs an `import` handler in the iPhone and Android apps with its own security review. Until then, export a `.swt` file.
-- **Animations.** Play `<gif>` and the clock and swing animations; the renderer already returns their positions.
 - **A restricted engine process.** Run package code in a separate process inside an AppContainer with a job object for memory and processor limits.
 - **`$music`, `$notifications`, `$location`.** Windows has system interfaces for all three; each needs the package identity and the user's consent.
-- **Gallery, Skills and AI generation**, as on the other platforms. AI credentials must be stored with the Windows credential locker, never in settings or packages.
 - **The Windows Widgets board** as an extra surface: one generic provider that shows a rendered image with a row of buttons.
 - **A smaller package.** The management window carries the .NET runtime (about 70 MB of the package). Compiling it ahead of time, as the host is, would remove most of that.

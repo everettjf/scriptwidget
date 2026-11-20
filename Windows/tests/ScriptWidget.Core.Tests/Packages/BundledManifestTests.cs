@@ -1,5 +1,6 @@
 using System.Text;
 using ScriptWidget.Core.Hosting;
+using ScriptWidget.Core.Runtime;
 
 namespace ScriptWidget.Core.Tests.Packages;
 
@@ -41,6 +42,39 @@ public class BundledManifestTests
     {
         foreach (var name in new[] { "health", "calendar", "location", "music" }) Assert.True(Library.IsUnsupportedApi(name), name);
         foreach (var name in new[] { "storage", "device", "system", "file", "http", "xml", "weather", "dataSource", "healthy", "" }) Assert.False(Library.IsUnsupportedApi(name), name);
+    }
+
+    [Theory]
+    [InlineData("lib/location.js")]
+    [InlineData("lib/location.jsx")]
+    [InlineData("lib/location.mjs")]
+    [InlineData("lib/location.JS")]
+    public void FiltersUnsupportedApisInNestedSourceFiles(string helper)
+    {
+        var text = new Dictionary<string, string>
+        {
+            ["main.jsx"] = "$import('" + helper + "'); $render(<text>Weather</text>);",
+            [helper] = "const position = await $location.current();",
+        };
+        Assert.False(Library.SupportsBundled(new MemoryPackageFiles(text)));
+        text[helper] = "const forecast = await $weather.forecast({latitude: 1, longitude: 1});";
+        Assert.True(Library.SupportsBundled(new MemoryPackageFiles(text)));
+        text["notes.txt"] = "$location is not available";
+        Assert.True(Library.SupportsBundled(new MemoryPackageFiles(text)));
+    }
+
+    [Fact]
+    public void TheActualTemplateListSkipsLocationInAnImportedHelper()
+    {
+        using var temporary = new TemporaryFolder();
+        var templates = temporary.NewFolder("templates");
+        var local = temporary.NewFolder("templates", "template", "Local Weather");
+        File.WriteAllText(Path.Combine(local, "main.jsx"), "$import('location.js');");
+        File.WriteAllText(Path.Combine(local, "location.js"), "$location.current();");
+        var clock = temporary.NewFolder("templates", "template", "Clock");
+        File.WriteAllText(Path.Combine(clock, "main.jsx"), "$render(<text>Clock</text>);");
+        var library = new Library(new DataPaths(temporary.NewFolder("data")), templates);
+        Assert.Equal(["Clock"], library.Bundled().Select(item => item.Name));
     }
 
     [Fact]

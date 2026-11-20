@@ -170,6 +170,43 @@ public sealed partial class PackageStore(string libraryRoot, string stagingRoot,
     }
 
     /// <summary>
+    /// Replaces a verified Gallery package while keeping its directory and a bounded private
+    /// installation marker. Validation finishes before the old package moves; a failed publish
+    /// restores it. Identity is rechecked under the mutation lock so an unrelated widget is never replaced.
+    /// </summary>
+    public PackageInfo ReplaceArchive(string name, Stream input, string expectedId, string installationMarker, Action<IPackageFiles> validate)
+    {
+        if (installationMarker.Length == 0 || installationMarker.Contains('/') || installationMarker.Contains('\\') || installationMarker is "." or ".." || !PackagePathRules.ValidComponent(installationMarker))
+            throw new ArgumentException("Invalid installation marker.", nameof(installationMarker));
+        using var extracted = PackageArchive.Extract(input, staging, limits);
+        var files = new DiskPackageFiles(extracted.Directory);
+        if (!ManifestPresent(extracted.Directory) || PackageManifests.StringValue(ReadManifest(files), "id") != expectedId)
+            throw new PackageException(PackageErrors.InvalidManifest, "Replacement package identity does not match.");
+        validate(files);
+        lock (gate)
+        {
+            var target = Existing(name);
+            if (PackageManifests.StringValue(ReadManifest(new DiskPackageFiles(target)), "id") != expectedId)
+                throw new PackageException(PackageErrors.InvalidManifest, "Installed package identity changed.");
+            // The marker is never accepted from a download. It is copied only from this installation.
+            if (Plugins.PluginFiles.ExistingFile(target, installationMarker) is { } marker && Plugins.PluginFiles.ReadBounded(marker, 4096) is { } bytes)
+                Plugins.PluginFiles.WriteNew(Path.Combine(extracted.Directory, installationMarker), bytes);
+            var backup = SafeFiles.NewWorkDirectory(staging, "replace-backup");
+            var old = SafeFiles.Child(backup, "package");
+            var cleanBackup = false;
+            try
+            {
+                Directory.Move(target, old);
+                try { extracted.MoveTo(target); }
+                catch { Directory.Move(old, target); cleanBackup = true; throw; }
+                cleanBackup = true;
+                return Info(name, target);
+            }
+            finally { if (cleanBackup || !Directory.Exists(old)) SafeFiles.DeleteTree(backup); }
+        }
+    }
+
+    /// <summary>
     /// Exports an installed package as a <c>.swt</c> archive under one top-level directory named
     /// after the package. <c>__Build</c>, dot-files and links are not exported. A legacy package is
     /// exported with a generated <c>widget.json</c> (the installed package is not modified); a

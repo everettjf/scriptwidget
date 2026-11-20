@@ -165,14 +165,14 @@ public sealed class WidgetRuntime : IDisposable
     /// <param name="width">Width in points.</param>
     /// <param name="density">Pixels per point of the display the widget is on.</param>
     /// <param name="cornerRadius">Corner radius in points; 0 leaves the widget square.</param>
-    public RenderOutput Render(RunRequest request, RunResult result, float width, float height, float density, bool? darkMode = null, long? nowMilliseconds = null, long maximumBitmapBytes = long.MaxValue, float cornerRadius = RoundedCorners.DefaultRadius)
+    public RenderOutput Render(RunRequest request, RunResult result, float width, float height, float density, bool? darkMode = null, long? nowMilliseconds = null, long maximumBitmapBytes = long.MaxValue, float cornerRadius = RoundedCorners.DefaultRadius, bool liveAnimation = false)
     {
-        var output = RenderSquare(request, result, width, height, density, darkMode, nowMilliseconds, maximumBitmapBytes);
+        var output = RenderSquare(request, result, width, height, density, darkMode, nowMilliseconds, maximumBitmapBytes, liveAnimation);
         RoundedCorners.Apply(output.Pixels, output.PixelWidth, output.PixelHeight, cornerRadius * output.Scale);
         return output;
     }
 
-    private RenderOutput RenderSquare(RunRequest request, RunResult result, float width, float height, float density, bool? darkMode, long? nowMilliseconds, long maximumBitmapBytes)
+    private RenderOutput RenderSquare(RunRequest request, RunResult result, float width, float height, float density, bool? darkMode, long? nowMilliseconds, long maximumBitmapBytes, bool liveAnimation)
     {
         var dark = darkMode ?? request.DarkMode;
         var tree = result.Execution.Tree ?? ErrorTree(result.Execution.Error);
@@ -183,6 +183,7 @@ public sealed class WidgetRuntime : IDisposable
             {
                 Tree = tree, Width = width, Height = height, Density = density, Family = request.Family, DarkMode = dark,
                 Files = request.Files, RemoteImages = remote, NowMilliseconds = nowMilliseconds, MaximumBitmapBytes = maximumBitmapBytes,
+                DesktopAnimation = liveAnimation,
             });
         }
         catch (Exception error) when (error is not OutOfMemoryException)

@@ -1,6 +1,9 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using ScriptWidget.Core;
+using ScriptWidget.Core.Skills;
+using ScriptWidget.Core.Gallery;
+using ScriptWidget.Core.AI;
 using ScriptWidget.Core.Hosting;
 using ScriptWidget.Core.Packages;
 using ScriptWidget.Core.Runtime;
@@ -12,7 +15,7 @@ namespace ScriptWidget.Cli;
 /// runtime as the desktop host. Used by CI to check packages and to draw
 /// reference images, and for debugging.
 /// </summary>
-internal static class Program
+internal static partial class Program
 {
     private const string Usage = """
         Usage: swcli <command> [options]
@@ -40,6 +43,11 @@ internal static class Program
           add <package> [--family <name>]     Put a package on the desktop (needs the host running).
           refresh                             Refresh every desktop widget (needs the host running).
           host <json>                         Send one request to the host and print the answer (for scripts).
+          skills <command>                    list, show, import, export, enable, disable, remove (--data <dir>).
+          gallery <command>                   list, show <id>, install <id>, update <id> (--data <dir>).
+          ai <command>                        configure, profiles, key, models, new, continue, retry, list, show, fork, select, apply.
+
+        --data <dir> also isolates list, install, skills, gallery and ai from your desktop library.
         """;
 
     private static int Main(string[] arguments)
@@ -56,9 +64,12 @@ internal static class Program
                 "render" => Render(options),
                 "timeline" => Timeline(options),
                 "pack" => Pack(options),
-                "list" => List(),
+                "list" => List(options),
                 "install" => Install(options),
                 "templates" => Templates(),
+                "skills" => Skills(options),
+                "gallery" => Gallery(options).GetAwaiter().GetResult(),
+                "ai" => Ai(options).GetAwaiter().GetResult(),
                 "widgets" => Host(new JsonObject { ["command"] = "list" }),
                 "add" => Add(options),
                 "refresh" => Host(new JsonObject { ["command"] = "refresh" }),
@@ -68,6 +79,9 @@ internal static class Program
         }
         catch (ArgumentException error) { return Fail(error.Message, 2); }
         catch (PackageException error) { return Fail($"[{error.Code}] {error.Message}", 1); }
+        catch (SkillException error) { return Fail($"[{error.Code}] {error.Message}", 1); }
+        catch (GalleryException error) { return Fail($"[{error.Code}] {error.Message}", 1); }
+        catch (AiException error) { return Fail($"[{error.Code}] {error.Message}", 1); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException) { return Fail(error.Message, 1); }
     }
 
@@ -75,6 +89,85 @@ internal static class Program
     {
         Console.Error.WriteLine(message);
         return code;
+    }
+
+    private static async Task<int> Gallery(Options options)
+    {
+        var command = options.Positional(0, "Gallery command");
+        if (command is not ("list" or "show" or "install" or "update")) throw new ArgumentException("Usage: swcli gallery list|show <id>|install <id>|update <id> [--data <dir>]");
+        var paths = new DataPaths(options.Value("data"));
+        var library = new Library(paths);
+        using var transport = new GalleryHttpTransport();
+        var service = new GalleryService(paths, library, new SkillStore(paths.Skills), transport);
+        var loaded = await service.LoadAsync();
+        JsonObject Describe(GalleryItem item) => new()
+        {
+            ["id"] = item.Id, ["kind"] = item.Kind, ["name"] = item.Name, ["version"] = item.Version,
+            ["summary"] = item.Summary, ["state"] = service.State(item), ["sourceURL"] = item.SourceUrl,
+        };
+        if (command == "list")
+        {
+            var items = new JsonArray();
+            foreach (var entry in loaded.Index.Items) items.Append(Describe(entry));
+            Print(new JsonObject { ["ok"] = true, ["offline"] = loaded.IsOffline, ["warning"] = loaded.Warning, ["items"] = items });
+            return 0;
+        }
+        var item = loaded.Index.Items.FirstOrDefault(item => item.Id == options.Positional(1, "Gallery item id")) ?? throw new GalleryException("not_found", "Gallery item not found.");
+        if (command == "show") { Print(Describe(item)); return 0; }
+        using var runtime = new WidgetRuntime(paths);
+        var installed = await service.InstallAsync(item, runtime.ValidatePackage, updateExisting: command == "update");
+        if (options.Value("data") is null) HostPipe.Send(new JsonObject { ["command"] = "library-changed" }, 300, 3000);
+        Print(new JsonObject { ["ok"] = true, ["id"] = item.Id, ["localName"] = installed.Installation.LocalName, ["updated"] = installed.Updated });
+        return 0;
+    }
+
+    private static int Skills(Options options)
+    {
+        var store = new SkillStore(new DataPaths(options.Value("data")).Skills);
+        var command = options.Positional(0, "Skills command");
+        JsonObject Describe(WidgetSkill skill) => new()
+        {
+            ["id"] = skill.Id, ["name"] = skill.Name, ["version"] = skill.Version, ["summary"] = skill.Summary,
+            ["builtIn"] = skill.IsBuiltIn, ["enabled"] = store.EnabledIds().Contains(skill.Id),
+        };
+        switch (command)
+        {
+            case "list":
+                var items = new JsonArray();
+                foreach (var skill in store.List()) items.Append(Describe(skill));
+                Print(new JsonObject { ["ok"] = true, ["skills"] = items });
+                break;
+            case "show":
+                var found = store.Find(options.Positional(1, "Skill id")) ?? throw new SkillException("skill_not_found", "Skill not found.");
+                var detail = Describe(found);
+                detail["instruction"] = found.Instruction;
+                Print(detail);
+                break;
+            case "import":
+                using (var input = File.OpenRead(options.Positional(1, "Skill archive"))) Print(Describe(store.ImportArchive(input)));
+                break;
+            case "export":
+                // Do not truncate an existing archive without an explicit choice by its owner.
+                using (var archive = new MemoryStream())
+                {
+                    store.Export(options.Positional(1, "Skill id"), archive);
+                    using var output = new FileStream(options.Positional(2, "output .swskill file"), FileMode.CreateNew, FileAccess.Write);
+                    archive.Position = 0;
+                    archive.CopyTo(output);
+                }
+                Print(new JsonObject { ["ok"] = true });
+                break;
+            case "enable" or "disable":
+                store.SetEnabled(options.Positional(1, "Skill id"), command == "enable");
+                Print(new JsonObject { ["ok"] = true });
+                break;
+            case "remove":
+                store.Delete(options.Positional(1, "Skill id"));
+                Print(new JsonObject { ["ok"] = true });
+                break;
+            default: throw new ArgumentException("Usage: swcli skills list|show <id>|import <archive>|export <id> <file>|enable <id>|disable <id>|remove <id> [--data <dir>]");
+        }
+        return 0;
     }
 
     private static void Print(JsonObject json) => Console.WriteLine(Json.Stringify(json, indented: true));
@@ -234,9 +327,9 @@ internal static class Program
 
     // MARK: - Library and desktop commands
 
-    private static int List()
+    private static int List(Options options)
     {
-        var library = new Library(new DataPaths());
+        var library = new Library(new DataPaths(options.Value("data")));
         var items = new JsonArray();
         foreach (var package in library.List()) items.Append(new JsonObject { ["name"] = package.Name, ["title"] = package.DisplayName, ["installation"] = package.Installation, ["directory"] = package.Directory });
         Print(new JsonObject { ["packages"] = items });
@@ -255,7 +348,7 @@ internal static class Program
     private static int Install(Options options)
     {
         var file = Path.GetFullPath(options.Positional(0, "archive"));
-        var paths = new DataPaths();
+        var paths = new DataPaths(options.Value("data"));
         var library = new Library(paths);
         using var runtime = new WidgetRuntime(paths);
         using var stream = File.OpenRead(file);
@@ -264,7 +357,7 @@ internal static class Program
             try { runtime.ValidatePackage(files); }
             catch (RuntimeError error) { throw new PackageException(PackageErrors.InvalidManifest, error.Message); }
         });
-        HostPipe.Send(new JsonObject { ["command"] = "library-changed" }, 300, 3000);
+        if (options.Value("data") is null) HostPipe.Send(new JsonObject { ["command"] = "library-changed" }, 300, 3000);
         Print(new JsonObject { ["name"] = installed.Name, ["installation"] = installed.Installation });
         return 0;
     }
@@ -287,7 +380,7 @@ internal static class Program
     /// <summary><c>--name value</c> options, <c>--flag</c> switches and positional arguments.</summary>
     private sealed class Options
     {
-        private static readonly HashSet<string> Flags = ["dark"];
+        private static readonly HashSet<string> Flags = ["dark", "stdin", "stream", "allow-network"];
         private readonly Dictionary<string, string> values = new();
         private readonly HashSet<string> flags = new();
         private readonly List<string> positional = new();

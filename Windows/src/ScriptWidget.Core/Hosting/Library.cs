@@ -173,8 +173,12 @@ public sealed partial class Library
     /// that uses one would only show "not supported", so it is left out of
     /// the template list.
     /// </summary>
-    [GeneratedRegex(@"\$(health|calendar|reminders|photos|contacts|home|icloud|alarms|maps|services|music|notifications|location|documents)\b")]
-    private static partial Regex UnsupportedAPI();
+    public static IReadOnlyList<string> UnsupportedGlobals { get; } = Array.AsReadOnly(new[]
+    {
+        "health", "calendar", "reminders", "photos", "contacts", "home", "icloud", "alarms", "maps", "services", "music", "notifications", "location", "documents",
+    });
+    private static readonly Regex UnsupportedPattern = new(@"\$(" + string.Join('|', UnsupportedGlobals) + @")\b", RegexOptions.CultureInvariant);
+    private static Regex UnsupportedAPI() => UnsupportedPattern;
 
     /// <summary>True for a script global without the dollar sign, such as <c>health</c>, that Windows does not implement in this release.</summary>
     public static bool IsUnsupportedApi(string name) => UnsupportedAPI().IsMatch("$" + name) && UnsupportedAPI().Match("$" + name).Length == name.Length + 1;
@@ -191,12 +195,23 @@ public sealed partial class Library
             {
                 var main = Path.Combine(package, PackageManifests.LegacyEntry);
                 if (!File.Exists(main)) continue;
-                try { if (UnsupportedAPI().IsMatch(File.ReadAllText(main, Encoding.UTF8))) continue; }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException) { continue; }
+                try { if (!SupportsBundled(new DiskPackageFiles(package))) continue; }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or PackageException) { continue; }
                 result.Add(new BundledPackage(group, Path.GetFileName(package), package));
             }
         }
         return result;
+    }
+
+    /// <summary>Checks every source file, including imported helpers, using the same API list as the reference and AI prompt.</summary>
+    public static bool SupportsBundled(IPackageFiles files)
+    {
+        foreach (var path in files.Paths())
+        {
+            if (Path.GetExtension(path).ToLowerInvariant() is not (".js" or ".jsx" or ".mjs")) continue;
+            if (files.ReadText(path) is not { } source || UnsupportedAPI().IsMatch(source)) return false;
+        }
+        return true;
     }
 
     /// <summary>Files of a bundled package as (relative path, bytes).</summary>

@@ -1,9 +1,10 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
+import { fileURLToPath } from "node:url";
 import { scriptWidgetAPI } from "../Editor/editorfe/src/scriptWidgetAPI.js";
 
-const root = new URL("../", import.meta.url).pathname;
+const root = fileURLToPath(new URL("../", import.meta.url));
 const templateRoot = join(root, "Shared/ScriptWidgetRuntime/Resource/Script.bundle/template");
 const schema = scriptWidgetAPI;
 const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/widget.schema.json"), "utf8"));
@@ -206,7 +207,7 @@ async function walk(directory) {
 for (const path of await walk(root)) {
   if (!/\.(swift|js|jsx|mjs|html)$/.test(path)) continue;
   const contents = await readFile(path, "utf8");
-  if (relative(root, path).toLowerCase() !== "scripts/validate-release.mjs" && /monaco-editor|Monaco editor/.test(contents)) {
+  if (relative(root, path).replaceAll("\\", "/").toLowerCase() !== "scripts/validate-release.mjs" && /monaco-editor|Monaco editor/.test(contents)) {
     failures.push(`${relative(root, path)}: legacy Monaco editor reference`);
   }
 }
