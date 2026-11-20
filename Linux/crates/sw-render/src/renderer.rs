@@ -26,7 +26,7 @@ use crate::fonts::FontRegistry;
 use crate::images::PackageImageSource;
 use crate::painter::DomPainter;
 use crate::text::{TextEngine, TextStyle};
-use crate::{GifSlot, HitRegion};
+use crate::{GifSlot, HitRegion, MotionSlot};
 
 /// What to draw and at what size. Lengths are in points.
 #[derive(Clone)]
@@ -49,6 +49,16 @@ pub struct RenderRequest {
     pub maximum_bitmap_bytes: u64,
     /// The moment of every GIF's animation to show, in milliseconds from its start; `None` shows the first frame.
     pub gif_time_milliseconds: Option<u64>,
+    /// The moment at which elements with an `animation` are painted, in milliseconds since 1970: clock hands show
+    /// that time, a swing is where it is that long after 1970. `None` leaves them where the layout puts them: clock
+    /// hands at the time of the layout (`now_milliseconds` or the real clock), a swing at rest.
+    pub motion_milliseconds: Option<i64>,
+    /// Lets a caller that draws the same widget many times lay it out once. The layout of a render is kept, and the
+    /// next render with the same key, tree, size, family and theme only paints (a few layouts are kept, the oldest go first). The caller promises that between two
+    /// such renders the package files and the fetched images did not change, and that the tree has no text that
+    /// changes with the time. Elements with an `animation` are then always painted at a moment: the one of
+    /// `motion_milliseconds`, else `now_milliseconds`, else the real clock. `None` lays out every time.
+    pub layout_key: Option<u64>,
     /// System theme colors behind the `material.<role>` names; `None` leaves them unknown. Android only; Linux hosts leave it off.
     pub colors: Option<Value>,
 }
@@ -73,6 +83,8 @@ impl RenderRequest {
             now_milliseconds: None,
             maximum_bitmap_bytes: u64::MAX,
             gif_time_milliseconds: None,
+            motion_milliseconds: None,
+            layout_key: None,
             colors: None,
         }
     }
@@ -90,6 +102,10 @@ pub struct RenderOutput {
     pub hit_regions: Vec<HitRegion>,
     /// The animated GIFs in the bitmap, for a display layer that cycles their frames.
     pub gif_slots: Vec<GifSlot>,
+    /// The elements with an `animation`, for a display layer that draws the widget again as they move.
+    pub motion_slots: Vec<MotionSlot>,
+    /// True when the layout of an earlier render was painted again (see [`RenderRequest::layout_key`]).
+    pub layout_reused: bool,
     /// What the layout could not show as on iPhone, as the shared renderer reports it.
     pub diagnostics: Vec<Value>,
     pub layout_time: Duration,
@@ -193,7 +209,7 @@ impl WidgetRenderer {
         let (jobs, queue) = mpsc::channel::<Job>();
         let locale = locale.to_owned();
         let worker = std::thread::Builder::new().name("scriptwidget-render".into()).stack_size(RENDER_THREAD_STACK).spawn(move || {
-            let mut worker = Worker { scripts, shared: Rc::new(Shared { text: RefCell::new(TextEngine::new(FontRegistry::new(&locale))), images: RefCell::new(None) }), engine: None };
+            let mut worker = Worker { scripts, shared: Rc::new(Shared { text: RefCell::new(TextEngine::new(FontRegistry::new(&locale))), images: RefCell::new(None) }), engine: None, kept: Vec::new() };
             for job in queue {
                 match job {
                     Job::Render(request, reply) => {
@@ -202,8 +218,15 @@ impl WidgetRenderer {
                     Job::Layout(request, reply) => {
                         let _ = reply.send(worker.with_images(&request, |worker| worker.layout(&request)).map(|layout| stringify(&Value::Object(layout))));
                     }
-                    Job::SetLocale(locale) => worker.shared.text.borrow_mut().fonts_mut().set_locale(&locale),
-                    Job::SetUseSystemFont(value) => worker.shared.text.borrow_mut().fonts_mut().set_use_system_font(value),
+                    Job::SetLocale(locale) => {
+                        // Other fonts measure differently: a kept layout no longer fits.
+                        worker.kept.clear();
+                        worker.shared.text.borrow_mut().fonts_mut().set_locale(&locale);
+                    }
+                    Job::SetUseSystemFont(value) => {
+                        worker.kept.clear();
+                        worker.shared.text.borrow_mut().fonts_mut().set_use_system_font(value);
+                    }
                     Job::Fonts(reply) => {
                         let mut text = worker.shared.text.borrow_mut();
                         let (monospace, serif) = (text.primary_family("ui-monospace", 400), text.primary_family("ui-serif", 400));
@@ -213,7 +236,10 @@ impl WidgetRenderer {
                     Job::FamiliesUsed(text, style, reply) => {
                         let _ = reply.send(worker.shared.text.borrow_mut().families_used(&text, &style));
                     }
-                    Job::Release => worker.engine = None,
+                    Job::Release => {
+                        worker.engine = None;
+                        worker.kept.clear();
+                    }
                 }
             }
         })?;
@@ -261,7 +287,7 @@ impl WidgetRenderer {
         answer.recv().map_err(|_| stopped())
     }
 
-    /// Frees the layout context; the next render recreates it.
+    /// Frees the layout context and the kept layout; the next render recreates them.
     pub fn release(&self) {
         let _ = self.send(Job::Release);
     }
@@ -292,6 +318,27 @@ struct Worker {
     scripts: Arc<SharedScripts>,
     shared: Rc<Shared>,
     engine: Option<Engine<'static>>,
+    /// The layouts of the last renders that had a [`RenderRequest::layout_key`], the newest last.
+    kept: Vec<KeptLayout>,
+}
+
+/// One laid-out widget, to paint again at another moment or scale.
+struct KeptLayout {
+    key: u64,
+    tree: String,
+    width: f32,
+    height: f32,
+    family: String,
+    dark_mode: bool,
+    colors: Option<Value>,
+    root: DomNode,
+    diagnostics: Vec<Value>,
+}
+
+impl KeptLayout {
+    fn fits(&self, key: u64, request: &RenderRequest) -> bool {
+        self.key == key && self.width == request.width && self.height == request.height && self.dark_mode == request.dark_mode && self.family == request.family && self.colors == request.colors && self.tree == request.tree
+    }
 }
 
 fn number(value: f32) -> String {
@@ -390,8 +437,19 @@ impl Worker {
         }
         self.with_images(request, |worker| {
             let layout_start = Instant::now();
-            let rendered = worker.layout(request)?;
+            let kept = request.layout_key.and_then(|key| worker.kept.iter().position(|kept| kept.fits(key, request))).map(|index| worker.kept.remove(index));
+            let layout_reused = kept.is_some();
+            let (root, diagnostics) = match kept {
+                Some(kept) => (kept.root, kept.diagnostics),
+                None => {
+                    let rendered = worker.layout(request)?;
+                    let root = DomNode::from_json(rendered.opt_object("root").ok_or_else(|| RenderError::new("Layout returned no element tree"))?).map_err(RenderError::new)?;
+                    (root, rendered.opt_array("diagnostics").cloned().unwrap_or_default())
+                }
+            };
             let layout_time = layout_start.elapsed();
+            // A kept layout holds the clock hands of the moment it was made: they are always posed again.
+            let motion_time = request.motion_milliseconds.or_else(|| request.layout_key.map(|_| request.now_milliseconds.unwrap_or_else(wall_milliseconds)));
 
             let paint_start = Instant::now();
             let mut scale = request.scale;
@@ -401,19 +459,35 @@ impl Worker {
             }
             let pixel_width = ((request.width * scale).ceil() as i32).clamp(1, MAXIMUM_BITMAP_SIDE);
             let pixel_height = ((request.height * scale).ceil() as i32).clamp(1, MAXIMUM_BITMAP_SIDE);
-            let root = DomNode::from_json(rendered.opt_object("root").ok_or_else(|| RenderError::new("Layout returned no element tree"))?).map_err(RenderError::new)?;
 
             let info = ImageInfo::new((pixel_width, pixel_height), ColorType::RGBA8888, AlphaType::Premul, None);
             let mut surface = surfaces::raster(&info, None, None).ok_or_else(|| RenderError::new("The bitmap could not be allocated"))?;
             surface.canvas().clear(Color::TRANSPARENT);
-            let (hit_regions, gif_slots) = {
+            let (hit_regions, gif_slots, motion_slots) = {
                 let mut text = worker.shared.text.borrow_mut();
                 let mut images = worker.shared.images.borrow_mut();
                 let mut painter = DomPainter::new(&mut text, images.as_mut().expect("set by with_images"));
+                painter.motion_time = motion_time;
                 painter.paint(surface.canvas(), &root, scale);
-                (painter.hit_regions, painter.gif_slots)
+                (painter.hit_regions, painter.gif_slots, painter.motion_slots)
             };
             let pixels = surface.peek_pixels().and_then(|pixmap| pixmap.bytes().map(<[u8]>::to_vec)).ok_or_else(|| RenderError::new("The bitmap could not be read"))?;
+            if let Some(key) = request.layout_key {
+                if worker.kept.len() >= MAXIMUM_KEPT_LAYOUTS {
+                    worker.kept.remove(0);
+                }
+                worker.kept.push(KeptLayout {
+                    key,
+                    tree: request.tree.clone(),
+                    width: request.width,
+                    height: request.height,
+                    family: request.family.clone(),
+                    dark_mode: request.dark_mode,
+                    colors: request.colors.clone(),
+                    root,
+                    diagnostics: diagnostics.clone(),
+                });
+            }
             Ok(RenderOutput {
                 pixels,
                 pixel_width: pixel_width as u32,
@@ -421,12 +495,18 @@ impl Worker {
                 scale,
                 hit_regions,
                 gif_slots,
-                diagnostics: rendered.opt_array("diagnostics").cloned().unwrap_or_default(),
+                motion_slots,
+                layout_reused,
+                diagnostics,
                 layout_time,
                 paint_time: paint_start.elapsed(),
             })
         })
     }
+}
+
+fn wall_milliseconds() -> i64 {
+    std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map_or(0, |elapsed| elapsed.as_millis().min(i64::MAX as u128) as i64)
 }
 
 fn run_layout(engine: &mut Engine<'static>, job: &str) -> Result<Object, RenderError> {
@@ -465,5 +545,7 @@ const LAYOUT_JS_STACK: usize = 6 * 1024 * 1024;
 const RENDER_THREAD_STACK: usize = 16 * 1024 * 1024;
 const LAYOUT_TIMEOUT_MILLISECONDS: u64 = 8000;
 const JOB_BATCH: usize = 100_000;
+/// So many widgets can each be painted again from their layout; a layout is a few hundred kilobytes.
+const MAXIMUM_KEPT_LAYOUTS: usize = 8;
 /// A side longer than this is not allocated, whatever the request says.
 const MAXIMUM_BITMAP_SIDE: i32 = 16384;

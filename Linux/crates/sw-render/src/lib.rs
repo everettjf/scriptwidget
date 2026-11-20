@@ -17,6 +17,7 @@ mod fonts;
 pub mod gif;
 pub mod gif_cache;
 mod images;
+pub mod motion;
 mod painter;
 #[cfg(test)]
 mod painter_tests;
@@ -91,4 +92,14 @@ pub struct GifSlot {
     pub source: String,
     /// How long each frame is shown, in milliseconds.
     pub delays: Vec<u32>,
+}
+
+/// An element with the `animation` property. The bitmap shows it where
+/// [`RenderRequest::motion_milliseconds`] puts it; a display layer renders
+/// the widget again at the moments it wants to show.
+#[derive(Debug, Clone, PartialEq)]
+pub struct MotionSlot {
+    /// What the element covers at the pose that was painted.
+    pub bounds: Bounds,
+    pub motion: motion::Motion,
 }

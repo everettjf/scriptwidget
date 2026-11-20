@@ -107,6 +107,85 @@ pub fn gif_frames(delays: &[Vec<u32>], maximum: usize) -> Vec<(u64, u32)> {
     boundaries.iter().copied().zip(ends).map(|(start, end)| (start, (end - start).min(u64::from(u32::MAX)) as u32)).collect()
 }
 
+/// A cycle shows no picture for less than this: at most twenty pictures a second.
+pub const MINIMUM_MOTION_FRAME: u64 = 50;
+/// A cycle whose pictures would each stay longer than this is not built: the widget is drawn every second instead.
+pub const MAXIMUM_MOTION_FRAME: u64 = 1000;
+
+/// How a widget with moving parts is shown.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct MotionPlan {
+    /// The pictures of one cycle, as [`gif_frames`] gives them; empty when one picture is enough.
+    pub frames: Vec<(u64, u32)>,
+    /// How often the tree is drawn again without running the script.
+    pub tick: Option<Tick>,
+}
+
+/// The pictures of a widget whose elements move by themselves, and how often
+/// it is drawn again.
+///
+/// A GIF plays as before. A swing and a custom clock repeat, so together they
+/// are one more track of the cycle, as if they were a GIF with evenly spaced
+/// frames: as long as the time after which all of them are where they began,
+/// with a picture every [`MINIMUM_MOTION_FRAME`] milliseconds, or as many
+/// pictures as `maximum` and `affordable` allow. When that would leave a
+/// picture on screen for more than [`MAXIMUM_MOTION_FRAME`], or the widget is
+/// drawn every second anyway, no cycle is built for them: they are drawn where
+/// they are at each second. Clock hands follow the time of day and never
+/// repeat within a cycle: they are drawn again every second or minute.
+///
+/// `gifs` has the frame delays of each GIF, `periods` the milliseconds after
+/// which each repeating motion is where it began, `hands` the tick the clock
+/// hands need (a second hand every second, the others every minute), `dates`
+/// the tick of the tree's dates. `maximum` is the most pictures a cycle may
+/// have, `affordable` the most the pixel budget allows at this widget's size;
+/// a cycle of GIFs alone that needs more shows its first frame only.
+pub fn motion_plan(gifs: &[Vec<u32>], periods: &[u64], hands: Option<Tick>, dates: Option<Tick>, maximum: usize, affordable: usize) -> MotionPlan {
+    let fastest = |left: Option<Tick>, right: Option<Tick>| match (left, right) {
+        (Some(left), Some(right)) => Some(left.min(right)),
+        (left, right) => left.or(right),
+    };
+    let tick = fastest(dates, hands);
+    let within = |frames: Vec<(u64, u32)>| if frames.len() > affordable { Vec::new() } else { frames };
+    if periods.is_empty() {
+        return MotionPlan { frames: within(gif_frames(gifs, maximum)), tick };
+    }
+    let track = if tick == Some(Tick::Second) { None } else { motion_track(periods, maximum.min(affordable)) };
+    let frames = track.map(|track| {
+        let mut tracks = gifs.to_vec();
+        tracks.push(track);
+        gif_frames(&tracks, maximum)
+    });
+    match frames {
+        Some(frames) if frames.len() <= affordable => MotionPlan { frames, tick },
+        _ => MotionPlan { frames: within(gif_frames(gifs, maximum)), tick: Some(Tick::Second) },
+    }
+}
+
+/// The repeating motions of a widget as one track of evenly spaced frames,
+/// or `None` when no cycle of at most `maximum` pictures shows them well.
+fn motion_track(periods: &[u64], maximum: usize) -> Option<Vec<u32>> {
+    fn divisor(mut left: u64, mut right: u64) -> u64 {
+        while right != 0 {
+            (left, right) = (right, left % right);
+        }
+        left
+    }
+    let longest = (maximum as u64).checked_mul(MAXIMUM_MOTION_FRAME)?;
+    // The first moment every motion is back where it began.
+    let mut total = 1u64;
+    for period in periods {
+        let period = (*period).max(1);
+        total = (total / divisor(total, period)).checked_mul(period).filter(|total| *total <= longest)?;
+    }
+    let count = (total / MINIMUM_MOTION_FRAME).min(maximum as u64);
+    if count < 2 {
+        return None;
+    }
+    // Whole milliseconds that add up to exactly the cycle.
+    Some((0..count).map(|index| ((index + 1) * total / count - index * total / count) as u32).collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -197,5 +276,101 @@ mod tests {
         assert_eq!(gif_frames(&[vec![20; 200]], 60).len(), 60);
         // A zero delay cannot stall the loop.
         assert_eq!(gif_frames(&[vec![0, 100]], 60), [(0, 1), (1, 99)]);
+    }
+
+    fn plan(gifs: &[Vec<u32>], periods: &[u64], hands: Option<Tick>, dates: Option<Tick>) -> MotionPlan {
+        motion_plan(gifs, periods, hands, dates, 60, 60)
+    }
+
+    #[test]
+    fn a_widget_with_nothing_that_moves_has_one_picture_and_no_tick() {
+        assert_eq!(plan(&[], &[], None, None), MotionPlan { frames: vec![], tick: None });
+        // Dates and GIFs alone are scheduled as before.
+        assert_eq!(plan(&[], &[], None, Some(Tick::Minute)), MotionPlan { frames: vec![], tick: Some(Tick::Minute) });
+        assert_eq!(plan(&[vec![100, 250, 100]], &[], None, Some(Tick::Second)), MotionPlan { frames: vec![(0, 100), (100, 250), (350, 100)], tick: Some(Tick::Second) });
+        // A GIF cycle that the pixel budget cannot hold shows its first frame.
+        assert_eq!(motion_plan(&[vec![100, 250, 100]], &[], None, None, 60, 2), MotionPlan { frames: vec![], tick: None });
+    }
+
+    #[test]
+    fn clock_hands_are_drawn_again_each_second_or_minute() {
+        assert_eq!(plan(&[], &[], Some(Tick::Second), None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        assert_eq!(plan(&[], &[], Some(Tick::Minute), None), MotionPlan { frames: vec![], tick: Some(Tick::Minute) });
+        // The fastest of the hands and the dates wins.
+        assert_eq!(plan(&[], &[], Some(Tick::Minute), Some(Tick::Second)).tick, Some(Tick::Second));
+        assert_eq!(plan(&[], &[], Some(Tick::Second), Some(Tick::Minute)).tick, Some(Tick::Second));
+    }
+
+    #[test]
+    fn a_swing_becomes_a_cycle_of_evenly_spaced_pictures() {
+        // There and back in two seconds: forty pictures of 50 ms, twenty a second.
+        let swing = plan(&[], &[2000], None, None);
+        assert_eq!(swing.tick, None);
+        assert_eq!(swing.frames.len(), 40);
+        assert!(swing.frames.iter().enumerate().all(|(index, frame)| *frame == (index as u64 * 50, 50)));
+        // The fastest swing there is: 200 ms in four pictures.
+        assert_eq!(plan(&[], &[200], None, None).frames, [(0, 50), (50, 50), (100, 50), (150, 50)]);
+        // A slower motion gets the sixty pictures the cycle may have: 40 seconds, two thirds of a second each.
+        let slow = plan(&[], &[40_000], None, None);
+        assert_eq!(slow.frames.len(), 60);
+        assert_eq!(slow.frames.iter().map(|(_, duration)| u64::from(*duration)).sum::<u64>(), 40_000, "the durations add up to the cycle");
+        assert!(slow.frames.iter().all(|(_, duration)| (666..=667).contains(duration)));
+        assert_eq!(slow.frames[59].0 + u64::from(slow.frames[59].1), 40_000);
+        // A minute is the longest cycle: one picture a second.
+        assert_eq!(plan(&[], &[60_000], None, None).frames.len(), 60);
+        assert_eq!(plan(&[], &[60_000], None, None).tick, None);
+    }
+
+    #[test]
+    fn a_motion_too_slow_for_a_cycle_is_drawn_each_second() {
+        assert_eq!(plan(&[], &[60_001], None, None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        assert_eq!(plan(&[], &[172_800_000], None, None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        // The aquarium: 30, 40 and 60 seconds are together again after 120.
+        assert_eq!(plan(&[], &[40_000, 60_000, 30_000], None, None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        // Periods that never meet, and ones whose product does not fit a number.
+        assert_eq!(plan(&[], &[24_000, 24_340, 24_680], None, None).tick, Some(Tick::Second));
+        assert_eq!(plan(&[], &[u64::MAX, u64::MAX - 1], None, None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        assert_eq!(plan(&[], &[0], None, None).tick, Some(Tick::Second), "no period is not a cycle");
+        // A widget that is drawn every second anyway moves then, and builds no cycle on top.
+        assert_eq!(plan(&[], &[2000], Some(Tick::Second), None), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        assert_eq!(plan(&[], &[2000], None, Some(Tick::Second)), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        // With a tick of a minute the cycle is kept, and published again each minute.
+        let minute = plan(&[], &[2000], Some(Tick::Minute), None);
+        assert_eq!((minute.frames.len(), minute.tick), (40, Some(Tick::Minute)));
+    }
+
+    #[test]
+    fn motions_that_meet_share_a_cycle() {
+        // Two and three seconds are together again after six: sixty pictures of 100 ms.
+        let both = plan(&[], &[2000, 3000, 2000], None, None);
+        assert_eq!(both.frames.len(), 60);
+        assert!(both.frames.iter().all(|(_, duration)| *duration == 100));
+        assert_eq!(both.tick, None);
+    }
+
+    #[test]
+    fn the_pixel_budget_lowers_the_number_of_pictures() {
+        // Room for ten pictures: a two-second swing gets ten of 200 ms.
+        let few = motion_plan(&[], &[2000], None, None, 60, 10);
+        assert_eq!(few.frames.len(), 10);
+        assert!(few.frames.iter().all(|(_, duration)| *duration == 200));
+        // Room for ten pictures and a 40 second turn: four seconds a picture is too slow, so each second is drawn.
+        assert_eq!(motion_plan(&[], &[40_000], None, None, 60, 10), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        // Room for one picture: nothing cycles.
+        assert_eq!(motion_plan(&[], &[2000], None, None, 60, 1), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+        assert_eq!(motion_plan(&[], &[2000], None, None, 60, 0), MotionPlan { frames: vec![], tick: Some(Tick::Second) });
+    }
+
+    #[test]
+    fn a_gif_and_a_motion_share_the_cycle_like_two_gifs() {
+        // A GIF of 400 ms and a swing of 200 ms: the swing's four pictures repeat inside the GIF's cycle.
+        let both = plan(&[vec![200, 200]], &[200], None, None);
+        assert_eq!(both.frames, [(0, 50), (50, 50), (100, 50), (150, 50), (200, 50), (250, 50), (300, 50), (350, 50)]);
+        // More moments than a cycle may have: only the longest track sets the moments, as for two GIFs.
+        let crowded = plan(&[vec![70; 30]], &[3000], None, None);
+        assert_eq!(crowded.frames.len(), 60);
+        assert!(crowded.frames.iter().all(|(_, duration)| *duration == 50));
+        // A motion too slow for a cycle leaves the GIF playing and is drawn each second.
+        assert_eq!(plan(&[vec![100, 100]], &[90_000], None, None), MotionPlan { frames: vec![(0, 100), (100, 100)], tick: Some(Tick::Second) });
     }
 }

@@ -10,6 +10,7 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::mpsc::Receiver;
 
 use serde_json::{Map, Value};
@@ -19,15 +20,19 @@ use sw_core::executor::ExecutionError;
 use sw_core::library::{InstalledPackage, Library};
 use sw_core::{PackageFiles, RunRequest, WidgetRuntime};
 use sw_render::gif_cache::FrameCacheScope;
+use sw_render::motion::{Hand, Motion};
 use sw_render::{HitRegion, RenderError, RenderOutput, RenderRequest, WidgetRenderer, rounded_corners};
 
+use crate::clock::Clock;
 use crate::frames::FrameStore;
 use crate::schedule::{self, Tick};
 use crate::surfaces;
 
-/// A widget shows at most this many pictures in a cycle (plan 4.8).
+/// A widget shows at most this many pictures in a cycle (plan 4.8): the frames of its GIFs and the poses of
+/// its swings and custom clocks together.
 pub const MAXIMUM_GIF_FRAMES: usize = sw_render::gif::MAXIMUM_FRAMES;
-/// All pictures of one cycle together have at most this many pixels; a widget that would need more shows its first frame only.
+/// All pictures of one cycle together have at most this many pixels. A widget whose GIFs would need more shows
+/// their first frame only; one whose motions would need more gets fewer pictures, or is drawn each second.
 pub const MAXIMUM_CYCLE_PIXELS: u64 = 32 * 1024 * 1024;
 
 /// What a tap asked for. Built by the service from its own action table, never from a request.
@@ -45,6 +50,8 @@ pub struct Action {
 /// What a finished run left behind: enough to draw the same tree again, at
 /// another scale or a second later, without running the script.
 pub struct Kept {
+    /// Unique in this run of the service: names the layout the renderer keeps for this tree.
+    serial: u64,
     pub family: String,
     pub dark: bool,
     tree: String,
@@ -54,6 +61,7 @@ pub struct Kept {
     remote_images: HashMap<String, PathBuf>,
     /// When the package's timeline next changes slot, in milliseconds since 1970.
     pub next_transition: Option<i64>,
+    /// How often a date of the tree changes by itself. What the widget needs in all is [`Outcome::tick`].
     pub tick: Option<Tick>,
     /// The error kind of the run, when it failed.
     pub error: Option<String>,
@@ -101,6 +109,9 @@ pub struct Outcome {
     pub ran: bool,
     /// `None` when the picture is the one already on screen, or when nothing could be drawn.
     pub picture: Option<Picture>,
+    /// How often the tree is drawn again without running the script: for its dates, its clock hands,
+    /// and the motions that no cycle of pictures shows.
+    pub tick: Option<Tick>,
 }
 
 pub enum WorkerMessage {
@@ -114,11 +125,31 @@ pub struct Worker {
     renderer: WidgetRenderer,
     library: Library,
     frames: Arc<FrameStore>,
+    /// Says what time the moving parts of a picture show.
+    clock: Arc<dyn Clock>,
+}
+
+fn next_serial() -> u64 {
+    static SERIAL: AtomicU64 = AtomicU64::new(1);
+    SERIAL.fetch_add(1, Ordering::Relaxed)
+}
+
+impl Kept {
+    /// The key under which the renderer may keep the layout of this tree and paint it again
+    /// (`RenderRequest::layout_key`), at `wall` milliseconds since 1970; `None` when it must be laid out every time.
+    fn layout_key(&self, wall: i64) -> Option<u64> {
+        match self.tick {
+            None => Some(self.serial << 32),
+            // The text of a clock time is the same for a whole minute.
+            Some(Tick::Minute) => Some(self.serial << 32 | (wall.div_euclid(60_000) as u64 & 0xFFFF_FFFF)),
+            Some(Tick::Second) => None,
+        }
+    }
 }
 
 impl Worker {
-    pub fn new(runtime: WidgetRuntime, renderer: WidgetRenderer, library: Library, frames: Arc<FrameStore>) -> Self {
-        Self { runtime, renderer, library, frames }
+    pub fn new(runtime: WidgetRuntime, renderer: WidgetRenderer, library: Library, frames: Arc<FrameStore>, clock: Arc<dyn Clock>) -> Self {
+        Self { runtime, renderer, library, frames, clock }
     }
 
     /// Serves jobs until the sender is dropped.
@@ -138,20 +169,22 @@ impl Worker {
         if kept.is_none() {
             kept = Some(Arc::new(self.run(&job)));
         }
-        let picture = kept.as_deref().and_then(|kept| match self.picture(&job, kept) {
-            Ok(picture) => picture,
-            Err(error) => {
+        let (picture, tick) = match kept.as_deref().map(|kept| (kept, self.picture(&job, kept))) {
+            Some((_, Ok(drawn))) => drawn,
+            Some((kept, Err(error))) => {
                 crate::log(&format!("widget {} could not be drawn: {}", job.id, error.message));
-                None
+                (None, kept.tick)
             }
-        });
-        Outcome { token: job.token, id: job.id, kept, ran, picture }
+            None => (None, None),
+        };
+        Outcome { token: job.token, id: job.id, kept, ran, picture, tick }
     }
 
     /// Runs the tapped action, then the script.
     fn run(&self, job: &Job) -> Kept {
         let Some(installed) = self.library.find_by_installation(&job.package) else {
             return Kept {
+                serial: next_serial(),
                 family: job.family.clone(),
                 dark: job.dark,
                 tree: WidgetRuntime::notice_tree("Widget not found", "Its package was removed. Remove this widget from the desktop."),
@@ -192,6 +225,7 @@ impl Worker {
             None => (self.runtime.error_tree(result.execution.error.as_ref()), false),
         };
         Kept {
+            serial: next_serial(),
             family: job.family.clone(),
             dark: job.dark,
             tick: if own_tree { schedule::tick_of(&tree) } else { None },
@@ -251,11 +285,14 @@ impl Worker {
         crate::log(&format!("action of {}: {}", installed.installation, result.execution.error.map_or("ok".to_owned(), |error| error.kind)));
     }
 
-    /// One frame of `kept`: the package's tree, or a card that says why it could not be drawn.
-    fn draw(&self, kept: &Kept, scale: f32, gif_time: Option<u64>) -> Result<RenderOutput, RenderError> {
+    /// One frame of `kept`: the package's tree, or a card that says why it could not be drawn. `gif_time` is the
+    /// moment of the cycle; the parts that move by themselves are where they are that long after `wall`. The tree
+    /// is laid out for the first frame and only painted for the others, when no text of it changes in between.
+    fn draw(&self, kept: &Kept, scale: f32, gif_time: Option<u64>, wall: i64) -> Result<RenderOutput, RenderError> {
         let (width, height) = sw_render::family_size(&kept.family).unwrap_or((329.0, 170.0));
-        let request = |tree: String| RenderRequest { family: kept.family.clone(), dark_mode: kept.dark, gif_time_milliseconds: gif_time, ..RenderRequest::new(tree, width, height, scale) };
-        let drawn = self.renderer.render(RenderRequest { files: kept.files.clone(), remote_images: kept.remote_images.clone(), ..request(kept.tree.clone()) });
+        let moment = wall.saturating_add(gif_time.unwrap_or(0).min(i64::MAX as u64) as i64);
+        let request = |tree: String| RenderRequest { family: kept.family.clone(), dark_mode: kept.dark, gif_time_milliseconds: gif_time, motion_milliseconds: Some(moment), ..RenderRequest::new(tree, width, height, scale) };
+        let drawn = self.renderer.render(RenderRequest { files: kept.files.clone(), remote_images: kept.remote_images.clone(), layout_key: kept.layout_key(wall), ..request(kept.tree.clone()) });
         let mut output = match drawn {
             Ok(output) => output,
             Err(error) if kept.own_tree => {
@@ -269,8 +306,11 @@ impl Worker {
     }
 
     /// Draws every frame and writes the PNG files, unless the result is the picture already on screen.
-    fn picture(&self, job: &Job, kept: &Kept) -> Result<Option<Picture>, RenderError> {
-        let first = self.draw(kept, job.scale, None)?;
+    /// Also says how often the tree must be drawn again without running the script.
+    fn picture(&self, job: &Job, kept: &Kept) -> Result<(Option<Picture>, Option<Tick>), RenderError> {
+        // The moment the first frame shows: the hands of a clock point at this time.
+        let wall = self.clock.wall();
+        let first = self.draw(kept, job.scale, None, wall)?;
         let (width, height) = sw_render::family_size(&kept.family).unwrap_or((329.0, 170.0));
         let mut digest = Sha256::new();
         digest.update(first.pixel_width.to_le_bytes());
@@ -293,21 +333,32 @@ impl Worker {
                 delays.push(slot.delays.clone());
             }
         }
-        let mut moments = schedule::gif_frames(&delays, MAXIMUM_GIF_FRAMES);
-        if moments.len() as u64 * u64::from(first.pixel_width) * u64::from(first.pixel_height) > MAXIMUM_CYCLE_PIXELS {
-            moments.clear();
-        }
+        // What moves by itself: the motions that repeat, and the clock hands, which follow the time of day.
+        let mut periods: Vec<u64> = first.motion_slots.iter().filter_map(|slot| slot.motion.period_milliseconds()).collect();
+        periods.sort_unstable();
+        periods.dedup();
+        let hands = first
+            .motion_slots
+            .iter()
+            .filter_map(|slot| match &slot.motion {
+                Motion::Hand { hand: Hand::Second, .. } => Some(Tick::Second),
+                Motion::Hand { .. } => Some(Tick::Minute),
+                _ => None,
+            })
+            .min();
+        let affordable = (MAXIMUM_CYCLE_PIXELS / (u64::from(first.pixel_width) * u64::from(first.pixel_height)).max(1)).min(MAXIMUM_GIF_FRAMES as u64) as usize;
+        let schedule::MotionPlan { frames: moments, tick } = schedule::motion_plan(&delays, &periods, hands, kept.tick, MAXIMUM_GIF_FRAMES, affordable);
 
         let fail = |error: std::io::Error| RenderError { message: format!("the picture could not be written: {error}") };
         if moments.len() < 2 {
             digest.update(&first.pixels);
             let hash: [u8; 32] = digest.finalize().into();
             if job.current == Some(hash) {
-                return Ok(None);
+                return Ok((None, tick));
             }
             let file = self.frames.temporary(job.token, 0);
             self.frames.write(&file, &first.encode_png()?).map_err(fail)?;
-            return Ok(Some(Picture { hash, width: width as u32, height: height as u32, scale: first.scale, frames: vec![(file, 0)], regions: first.hit_regions }));
+            return Ok((Some(Picture { hash, width: width as u32, height: height as u32, scale: first.scale, frames: vec![(file, 0)], regions: first.hit_regions }), tick));
         }
 
         // Each frame is hashed, encoded and written before the next one is drawn, so only one bitmap is held at a time.
@@ -315,7 +366,7 @@ impl Worker {
         let mut files: Vec<(PathBuf, u32)> = Vec::new();
         let written = (|| {
             for (index, (start, duration)) in moments.iter().enumerate() {
-                let output = if index == 0 { None } else { Some(self.draw(kept, job.scale, Some(*start))?) };
+                let output = if index == 0 { None } else { Some(self.draw(kept, job.scale, Some(*start), wall)?) };
                 let output = output.as_ref().unwrap_or(&first);
                 digest.update(&output.pixels);
                 digest.update(duration.to_le_bytes());
@@ -333,9 +384,9 @@ impl Worker {
         let hash: [u8; 32] = digest.finalize().into();
         if job.current == Some(hash) {
             discard(&files);
-            return Ok(None);
+            return Ok((None, tick));
         }
-        Ok(Some(Picture { hash, width: width as u32, height: height as u32, scale: first.scale, frames: files, regions: first.hit_regions }))
+        Ok((Some(Picture { hash, width: width as u32, height: height as u32, scale: first.scale, frames: files, regions: first.hit_regions }), tick))
     }
 }
 

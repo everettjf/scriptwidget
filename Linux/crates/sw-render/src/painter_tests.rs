@@ -15,7 +15,8 @@ use crate::fonts::FontRegistry;
 use crate::images::PackageImageSource;
 use crate::painter::DomPainter;
 use crate::text::{TextEngine, TextStyle};
-use crate::{GifSlot, HitRegion};
+use crate::motion::{Hand, Motion};
+use crate::{GifSlot, HitRegion, MotionSlot};
 
 const INTER: &str = "\"ScriptWidget Inter\", Arial, sans-serif";
 
@@ -24,6 +25,7 @@ struct Painted {
     width: usize,
     hit_regions: Vec<HitRegion>,
     gif_slots: Vec<GifSlot>,
+    motion_slots: Vec<MotionSlot>,
 }
 
 impl Painted {
@@ -61,14 +63,20 @@ fn no_images() -> PackageImageSource {
 
 /// Paints a recorded element tree (JSON as render/entry.mjs writes it).
 fn paint_with(json: &str, width: i32, height: i32, scale: f32, text: &mut TextEngine, images: &mut PackageImageSource) -> Painted {
+    paint_moment(json, width, height, scale, text, images, None)
+}
+
+/// Paints with the elements that have an `animation` where they are at `motion_time`.
+fn paint_moment(json: &str, width: i32, height: i32, scale: f32, text: &mut TextEngine, images: &mut PackageImageSource, motion_time: Option<i64>) -> Painted {
     let root = DomNode::from_json(&parse_object(json).expect("element JSON")).expect("element tree");
     let mut surface = surfaces::raster(&ImageInfo::new((width, height), ColorType::RGBA8888, AlphaType::Premul, None), None, None).expect("surface");
     surface.canvas().clear(Color::TRANSPARENT);
     let mut painter = DomPainter::new(text, images);
+    painter.motion_time = motion_time;
     painter.paint(surface.canvas(), &root, scale);
-    let (hit_regions, gif_slots) = (std::mem::take(&mut painter.hit_regions), std::mem::take(&mut painter.gif_slots));
+    let (hit_regions, gif_slots, motion_slots) = (std::mem::take(&mut painter.hit_regions), std::mem::take(&mut painter.gif_slots), std::mem::take(&mut painter.motion_slots));
     let pixels = surface.peek_pixels().and_then(|pixmap| pixmap.bytes().map(<[u8]>::to_vec)).expect("pixels");
-    Painted { pixels, width: width as usize, hit_regions, gif_slots }
+    Painted { pixels, width: width as usize, hit_regions, gif_slots, motion_slots }
 }
 
 fn paint(json: &str, width: i32, height: i32, scale: f32) -> Painted {
@@ -662,6 +670,101 @@ fn a_gif_shows_the_frame_of_the_requested_moment_and_reports_its_timing() {
     let still = paint_with(&root(100, 60, &image_element("res:still.gif", "fill")), 100, 60, 1.0, &mut text, &mut images);
     assert_eq!(still.pixel(50, 30), GREEN);
     assert!(still.gif_slots.is_empty());
+}
+
+// MARK: - Motion
+
+/// 2026-01-01T12:00:00Z.
+const NOON: i64 = 1_767_268_800_000;
+
+fn at(json: &str, width: i32, height: i32, motion_time: Option<i64>) -> Painted {
+    paint_moment(json, width, height, 1.0, &mut engine(), &mut no_images(), motion_time)
+}
+
+/// A blue hand as the layout records it: a 4 x 40 bar from the middle of a 100 x 100 face up to twelve,
+/// turning about its lower end, drawn by the layout at half past (`rotate(180deg)`).
+fn hand(kind: &str, zone: &str) -> String {
+    let record = quote(&format!("{{\"kind\":\"clock\",\"type\":\"{kind}\",\"timezone\":\"{zone}\",\"anchor\":\"bottom\"}}"));
+    format!("{{\"t\":\"div\",\"s\":{{\"position\":\"absolute\",\"left\":\"48px\",\"top\":\"10px\",\"width\":\"4px\",\"height\":\"40px\",\"backgroundColor\":\"#0000ff\",\"transform\":\"rotate(180deg)\",\"transformOrigin\":\"50% 100%\"}},\"d\":{{\"swAnimation\":{record}}}}}")
+}
+
+#[test]
+fn a_clock_hand_is_painted_at_the_time_that_is_asked_for() {
+    let face = root(100, 100, &hand("clockHour", "UTC"));
+    // No moment: the hand stays where the layout turned it, pointing down.
+    let laid_out = at(&face, 100, 100, None);
+    assert_eq!(laid_out.pixel(50, 70), BLUE);
+    assert_eq!(laid_out.pixel(50, 30).3, 0);
+    // Noon in UTC: straight up. Three hours later: to the right. Six: down. Nine: to the left.
+    let hours = |hours: i64| at(&face, 100, 100, Some(NOON + hours * 3_600_000));
+    let noon = hours(0);
+    assert_eq!((noon.pixel(50, 30), noon.pixel(70, 50).3, noon.pixel(50, 70).3), (BLUE, 0, 0));
+    assert_eq!((hours(3).pixel(70, 50), hours(3).pixel(50, 30).3), (BLUE, 0));
+    assert_eq!((hours(6).pixel(50, 70), hours(6).pixel(70, 50).3), (BLUE, 0));
+    assert_eq!((hours(9).pixel(30, 50), hours(9).pixel(50, 70).3), (BLUE, 0));
+    assert!(hours(6).pixels == laid_out.pixels, "half past is where the layout had it");
+    // The same moment is the same picture; twelve hours later the hand is back.
+    assert!(noon.pixels == hours(0).pixels);
+    assert!(noon.pixels == hours(12).pixels);
+    assert!(noon.pixels != hours(1).pixels);
+    // The same moment in Tokyo is nine in the evening: the hand points left.
+    let tokyo = at(&root(100, 100, &hand("clockHour", "Asia/Tokyo")), 100, 100, Some(NOON));
+    assert_eq!((tokyo.pixel(30, 50), tokyo.pixel(50, 30).3), (BLUE, 0));
+    // The minute and the second hand at a quarter past and at fifteen seconds.
+    let minute = at(&root(100, 100, &hand("clockMinute", "UTC")), 100, 100, Some(NOON + 15 * 60_000));
+    assert_eq!((minute.pixel(70, 50), minute.pixel(50, 30).3), (BLUE, 0));
+    let second = at(&root(100, 100, &hand("clockSecond", "UTC")), 100, 100, Some(NOON + 15_000));
+    assert_eq!((second.pixel(70, 50), second.pixel(50, 30).3), (BLUE, 0));
+    // What moves is reported, with the place it has in this picture.
+    assert_eq!(noon.motion_slots.len(), 1);
+    assert_eq!(noon.motion_slots[0].motion, Motion::Hand { hand: Hand::Hour, zone: "UTC".into() });
+    assert_eq!(noon.motion_slots[0].bounds, crate::Bounds { left: 48.0, top: 10.0, right: 52.0, bottom: 50.0 });
+    assert_eq!(laid_out.motion_slots.len(), 1, "also when no moment was asked for");
+}
+
+#[test]
+fn a_swing_and_a_custom_clock_move_with_the_moment_and_a_still_tree_does_not() {
+    let swing = |axis: &str| {
+        let record = quote(&format!("{{\"kind\":\"swing\",\"axis\":\"{axis}\",\"distance\":20,\"duration\":1}}"));
+        root(100, 100, &format!("{{\"t\":\"div\",\"s\":{{\"position\":\"absolute\",\"left\":\"40px\",\"top\":\"40px\",\"width\":\"20px\",\"height\":\"20px\",\"backgroundColor\":\"#ff0000\",\"transform\":\"translateX(0px)\"}},\"d\":{{\"swAnimation\":{record}}}}}"))
+    };
+    let bounds = |json: &str, time: Option<i64>| at(json, 100, 100, time).ink_bounds();
+    let sideways = swing("x");
+    // At rest, a quarter of the way (far right), half way (back), three quarters (far left), and a whole cycle.
+    assert_eq!(bounds(&sideways, None), (40, 40, 59, 59));
+    assert_eq!(bounds(&sideways, Some(NOON)), (40, 40, 59, 59));
+    assert_eq!(bounds(&sideways, Some(NOON + 500)), (60, 40, 79, 59));
+    assert_eq!(bounds(&sideways, Some(NOON + 1000)), (40, 40, 59, 59));
+    assert_eq!(bounds(&sideways, Some(NOON + 1500)), (20, 40, 39, 59));
+    assert_eq!(bounds(&sideways, Some(NOON + 2500)), (60, 40, 79, 59));
+    assert_eq!(bounds(&swing("y"), Some(NOON + 500)), (40, 60, 59, 79));
+    assert!(at(&sideways, 100, 100, Some(NOON + 250)).pixels != at(&sideways, 100, 100, Some(NOON + 300)).pixels, "two moments, two pictures");
+    assert!(at(&sideways, 100, 100, Some(NOON + 250)).pixels == at(&sideways, 100, 100, Some(NOON + 2250)).pixels, "one cycle later, the same picture");
+    let slots = at(&sideways, 100, 100, Some(NOON + 500)).motion_slots;
+    assert_eq!(slots.len(), 1);
+    assert_eq!(slots[0].bounds, crate::Bounds { left: 60.0, top: 40.0, right: 80.0, bottom: 60.0 });
+
+    // Half a turn every ten seconds about the centre: a 40 x 4 bar lies flat, then stands five seconds later.
+    let record = quote("{\"kind\":\"clock\",\"type\":\"clock\",\"timezone\":\"UTC\",\"anchor\":\"center\",\"interval\":10}");
+    let spin = root(100, 100, &format!("{{\"t\":\"div\",\"s\":{{\"position\":\"absolute\",\"left\":\"30px\",\"top\":\"48px\",\"width\":\"40px\",\"height\":\"4px\",\"backgroundColor\":\"#00ff00\",\"transform\":\"rotate(0deg)\",\"transformOrigin\":\"50% 50%\"}},\"d\":{{\"swAnimation\":{record}}}}}"));
+    // NOON is a whole number of twenty-second turns after the start of 2001.
+    let flat = at(&spin, 100, 100, Some(NOON));
+    assert_eq!((flat.pixel(35, 50), flat.pixel(50, 35).3), (GREEN, 0));
+    let upright = at(&spin, 100, 100, Some(NOON + 5000));
+    assert_eq!((upright.pixel(50, 35), upright.pixel(35, 50).3), (GREEN, 0));
+    assert!(at(&spin, 100, 100, Some(NOON + 1000)).pixels != flat.pixels);
+
+    // A tree with nothing that moves is the same picture at every moment, and reports nothing.
+    let still = root(100, 100, &format!("{},{}", boxed("\"left\":\"10px\",\"top\":\"10px\",\"width\":\"30px\",\"height\":\"30px\",\"backgroundColor\":\"#ff0000\",\"transform\":\"rotate(30deg)\"", ""), text_box("Still", 10.0, 60.0, 80.0, 22.0, "")));
+    let first = at(&still, 100, 100, Some(NOON));
+    assert!(first.inked() > 500);
+    assert!(first.pixels == at(&still, 100, 100, Some(NOON + 12_345)).pixels);
+    assert!(first.pixels == at(&still, 100, 100, None).pixels);
+    assert!(first.motion_slots.is_empty());
+    // A record that is not one of the renderer's leaves the element where the layout put it.
+    let unknown = root(100, 100, &boxed("\"left\":\"10px\",\"top\":\"10px\",\"width\":\"30px\",\"height\":\"30px\",\"backgroundColor\":\"#ff0000\",\"transform\":\"translateX(5px)\"", ",\"d\":{\"swAnimation\":\"{not json\"}"));
+    assert_eq!(bounds(&unknown, Some(NOON + 500)), (15, 10, 44, 39));
+    assert!(at(&unknown, 100, 100, Some(NOON)).motion_slots.is_empty());
 }
 
 fn base64(data: &[u8]) -> String {

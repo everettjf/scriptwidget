@@ -140,7 +140,7 @@ impl Service {
         let runtime = WidgetRuntime::new(scripts.clone(), &options.data)?;
         let renderer = WidgetRenderer::new(scripts)?;
         let templates = options.resources.templates.clone();
-        let worker = Worker::new(runtime, renderer, Library::new(&options.data, templates.clone()), frames.clone());
+        let worker = Worker::new(runtime, renderer, Library::new(&options.data, templates.clone()), frames.clone(), options.clock.clone());
 
         let (sender, messages) = channel::<Message>();
         let (jobs, job_queue) = channel::<WorkerMessage>();
@@ -259,7 +259,7 @@ struct Widget {
     kept: Option<Arc<Kept>>,
     /// When the script runs again, on the steady clock.
     next_run: Option<u64>,
-    /// When the same tree is drawn again because a date in it changed.
+    /// When the same tree is drawn again because a date in it changed or a part of it moved.
     next_redraw: Option<u64>,
     /// How often the script has run; for the list and for tests.
     runs: u64,
@@ -528,7 +528,8 @@ impl Host {
                 widget.runs += 1;
                 widget.next_run = Some(now + schedule::run_delay(refresh_minutes, kept.next_transition, wall));
             }
-            widget.next_redraw = kept.tick.map(|tick| now + schedule::tick_delay(tick, wall));
+            // The dates of the tree, its clock hands and the motions that no cycle of pictures shows.
+            widget.next_redraw = outcome.tick.map(|tick| now + schedule::tick_delay(tick, wall));
             widget.kept = Some(kept);
         }
         let pending = widget.pending.take();

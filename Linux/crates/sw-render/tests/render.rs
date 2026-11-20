@@ -320,6 +320,123 @@ fn an_animated_clock_shows_the_time_of_the_request() {
     assert!(noon.pixels != at(FIXED_NOW + 15 * 60 * 1000).pixels);
 }
 
+/// The clock template: three hands, each painted at the moment that is asked for.
+#[test]
+fn the_hands_of_the_animation_clock_are_posed_at_a_moment() {
+    use sw_render::motion::{Hand, Motion};
+    let tree = corpus_tree("template/Animation Clock");
+    let request = |motion: Option<i64>| {
+        let mut request = RenderRequest::for_family(tree.clone(), "small", 2.0).expect("family");
+        // The text of the time is that of one fixed moment; only the hands follow `motion`.
+        request.now_milliseconds = Some(FIXED_NOW);
+        request.motion_milliseconds = motion;
+        request
+    };
+    let at = |motion: Option<i64>| renderer().render(request(motion)).expect("render");
+    let noon = at(Some(FIXED_NOW));
+    let hands: Vec<Hand> = noon.motion_slots.iter().filter_map(|slot| if let Motion::Hand { hand, .. } = &slot.motion { Some(*hand) } else { None }).collect();
+    assert_eq!(hands, [Hand::Second, Hand::Minute, Hand::Hour]);
+    assert!(noon.motion_slots.iter().all(|slot| slot.motion.zone() == Some("current")));
+    assert!(!noon.layout_reused);
+    // The pose computed here is the one the shared renderer computes for the same moment.
+    assert!(noon.pixels == at(None).pixels, "the moment of the layout");
+    assert!(noon.pixels == at(Some(FIXED_NOW)).pixels, "the same moment draws the same clock");
+    // One second moves the second hand; a quarter of an hour moves the minute hand too.
+    let second = at(Some(FIXED_NOW + 1000));
+    let quarter = at(Some(FIXED_NOW + 15 * 60_000));
+    assert!(noon.pixels != second.pixels && noon.pixels != quarter.pixels && second.pixels != quarter.pixels);
+    // Twelve hours later every hand is where it was.
+    assert!(noon.pixels == at(Some(FIXED_NOW + 12 * 3_600_000)).pixels);
+
+    // With a layout key the layout runs once; every later picture is painted from it, and is the same picture.
+    let keyed = |motion: Option<i64>, key: u64| {
+        let mut request = request(motion);
+        request.layout_key = Some(key);
+        renderer_of_its_own().render(request).expect("render")
+    };
+    let first = keyed(Some(FIXED_NOW), 7);
+    assert!(!first.layout_reused && first.pixels == noon.pixels);
+    let again = keyed(Some(FIXED_NOW + 1000), 7);
+    assert!(again.layout_reused, "painted from the kept layout");
+    assert!(again.pixels == second.pixels);
+    assert_eq!(again.motion_slots, second.motion_slots);
+    // At another scale too: the layout is in points.
+    let mut small = request(Some(FIXED_NOW + 1000));
+    small.layout_key = Some(7);
+    small.scale = 1.0;
+    let small = renderer_of_its_own().render(small).expect("render");
+    assert!(small.layout_reused && small.pixel_width == 170);
+    // Without a moment, a keyed render shows the time of the request, never the hands of an older layout.
+    assert!(keyed(None, 7).pixels == noon.pixels);
+    // Another key, another tree or another theme is laid out again.
+    assert!(!keyed(Some(FIXED_NOW), 8).layout_reused);
+    assert!(keyed(Some(FIXED_NOW), 8).layout_reused);
+    let mut dark = request(Some(FIXED_NOW));
+    dark.layout_key = Some(8);
+    dark.dark_mode = true;
+    assert!(!renderer_of_its_own().render(dark).expect("render").layout_reused);
+    let mut other = RenderRequest::new(RED_CARD, 170.0, 170.0, 2.0);
+    other.layout_key = Some(8);
+    assert!(!renderer_of_its_own().render(other.clone()).expect("render").layout_reused);
+    assert!(renderer_of_its_own().render(other.clone()).expect("render").layout_reused);
+    // Releasing the layout context forgets the kept layout.
+    renderer_of_its_own().release();
+    assert!(!renderer_of_its_own().render(other).expect("render").layout_reused);
+}
+
+/// A renderer no other test draws with: what it keeps between two renders is this test's alone.
+fn renderer_of_its_own() -> &'static WidgetRenderer {
+    static RENDERER: OnceLock<WidgetRenderer> = OnceLock::new();
+    RENDERER.get_or_init(|| WidgetRenderer::with_locale(scripts(), "en-US").expect("render thread"))
+}
+
+/// The aquarium template: three swings of 30, 40 and 60 seconds there and back.
+#[test]
+fn the_creatures_of_the_animation_aquarium_swing() {
+    use sw_render::motion::Motion;
+    let tree = corpus_tree("template/Animation Aquarium");
+    let at = |motion: Option<i64>| {
+        let mut request = RenderRequest::for_family(tree.clone(), "medium", 2.0).expect("family");
+        request.now_milliseconds = Some(FIXED_NOW);
+        request.motion_milliseconds = motion;
+        renderer().render(request).expect("render")
+    };
+    let rest = at(None);
+    assert!(!rest.motion_slots.is_empty());
+    let mut periods: Vec<u64> = rest.motion_slots.iter().map(|slot| slot.motion.period_milliseconds().expect("a swing repeats")).collect();
+    assert!(rest.motion_slots.iter().all(|slot| matches!(slot.motion, Motion::Swing { .. })));
+    periods.sort_unstable();
+    periods.dedup();
+    assert_eq!(periods, [30_000, 40_000, 60_000]);
+    // FIXED_NOW is a whole number of every cycle after 1970: every creature is at rest.
+    assert!(rest.pixels == at(Some(FIXED_NOW)).pixels);
+    let later = at(Some(FIXED_NOW + 5000));
+    assert!(rest.pixels != later.pixels, "five seconds on, they have moved");
+    assert!(later.pixels != at(Some(FIXED_NOW + 6000)).pixels);
+    assert!(later.pixels == at(Some(FIXED_NOW + 5000)).pixels, "a moment has one picture");
+    // After 120 seconds, the first moment all three cycles end together, the picture repeats.
+    assert!(later.pixels == at(Some(FIXED_NOW + 125_000)).pixels);
+    // A creature moves by a few points and stays inside the widget.
+    for (still, moved) in rest.motion_slots.iter().zip(&later.motion_slots) {
+        let (dx, dy) = (moved.bounds.left - still.bounds.left, moved.bounds.top - still.bounds.top);
+        assert!(dx.abs() <= 10.0 && dy.abs() <= 6.0 && (dx != 0.0) != (dy != 0.0), "{dx} {dy}");
+        assert!(moved.bounds.left >= 0.0 && moved.bounds.right <= 329.0 && moved.bounds.top >= 0.0 && moved.bounds.bottom <= 170.0, "{:?}", moved.bounds);
+    }
+}
+
+/// A widget with no `animation` is the same picture at every moment.
+#[test]
+fn a_widget_that_does_not_move_ignores_the_moment() {
+    let at = |motion: Option<i64>| {
+        let mut request = RenderRequest::new(RED_CARD, 200.0, 100.0, 2.0);
+        request.motion_milliseconds = motion;
+        renderer().render(request).expect("render")
+    };
+    let still = at(None);
+    assert!(still.motion_slots.is_empty());
+    assert!(still.pixels == at(Some(FIXED_NOW)).pixels && still.pixels == at(Some(FIXED_NOW + 777)).pixels);
+}
+
 // MARK: - GIFs
 
 /// A GIF of `frames` solid frames (1 red, 2 green, 3 blue) with delays in hundredths of a second.

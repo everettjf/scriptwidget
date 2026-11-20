@@ -4,6 +4,8 @@
 //! from `Windows/src/ScriptWidget.Core/Render/DomPainter.cs`, with the
 //! drawing calls of the Android original, which already painted on Skia.
 
+use std::collections::HashMap;
+
 use skia_safe::canvas::SaveLayerRec;
 use skia_safe::paint::Style;
 use skia_safe::{BlurStyle, Canvas, Color, Color4f, MaskFilter, Matrix, Paint, Path, PathEffect, RRect, Rect, image_filters};
@@ -14,9 +16,10 @@ use crate::css::{self, BoxShadow, Shadow};
 use crate::dom::DomNode;
 use crate::gif::GifTimeline;
 use crate::images::{PackageImageSource, sampling};
+use crate::motion::{LocalTime, Motion, Pose};
 use crate::svg::SvgPainter;
 use crate::text::{TextEngine, TextStyle};
-use crate::{Bounds, GifSlot, HitRegion};
+use crate::{Bounds, GifSlot, HitRegion, MotionSlot};
 
 #[derive(Clone)]
 struct TextContext {
@@ -60,17 +63,27 @@ pub struct DomPainter<'a> {
     images: &'a mut PackageImageSource,
     pub hit_regions: Vec<HitRegion>,
     pub gif_slots: Vec<GifSlot>,
+    /// The elements with an `animation`, in the order they were painted.
+    pub motion_slots: Vec<MotionSlot>,
+    /// The moment whose poses are painted, in milliseconds since 1970.
+    /// `None` leaves every element where the layout put it: a clock hand at
+    /// the time of the layout, a swing at rest.
+    pub motion_time: Option<i64>,
+    /// What the clock of each zone shows at `motion_time`.
+    local_times: HashMap<String, LocalTime>,
 }
 
 impl<'a> DomPainter<'a> {
     pub fn new(text: &'a mut TextEngine, images: &'a mut PackageImageSource) -> Self {
-        Self { text, images, hit_regions: Vec::new(), gif_slots: Vec::new() }
+        Self { text, images, hit_regions: Vec::new(), gif_slots: Vec::new(), motion_slots: Vec::new(), motion_time: None, local_times: HashMap::new() }
     }
 
     /// Paints `root` (the widget element). `scale` converts points to pixels.
     pub fn paint(&mut self, canvas: &Canvas, root: &DomNode, scale: f32) {
         self.hit_regions.clear();
         self.gif_slots.clear();
+        self.motion_slots.clear();
+        self.local_times.clear();
         canvas.save();
         canvas.scale((scale, scale));
         let width = css::pixels(root.style("width")).unwrap_or(0.0);
@@ -105,10 +118,15 @@ impl<'a> DomPainter<'a> {
         local.pre_translate((x, y));
         canvas.save();
         canvas.translate((x, y));
-        if let Some(matrix) = transform(node, width, height) {
+        let motion = node.data("swAnimation").and_then(Motion::parse);
+        let pose = motion.as_ref().and_then(|motion| self.pose(motion));
+        if let Some(matrix) = transform(node, width, height, pose) {
             // Skia draws through a matrix with perspective directly; no offscreen pass is needed.
             canvas.concat(&matrix);
             local.pre_concat(&matrix);
+        }
+        if let Some(motion) = motion {
+            self.motion_slots.push(MotionSlot { bounds: bounds_of(local.map_rect(bounds).0), motion });
         }
 
         let shadow = css::drop_shadow(node.style("filter"));
@@ -131,6 +149,16 @@ impl<'a> DomPainter<'a> {
             self.content(canvas, node, bounds, inherited, &local);
         }
         canvas.restore();
+    }
+
+    /// Where `motion` is at the moment being painted; `None` when no moment was asked for.
+    fn pose(&mut self, motion: &Motion) -> Option<Pose> {
+        let time = self.motion_time?;
+        let local = match motion.zone() {
+            Some(zone) => *self.local_times.entry(zone.to_owned()).or_insert_with(|| LocalTime::in_zone(time, zone)),
+            None => LocalTime::utc(time),
+        };
+        Some(motion.pose_at(time, &local))
     }
 
     fn content(&mut self, canvas: &Canvas, node: &DomNode, bounds: Rect, inherited: &TextContext, to_widget: &Matrix) {
@@ -342,11 +370,23 @@ fn outline(node: &DomNode, bounds: Rect, radius: f32) -> Path {
 }
 
 /// CSS transform list with its transform-origin, as a matrix in element coordinates.
-fn transform(node: &DomNode, width: f32, height: f32) -> Option<Matrix> {
-    let value = node.style("transform")?;
+/// The transform of an element with an `animation` is that animation's alone
+/// (the layout gives it a layer of its own), so a `pose` takes its place.
+fn transform(node: &DomNode, width: f32, height: f32, pose: Option<Pose>) -> Option<Matrix> {
     let mut origin = node.style("transformOrigin").unwrap_or("").split(' ');
     let origin_x = css::length(origin.next(), width).unwrap_or(width / 2.0);
     let origin_y = css::length(origin.next(), height).unwrap_or(height / 2.0);
+    match pose {
+        Some(Pose::Turn(degrees)) => {
+            let mut matrix = Matrix::rotate_deg(degrees as f32);
+            matrix.pre_translate((-origin_x, -origin_y));
+            matrix.post_translate((origin_x, origin_y));
+            return Some(matrix);
+        }
+        Some(Pose::Shift(x, y)) => return Some(Matrix::translate((x as f32, y as f32))),
+        None => {}
+    }
+    let value = node.style("transform")?;
     let degrees = |text: &str| css::number(Some(text.strip_suffix("deg").unwrap_or(text)));
     let mut matrix = Matrix::new_identity();
     let mut perspective = 0f32;
@@ -417,22 +457,22 @@ mod tests {
     #[test]
     fn transforms_turn_about_their_origin() {
         // A quarter turn about the centre of a 100 x 40 box.
-        let quarter = transform(&styled(&[("transform", "rotate(90deg)")]), 100.0, 40.0).expect("matrix");
+        let quarter = transform(&styled(&[("transform", "rotate(90deg)")]), 100.0, 40.0, None).expect("matrix");
         assert!(close(quarter.map_point((50.0, 20.0)), 50.0, 20.0));
         assert!(close(quarter.map_point((100.0, 20.0)), 50.0, 70.0), "{:?}", quarter.map_point((100.0, 20.0)));
         // About the top-left corner, then moved: the list applies right to left.
-        let moved = transform(&styled(&[("transform", "translate(10px, 5px) scale(2)"), ("transformOrigin", "0px 0px")]), 100.0, 40.0).expect("matrix");
+        let moved = transform(&styled(&[("transform", "translate(10px, 5px) scale(2)"), ("transformOrigin", "0px 0px")]), 100.0, 40.0, None).expect("matrix");
         assert!(close(moved.map_point((3.0, 4.0)), 16.0, 13.0));
-        let percent = transform(&styled(&[("transform", "scale(2, 3)"), ("transformOrigin", "100% 50%")]), 100.0, 40.0).expect("matrix");
+        let percent = transform(&styled(&[("transform", "scale(2, 3)"), ("transformOrigin", "100% 50%")]), 100.0, 40.0, None).expect("matrix");
         assert!(close(percent.map_point((100.0, 20.0)), 100.0, 20.0));
         assert!(close(percent.map_point((90.0, 30.0)), 80.0, 50.0));
-        assert!(transform(&styled(&[]), 1.0, 1.0).is_none());
+        assert!(transform(&styled(&[]), 1.0, 1.0, None).is_none());
     }
 
     #[test]
     fn a_turn_in_depth_narrows_the_far_side() {
         let node = styled(&[("transform", "perspective(200px) rotate3d(0, 1, 0, 60deg)")]);
-        let matrix = transform(&node, 100.0, 100.0).expect("matrix");
+        let matrix = transform(&node, 100.0, 100.0, None).expect("matrix");
         assert!(matrix.has_perspective());
         // The axis through the centre stays where it is.
         assert!(close(matrix.map_point((50.0, 50.0)), 50.0, 50.0));
@@ -443,7 +483,7 @@ mod tests {
         let (left_height, right_height) = (near_bottom.y - near.y, far_bottom.y - far.y);
         assert!((left_height - right_height).abs() > 10.0, "{left_height} {right_height}");
         // Without a perspective the same turn only squeezes the box.
-        let flat = transform(&styled(&[("transform", "rotate3d(0, 1, 0, 60deg)")]), 100.0, 100.0).expect("matrix");
+        let flat = transform(&styled(&[("transform", "rotate3d(0, 1, 0, 60deg)")]), 100.0, 100.0, None).expect("matrix");
         assert!(!flat.has_perspective());
         assert!(close(flat.map_point((100.0, 0.0)), 75.0, 0.0), "{:?}", flat.map_point((100.0, 0.0)));
     }

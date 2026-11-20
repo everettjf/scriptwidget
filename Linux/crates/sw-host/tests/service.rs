@@ -684,6 +684,133 @@ fn a_gif_becomes_frames_drawn_by_the_service() {
     assert!(event.get("frames").is_none());
 }
 
+/// Clock hands follow the clock of the service: a second hand is drawn again
+/// every second, the other hands every minute, and the picture of a moment
+/// depends on nothing but that moment.
+#[test]
+fn clock_hands_are_drawn_again_as_the_time_passes() {
+    let session = Session::new();
+    let hand = |kind: &str| format!(r##"$render(<zstack frame="max" background="#111827"><vstack animation="{kind}"><rect frame="4,60" color="#fb7185"/><rect frame="4,60" color="clear"/></vstack></zstack>);"##);
+    session.install("Seconds", &hand("clockSecond"), "", "");
+    session.install("Minutes", &hand("clockMinute"), "", "");
+    session.install("Plain", PLAIN, "", "");
+    let service = session.start_manual();
+    let controller = service.controller();
+    let clock = session.manual.clone();
+    let seconds = session.add("Seconds", Some("small"));
+    let minutes = session.add("Minutes", Some("small"));
+    let plain = session.add("Plain", Some("small"));
+    let pass = |milliseconds: u64| {
+        clock.advance(milliseconds);
+        controller.poke();
+        std::thread::sleep(Duration::from_millis(150));
+    };
+    let version = |id: &str| session.until(id, "the job to end", |widget| widget["busy"] == false)["version"].as_u64().unwrap();
+    assert_eq!((version(&seconds), version(&minutes), version(&plain)), (1, 1, 1));
+    assert_eq!(session.widget(&seconds)["frames"], 1, "one picture at a time, not a cycle");
+
+    // Time that does not pass on the clock of the service moves nothing.
+    pass(0);
+    assert_eq!((version(&seconds), version(&minutes)), (1, 1));
+    // A second later the second hand has moved; the minute hand waits for its minute.
+    pass(1100);
+    session.until(&seconds, "the next second", |widget| widget["version"] == 2);
+    assert_eq!((version(&minutes), version(&plain)), (1, 1));
+    // A whole minute later the second hand is where it was: the picture of that moment is the one on
+    // screen, so nothing is published. The minute hand has moved.
+    pass(60_000);
+    session.until(&minutes, "the next minute", |widget| widget["version"] == 2);
+    assert_eq!(version(&seconds), 2, "the same pose is the same picture");
+    // The second hand goes on.
+    pass(1100);
+    session.until(&seconds, "the second after", |widget| widget["version"] == 3);
+    pass(1100);
+    session.until(&seconds, "one more second", |widget| widget["version"] == 4);
+    assert_eq!(version(&minutes), 2);
+
+    // While the session is locked nothing is drawn; unlocking draws everything once.
+    controller.session(SessionEvent::Locked(true));
+    pass(1100);
+    pass(1100);
+    assert_eq!(version(&seconds), 4, "paused while locked");
+    controller.session(SessionEvent::Locked(false));
+    session.until(&seconds, "the unlock", |widget| widget["version"] == 5);
+
+    for id in [&seconds, &minutes, &plain] {
+        let widget = session.runs(id, 2);
+        assert_eq!(widget["runs"], 2, "the script ran when the widget was added and at the unlock, never for a hand");
+    }
+    assert_eq!(version(&plain), 1, "a widget in which nothing moves is left alone");
+}
+
+/// A swing repeats, so it becomes a cycle of pictures that the display plays,
+/// like a GIF; a motion too slow for a cycle is drawn again every second.
+#[test]
+fn a_swing_becomes_frames_and_a_slow_motion_is_drawn_each_second() {
+    let session = Session::new();
+    session.install("Swing", r##"$render(<vstack frame="max" background="#111827"><text color="white" font="title" animation="swing">swing</text></vstack>);"##, "", "");
+    session.install(
+        "Slow",
+        r##"const drift = $animation({ type: "swing", duration: 45, direction: "horizontal", distance: 60 });
+$render(<vstack frame="max" background="#111827"><rect frame="40,40" color="white" animation={drift} /></vstack>);"##,
+        "",
+        "",
+    );
+    let service = session.start_manual();
+    let controller = service.controller();
+    let clock = session.manual.clone();
+    let mut watcher = Connection::watch(&session.socket());
+    let pass = |milliseconds: u64| {
+        clock.advance(milliseconds);
+        controller.poke();
+        std::thread::sleep(Duration::from_millis(150));
+    };
+
+    // There and back in two seconds: forty pictures of 50 ms each.
+    let swing = session.add("Swing", Some("small"));
+    let event = watcher.event(|event| event["event"] == "widget" && event["id"] == swing.as_str());
+    let frames = event["frames"].as_array().unwrap_or_else(|| panic!("frames: {event}"));
+    assert_eq!(frames.len(), 40);
+    assert!(frames.iter().all(|frame| frame["ms"] == 50), "{event}");
+    assert_eq!(frames[0]["image"], event["image"], "the picture is the first frame");
+    let pictures: Vec<Vec<u8>> = frames.iter().map(|frame| std::fs::read(image(frame)).unwrap()).collect();
+    assert_eq!(png_size(&image(&frames[39])), (170, 170), "every frame is the whole widget");
+    // START is a whole number of cycles after 1970: the cycle begins at rest, is farthest out a quarter
+    // of the way, back in the middle half way, and farthest the other way at three quarters.
+    assert!(pictures[0] != pictures[10] && pictures[10] != pictures[30] && pictures[0] != pictures[30]);
+    assert!(pictures[0] == pictures[20], "half way the text passes through its place");
+    assert!(pictures[5] == pictures[15], "and it is at the same place on the way out and on the way back");
+    assert_eq!(session.widget(&swing)["frames"], 40);
+    assert_eq!(session.frame_files().len(), 40);
+
+    // The display plays the cycle: the service draws nothing more, however long it runs.
+    pass(4000);
+    let widget = session.widget(&swing);
+    assert_eq!((widget["version"].as_u64(), widget["runs"].as_u64(), widget["busy"].as_bool()), (Some(1), Some(1), Some(false)));
+    // Run again a whole number of cycles later: the same pictures are not published a second time.
+    session.ask(Request::Refresh { id: Some(swing.clone()), package: None });
+    assert_eq!(session.runs(&swing, 2)["version"], 1);
+    assert_eq!(session.frame_files().len(), 40, "and the frames that were drawn to compare are gone");
+    // Run again in the middle of a cycle: the new cycle begins where the swing is at that moment.
+    pass(500);
+    session.ask(Request::Refresh { id: Some(swing.clone()), package: None });
+    assert_eq!(session.runs(&swing, 3)["version"], 2);
+    let event = watcher.event(|event| event["event"] == "widget" && event["id"] == swing.as_str() && event["version"] == 2);
+    let shifted = std::fs::read(image(&event)).unwrap();
+    assert!(shifted == pictures[10], "a quarter of a cycle on");
+
+    // Ninety seconds there and back is too slow for sixty pictures: one picture, drawn again each second.
+    let slow = session.add("Slow", Some("small"));
+    let widget = session.widget(&slow);
+    assert_eq!((widget["frames"].as_u64(), widget["version"].as_u64()), (Some(1), Some(1)));
+    pass(1100);
+    session.until(&slow, "the next second", |widget| widget["version"] == 2);
+    pass(1100);
+    let widget = session.until(&slow, "the second after", |widget| widget["version"] == 3);
+    assert_eq!(widget["runs"], 1, "without running the script");
+    assert_eq!(session.widget(&swing)["version"], 2, "the cycle of the other widget is left alone");
+}
+
 #[test]
 fn scripts_run_on_schedule() {
     let session = Session::new();
