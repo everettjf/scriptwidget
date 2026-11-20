@@ -1,7 +1,7 @@
 # Connected Services API (Runtime 1.4)
 
 <!-- platforms:start -->
-> **Runs on:** iPhone and iPad, Mac, Android (With a fine-grained token, no OAuth sign-in). **Not on:** Windows, Linux. Details and limits: [Platform support](platform-support.md).
+> **Runs on:** iPhone and iPad, Mac, Android (With a fine-grained token, no OAuth sign-in), Linux (With a fine-grained token kept in the system keyring, no OAuth sign-in). **Not on:** Windows. Details and limits: [Platform support](platform-support.md).
 <!-- platforms:end -->
 
 `$services` reads a user-connected account through a fixed native request broker. The only supported provider is `github`. Account connection and per-widget approval live in ScriptWidget Settings > Service Accounts (iOS) or Settings > Services (Mac). Web Studio uses editable samples; it does not authenticate or contact the provider.

@@ -13,7 +13,7 @@ On other desktops the command line and the management window work, but nothing i
 | Part | What it does |
 | --- | --- |
 | `scriptwidget` | The command line, and the background service (`scriptwidget host run`): it runs the scripts on a schedule, draws the pictures and handles clicks. It opens no window |
-| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the code editor with a live preview and the AI conversation, the settings. Closing it frees its memory; the widgets keep running |
+| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the Gallery, the Skills, the code editor with a live preview and the AI conversation, the settings. Closing it frees its memory; the widgets keep running |
 | Omarchy plugin `com.atomsprout.scriptwidget` | Shows the pictures on the desktop layer and adds an entry to the bar. It only shows pictures and forwards numbers and coordinates |
 
 ## Pictures
@@ -25,10 +25,9 @@ The management window on Omarchy 4.5 (screenshots of the real window in the test
 | ![My widgets](images/studio-library.png) | ![Templates](images/studio-templates.png) |
 | ![Components](images/studio-components.png) | ![APIs](images/studio-apis.png) |
 | ![A template opened](images/studio-template.png) | ![Editor with live preview](images/studio-editor.png) |
-| ![Settings](images/studio-settings.png) | ![My widgets in Chinese](images/studio-library-zh.png) |
-| ![Typing Chinese with pinyin in the editor](images/studio-pinyin.png) | |
+| ![Settings](images/studio-settings.png) | ![Typing Chinese with pinyin in the editor](images/studio-pinyin.png) |
 
-The interface follows the system language when it is English or Simplified Chinese, and is English otherwise.
+The interface is in English. Text in any language can be typed in the editor and drawn by a widget.
 
 ## Installing it
 
@@ -55,9 +54,12 @@ sh install.sh
 - **Click.** A left click works on buttons, toggles and links; elsewhere on a widget it does nothing.
 - **See widgets above your windows.** "Show widgets on top" in the bar entry, or `scriptwidget peek`; once more puts them back.
 - **Edit.** The preview next to the code is drawn by the same painter as the desktop widget. `scriptwidget dev <folder>` watches a folder and refreshes the placed widgets of that package on save.
-- **Ask AI.** In Settings, choose a provider and store its API key (it goes to the system keyring). Then "Ask AI" in the editor opens the conversation beside the code: say what the widget should show or what to change; the reply is written out as it arrives, the result is run on this computer, and the changed lines are shown. Nothing changes until "Apply to the widget". From a terminal: `scriptwidget ai new "a clock"` and `scriptwidget ai continue <name> "make the time red"`. See [AI conversation](../ai-conversation.md).
+- **Gallery and Skills.** The Gallery page lists community widgets and Skills and installs them after checking every file; the Skills page turns Skills on and off and imports and exports them.
+- **Ask AI.** In Settings, choose a provider and store its API key (it goes to the system keyring). "New with AI" on the My widgets page makes a widget from a description. "Ask AI" in the editor opens the conversation beside the code: say what the widget should show or what to change; the reply is written out as it arrives, the result is run on this computer, and the changed lines are shown. Nothing changes until "Apply to the widget". From a terminal: `scriptwidget ai new "a clock"` and `scriptwidget ai continue <name> "make the time red"`. See [AI conversation](../ai-conversation.md).
 
   ![The AI conversation beside the code, with the changed line and the Apply button](images/studio-ai-reply.png)
+
+  ![New widget with AI](images/studio-ai-new.png)
 - **Move a widget to another device.** Export it as a `.swt` file and open that file in ScriptWidget on the other device; a `.swt` from another device is imported the same way.
 
 ## Parts in the source
@@ -127,7 +129,12 @@ Every command prints one JSON report on standard output; errors and warnings are
 | `scriptwidget dev <folder>` | Watches a package folder and refreshes its placed widgets on save |
 | `scriptwidget peek`, `arrange` | Toggle "on top" and arrange mode |
 | `scriptwidget ai show`, `ai set`, `ai key set`, `ai key remove`, `ai models` | The AI provider: Anthropic, OpenAI or an OpenAI-compatible endpoint, its address (always `https://`) and model, and the API key in the system keyring |
-| `scriptwidget ai new <request>`, `ai continue <package> <request>`, `ai apply`, `ai conversations` | The [AI conversation](../ai-conversation.md): makes a widget or changes an installed one. The reply is written to standard error as it arrives (`--events` for JSON lines); the code is run here before it is applied. A new widget that uses the network stays a draft unless `--allow-new-hosts` is given |
+| `scriptwidget skills list`, `show`, `enable`, `disable`, `import <file or folder>`, `export`, `remove` | [Skills](../skills.md): instructions that are added to AI requests while they are turned on. They cannot run code or grant permissions |
+| `scriptwidget gallery list [--kind widget\|skill] [--refresh]`, `show <id>`, `install <id>` | The [Gallery](../gallery.md): every file is checked against the catalog (path, size, SHA-256) before a transactional install; a widget that uses an API Linux lacks installs with a warning |
+| `scriptwidget ai new <request>`, `ai continue <conversation or package> <request>`, `ai retry`, `ai restart`, `ai apply`, `ai conversations` | The [AI conversation](../ai-conversation.md): makes a widget or changes an installed one. The reply is written to standard error as it arrives (`--events` for JSON lines); the code is run here before it is applied. A new widget that uses the network stays a draft unless `--allow-new-hosts` is given |
+| `scriptwidget notifications allow\|deny <widget>`, `documents add\|remove\|list <widget> …`, `photos add\|remove\|list <widget> …` | What a widget may use: whether it may show notifications, and the files and pictures picked for it |
+| `scriptwidget services status\|connect\|disconnect\|allow\|deny` | The GitHub account for `$services`: a fine-grained token, kept in the system keyring, and the widgets that may use it |
+| `scriptwidget reload` | Makes the running service read the settings again |
 | `watch`, `tap`, `move`, `screen`, `theme`, `menu`, `session` | Used by the display; see [protocol.md](protocol.md) |
 
 The commands from `add` on need the background service; without it they exit with 69 and say how to start it.
@@ -166,6 +173,12 @@ Every bundled package that needs no live data produces the same element tree on 
 | Rendering modes | Always `fullColor`; `backgroundMaterial` uses the opaque `background` fallback |
 | Fonts | Inter is built into the program. The six display fonts of the other platforms are not shipped, because the repository records no licence for them: text that asks for one is drawn with Inter, unless the font file is put in `~/.local/share/scriptwidget/fonts` (or the folder `SCRIPTWIDGET_FONTS` names). Chinese, Japanese, Korean and emoji use system fonts found through fontconfig; the order of the Chinese, Japanese and Korean faces follows the locale. Monospace and serif are the user's fontconfig choices |
 | `animation` | Moves on the desktop. Standard clock hands are redrawn every second (with a second hand) or every minute. Swings and custom intervals are drawn as a cycle of at most 60 pictures, one every 50 ms, through the same frames as a GIF; a motion whose cycle is longer than 60 seconds is redrawn once a second instead. `render` and the previews show one frame: hands at the current time, a swing at rest |
+| `$music` | The MPRIS player that is playing, else the paused one: title, artist, album, state, position and duration. Read only, no artwork |
+| `$notifications` | Shown by the background service through the desktop's notification service. Inexact: nothing is shown while the service is not running or the computer sleeps; an overdue one-time notification is shown at the next look, a daily one is not caught up. At most 4 a minute for one widget |
+| `$services` (GitHub) | A fine-grained token (`github_pat_…`) kept in the system keyring; no OAuth sign-in. A widget needs the permission and the user's consent for that widget |
+| `$documents`, `$photos` | Files and pictures picked for one widget ("Data access" in the editor, or the command line). The widget gets the name, type and content, or a reduced JPEG without metadata; never a path. 8 files of 256 KiB; 24 pictures of 16 MB |
+| `$location` | Not available: Omarchy 4.5 ships no GeoClue |
+| `material.<role>` colors | The fixed Material 3 baseline palette, light and dark, as on iPhone, Mac and Windows; only Android reads the wallpaper |
 | `<gif>` | Animated on the desktop, at most 60 frames; `render` and the previews show the first frame |
 | `<date>` | A running timer is redrawn every second and a clock time every minute |
 | Timeline | The script runs again at each transition |
@@ -185,6 +198,7 @@ Scripts, imported archives and network responses are untrusted, as on every plat
 - **Archives** are checked whole before anything is extracted (entry count, file size, expanded size, names), extracted through the same reading of the archive that checked them, into a unique staging folder on the same filesystem, and published with a rename that refuses to replace anything.
 - **Network.** Requests go over a small HTTP/1.1 client on rustls. It resolves the host itself, refuses private, loopback and link-local addresses, and connects only to the address it checked. Redirects are followed by hand with the same checks at every hop, and a redirect to another origin does not receive the `Authorization` or `Cookie` header the script set. The system proxy is not used. Requests name the client as `ScriptWidget-Linux/<version>` unless the script sets its own `User-Agent`.
 - **AI.** The API key is kept in the Secret Service (GNOME Keyring, KeePassXC and others) through `secret-tool` from libsecret, which gets the key on its standard input. It is never written to the settings, a package, a prompt or a saved conversation, and never passed in an argument. Without a keyring nothing is stored; `SCRIPTWIDGET_AI_KEY` gives a key for one run. The provider address is the user's choice and must be `https://`; redirects are not followed. Requests and the widget's code go to that provider and nowhere else. AI output is untrusted like any script: it runs with the permissions its manifest declares, and applying it is the user's step.
+- **System data.** MPRIS and notifications are reached by running `busctl` with a fixed argument list, a deadline and a bounded reply; text from a package is only ever a value after `--`, and bus names are checked against their grammar first. Picked files are reopened on every read without following links, must be regular files, and are refused when they change while being read. The GitHub token is in the Secret Service, like the AI key.
 - **Engine isolation.** Package code runs inside the program's process, as on the other platforms: QuickJS exposes no system interface, and memory, stack and time are bounded.
 - **Service socket.** `$XDG_RUNTIME_DIR/scriptwidget/host.sock` is readable by the user only, and the service checks that the peer is the same user. Requests are single lines that name packages, widget ids, integers and fixed words; nothing received is run as code or used as a path.
 - **The display plugin** runs inside the Omarchy shell, unsandboxed like every plugin, so it is kept small: it shows PNG files from the service's own folder, ignores any other path, and sends back only a widget id with a region number or coordinates. Which action a region stands for is looked up in the service.

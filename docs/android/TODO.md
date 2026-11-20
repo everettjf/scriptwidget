@@ -44,8 +44,8 @@ What is left before 1.0.0 (version code 1) is public on Google Play. On 15 Novem
 Scrolling lists, wallpaper colors and the automation entry point are done; see [Only on Android](README.md#only-on-android).
 
 
-- The Studio completions do not know `<list>` and the `material.` colors yet. The editor is a WebView that loads the same `StudioEditor.bundle` as iOS, and the completions are compiled into it, so this needs a change in `Editor/editorfe` (an optional host-supplied list that only the Android bridge sets) and a rebuild of both bundles. The AI prompt on Android describes both since 19 November 2026 (a section of about 250 tokens; not tried with a live model).
-- The AI conversation screen is in English and Simplified Chinese since 19 November 2026. Still English there: the Name/OK/Cancel of the shared name dialog, the example chips and the heavy-conversation notice (they come from `core`), error lines from the runtime or a provider, and the default name "AI Widget". The rest of the app has no Chinese.
+- The Studio completions know `<list>` and the `material.` colors on Android since 19 November 2026: the Android bridge hands the editor a list that the shared bundle merges in, and other platforms are unchanged. Accepting any tag completion still writes `<<tag>` with a literal `${}`, on every platform.
+- The interface is English only (decided 19 November 2026 for every platform). The texts of the AI conversation screen are in string resources; the Chinese resources that were added the same day were removed again.
 - Edit replies, the attribute check, the changed lines, the heavy-conversation notice and streamed replies have not been run with a live model on a device; see `docs/ai-conversation-plan.md`. The stream readers for Anthropic and OpenAI-compatible servers are tested against recorded event shapes only.
 - A way for a script to hand data to an action (a row's own identifier), so a list row can do more than toggle a stored value.
 - Sending broadcasts from a script to automation apps, after a separate security review.

@@ -6,9 +6,9 @@ What was run before handing this build to testers, and what was not.
 
 | Suite | Count | Where | Command |
 | --- | --- | --- | --- |
-| Unit tests | 532 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
+| Unit tests | 549 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
 | Core device tests | 30 | see below | `Android/scripts/device-test.sh core` |
-| App device tests | 69 | see below | `Android/scripts/device-test.sh app` |
+| App device tests | 77 | see below | `Android/scripts/device-test.sh app` |
 
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
@@ -61,7 +61,7 @@ On 16 November 2026, after the Habit Heatmap template gained a total count, the 
 
 The build script now calls the library shared with Windows, and `android-apis.js` takes the platform name in its "not supported" message from the host (default: Android). In CI on that branch: the regenerated assets equal the checked-in ones, `:core:testDebugUnitTest` passes (run 44081171658), and on an API 35 x86_64 emulator the core instrumented suite passes 30 of 30 and the app suite (`foss` flavor) 63 of 63 (run 44094364212; start it from Actions > Android > Run workflow). Earlier emulator runs failed for reasons of the job, not of the code: Open-Meteo did not answer once, and with system animations turned off the four widget animation tests fail, because the app shows no animation frames then. Not re-run: both instrumented suites on the Pixel 6.
 
-## 19 November 2026: copies of bundled templates, the Android-only prompt section, Chinese for the AI conversation
+## 19 November 2026: copies of bundled templates, the Android-only prompt section, the AI conversation texts as resources
 
 Uncommitted changes on top of commit `5b9b656b`. No API key and no real AI provider were used.
 
@@ -73,8 +73,24 @@ Uncommitted changes on top of commit `5b9b656b`. No API key and no real AI provi
 | `./gradlew :app:lintVitalPlayRelease` | Mac | passed |
 
 - **Copies of bundled templates that use the network.** Reproduced on the Pixel 6 before the fix with `LibraryTest#aCopyOfABundledTemplateThatUsesTheNetworkDeclaresItsOwnHostsOnly`: Daily Quote failed with "Network host is not declared in widget.json". After the fix it passes for Daily Quote, Currency Pulse, Weather and `api/http`, and Month Calendar gets no network permission. The test requires that the manifest no longer refuses the request; it does not assert what the network returned.
-- **Chinese.** `AiConversationLanguageTest` checks by resource lookup that zh-CN, zh-Hans-CN, zh-Hans-SG and zh-SG get Chinese and that en, fr, ja, zh-TW and zh-Hant-HK get English. The phone's language was not changed, so the Chinese screen was not looked at: wording in context and layout are unchecked.
+- **Chinese.** Added and removed on the same day: the owner decided that the interface of every platform is English only. The texts stay in string resources, in English.
 - **The "ONLY ON ANDROID" prompt section** was not tried with a live model.
+
+## 19 November 2026, later: AI alignment with Apple, editor completions, English only
+
+Uncommitted changes on top of commit `670d9cd3`. No API key and no real AI provider were used.
+
+| Command | Where | Result |
+| --- | --- | --- |
+| `./gradlew :core:testDebugUnitTest :app:assembleDebug` | Mac | 549 tests, 0 failures |
+| `ANDROID_SERIAL=26081FDF60046A sh Android/scripts/device-test.sh core` | Pixel 6 | 30 tests passed, after the last change to the renderer's fixed palette |
+| `ANDROID_SERIAL=26081FDF60046A SUFFIX=.dev sh Android/scripts/device-test.sh app` | Pixel 6, the `.dev` copy | 77 tests passed; the live-model, push-wait and picked-folder tests were skipped as before |
+
+- **Editor completions.** `StudioEditorCompletionTest` types `<li` and `material.onSurfaceV` in the real editor and checks the saved file; the popup was seen in screenshots listing `list` first and the `material.` names.
+- **AI conversation.** Seen in test screenshots: "Fix Runtime Error" under a failing preview, the Logs dialog, the progress line "attempt 2 of 4", the Skills dialog with the five built-in Skills, the refusal screen for a broken `widget.json`.
+- **Live model.** `AiLiveModelTest` passed its 3 tests on the Pixel 6 against DeepSeek (`deepseek-flash`), started with `-e aiKey … -e aiBaseUrl https://api.deepseek.com -e aiModel deepseek-flash`; the `aiBaseUrl` argument is new and selects an OpenAI-compatible endpoint. It covers generate-and-repair, not the conversation screen. The key was passed as an instrumentation argument and is in no file.
+- **Not done:** the conversation screen with a live model; Anthropic with a live model; the AI settings screen after its "Maximum attempts" chips were removed was not looked at by hand; one UI test waits 2.5 s before it looks for the progress line, because the lookup failed without the pause although the screenshot shows the text.
+- **`material.` colors without a palette** now take the fixed Material 3 baseline (the device test expects its light surface); with the device's palette nothing changed.
 
 ## Checked by hand on the Pixel 6
 

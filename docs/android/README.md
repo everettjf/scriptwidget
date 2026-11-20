@@ -125,7 +125,7 @@ $render(
 - One list per widget scrolls. A second list, or a list inside a rotated or scaled view, is drawn in place and cut off at its bottom edge. The same happens in the app's previews.
 - Timers, GIFs and animations inside a row are drawn as a still picture.
 - The scroll position is kept when the widget is redrawn.
-- On iPhone, and in the web preview, the tag is unknown and shows as `UnknownTagName`. Use the platform check above.
+- On iPhone, iPad and Mac, and in their web preview, a `<list>` does not scroll: its rows are stacked from the top and a row that does not fit completely is left out. Windows and Linux draw the rows in place and cut the list off at its bottom edge. Use the platform check above when a widget should look different there.
 
 Redrawing a 100-row list took about 1.3 seconds on a Pixel 6 once the app was running. The first drawing after the app process starts is much slower, because nothing is cached yet: 12 seconds was measured with a debug build right after it was installed. A release build was not measured.
 
@@ -143,7 +143,7 @@ Roles: `primary`, `onPrimary`, `primaryContainer`, `onPrimaryContainer`, the sam
 
 - The light bitmap uses the light value and the dark bitmap the dark one. The script does not have to ask which theme is active.
 - After the wallpaper changes, widgets are redrawn when the app notices the change (while its process is alive) and otherwise at the next background refresh.
-- On iPhone, and in the web preview, the names are unknown and the prop is ignored, so the view keeps its default color.
+- On iPhone, iPad and Mac, and in their web preview, the names give the colors of a fixed palette (the Material 3 baseline, light and dark), since there is no wallpaper palette to read. What Windows and Linux do is in [Platform support](../platform-support.md).
 
 #### Automation entry point
 

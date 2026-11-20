@@ -1,6 +1,6 @@
 # ScriptWidget Skills 1.0
 
-Skills are reusable instructions that specialize AI generation and Copilot without changing the widget runtime. A layout reviewer, brand guide, API-integration checklist, or accessibility reviewer can be written once and selected for any prompt. Skills are in the Mac, iPhone, iPad and Android apps; the Windows and Linux previews do not have them yet.
+Skills are reusable instructions that specialize AI generation and Copilot without changing the widget runtime. A layout reviewer, brand guide, API-integration checklist, or accessibility reviewer can be written once and selected for any prompt. Skills are in the Mac, iPhone, iPad, Android and Linux apps (on Linux: the Skills page of the management window and `scriptwidget skills`); the Windows preview does not have them yet.
 
 ## Use and create Skills on Mac
 

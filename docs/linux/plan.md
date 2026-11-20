@@ -165,7 +165,7 @@ Linux/
 - gpui-component 是它上面的一套控件，Apache-2.0，带一个代码编辑器（Tree-sitter 语法高亮，诊断、补全、悬停提示）。项目自己说还在早期，接口会经常变。[已核实] 项目 README。它已经搬到 `longbridge/gpui-kit`，发布在 crates.io 上（`gpui-kit`，依赖 `gpui-pre`），不需要钉 Zed 仓库的提交；每周发一个版本，要锁定版本。[已核实] 阶段 0
 - 这样管理窗口从界面到编辑器全部是 Rust，不需要 WebKit，也不需要 GTK。实时预览直接调用 `sw-render`，和桌面上的小组件是同一个画笔。
 
-页面和 Windows 版对应：我的小组件、模板（打开后先看预览和代码，再"使用此模板"）、组件、API 参考、编辑器、设置。界面语言跟随系统，英文和简体中文。补全和参考页的数据来自 `Editor/editorfe/src/scriptWidgetAPI.js`，构建时转成 Rust 能读的数据。
+页面和 Windows 版对应：我的小组件、模板（打开后先看预览和代码，再"使用此模板"）、组件、API 参考、编辑器、设置。界面语言跟随系统，英文和简体中文。补全和参考页的数据来自 `Editor/editorfe/src/scriptWidgetAPI.js`，构建时转成 Rust 能读的数据。（2026-11-19 改为所有平台的界面只用英文，中文已删除。）
 
 要在阶段 0 确认的风险：
 

@@ -5,10 +5,11 @@
 >
 > - `$weather`: iPhone and iPad, Mac, Android, Windows, Linux.
 > - `$alarms`: iPhone and iPad, Android (inexact, no system alarm UI). **Not on:** Mac, Windows, Linux.
-> - `$contacts`, `$documents`: iPhone and iPad, Mac, Android (for items picked in the app). **Not on:** Windows, Linux.
+> - `$documents`: iPhone and iPad, Mac, Android (for files picked in the app), Linux (Files picked for the widget in the management window). **Not on:** Windows.
+> - `$contacts`: iPhone and iPad, Mac, Android (for contacts picked in the app). **Not on:** Windows, Linux.
 > - `$maps`: iPhone and iPad, Mac, Android (Geocoding and place search; no `snapshot`). **Not on:** Windows, Linux.
 > - `$home`: iPhone and iPad. **Not on:** Mac, Android, Windows, Linux.
-> - `$notifications`: iPhone and iPad, Mac, Android (delivery is inexact). **Not on:** Windows, Linux.
+> - `$notifications`: iPhone and iPad, Mac, Android (delivery is inexact), Linux (shown by the background service; delivery is inexact). **Not on:** Windows.
 >
 > Details and limits: [Platform support](platform-support.md).
 <!-- platforms:end -->

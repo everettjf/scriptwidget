@@ -157,6 +157,7 @@ Refresh is paused while the session is locked and everything runs once when it i
 | `scriptwidget remove <id>` | Removes it |
 | `scriptwidget widgets` | `widgets: [{id, package, installation, installed, family, screen, x, y, width, height, version, image, frames, regions, scale, runs, busy, error}]` |
 | `scriptwidget refresh [<id>] [--package <name>]` | Runs one widget, the widgets of a package, or all of them again. Answer: `refreshed` |
+| `scriptwidget reload` | Reads `settings.json` again and plans each widget's next run from when it last ran; the management window sends it after the refresh interval was changed. Added on 19 November 2026 |
 | `scriptwidget dev <dir> [--family <name>] [--adopt]` | See below |
 | `scriptwidget doctor` | Its `service` check is `passed` with the service's status when it runs, `notRun` when it does not |
 
@@ -183,6 +184,7 @@ A request is one line: a JSON object with `op` and the members of that operation
 | `add` | `package` (name), optional `family` |
 | `remove` | `id` |
 | `refresh` | optional `id` or optional `package` (name), not both |
+| `reload` | nothing |
 | `peek`, `arrange` | `state`: `on`, `off`, `toggle` |
 | `tap` | `id`, `n` (0 to 4095), optional `version` |
 | `move` | `id`, `screen`, `x`, `y` (integers) |

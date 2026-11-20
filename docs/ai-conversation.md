@@ -1,12 +1,12 @@
 # AI conversation
 
-Making a widget with AI is a conversation about one widget: describe it, look at the preview, ask for a change, look again. The Mac app, the iPhone and iPad app and the Android app all have it. This page describes the Mac window first, then what differs elsewhere; it says what the conversation does, what it sends to the AI provider and what it keeps on the device. Provider setup is in [AI generation](ai-generate.md).
+Making a widget with AI is a conversation about one widget: describe it, look at the preview, ask for a change, look again. The Mac app, the iPhone and iPad app, the Android app and the Linux app all have it. This page describes the Mac window first, then what differs elsewhere; it says what the conversation does, what it sends to the AI provider and what it keeps on the device. Provider setup is in [AI generation](ai-generate.md).
 
 ![The conversation on the left and the preview on the right; the third turn did not run and the widget stayed at version 2](images/ai-conversation-mac.png)
 
 ![The running app after a session with a local stand-in provider: a repaired turn, a turn left behind, and a change that did not run](images/ai-conversation-mac-live.png)
 
-iPhone and iPad have the same conversation, see [On iPhone and iPad](#on-iphone-and-ipad), and so does the Android app, see [On Android](#on-android).
+iPhone and iPad have the same conversation, see [On iPhone and iPad](#on-iphone-and-ipad), and so do the Android app, see [On Android](#on-android), and the Linux app, see [On Linux](#on-linux).
 
 ## Using it
 
@@ -62,7 +62,7 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 - **Save** in the top bar asks for a name. For a widget that uses the network the same dialog names its hosts, and its button reads **Save and Allow**. The **…** menu holds a new conversation, the drafts, Skills, the provider, the code, the logs and deleting the conversation.
 - Conversations are files in the app's own Application Support folder on the device, as on the Mac.
 - The **Copilot** tab of the editor is the conversation about the open widget, with the rules of [In the editor](#in-the-editor): the AI works on a copy, **Apply** writes the version on screen into the document, and a new host is asked about first. It has no Manage Skills entry; Skills are managed in Settings.
-- With the device set to Simplified Chinese, the conversation's own texts are in Chinese. The AI's notes are in the language you write in.
+- The conversation's own texts are in English, as the whole interface is. The AI's notes are in the language you write in.
 
 ![The conversation on an iPad: the turns on the left, the preview and the three sizes on the right](images/ai-conversation-ipad.png)
 
@@ -77,8 +77,25 @@ The **Copilot** tab of the editor is the conversation about the open widget. A w
 - An installed widget is changed with **Apply to widget**, which asks first and names any host the version adds.
 - There is no panel beside the editor: a phone has no room for one. The editor's **Improve with AI** button saves the file and opens the conversation about that widget; code changed in the editor is taken over as a version, and after **Apply to widget** the editor shows the applied code when you come back.
 - Conversations stay in the app's no-backup directory on the device.
+- **Fix Runtime Error** appears under the preview when the version on screen fails there; it sends the error and the last ten console lines. **Logs** in the ⋮ menu shows the last run's error and console lines.
+- **Skills** in the ⋮ menu chooses the Skills for this conversation; until a choice is made, the Skills that are turned on are used.
+- A widget whose `widget.json` cannot be read is refused: nothing is run or sent.
 
 More in the [Android notes](android/README.md#ai-conversation).
+
+## On Linux
+
+![New widget with AI in the management window: the conversation on the left, the preview on the right](linux/images/studio-ai-new.png)
+
+**New with AI** on the My widgets page, and **Ask AI** in the editor, open the conversation in the management window; `scriptwidget ai` does the same from a terminal. It follows the rules on this page with these differences:
+
+- The provider is Anthropic, OpenAI or an OpenAI-compatible endpoint, always over `https://`. The key is kept in the system keyring (Secret Service), never in a file.
+- The proposed version is drawn at every size by the same painter as the desktop widget, so the trial run paints the widget and does not only build its element tree.
+- A new widget that declares network hosts is saved only after **Allow and save** (`--allow-new-hosts` on the command line).
+- APIs that Linux does not have are named in the prompt, and a version that starts to use one is sent back to the AI with the reason.
+- From a terminal: `ai new`, `ai continue`, `ai retry`, `ai restart` (a new conversation from the current version), `ai apply` and `ai conversations`; `--skills` chooses the Skills for a conversation.
+
+More in the [Linux notes](linux/README.md).
 
 ## When something goes wrong
 
@@ -177,7 +194,7 @@ In the editor, the copy runs with the widget's own `widget.json` plus the declar
 
 ## Not in this version
 
-Translations of the conversation's own texts on the Mac and on Android (the Mac app has no translation yet; iPhone and iPad have Simplified Chinese). The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
+Translations: the interface of every ScriptWidget app is English only. The [plan](ai-conversation-plan.md) (Chinese) says what was done in which order and what is open.
 
 ## For contributors
 

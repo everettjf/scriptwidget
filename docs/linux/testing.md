@@ -691,6 +691,53 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 虚拟机里留下的东西：`~/ai-standin`（按脚本回答的程序、测试证书、单独的数据目录）、`~/work-swing`（测试小组件）、`~/shots`（截图）、库里多出的 Animation Clock、Animation Spirograph、Animation Aquarium、Fast Swing 四个包（桌面上已移除）、`~/scriptwidget.0.1.4.bak` 和 `~/scriptwidget-studio.0.1.4.bak`（换下来的 0.1.4 程序）。`~/.local/bin` 里现在是这次的开发版。
 
+## 2026-11-19（晚些时候），测试虚拟机：Gallery、Skills、AI 的补齐、只留英文
+
+工作区里未提交的改动（基于提交 `670d9cd3`），同一台虚拟机。
+
+| 做了什么 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里） | 826 个通过，0 个失败，2 个忽略 |
+| `cargo test --locked --workspace`（Mac 上） | 820 个通过，0 个失败，2 个忽略（在最后一批 `sw-render` 的改动之前） |
+| 发布版的 `scriptwidget`、`scriptwidget-studio --features ui` | 构建通过，装进 `~/.local/bin`，`doctor` 通过 |
+| `scriptwidget gallery list`、`show`、`install`，对着真实的目录 | 列出 25 项；Hello Card 安装成功，重复安装还是同一个包；Health Overview 安装时给出 `gallery.unsupported_api` 的警告；下载目录没有残留 |
+| `scriptwidget skills list`、`enable`、`export`、`remove`、`import`（文件和文件夹） | 五个内置 Skill；从 Gallery 装的 Privacy Review 能启用、导出、删除、再导入 |
+| 管理窗口的 Gallery 页、Skills 页 | 都能打开，目录和内置 Skill 显示正常；截图在 `images/studio-gallery.png`、`images/studio-skills.png` |
+| 只留英文：换上只有 `en.json` 的插件和没有 `zh_CN` 行的桌面入口，重启外壳 | 四个小组件回到桌面；管理窗口、插件、打包文件的源码里搜不到中文 |
+| 管理窗口：设置页的建议模型和 Load models 按钮 | 显示正常（`images/studio-settings-ai.png`） |
+| 管理窗口：My widgets → New with AI，输入一句话，回车，保存 | 回复逐字出现；左边列出代码和四个尺寸的小图，右边是所选尺寸的预览（`images/studio-ai-new.png`）；保存后新小组件进了库并在编辑器里打开，对话接在旁边。服务商是按脚本回答的本机程序 |
+
+发现并改掉的：从构建目录直接运行时，连安装 Skill 也要运行时文件（现在只有安装小组件才要）；新建页右边原先是空的（现在放预览）；保存草稿后编辑器里的输入框提示还是 “Describe a widget”。
+
+没做的：窗口里的重试、前后翻版本、修复运行错误、为一段对话选 Skills、“从这个版本另起一段”、在 Gallery 页里点安装、Skills 页的两个导入按钮，都只有单元测试，没有点过；真实模型；装好的运行时文件没有换成新的共用脚本，所以 `material.` 固定色板在桌面上的效果没有看（渲染测试在虚拟机上通过）。
+
+## 2026-11-19（晚上），测试虚拟机：数据 API 和管理窗口剩下的几项
+
+工作区里未提交的改动，同一台虚拟机。这一节是做这部分的代理报告的，我没有逐项重做。
+
+| 做了什么 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里） | 896 个通过，0 个失败，2 个忽略；其中 `the_real_busctl_on_a_private_bus` 用自己的 `dbus-daemon` 和替身播放器、替身通知服务 |
+| `cargo test --locked --workspace`（Mac 上） | 890 个通过，0 个失败，2 个忽略 |
+| `$music`：mpv 加 mpv-mpris 在真实会话里播放 | 小组件读到标题、艺人、专辑、时长 120、位置 2.05，`provider` 是 `mpris` |
+| `$notifications`：安排一条 3 秒后的通知 | `busctl monitor` 看到到点后约 0.45 秒发出的 `Notify`，正文已转义；Omarchy 的通知服务是 quickshell。没有授权时小组件得到 `[permission_denied]` |
+| `$documents`、`$photos` | JSON 和 CSV 读对了；一张 1136×640 的 PNG 变成 28 KB 的 JPEG 并显示在编辑器预览里 |
+| `$services` 的钥匙串 | 条目按预期的属性存进 gnome-keyring，`services disconnect` 后删除。没有用真实的 GitHub 令牌 |
+| 管理窗口 | 点过 Data access、Stop allowing、新建文件（`../escape.js` 被拒绝，`lib/helpers.js` 建出并打开）、有未保存内容时关闭（Cancel 留下窗口，“Close without saving”关闭）、把刷新间隔改成 30 分钟（服务随后报告 30） |
+| `$location` | 没做：虚拟机里没有 `geoclue` 的包、程序或 D-Bus 激活文件 |
+
+## 2026-11-19（晚上），测试虚拟机：真实模型
+
+服务商 DeepSeek，模型 `deepseek-flash`，`--provider custom --base-url https://api.deepseek.com`。密钥从标准输入读进 `SCRIPTWIDGET_AI_KEY`，没有存进钥匙串；跑完后数据目录和脚本里都搜不到密钥。
+
+| 做了什么 | 结果 |
+| --- | --- |
+| `ai models` | 列出 `deepseek-flash`、`deepseek-v4-pro` |
+| 另一把余额为 0 的密钥 | 服务商返回 HTTP 402；命令报出 `ai.request_failed` 和原因，没有留下半成品 |
+| `ai new "A clock card…"`，再 `ai continue` 两轮（把时间改成红色；加一条表示一天过去多少的进度条），共五遍 | 15 轮里 14 轮成功并写进包：新建 5 到 10 秒，后续每轮 1 到 4 秒，改动 1 到 4 行；`render` 画出的卡片正确。一轮新建以退出码 2 失败，报告没有留下 |
+| 管理窗口：打开这个小组件，Ask AI，输入一句话 | 命令行里的三轮显示在对话里；回复逐字出现；“Version 4 of 4”；列出改动的行 |
+| 说明的语言 | 改提示词之前三轮都是中文（请求是英文）；改之后四遍 12 轮都是英文 |
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

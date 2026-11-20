@@ -72,6 +72,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - JavaScript/React: 2-space indentation, `UpperCamelCase` components and `lowerCamelCase` functions. Match surrounding formatting; avoid unrelated whole-file rewrites.
 - Runtime examples: keep `main.jsx` UTF-8, deterministic, within runtime budgets, and compatible with their declared permissions/hosts/plugins. They are formatted with Prettier (`Editor/editorfe/node_modules/.bin/prettier --no-config --print-width 100`) and commented for a reader who is new to ScriptWidget; a text with two spaces in a row must be written as a string in braces, because the formatter joins them.
 - Xcode projects use explicit file references. When adding shared Swift sources, add them to every app/widget/test target that compiles or references them, then lint both `.pbxproj` files with `plutil -lint`.
+- The interface of every app, the command lines, the installers and the website are English only. Do not add translations, per-language resources or code that follows the system language. Keep user-visible text in each platform's resource mechanism where one exists, in English. README files may exist in other languages. Text that a widget draws is the widget's own and may be in any language.
 - Preserve user-authored or unrelated dirty-worktree changes. Generated editor bundles are the exception only when deliberately rebuilt from matching frontend source.
 
 ## Testing Expectations
@@ -100,7 +101,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - Bring Android 1.0.0 from the Google Play closed test to production: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
 - Take the Windows and Linux previews towards a first full release: finish the items in `docs/windows/TODO.md` and `docs/linux/TODO.md`, test on real hardware, and keep `docs/platform-support.md` (written from `Editor/editorfe/src/platformSupport.js`) the one place that says what runs where.
 - Grow the curated Gallery and beginner templates while keeping every example verified, permission-correct, and runnable offline where appropriate.
-- Improve Studio authoring ergonomics, diagnostics, accessibility, localization, and multi-file workflows without weakening crash recovery or iCloud conflict safety.
+- Improve Studio authoring ergonomics, diagnostics, accessibility, and multi-file workflows without weakening crash recovery or iCloud conflict safety.
 - Establish repeatable on-device performance baselines for timeline generation, JavaScript evaluation, cold launch, editor latency, and widget-extension memory.
 - Design authenticated data sources only with an explicit, user-owned credential capability; never expose secrets directly to imported widgets or plugin manifests.
 - Continue security review of execution, network, archive, shared-container, Gallery, AI, and plugin boundaries, and fail closed on unsupported capabilities.
