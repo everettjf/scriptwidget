@@ -15,7 +15,7 @@ Status: preview, shipped in the Linux archive (see [ScriptWidget for Linux](../.
 | `WidgetWindow.qml` | One widget: a layer-shell window with the picture, taking the pointer only on its tap regions |
 | `ArrangeWindow.qml` | Arrange mode: one window per screen in which the widgets can be dragged |
 | `BarWidget.qml` | The bar entry |
-| `i18n/` | English and Simplified Chinese strings |
+| `i18n/` | The strings, in English |
 | `tests/` | A stand-in for `scriptwidget` and the checks. Not part of the installed plugin |
 
 ## Installing for development

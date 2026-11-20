@@ -7,7 +7,7 @@ use futures::channel::mpsc::unbounded;
 use sw_studio::instance::{self, Claim, Request};
 use sw_studio::launch::{self, Parsed};
 use sw_studio::model::Studio;
-use sw_studio::strings::{self, tf};
+use sw_studio::strings::tf;
 
 fn main() -> ExitCode {
     // A key given for this run is taken out of the environment before any thread or child exists,
@@ -20,7 +20,6 @@ fn main() -> ExitCode {
     if let Err(problem) = sw_studio::ai::set_one_run_key(one_run_key) {
         eprintln!("warning: {problem}");
     }
-    strings::set_language(strings::detect(|name| std::env::var(name).ok()));
     let arguments: Vec<String> = std::env::args().skip(1).collect();
     let launch = match launch::parse(&arguments, std::env::current_dir().ok().as_deref()) {
         Ok(Parsed::Run(launch)) => launch,

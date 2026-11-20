@@ -209,3 +209,12 @@ fn a_turn_is_repaired_by_what_the_engine_says() {
     assert!(fixture.runtime.run(&sw_core::RunRequest::new(files, saved.installation.clone())).execution.error.is_none());
     assert_eq!(manifest(&saved)["networkDomains"], serde_json::json!(["api.example.com"]));
 }
+
+#[test]
+fn a_new_widget_is_named_after_its_conversation_when_that_can_be_a_name() {
+    for (title, expected) in [("A clock for my desk", "A clock for my desk"), ("show https://api.example.com/v1 prices", "show https   api.example.com v1 prices"), (".hidden", "hidden"), ("", "AI Widget"), ("///", "AI Widget"), ("a title that was cut…", "a title that was cut"), ("__Build", "AI Widget")] {
+        let name = AiCandidates::suggested_name(title);
+        assert_eq!(name, expected);
+        assert!(sw_core::packages::names::is_valid(&name), "{name}");
+    }
+}

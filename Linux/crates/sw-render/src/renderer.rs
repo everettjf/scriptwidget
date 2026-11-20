@@ -59,7 +59,7 @@ pub struct RenderRequest {
     /// changes with the time. Elements with an `animation` are then always painted at a moment: the one of
     /// `motion_milliseconds`, else `now_milliseconds`, else the real clock. `None` lays out every time.
     pub layout_key: Option<u64>,
-    /// System theme colors behind the `material.<role>` names; `None` leaves them unknown. Android only; Linux hosts leave it off.
+    /// System theme colors behind the `material.<role>` names; `None` gives the fixed Material 3 baseline colors. Android supplies the wallpaper palette; Linux hosts leave it off.
     pub colors: Option<Value>,
 }
 

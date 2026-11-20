@@ -25,12 +25,14 @@ mod renderer;
 pub mod rounded_corners;
 mod svg;
 mod text;
+mod thumbnails;
 pub mod widget;
 
 use serde_json::{Map, Value};
 
 pub use fonts::{CjkRegion, cjk_region_order};
 pub use images::{MAXIMUM_IMAGE_BYTES, MAXIMUM_IMAGE_PIXELS};
+pub use thumbnails::SkiaThumbnails;
 pub use renderer::{FontReport, RenderError, RenderOutput, RenderRequest, WidgetRenderer, encode_png};
 pub use widget::{Presentation, RenderedRun, render_run, render_tree};
 

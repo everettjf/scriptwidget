@@ -9,14 +9,17 @@
 //! picture `sw-render` draws; it compiles and runs it only inside the engine
 //! of `sw-core`, with the limits every run has.
 
+pub mod access;
 pub mod ai;
 pub mod completion;
 pub mod debounce;
+pub mod gallery;
 pub mod instance;
 pub mod launch;
 pub mod model;
 pub mod service;
 pub mod settings;
+pub mod skills;
 pub mod strings;
 
 #[cfg(test)]

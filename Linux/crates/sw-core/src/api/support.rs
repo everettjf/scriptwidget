@@ -1,7 +1,8 @@
-//! The shared pieces of the Runtime 1.6 system services that `$weather`
-//! needs. Ported from `Windows/src/ScriptWidget.Core/Api/SystemSupport.cs`;
-//! the other services (grants, mutation receipts, permission prompts) are
-//! added with the APIs that use them.
+//! The shared pieces of the Runtime 1.6 system services. Ported from
+//! `Windows/src/ScriptWidget.Core/Api/SystemSupport.cs` and, for the
+//! per-widget grants, from `Android/core/.../system/SystemSupport.kt`.
+//! Mutation receipts and permission prompts are added with the APIs that use
+//! them.
 
 use std::collections::{HashMap, HashSet};
 use std::fmt;
@@ -124,6 +125,11 @@ pub fn run_system(operation: &str, done: Completion, block: impl FnOnce() -> Res
             done.complete(false, Some(quote(&message)));
         }
     });
+}
+
+/// Runs work that belongs to no execution on the background workers of the system services.
+pub fn run_detached(work: impl FnOnce() + Send + 'static) {
+    system_pool().execute(work);
 }
 
 type Probe = Box<dyn Fn() -> bool + Send + Sync>;
@@ -407,6 +413,112 @@ pub mod system_options {
         }
         Ok(number as i32)
     }
+
+    /// Keys match `[a-zA-Z0-9_-]{1,64}`.
+    pub fn valid_key(value: &str) -> bool {
+        (1..=64).contains(&value.len()) && value.bytes().all(|byte| byte.is_ascii_alphanumeric() || byte == b'_' || byte == b'-')
+    }
+
+    /// A string that is not blank, has no control or format characters and fits `maximum` UTF-8 bytes.
+    pub fn text(value: Option<&Value>, maximum: usize) -> Result<String, SystemReject> {
+        match value {
+            Some(Value::String(text)) if !text.trim().is_empty() && text.len() <= maximum && !has_control_characters(text) => Ok(text.clone()),
+            _ => Err(invalid()),
+        }
+    }
+
+    /// A full ISO-8601 date-time with a zone, as epoch milliseconds.
+    pub fn date(value: Option<&Value>) -> Result<i64, SystemReject> {
+        iso_dates::parse(&text(value, 64)?).ok_or_else(invalid)
+    }
+
+    /// A present member that is not null.
+    pub fn member<'a>(options: &'a Object, name: &str) -> Option<&'a Value> {
+        options.get(name).filter(|value| !value.is_null())
+    }
+}
+
+/// Per-installation native grants for the system services that need one: the
+/// Linux counterpart of the System Access sheet. A grant is local to this
+/// computer, bound to the installation identity and never part of an exported
+/// package. A malformed grant file denies everything.
+pub struct SystemAccessGrants {
+    file: PrivateFile,
+}
+
+impl SystemAccessGrants {
+    /// Capabilities that need an explicit per-widget grant on Linux.
+    pub const CAPABILITIES: [&'static str; 1] = ["notifications"];
+    const MAXIMUM_OWNERS: usize = 512;
+
+    pub fn new(file: impl Into<PathBuf>) -> Self {
+        Self { file: PrivateFile::new(file, 128 * 1024) }
+    }
+
+    /// `unavailable` when the grant file is present but invalid.
+    pub fn granted(&self, installation: &str, capability: &str) -> Result<bool, SystemReject> {
+        let lock = self.file.lock();
+        let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        Ok(self.load()?.get(installation).is_some_and(|capabilities| capabilities.iter().any(|known| known == capability)))
+    }
+
+    /// What an installation was granted; nothing when the file cannot be read.
+    pub fn capabilities(&self, installation: &str) -> Vec<String> {
+        let lock = self.file.lock();
+        let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        self.load().ok().and_then(|mut all| all.remove(installation)).unwrap_or_default()
+    }
+
+    /// Grants or revokes one capability. A corrupt file is replaced: this is an explicit action of the user.
+    pub fn set(&self, installation: &str, capability: &str, granted: bool) -> bool {
+        if !is_owner(installation) || !Self::CAPABILITIES.contains(&capability) {
+            return false;
+        }
+        let lock = self.file.lock();
+        let _guard = lock.lock().unwrap_or_else(|poisoned| poisoned.into_inner());
+        let mut all = self.load().unwrap_or_default();
+        let mut next = all.remove(installation).unwrap_or_default();
+        next.retain(|known| known != capability);
+        if granted {
+            next.push(capability.to_owned());
+            next.sort_unstable();
+        }
+        if !next.is_empty() {
+            if all.len() >= Self::MAXIMUM_OWNERS {
+                return false;
+            }
+            all.insert(installation.to_owned(), next);
+        }
+        let grants: Object = all.into_iter().map(|(owner, capabilities)| (owner, Value::from(capabilities))).collect();
+        self.file.write(&crate::json::stringify(&serde_json::json!({ "formatVersion": 1, "grants": grants })))
+    }
+
+    /// Forgets everything granted to a deleted installation.
+    pub fn retire(&self, installation: &str) {
+        for capability in Self::CAPABILITIES {
+            self.set(installation, capability, false);
+        }
+    }
+
+    fn load(&self) -> Result<std::collections::BTreeMap<String, Vec<String>>, SystemReject> {
+        let unavailable = || SystemServiceError::Unavailable.reject();
+        let Some(text) = self.file.read().map_err(|_| unavailable())? else { return Ok(Default::default()) };
+        let root = crate::json::parse_object(&text).map_err(|_| unavailable())?;
+        if root.len() != 2 || root.get("formatVersion").and_then(Value::as_i64) != Some(1) {
+            return Err(unavailable());
+        }
+        let grants = root.opt_object("grants").filter(|grants| grants.len() <= Self::MAXIMUM_OWNERS).ok_or_else(unavailable)?;
+        let mut all = std::collections::BTreeMap::new();
+        for (owner, value) in grants {
+            let values: Vec<String> = value.as_array().ok_or_else(unavailable)?.iter().map(|item| item.as_str().map(str::to_owned).ok_or_else(unavailable)).collect::<Result<_, _>>()?;
+            let distinct: HashSet<&String> = values.iter().collect();
+            if !is_owner(owner) || distinct.len() != values.len() || values.iter().any(|value| !Self::CAPABILITIES.contains(&value.as_str())) {
+                return Err(unavailable());
+            }
+            all.insert(owner.clone(), values);
+        }
+        Ok(all)
+    }
 }
 
 /// True for the Unicode categories Cc (control) and Cf (format).
@@ -544,22 +656,98 @@ impl PrivateFile {
     }
 }
 
+/// Why a file the user picked could not be read again.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PickedFileError {
+    /// It is gone, is not a regular file any more (a link, a folder, a device), cannot be opened, or changed while it was read.
+    Unreadable,
+    /// It is larger than the caller accepts.
+    TooLarge,
+}
+
+/// What [`read_picked_file`] found: the bytes and what identifies this state of the file.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PickedFile {
+    pub bytes: Vec<u8>,
+    /// Modification time in nanoseconds since the epoch.
+    pub modified: i128,
+}
+
+/// Opens a file the user picked earlier, by the absolute path that was
+/// recorded then, and reads at most `maximum_bytes` of it.
+///
+/// The path was the user's choice, but the file behind it may have been
+/// replaced since: the last component is never followed when it is a link,
+/// only a regular file is read (opening never waits on a pipe or a device),
+/// the size is checked on the opened file before anything is read, and a
+/// file that changes during the read is refused.
+pub fn read_picked_file(path: &Path, maximum_bytes: u64) -> Result<PickedFile, PickedFileError> {
+    use PickedFileError::{TooLarge, Unreadable};
+    if !path.is_absolute() {
+        return Err(Unreadable);
+    }
+    let file = std::fs::OpenOptions::new().read(true).custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK | libc::O_CLOEXEC).open(path).map_err(|_| Unreadable)?;
+    let before = file.metadata().map_err(|_| Unreadable)?;
+    if !before.is_file() {
+        return Err(Unreadable);
+    }
+    if before.len() > maximum_bytes {
+        return Err(TooLarge);
+    }
+    let mut bytes = Vec::with_capacity(before.len() as usize);
+    (&file).take(maximum_bytes + 1).read_to_end(&mut bytes).map_err(|_| Unreadable)?;
+    if bytes.len() as u64 > maximum_bytes {
+        return Err(TooLarge);
+    }
+    let after = file.metadata().map_err(|_| Unreadable)?;
+    let stamp = |metadata: &std::fs::Metadata| (metadata.len(), metadata.mtime(), metadata.mtime_nsec());
+    if stamp(&after) != stamp(&before) || bytes.len() as u64 != before.len() {
+        return Err(Unreadable);
+    }
+    Ok(PickedFile { bytes, modified: i128::from(before.mtime()) * 1_000_000_000 + i128::from(before.mtime_nsec()) })
+}
+
+/// The path to record for a file the user picked: absolute, with every link
+/// on the way resolved now, while the user is looking at what they chose.
+/// `None` when it is not a regular file, or its path is not text a record can hold.
+pub fn picked_path(chosen: &Path) -> Option<PathBuf> {
+    let resolved = std::fs::canonicalize(chosen).ok()?;
+    let text = resolved.to_str()?;
+    (resolved.is_absolute() && text.len() <= 4096 && !text.chars().any(char::is_control) && std::fs::symlink_metadata(&resolved).ok()?.is_file()).then_some(resolved)
+}
+
 /// The shared gate of the Runtime 1.6 system services. The order is the Apple
 /// runtime's and decides which code a script sees:
 /// 1. `permission_denied`: not an installed owner, no manifest, the permission
 ///    is not declared, or `minimumRuntimeVersion` is below 1.6;
 /// 2. `read_only`: a future timeline entry, a Live Activity presentation, or
 ///    a write outside a user-initiated action;
-/// 3. `query_limit`: the eight-query budget of the execution is spent.
-///
-/// Services with a per-widget native grant check it between steps 2 and 3; `$weather` has none.
+/// 3. `permission_denied`: the service needs a per-widget native grant and
+///    the installation has none (`$weather` and `$documents` need none);
+/// 4. `query_limit`: the eight-query budget of the execution is spent.
 pub mod system_gate {
     use super::*;
 
     pub fn check(context: &CallContext, permission: &str, writing: bool) -> Result<(), SystemReject> {
-        validate(context, permission, writing)?;
+        check_granted(context, permission, writing, None)
+    }
+
+    /// [`check`] for a service with a per-widget native grant.
+    pub fn check_granted(context: &CallContext, permission: &str, writing: bool, grants: Option<&SystemAccessGrants>) -> Result<(), SystemReject> {
+        validate_granted(context, permission, writing, grants)?;
         if !context.consume_data_query() {
             return Err(SystemServiceError::QueryLimit.reject());
+        }
+        Ok(())
+    }
+
+    /// Steps 1 to 3; repeated before a result is delivered so a revoked grant stops an in-flight call.
+    pub fn validate_granted(context: &CallContext, permission: &str, writing: bool, grants: Option<&SystemAccessGrants>) -> Result<(), SystemReject> {
+        validate(context, permission, writing)?;
+        if let Some(grants) = grants
+            && !grants.granted(&context.installation, permission)?
+        {
+            return Err(SystemServiceError::PermissionDenied.reject());
         }
         Ok(())
     }
@@ -591,6 +779,40 @@ pub mod system_gate {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn grants_are_per_installation_and_fail_closed() {
+        const OWNER: &str = "11111111-1111-4111-8111-111111111111";
+        const OTHER: &str = "22222222-2222-4222-8222-222222222222";
+        let directory = std::env::temp_dir().join(format!("scriptwidget-test-grants-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&directory);
+        let grants = SystemAccessGrants::new(directory.join("grants.json"));
+        assert_eq!(grants.granted(OWNER, "notifications"), Ok(false));
+        assert!(grants.set(OWNER, "notifications", true));
+        assert!(!grants.set(OWNER, "calendarWrite", true), "not a capability of this platform");
+        assert!(!grants.set("preview", "notifications", true), "not an installation");
+        assert_eq!(grants.granted(OWNER, "notifications"), Ok(true));
+        assert_eq!(grants.granted(OTHER, "notifications"), Ok(false));
+        assert_eq!(grants.capabilities(OWNER), ["notifications"]);
+
+        let mut context = CallContext::new(OWNER, true, &["notifications"], &[], Some("1.6"));
+        context.is_action = true;
+        assert!(system_gate::check_granted(&context, "notifications", true, Some(&grants)).is_ok());
+        let other = CallContext::new(OTHER, true, &["notifications"], &[], Some("1.6"));
+        assert_eq!(system_gate::check_granted(&other, "notifications", false, Some(&grants)).unwrap_err().0, SystemServiceError::PermissionDenied.message());
+
+        // A file that is not what this writes denies everything, and says the service is unavailable.
+        for text in ["{ not json", r#"{"formatVersion":2,"grants":{}}"#, r#"{"formatVersion":1,"grants":{"x":["notifications"]}}"#, r#"{"formatVersion":1,"grants":{},"more":1}"#] {
+            std::fs::write(directory.join("grants.json"), text).unwrap();
+            assert_eq!(grants.granted(OWNER, "notifications").unwrap_err().0, SystemServiceError::Unavailable.message(), "{text}");
+            assert!(grants.capabilities(OWNER).is_empty());
+        }
+        // The user's own action replaces it.
+        assert!(grants.set(OWNER, "notifications", true));
+        grants.retire(OWNER);
+        assert_eq!(grants.granted(OWNER, "notifications"), Ok(false));
+        let _ = std::fs::remove_dir_all(&directory);
+    }
 
     #[test]
     fn owners_are_canonical_lowercase_uuids() {

@@ -152,6 +152,14 @@ impl AiCandidates {
         result
     }
 
+    /// A package name for a conversation that is saved as a new widget: its title when that can
+    /// be a name, with what a name cannot hold taken out, and "AI Widget" otherwise.
+    pub fn suggested_name(title: &str) -> String {
+        let title: String = title.trim_end_matches('…').chars().map(|character| if character.is_control() || "/\\:".contains(character) { ' ' } else { character }).collect();
+        let title = title.trim().trim_start_matches('.').trim();
+        if !title.is_empty() && crate::packages::names::is_valid(title) { title.to_owned() } else { "AI Widget".to_owned() }
+    }
+
     /// Saves a version as a new widget; a taken name gets a numbered suffix.
     pub fn save_new(library: &Library, new_name: &str, version: &AiConversationVersion) -> Result<InstalledPackage, PackageError> {
         let unique = library.store().unique_name(new_name)?;

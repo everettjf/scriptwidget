@@ -138,8 +138,37 @@ impl Report {
         self.fail(failure.exit, &failure.code, &failure.message);
     }
 
+    /// The report as it is printed, without printing it.
+    #[cfg(test)]
+    pub fn into_value(mut self) -> Value {
+        let diagnostics = self.diagnostics.clone();
+        let mut value = self.seal();
+        value["diagnostics"] = Value::Array(diagnostics);
+        value
+    }
+
+    /// The report as it is printed and its exit code, without printing it.
+    #[cfg(test)]
+    pub fn rendered(self) -> (String, i32) {
+        let exit = self.exit;
+        (serde_json::to_string_pretty(&self.into_value()).unwrap_or_default(), exit)
+    }
+
     /// Prints the report to standard output and its errors and warnings to standard error; returns the exit code.
     pub fn finish(mut self) -> i32 {
+        print_diagnostics(&self.diagnostics);
+        let mut value = self.seal();
+        value["diagnostics"] = Value::Array(std::mem::take(&mut self.diagnostics));
+        let text = serde_json::to_string_pretty(&value).unwrap_or_else(|_| "{}".into());
+        let mut output = std::io::stdout().lock();
+        // A closed pipe is the reader's choice; the exit code still tells the result.
+        let _ = writeln!(output, "{text}");
+        let _ = output.flush();
+        self.exit
+    }
+
+    /// Everything of the report but its diagnostics, which are its last member.
+    fn seal(&mut self) -> Value {
         let status = match self.exit {
             EXIT_PASSED => "passed",
             EXIT_FAILED => "failed",
@@ -153,14 +182,7 @@ impl Report {
         if let Some(checks) = self.checks.take() {
             self.fields.insert("checks".into(), Value::Object(checks));
         }
-        print_diagnostics(&self.diagnostics);
-        self.fields.insert("diagnostics".into(), Value::Array(std::mem::take(&mut self.diagnostics)));
-        let text = serde_json::to_string_pretty(&Value::Object(self.fields)).unwrap_or_else(|_| "{}".into());
-        let mut output = std::io::stdout().lock();
-        // A closed pipe is the reader's choice; the exit code still tells the result.
-        let _ = writeln!(output, "{text}");
-        let _ = output.flush();
-        self.exit
+        Value::Object(std::mem::take(&mut self.fields))
     }
 }
 

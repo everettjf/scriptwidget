@@ -31,6 +31,8 @@ pub(super) struct EditorSession {
     pub pane: PreviewPane,
     /// The AI conversation about this widget, when it is open beside the code.
     pub ai: Option<super::ai::AiView>,
+    /// What is granted to and picked for this widget, while "Data access" is shown in place of the code.
+    pub access: Option<crate::access::AccessState>,
     _changes: Option<Subscription>,
 }
 
@@ -100,10 +102,14 @@ impl StudioWindow {
         // The preview keeps its size and appearance while moving between the files of one widget.
         // So does the AI conversation; one about another widget ends here.
         let (pane, ai) = match self.editor.take() {
+            // Opening a file shows its code: "Data access" closes.
             Some(previous) if previous.name == card.name => (previous.pane, previous.ai),
             previous => {
-                if let Some(view) = previous.as_ref().and_then(|previous| previous.ai.as_ref()) {
-                    view.panel.cancel();
+                if let Some(previous) = previous {
+                    if let Some(view) = previous.ai {
+                        self.retire_ai(view);
+                    }
+                    self.retired.extend(previous.pane.shown);
                 }
                 (PreviewPane::new(card.families.clone(), self.dark(cx)), None)
             }
@@ -132,7 +138,7 @@ impl StudioWindow {
             let focus = editor.focus_handle(cx);
             window.defer(cx, move |window, cx| focus.focus(window, cx));
         }
-        self.editor = Some(EditorSession { name: card.name, files, path, editor, dirty: false, status: None, pane, ai, _changes: changes });
+        self.editor = Some(EditorSession { name: card.name, files, path, editor, dirty: false, status: None, pane, ai, access: None, _changes: changes });
         self.page = Page::Editor;
         self.request_preview(true, cx);
     }
@@ -164,9 +170,40 @@ impl StudioWindow {
         cx.notify();
     }
 
+    /// Asks for the name of a new file of the open widget.
+    fn new_file(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        if self.editor.is_none() {
+            return;
+        }
+        let input = cx.new(|cx| gpui_kit::component::input::InputState::new(window, cx).placeholder(t("editor.newFile.hint")));
+        self.ask_text(t("editor.newFile.title"), input, window, cx, |this, name, window, cx| this.create_file(name, window, cx));
+    }
+
+    /// Creates the file through the package layer, which decides whether the name is a path inside the package, and opens it.
+    fn create_file(&mut self, typed: String, window: &mut Window, cx: &mut Context<Self>) {
+        let Some(session) = &mut self.editor else { return };
+        let name = session.name.clone();
+        match self.studio.new_file(&name, &typed) {
+            Ok(path) => {
+                // Listed at once, also when the open file has changes and the user stays in it.
+                if let Ok(files) = self.studio.files(&name) {
+                    session.files = files;
+                }
+                self.forget_thumbnail(&name);
+                cx.notify();
+                self.open_file(path, window, cx);
+            }
+            Err(error) => self.notify_error(tf("editor.newFile.failed", &[&error.0]), window, cx),
+        }
+    }
+
     fn open_file(&mut self, path: String, window: &mut Window, cx: &mut Context<Self>) {
-        let Some(session) = &self.editor else { return };
+        let Some(session) = &mut self.editor else { return };
         if session.path == path {
+            // Its code, when "Data access" was shown in its place.
+            if session.access.take().is_some() {
+                cx.notify();
+            }
             return;
         }
         let name = session.name.clone();
@@ -211,6 +248,7 @@ impl StudioWindow {
                     .child(h_flex().gap_2().text_sm().child(div().text_color(muted).truncate().child(SharedString::from(session.path.clone()))).child(status)),
             )
             .child(Button::new("editor-ai").label(t("ai.open")).map(|button| if session.ai.is_some() { button.primary() } else { button.outline() }).selected(session.ai.is_some()).on_click(cx.listener(|this, _, window, cx| this.toggle_ai(window, cx))))
+            .child(Button::new("editor-access").label(t("access.open")).map(|button| if session.access.is_some() { button.primary() } else { button.outline() }).selected(session.access.is_some()).on_click(cx.listener(|this, _, _, cx| this.toggle_access(cx))))
             .child(Button::new("editor-export").label(t("action.export")).outline().on_click(cx.listener({
                 let name = name.clone();
                 move |this, _, window, cx| this.export(name.clone(), window, cx)
@@ -218,17 +256,25 @@ impl StudioWindow {
             .child(Button::new("editor-add").label(t("action.addToDesktop")).outline().on_click(cx.listener(move |this, _, window, cx| this.add_to_desktop(name.clone(), Some(family.clone()), window, cx))))
             .child(Button::new("editor-save").label(t("action.save")).primary().tooltip(t("editor.saveHint")).on_click(cx.listener(|this, _, window, cx| this.save(window, cx))));
 
-        let files = v_flex().w(px(190.)).h_full().flex_shrink_0().border_r_1().border_color(border).child(div().px_3().py_2().text_sm().font_semibold().text_color(muted).child(t("editor.files"))).child(
+        let files = v_flex().w(px(190.)).h_full().flex_shrink_0().border_r_1().border_color(border).child(
+            h_flex()
+                .pl_3()
+                .pr_1()
+                .py_1()
+                .child(div().flex_1().text_sm().font_semibold().text_color(muted).child(t("editor.files")))
+                .child(Button::new("editor-new-file").icon(IconName::Plus).ghost().small().tooltip(t("editor.newFile")).accessibility_label(t("editor.newFile")).on_click(cx.listener(|this, _, window, cx| this.new_file(window, cx)))),
+        ).child(
             div().id("editor-files").flex_1().min_h_0().overflow_y_scrollbar().child(v_flex().px_1().gap_0p5().children(session.files.iter().enumerate().map(|(index, path)| {
                 let target = path.clone();
                 // File names come from the package: shown as text.
-                Button::new(("editor-file", index)).child(div().w_full().truncate().child(SharedString::from(path.clone()))).small().ghost().w_full().selected(*path == session.path).on_click(cx.listener(move |this, _, window, cx| this.open_file(target.clone(), window, cx)))
+                Button::new(("editor-file", index)).child(div().w_full().truncate().child(SharedString::from(path.clone()))).small().ghost().w_full().selected(*path == session.path && session.access.is_none()).on_click(cx.listener(move |this, _, window, cx| this.open_file(target.clone(), window, cx)))
             }))),
         );
-        let code = match &session.editor {
-            Some(editor) => div().flex_1().min_w_0().h_full().child(Editor::new(editor).bordered(false).aria_label(t("editor.code")).h_full()),
-            None => div().flex_1().min_w_0().h_full().p_6().text_color(muted).child(t("editor.binary")),
+        let code = match (&session.access, &session.editor) {
+            (Some(state), _) => self.render_access(state, cx).into_any_element(),
+            (None, Some(editor)) => div().flex_1().min_w_0().h_full().child(Editor::new(editor).bordered(false).aria_label(t("editor.code")).h_full()).into_any_element(),
+            (None, None) => div().flex_1().min_w_0().h_full().p_6().text_color(muted).child(t("editor.binary")).into_any_element(),
         };
-        v_flex().size_full().child(header).child(h_flex().flex_1().min_h_0().items_start().child(files).child(code).children(session.ai.as_ref().map(|view| self.render_ai(view, cx))).child(self.render_pane(&session.pane, cx))).into_any_element()
+        v_flex().size_full().child(header).child(h_flex().flex_1().min_h_0().items_start().child(files).child(code).children(session.ai.as_ref().map(|view| self.render_ai(view, session.pane.error.is_some(), cx))).child(self.render_pane(&session.pane, cx))).into_any_element()
     }
 }

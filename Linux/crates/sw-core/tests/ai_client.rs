@@ -231,7 +231,9 @@ fn error_object_in_a_successful_response_is_an_error() {
 #[test]
 fn transport_failures_never_carry_the_key() {
     for style in ["plain", "streamed", "models"] {
-        let (client, _) = client(vec![Err(AiClientError::new(AiErrorKind::Network, format!("proxy said {KEY}")))]);
+        // The streamed request is tried once more in the plain way, which fails the same.
+        let failure = || Err(AiClientError::new(AiErrorKind::Network, format!("proxy said {KEY}")));
+        let (client, _) = client(vec![failure(), failure()]);
         let error = match style {
             "plain" => client.chat(&messages(), &anthropic(), KEY, &none()).unwrap_err(),
             "streamed" => client.chat_stream(&messages(), &anthropic(), KEY, &none(), &mut |_| {}).unwrap_err(),
@@ -391,6 +393,54 @@ fn an_anthropic_stream_keeps_only_the_text_and_counts_tokens() {
     assert_eq!(transport.body(0)["stream"], true);
 }
 
+/// The API refuses a message without text; one is left after an empty reply.
+#[test]
+fn an_anthropic_request_leaves_out_messages_without_text() {
+    let history = vec![
+        AiMessage::new(Role::System, "rules"),
+        AiMessage::new(Role::User, "make a clock"),
+        AiMessage::new(Role::Assistant, ""),
+        AiMessage::new(Role::User, " \n\t"),
+        AiMessage::new(Role::User, "try again"),
+    ];
+    let (client, _) = client(Vec::new());
+    for stream in [false, true] {
+        let request = client.build_chat_request(&history, &anthropic(), KEY, stream).unwrap();
+        let body: Value = serde_json::from_slice(request.body.as_ref().unwrap()).unwrap();
+        let sent: Vec<(&str, &str)> = body["messages"].as_array().unwrap().iter().map(|message| (message["role"].as_str().unwrap(), message["content"].as_str().unwrap())).collect();
+        assert_eq!(sent, [("user", "make a clock"), ("user", "try again")]);
+    }
+    // Chat completions accepts them, as Swift sends them.
+    let request = client.build_chat_request(&history, &openai(), KEY, false).unwrap();
+    let body: Value = serde_json::from_slice(request.body.as_ref().unwrap()).unwrap();
+    assert_eq!(body["messages"].as_array().unwrap().len(), 5);
+}
+
+/// An `error` event in the middle of the stream fails the request: the text before it is not a reply.
+#[test]
+fn an_error_event_in_an_anthropic_stream_fails_the_request() {
+    let events = [
+        r#"{"type":"content_block_delta","delta":{"type":"text_delta","text":"SUMMARY: half"}}"#,
+        r#"{"type":"error","error":{"type":"overloaded_error","message":"secret text"}}"#,
+    ];
+    let transport = FakeTransport::streaming(vec![sse(&events)], 5);
+    let error = AiClient::new(transport.clone()).chat_stream(&one_message(), &anthropic(), KEY, &none(), &mut |_| {}).unwrap_err();
+    assert_eq!(error.kind, AiErrorKind::Http);
+    assert_eq!(error.message, "The AI server reported an error (overloaded_error).");
+    assert_eq!(transport.requests().len(), 1, "nothing is sent again");
+    // Before any text too, and without a code that can be shown.
+    let transport = FakeTransport::streaming(vec![sse(&[r#"{"type":"error","error":{"type":"not a code","message":"x"}}"#])], 5);
+    let error = AiClient::new(transport.clone()).chat_stream(&one_message(), &anthropic(), KEY, &none(), &mut |_| {}).unwrap_err();
+    assert_eq!(error.message, "The AI server reported an error.");
+    assert_eq!(transport.requests().len(), 1);
+    // A code that echoes the key is not shown.
+    let transport = FakeTransport::streaming(vec![sse(&[&format!(r#"{{"type":"error","error":{{"type":"{KEY}"}}}}"#)])], 5);
+    assert_no_key(&AiClient::new(transport).chat_stream(&one_message(), &anthropic(), KEY, &none(), &mut |_| {}).unwrap_err());
+    // The same object in a chat-completions stream is not this event.
+    let transport = FakeTransport::streaming(vec![sse(&[&delta("whole"), r#"{"type":"error"}"#])], 5);
+    assert_eq!(AiClient::new(transport).chat_stream(&one_message(), &openai(), KEY, &none(), &mut |_| {}).unwrap().content, "whole");
+}
+
 /// The event stream of the Messages API as a server writes it: `event:` lines, pings, a tool
 /// block and CRLF line ends. The reader takes the `data:` lines and of those only the text.
 #[test]
@@ -544,4 +594,119 @@ fn a_bound_chat_sends_the_key_in_the_header_only() {
     assert_eq!(request.header("x-api-key"), Some(KEY));
     assert!(!String::from_utf8_lossy(request.body.as_deref().unwrap()).contains(KEY));
     assert!(!request.url.contains(KEY));
+}
+
+/// A transport whose streamed exchange hands over `pieces` and then breaks off with `failure`,
+/// and whose plain exchange answers with `plain`. Records every request.
+#[derive(Clone)]
+struct Breaking {
+    pieces: Vec<String>,
+    failure: AiClientError,
+    plain: Canned,
+    requests: Arc<Mutex<Vec<AiHttpRequest>>>,
+}
+
+impl Breaking {
+    fn new(pieces: &[&str], failure: AiClientError, plain: Canned) -> Self {
+        Self { pieces: pieces.iter().map(|piece| piece.to_string()).collect(), failure, plain, requests: Arc::default() }
+    }
+
+    /// Whether each request asked for a streamed reply.
+    fn streamed(&self) -> Vec<bool> {
+        self.requests.lock().unwrap().iter().map(|request| serde_json::from_slice::<Value>(request.body.as_deref().unwrap()).unwrap().get("stream").is_some()).collect()
+    }
+}
+
+impl AiTransport for Breaking {
+    fn execute(&self, request: &AiHttpRequest, _: &AiCancellation) -> Canned {
+        self.requests.lock().unwrap().push(request.clone());
+        self.plain.clone()
+    }
+
+    fn execute_streaming(&self, request: &AiHttpRequest, _: &AiCancellation, on_body: OnBody<'_>) -> Canned {
+        self.requests.lock().unwrap().push(request.clone());
+        for piece in &self.pieces {
+            on_body(piece.as_bytes())?;
+        }
+        Err(self.failure.clone())
+    }
+}
+
+/// Port of the last `catch` of `AIClient.chatStream`: a streamed request that failed in transport
+/// is asked once more in the plain form, as long as nothing was received yet.
+#[test]
+fn a_stream_that_fails_before_any_text_is_asked_once_more_in_the_plain_way() {
+    let plain = r#"{"choices":[{"message":{"content":"plain reply"},"finish_reason":"stop"}],"usage":{"prompt_tokens":4,"completion_tokens":2}}"#;
+    let unreachable = || AiClientError::new(AiErrorKind::Network, "The AI server could not be reached. Check your connection and try again.");
+    let timeout = || AiClientError::new(AiErrorKind::Timeout, "The AI server did not answer in time. Try again.");
+    let ask = |transport: &Breaking, seen: &mut Vec<String>| AiClient::new(transport.clone()).chat_stream(&one_message(), &openai(), KEY, &none(), &mut |text| seen.push(text.to_owned()));
+
+    for failure in [unreachable(), timeout()] {
+        // Nothing arrived, and events without text arrived: the plain request is the reply.
+        for pieces in [&[][..], &["data: {\"choices\":[{\"delta\":{}}]}\n\n"]] {
+            let transport = Breaking::new(pieces, failure.clone(), response(200, plain));
+            let mut seen = Vec::new();
+            let result = ask(&transport, &mut seen).unwrap();
+            assert_eq!((result.content.as_str(), result.usage.total_tokens), ("plain reply", 6));
+            assert_eq!(transport.streamed(), [true, false], "one streamed request, then one plain request");
+            assert_eq!(seen, ["plain reply"]);
+        }
+    }
+
+    // Once only: when the plain request fails too, its failure is the answer.
+    let transport = Breaking::new(&[], unreachable(), Err(timeout()));
+    assert_eq!(ask(&transport, &mut Vec::new()).unwrap_err(), timeout());
+    assert_eq!(transport.streamed(), [true, false]);
+    // The plain request's own refusal is reported as it is.
+    let transport = Breaking::new(&[], unreachable(), response(401, "{}"));
+    let refused = ask(&transport, &mut Vec::new()).unwrap_err();
+    assert_eq!((refused.kind, refused.http_status), (AiErrorKind::Http, Some(401)));
+}
+
+#[test]
+fn a_stream_is_never_asked_again_after_text_arrived_or_for_a_refusal() {
+    let plain = r#"{"choices":[{"message":{"content":"another answer"},"finish_reason":"stop"}]}"#;
+    let unreachable = AiClientError::new(AiErrorKind::Network, "The AI server could not be reached. Check your connection and try again.");
+    // Text already shown must not be replaced by a second, different answer.
+    let first = format!("data: {}\n\n", delta("$render("));
+    let broken = Breaking::new(&[&first], unreachable.clone(), response(200, plain));
+    let mut seen: Vec<String> = Vec::new();
+    let error = AiClient::new(broken.clone()).chat_stream(&one_message(), &openai(), KEY, &none(), &mut |text| seen.push(text.to_owned())).unwrap_err();
+    assert_eq!(error, unreachable);
+    assert_eq!((broken.streamed(), seen), (vec![true], vec!["$render(".to_owned()]));
+
+    // Authentication and the usage limit are answers, not broken connections: reported, never asked again.
+    for status in [401, 403, 429] {
+        let transport = FakeTransport::streaming(vec![AiHttpResponse::new(status, "{}"), AiHttpResponse::new(200, plain)], 7);
+        let error = AiClient::new(transport.clone()).chat_stream(&one_message(), &openai(), KEY, &none(), &mut |_| {}).unwrap_err();
+        assert_eq!((error.kind, error.http_status), (AiErrorKind::Http, Some(status)));
+        assert_eq!(transport.requests().len(), 1, "{status}");
+    }
+    // Neither is what is no failure of the connection: a redirect, a profile that cannot be used, a reply too large, a stop.
+    for failure in [
+        AiClientError::with_status(AiErrorKind::Http, "The AI server answered with a redirect, which is not followed. Check the API base URL.", 302),
+        AiClientError::new(AiErrorKind::InvalidProfile, "The API base URL must start with https://."),
+        AiClientError::new(AiErrorKind::ResponseTooLarge, "The AI response exceeded the size limit."),
+        AiClientError::cancelled(),
+    ] {
+        let transport = Breaking::new(&[], failure.clone(), response(200, plain));
+        assert_eq!(AiClient::new(transport.clone()).chat_stream(&one_message(), &openai(), KEY, &none(), &mut |_| {}).unwrap_err(), failure);
+        assert_eq!(transport.streamed(), [true]);
+    }
+    // The user stopped the turn while the connection failed: nothing more is sent.
+    #[derive(Clone)]
+    struct Stopping(AiCancellation, Arc<Mutex<usize>>);
+    impl AiTransport for Stopping {
+        fn execute(&self, _: &AiHttpRequest, _: &AiCancellation) -> Canned {
+            *self.1.lock().unwrap() += 1;
+            Err(AiClientError::new(AiErrorKind::Network, "The AI request could not be sent."))
+        }
+        fn execute_streaming(&self, request: &AiHttpRequest, cancellation: &AiCancellation, _: OnBody<'_>) -> Canned {
+            self.0.cancel();
+            self.execute(request, cancellation)
+        }
+    }
+    let stopping = Stopping(AiCancellation::new(), Arc::default());
+    assert_eq!(AiClient::new(stopping.clone()).chat_stream(&one_message(), &openai(), KEY, &stopping.0, &mut |_| {}).unwrap_err().kind, AiErrorKind::Network);
+    assert_eq!(*stopping.1.lock().unwrap(), 1);
 }

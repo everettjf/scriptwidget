@@ -122,6 +122,10 @@ pub enum PreviewSource {
     Installed { name: String, edits: Vec<(String, String)> },
     /// A bundled template by "group/name".
     Bundled(String),
+    /// A version of an AI conversation, in memory: the code and the hosts it declares, laid over
+    /// the files of the installed widget `widget`, or a package of its own for a widget that does
+    /// not exist yet. It runs under the identity every trial of a conversation has.
+    Candidate { widget: Option<String>, source: String, domains: Vec<String> },
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -162,6 +166,8 @@ pub struct Studio {
     library: Library,
     runtime: WidgetRuntime,
     renderer: WidgetRenderer,
+    /// The Skills of the AI conversation (see [`crate::skills`]).
+    skills: sw_core::skills::SkillStore,
     /// One run at a time: previews are asked for from several threads.
     engine: Mutex<()>,
 }
@@ -181,6 +187,7 @@ impl Studio {
             templates,
             runtime: WidgetRuntime::new(scripts.clone(), paths)?,
             renderer: WidgetRenderer::new(scripts)?,
+            skills: sw_core::skills::SkillStore::new(paths.skills()),
             engine: Mutex::new(()),
         })
     }
@@ -195,6 +202,25 @@ impl Studio {
 
     pub(crate) fn templates(&self) -> Option<&Path> {
         self.templates.as_deref()
+    }
+
+    pub(crate) fn skill_store(&self) -> &sw_core::skills::SkillStore {
+        &self.skills
+    }
+
+    /// What the data APIs keep between runs, as the previews of this window see it.
+    pub(crate) fn system(&self) -> &sw_core::api::SystemStores {
+        self.runtime.system()
+    }
+
+    /// The runtime API version this program implements, as its runtime files state it.
+    pub(crate) fn api_version(&self) -> Option<String> {
+        self.runtime.scripts().contract().opt_string_or_none("apiVersion")
+    }
+
+    /// Compiles a package that is about to be installed, without running it; the error is the compiler's sentence.
+    pub(crate) fn compile(&self, files: &dyn PackageFiles) -> Result<(), String> {
+        self.runtime.validate_package(files).map_err(|error| error.message)
     }
 
     /// Compiles, runs and draws a candidate of an AI conversation in memory, as the preview would,
@@ -227,8 +253,14 @@ impl Studio {
         Ok(self.library.create(name.trim(), STARTER, None)?.name)
     }
 
+    /// Removes the widget, and with it what was granted to and picked for it.
     pub fn remove(&self, name: &str) -> Result<(), StudioError> {
-        Ok(self.library.delete(name)?)
+        let installation = self.library.find(name).map(|package| package.installation);
+        self.library.delete(name)?;
+        if let Some(installation) = installation {
+            self.runtime.system().retire(&installation);
+        }
+        Ok(())
     }
 
     /// Writes the widget as a `.swt` file. The archive is written next to
@@ -341,6 +373,35 @@ impl Studio {
         Ok(String::from_utf8(bytes).ok())
     }
 
+    /// Adds an empty text file to the widget and returns its path as the
+    /// package holds it. The name is the user's; the package layer decides
+    /// whether it is a path inside the package (no `..`, no absolute path, no
+    /// backslash, no hidden or reserved name, no link on the way). A name
+    /// that is already taken, in any letter case, is refused: this never
+    /// replaces a file.
+    pub fn new_file(&self, name: &str, path: &str) -> Result<String, StudioError> {
+        let path = path.trim();
+        let package = self.installed(name)?;
+        if path.is_empty() {
+            return Err(StudioError(crate::strings::t("editor.newFile.empty")));
+        }
+        if !is_text_file(path) {
+            return Err(StudioError(crate::strings::t("editor.newFile.type")));
+        }
+        // An empty widget.json is a manifest that cannot be read, which stops the whole widget.
+        if path.eq_ignore_ascii_case(manifests::FILE_NAME) {
+            return Err(StudioError(crate::strings::t("editor.newFile.reserved")));
+        }
+        let existing = package.files().list()?;
+        if existing.iter().any(|known| known.to_lowercase() == path.to_lowercase()) {
+            return Err(StudioError(crate::strings::tf("editor.newFile.exists", &[path])));
+        }
+        self.library.write_file(name, path, b"")?;
+        // The path as the package lists it: what was typed may differ in form (a doubled slash).
+        let listed = package.files().list()?;
+        Ok(listed.into_iter().find(|known| !existing.contains(known)).unwrap_or_else(|| path.to_owned()))
+    }
+
     /// Saves a file through the package store: written beside the old file and renamed over it.
     pub fn save_text(&self, name: &str, path: &str, text: &str) -> Result<(), StudioError> {
         Ok(self.library.write_file(name, path, text.as_bytes())?)
@@ -369,6 +430,17 @@ impl Studio {
                     Ok(files) => (Arc::new(files), format!("studio:{reference}")),
                     Err(error) => return failed(error.0),
                 }
+            }
+            PreviewSource::Candidate { widget, source, domains } => {
+                use sw_core::ai::candidates::{AiCandidates, PREVIEW_PACKAGE_ID};
+                let installed = match widget {
+                    Some(name) => match self.library.find(name) {
+                        Some(package) => Some(package),
+                        None => return failed(format!("There is no widget named {name}.")),
+                    },
+                    None => None,
+                };
+                (AiCandidates::files(installed.as_ref(), source, domains, "AI Widget"), PREVIEW_PACKAGE_ID.to_owned())
             }
         };
         let Some(presentation) = Presentation::for_family(&request.family, request.scale.clamp(0.5, 4.0)) else { return failed(format!("Unknown size {}", request.family)) };
@@ -495,6 +567,72 @@ mod tests {
     fn the_engine_is_shared_between_threads() {
         fn shared<T: Send + Sync>() {}
         shared::<Studio>();
+    }
+
+    #[test]
+    fn a_new_file_is_a_text_file_inside_the_widget_and_never_replaces_one() {
+        let scratch = Scratch::new("new-file");
+        let studio = studio(&scratch);
+        let name = studio.new_widget("Notes").unwrap();
+        let directory = studio.library().find(&name).unwrap().directory;
+        assert_eq!(studio.new_file(&name, "  lib/helpers.js ").unwrap(), "lib/helpers.js");
+        assert_eq!(studio.read_text(&name, "lib/helpers.js").unwrap().as_deref(), Some(""));
+        assert_eq!(studio.new_file(&name, "data.json").unwrap(), "data.json");
+        assert_eq!(studio.files(&name).unwrap(), ["main.jsx", "data.json", "lib/helpers.js", "widget.json"], "the entry first, then by name");
+        // A taken name, in any letter case, is refused; the file that is there keeps what it holds.
+        studio.save_text(&name, "data.json", "{\"kept\": true}").unwrap();
+        for taken in ["data.json", "DATA.JSON", "main.jsx", "Lib/Helpers.js"] {
+            assert_eq!(studio.new_file(&name, taken).unwrap_err().0, crate::strings::tf("editor.newFile.exists", &[taken]), "{taken}");
+        }
+        assert_eq!(studio.read_text(&name, "data.json").unwrap().as_deref(), Some("{\"kept\": true}"));
+        // The package layer decides what is a path inside the package.
+        let outside = scratch.write("outside/marker.txt", b"outside");
+        let escapes = [
+            "../escape.js".to_owned(),
+            "lib/../../escape.js".to_owned(),
+            "/tmp/scriptwidget-escape.js".to_owned(),
+            format!("{}/x.js", outside.parent().unwrap().display()),
+            "lib\\win.js".to_owned(),
+            ".hidden.js".to_owned(),
+            "lib/.hidden/x.js".to_owned(),
+            "__Build/x.js".to_owned(),
+            "a//b.js".to_owned(),
+            "./a.js".to_owned(),
+            "a/./b.js".to_owned(),
+            "nul\0.js".to_owned(),
+            "line\nbreak.js".to_owned(),
+        ];
+        for path in escapes {
+            assert!(studio.new_file(&name, &path).is_err(), "{path:?} was made");
+        }
+        assert!(!scratch.path("escape.js").exists() && !scratch.path("data/escape.js").exists() && !std::path::Path::new("/tmp/scriptwidget-escape.js").exists());
+        assert_eq!(std::fs::read_dir(outside.parent().unwrap()).unwrap().count(), 1, "nothing was written outside the widget");
+        // Through a link inside the widget's folder nothing is written either.
+        std::os::unix::fs::symlink(outside.parent().unwrap(), directory.join("linked")).unwrap();
+        assert!(studio.new_file(&name, "linked/x.js").is_err());
+        assert_eq!(std::fs::read_dir(outside.parent().unwrap()).unwrap().count(), 1);
+        // Not a text file, no name, the manifest, a widget that is not there.
+        assert_eq!(studio.new_file(&name, "picture.png").unwrap_err().0, crate::strings::t("editor.newFile.type"));
+        assert_eq!(studio.new_file(&name, "noextension").unwrap_err().0, crate::strings::t("editor.newFile.type"));
+        assert_eq!(studio.new_file(&name, "   ").unwrap_err().0, crate::strings::t("editor.newFile.empty"));
+        assert_eq!(studio.new_file(&name, "Widget.JSON").unwrap_err().0, crate::strings::t("editor.newFile.reserved"));
+        assert!(studio.new_file("No Such Widget", "a.js").is_err());
+        assert_eq!(studio.files(&name).unwrap(), ["main.jsx", "data.json", "lib/helpers.js", "widget.json"]);
+    }
+
+    #[test]
+    fn removing_a_widget_forgets_what_was_granted_to_it() {
+        let scratch = Scratch::new("retire");
+        let studio = studio(&scratch);
+        let name = studio.new_widget("Reminder").unwrap();
+        let installation = studio.library().find(&name).unwrap().installation;
+        let system = studio.system().clone();
+        assert!(system.grants.set(&installation, "notifications", true));
+        system.documents.add(&installation, &scratch.write("home/a.json", b"[]")).unwrap();
+        studio.remove(&name).unwrap();
+        assert_eq!(system.grants.granted(&installation, "notifications"), Ok(false));
+        assert_eq!(system.documents.list(&installation).unwrap(), []);
+        assert!(scratch.path("home/a.json").is_file(), "the picked file itself stays");
     }
 
     #[test]

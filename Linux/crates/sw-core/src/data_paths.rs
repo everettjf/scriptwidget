@@ -87,6 +87,26 @@ impl DataPaths {
         self.root.join("Plugins")
     }
 
+    /// Imported Skills, one folder each, and which of them are enabled (see [`crate::skills`]).
+    pub fn skills(&self) -> PathBuf {
+        self.root.join("Skills")
+    }
+
+    /// What was installed from the Gallery (see [`crate::gallery::GalleryInstallationRegistry`]).
+    pub fn gallery_installations(&self) -> PathBuf {
+        self.root.join("gallery-installations.json")
+    }
+
+    /// The last Gallery index that passed validation. It can be fetched again, so it is cache.
+    pub fn gallery_cache(&self) -> PathBuf {
+        self.cache.join("Gallery")
+    }
+
+    /// Where Gallery files are downloaded and checked before anything is installed.
+    pub fn gallery_downloads(&self) -> PathBuf {
+        self.cache.join("GalleryDownloads")
+    }
+
     /// Compiled artifacts, remote images and other data that can be rebuilt.
     pub fn cache(&self) -> &Path {
         &self.cache
@@ -99,6 +119,14 @@ impl DataPaths {
 
     pub fn settings(&self) -> PathBuf {
         self.root.join("settings.json")
+    }
+
+    /// What the user allowed and picked for the data APIs: the per-widget
+    /// grants, the pending notifications, the connected service (never its
+    /// token) and the lists of picked documents and pictures (see
+    /// [`crate::api::SystemStores`]).
+    pub fn system(&self) -> PathBuf {
+        self.root.join("System")
     }
 
     /// The AI provider profile: endpoint and model, never a key (see [`crate::ai::profile_store`]).
@@ -133,6 +161,11 @@ mod tests {
         assert_eq!(paths.settings(), Path::new("/data/scriptwidget/settings.json"));
         assert_eq!(paths.ai_profile(), Path::new("/data/scriptwidget/ai-profile.json"));
         assert_eq!(paths.ai_conversations(), Path::new("/data/scriptwidget/AiConversations"));
+        assert_eq!(paths.skills(), Path::new("/data/scriptwidget/Skills"));
+        assert_eq!(paths.system(), Path::new("/data/scriptwidget/System"));
+        assert_eq!(paths.gallery_installations(), Path::new("/data/scriptwidget/gallery-installations.json"));
+        assert_eq!(paths.gallery_cache(), Path::new("/cache/scriptwidget/Gallery"));
+        assert_eq!(paths.gallery_downloads(), Path::new("/cache/scriptwidget/GalleryDownloads"));
     }
 
     #[test]

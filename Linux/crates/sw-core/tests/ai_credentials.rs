@@ -116,6 +116,32 @@ fn a_child_of_this_program_never_inherits_the_key_of_one_run() {
     assert!(!environment.contains(ENVIRONMENT_KEY) && !environment.contains(KEY), "{environment}");
 }
 
+/// The same keyring keeps the GitHub token of `$services`, as another kind of item, and a
+/// widget run that asks for it does not wait for a keyring that asks the user something.
+#[test]
+fn another_kind_of_secret_is_another_item_and_a_slow_keyring_is_not_waited_for() {
+    let folder = temporary_directory("ai-secret-kind");
+    let store = SecretToolStore::with_program(fake_secret_tool(&folder)).for_kind("service-token", "ScriptWidget service token");
+    store.save("github", &ApiKey::new(KEY).unwrap()).unwrap();
+    assert_eq!(store.load("github").unwrap().unwrap().expose(), KEY);
+    assert!(store.remove("github").unwrap());
+    let arguments = std::fs::read_to_string(folder.join("arguments")).unwrap();
+    assert!(arguments.contains("store --label=ScriptWidget service token (github) application scriptwidget kind service-token account github"), "{arguments}");
+    assert!(arguments.contains("lookup application scriptwidget kind service-token account github") && arguments.contains("clear application scriptwidget kind service-token account github"));
+    assert!(!arguments.contains("ai-api-key") && !arguments.contains(KEY), "{arguments}");
+
+    // A keyring that waits (for a password prompt nobody answers): the call ends with its limit, and the program is stopped.
+    let waiting = temporary_directory("ai-secret-waiting");
+    let program = script(&waiting, "secret-tool", "#!/bin/sh\necho $$ > \"$(dirname \"$0\")/pid\"\nexec sleep 30\n");
+    let started = std::time::Instant::now();
+    let impatient = SecretToolStore::with_program(program).with_limit(std::time::Duration::from_millis(300));
+    assert!(matches!(impatient.load("github"), Err(CredentialError::Unavailable(_))));
+    assert!(started.elapsed() < std::time::Duration::from_secs(5), "{:?}", started.elapsed());
+    let pid: i32 = std::fs::read_to_string(waiting.join("pid")).unwrap().trim().parse().unwrap();
+    // SAFETY: signal 0 only asks whether the process exists.
+    assert_eq!(unsafe { libc::kill(pid, 0) }, -1, "no child is left behind");
+}
+
 #[test]
 fn without_secret_tool_or_a_keyring_nothing_is_stored_and_the_message_says_so() {
     let folder = temporary_directory("ai-no-keyring");

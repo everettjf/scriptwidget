@@ -30,6 +30,9 @@ impl AiConversationLimits {
     /// From here on the user is told that the conversation has grown heavy.
     pub const HEAVY_PROMPT_TOKENS: i64 = 30_000;
     pub const HEAVY_TOTAL_TOKENS: i64 = 300_000;
+    /// How many Skills a conversation can name, and how long one id can be.
+    pub const MAX_SKILLS: usize = 64;
+    pub const SKILL_ID_CHARACTERS: usize = 128;
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -172,6 +175,11 @@ pub struct AiConversation {
     pub package_id: Option<String>,
     pub created_at: i64,
     pub updated_at: i64,
+    /// The ids of the Skills chosen for this conversation; they apply to every turn. `None`
+    /// until the user chooses in the conversation: then the Skills enabled in the program apply,
+    /// read anew for each turn, which is what every conversation did before this field existed.
+    /// An empty list is a choice too: no Skill. Ids only: a Skill's text is read when a turn is sent.
+    pub skill_ids: Option<Vec<String>>,
 }
 
 impl AiConversation {
@@ -179,7 +187,7 @@ impl AiConversation {
 
     /// An empty draft made at `now`.
     pub fn new(now: i64) -> Self {
-        Self { id: new_id(), title: String::new(), size: AiWidgetSize::Medium, turns: Vec::new(), versions: Vec::new(), current_version_id: None, version_counter: 0, package_id: None, created_at: now, updated_at: now }
+        Self { id: new_id(), title: String::new(), size: AiWidgetSize::Medium, turns: Vec::new(), versions: Vec::new(), current_version_id: None, version_counter: 0, package_id: None, created_at: now, updated_at: now, skill_ids: None }
     }
 
     pub fn is_draft(&self) -> bool {
@@ -237,6 +245,7 @@ impl AiConversation {
         next.title = self.title.clone();
         next.size = self.size;
         next.package_id = self.package_id.clone();
+        next.skill_ids = self.skill_ids.clone();
         next.add_version(&current.source, current.network_domains.clone(), now);
         Some(next)
     }
@@ -299,6 +308,16 @@ impl AiConversation {
         self.current_version_id = Some(id.to_owned());
         self.updated_at = now;
         true
+    }
+
+    /// Chooses the Skills of this conversation; ids are deduplicated and sorted, as Swift stores them.
+    pub fn choose_skills<'a>(&mut self, ids: impl IntoIterator<Item = &'a str>, now: i64) {
+        let mut chosen: Vec<String> = ids.into_iter().filter(|id| !id.is_empty() && length(id) <= AiConversationLimits::SKILL_ID_CHARACTERS).map(str::to_owned).collect();
+        chosen.sort();
+        chosen.dedup();
+        chosen.truncate(AiConversationLimits::MAX_SKILLS);
+        self.skill_ids = Some(chosen);
+        self.updated_at = now;
     }
 
     /// The turns the model is told about: finished, not abandoned, not manual edits, oldest first.
@@ -406,7 +425,7 @@ impl AiConversation {
                 })
             })
             .collect();
-        json!({
+        let mut root = json!({
             "formatVersion": Self::FORMAT_VERSION,
             "id": self.id,
             "title": self.title,
@@ -418,7 +437,12 @@ impl AiConversation {
             "updatedAt": self.updated_at,
             "versions": versions,
             "turns": turns,
-        })
+        });
+        // Written only once the user chose: a file without it means "the Skills enabled in the program".
+        if let Some(ids) = &self.skill_ids {
+            root["skillIds"] = json!(ids);
+        }
+        root
     }
 
     pub fn title_from(request: &str) -> String {
@@ -471,6 +495,14 @@ impl AiConversation {
         if !Self::is_safe_id(&id) {
             return None;
         }
+        // Optional. Present, it must be a short list of short strings; anything else is not a conversation.
+        let skill_ids = match root.get("skillIds") {
+            None | Some(Value::Null) => None,
+            Some(Value::Array(items)) if items.len() <= AiConversationLimits::MAX_SKILLS => {
+                Some(items.iter().map(|item| item.as_str().filter(|id| !id.is_empty() && length(id) <= AiConversationLimits::SKILL_ID_CHARACTERS).map(str::to_owned)).collect::<Option<Vec<String>>>()?)
+            }
+            Some(_) => return None,
+        };
         let mut conversation = Self {
             id,
             title: root.opt_string("title"),
@@ -482,6 +514,7 @@ impl AiConversation {
             package_id: text(root, "packageId")?,
             created_at: integer(root, "createdAt")?,
             updated_at: integer(root, "updatedAt")?,
+            skill_ids,
         };
         conversation.mark_running_turns_interrupted();
         Some(conversation)

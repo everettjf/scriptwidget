@@ -126,6 +126,8 @@ pub enum Request {
     Menu { id: String, word: String },
     /// The display says that the session was locked or unlocked.
     Session { locked: bool },
+    /// `settings.json` was changed: read it again and plan the next runs by it.
+    Reload,
 }
 
 fn text<'a>(object: &'a Map<String, Value>, name: &str) -> Result<&'a str, Refusal> {
@@ -182,7 +184,7 @@ impl Request {
         };
         let operation = text(&object, "op")?;
         let members: &[&str] = match operation {
-            "watch" | "status" | "widgets" => &[],
+            "watch" | "status" | "widgets" | "reload" => &[],
             "add" => &["package", "family"],
             "remove" => &["id"],
             "refresh" => &["id", "package"],
@@ -204,6 +206,7 @@ impl Request {
             "watch" => Self::Watch,
             "status" => Self::Status,
             "widgets" => Self::Widgets,
+            "reload" => Self::Reload,
             "add" => Self::Add { package: package(text(&object, "package")?)?, family: optional_text(&object, "family")?.map(family).transpose()? },
             "remove" => Self::Remove { id: identifier(&object)? },
             "refresh" => {
@@ -256,6 +259,7 @@ impl Request {
             Self::Watch => json!({ "op": "watch" }),
             Self::Status => json!({ "op": "status" }),
             Self::Widgets => json!({ "op": "widgets" }),
+            Self::Reload => json!({ "op": "reload" }),
             Self::Add { package, family } => {
                 let mut value = json!({ "op": "add", "package": package });
                 if let Some(family) = family {
@@ -350,6 +354,7 @@ mod tests {
         let requests = [
             Request::Watch,
             Request::Status,
+            Request::Reload,
             Request::Widgets,
             Request::Add { package: "Daily Quote".into(), family: None },
             Request::Add { package: "时钟".into(), family: Some("extraLarge".into()) },

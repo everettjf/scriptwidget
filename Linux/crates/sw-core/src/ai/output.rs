@@ -20,8 +20,9 @@ pub struct AiManifestDeclaration {
 impl AiManifestDeclaration {
     /// Permissions generated code may request. Anything else needs a human editing the manifest.
     pub const GRANTABLE_PERMISSIONS: [&'static str; 1] = ["network"];
-    pub const MAXIMUM_DOMAINS: usize = 16;
-    pub const MAXIMUM_BYTES: usize = 8 * 1024;
+    /// `AINetworkDeclaration.maximumDomains` and the 4,096 bytes its `parse` reads at most.
+    pub const MAXIMUM_DOMAINS: usize = 8;
+    pub const MAXIMUM_BYTES: usize = 4_096;
 
     pub fn new(permissions: Vec<String>, network_domains: Vec<String>) -> Self {
         Self { permissions, network_domains }
@@ -48,41 +49,44 @@ impl AiManifestDeclaration {
         result
     }
 
-    /// Parses a declaration, failing closed. The error is a sentence that can be fed back to the model.
+    /// What the model is told when a declaration is refused; the same sentence as `AgentLoop.swift`
+    /// and `AiOutput.kt`.
+    pub fn failure_text(reason: &str) -> String {
+        format!("The network declaration block is not valid: {reason}.")
+    }
+
+    /// Parses a declaration, failing closed. The error is the reason, worded as
+    /// `AINetworkDeclaration.parse` words it, for [`Self::failure_text`] to complete.
     ///
     /// The text is read strictly (no comments, no key twice), where Android's
     /// `org.json` is lenient: what is not plain JSON is not a declaration.
     pub fn parse(json: &str) -> Result<Self, String> {
+        const NOT_AN_OBJECT: &str = "it is not a JSON object";
+        const ONLY_NETWORK: &str = "\"permissions\" must be exactly [\"network\"]; no other permission can be declared";
+        // `AINetworkDeclaration.parse` reads nothing larger.
         if json.len() > Self::MAXIMUM_BYTES {
-            return Err("The package declaration is too large.".into());
+            return Err(NOT_AN_OBJECT.into());
         }
-        let root = manifests::parse(Some(json)).ok_or("The package declaration is not a JSON object.")?;
-        for key in root.keys() {
-            if key != "permissions" && key != "networkDomains" {
-                return Err(format!("The package declaration may only contain \"permissions\" and \"networkDomains\"; remove \"{}\".", take(key, 40)));
-            }
+        let root = manifests::parse(Some(json)).ok_or(NOT_AN_OBJECT)?;
+        if root.keys().any(|key| key != "permissions" && key != "networkDomains") {
+            return Err("only \"permissions\" and \"networkDomains\" may appear".into());
         }
         let permissions = distinct(strings(&root, "permissions")?);
-        for permission in &permissions {
-            if !Self::GRANTABLE_PERMISSIONS.contains(&permission.as_str()) {
-                return Err(format!("Permission \"{}\" cannot be declared by generated widgets on Linux; only \"network\" can.", take(permission, 40)));
-            }
+        if permissions.iter().any(|permission| !Self::GRANTABLE_PERMISSIONS.contains(&permission.as_str())) {
+            return Err(ONLY_NETWORK.into());
         }
         let domains = distinct(strings(&root, "networkDomains")?.into_iter().map(|domain| domain.to_lowercase()).collect());
-        if domains.len() > Self::MAXIMUM_DOMAINS {
-            return Err(format!("Declare at most {} network domains.", Self::MAXIMUM_DOMAINS));
+        let network = permissions.iter().any(|permission| permission == "network");
+        if !domains.is_empty() && !network {
+            return Err(ONLY_NETWORK.into());
+        }
+        if domains.len() > Self::MAXIMUM_DOMAINS || (network && domains.is_empty()) {
+            return Err(format!("\"networkDomains\" must list 1 to {} hosts", Self::MAXIMUM_DOMAINS));
         }
         for domain in &domains {
             if domain.len() > 253 || !is_host(domain) || policy::blocked_host_name(domain.strip_prefix("*.").unwrap_or(domain)) {
-                return Err(format!("\"{}\" is not a public host name. Use a host such as api.example.com, without scheme or path.", take(domain, 80)));
+                return Err(format!("\"{}\" is not a public host name; use a host such as api.example.com, without scheme or path", take(domain, 80)));
             }
-        }
-        let network = permissions.iter().any(|permission| permission == "network");
-        if !domains.is_empty() && !network {
-            return Err("networkDomains requires the \"network\" permission.".into());
-        }
-        if network && domains.is_empty() {
-            return Err("The \"network\" permission requires at least one entry in networkDomains.".into());
         }
         Ok(Self { permissions, network_domains: domains })
     }
@@ -110,7 +114,7 @@ fn distinct(items: Vec<String>) -> Vec<String> {
 }
 
 fn strings(root: &Object, key: &str) -> Result<Vec<String>, String> {
-    let wrong = || format!("\"{key}\" must be an array of strings.");
+    let wrong = || format!("\"{key}\" must be an array of strings");
     match root.get(key) {
         None => Ok(Vec::new()),
         Some(Value::Array(items)) => items.iter().map(|item| item.as_str().map(str::to_owned).ok_or_else(wrong)).collect(),

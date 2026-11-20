@@ -64,6 +64,10 @@ enum Reply {
     Text(String),
     /// A refusal with this status.
     Status(u16),
+    /// The text of the model as one JSON body, the way a request that is not streamed is answered.
+    Plain(String),
+    /// The request is read and the connection closed without an answer.
+    Hangup,
 }
 
 struct Provider {
@@ -98,6 +102,11 @@ impl Provider {
                         let body = events(text);
                         format!("HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nContent-Length: {}\r\n\r\n{body}", body.len())
                     }
+                    Reply::Plain(text) => {
+                        let body = json!({ "content": [{ "type": "text", "text": text }], "usage": { "input_tokens": 120, "output_tokens": 40 } }).to_string();
+                        format!("HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: {}\r\n\r\n{body}", body.len())
+                    }
+                    Reply::Hangup => continue,
                 };
                 let _ = stream.write_all(response.as_bytes());
                 stream.conn.send_close_notify();
@@ -283,6 +292,18 @@ impl Sandbox {
         found
     }
 
+    /// The key is in no file of the data folder; `folders` names what a test expects to find there besides.
+    #[track_caller]
+    fn assert_no_key_on_disk_or_in(&self, folders: &[&str]) {
+        let files = self.data_files();
+        for (name, text) in &files {
+            assert!(!text.contains(KEY), "{name} holds the key");
+        }
+        for folder in folders {
+            assert!(files.iter().any(|(name, _)| name.starts_with(&format!("{folder}/"))), "{folder} is empty");
+        }
+    }
+
     #[track_caller]
     fn assert_no_key_on_disk(&self) {
         for (name, text) in self.data_files() {
@@ -322,6 +343,9 @@ fn the_profile_is_set_and_shown_and_plain_http_is_refused() {
     let help = sandbox.run(&["ai", "--help"]);
     assert!(help.code == 0 && help.stdout.contains("scriptwidget ai <command>") && help.stdout.contains("SCRIPTWIDGET_AI_KEY"));
     assert!(sandbox.run(&["--help"]).stdout.contains("ai new <request>"));
+    for command in ["retry <conversation | package>", "restart <conversation | package>", "continue <conversation | package> <request>", "--skills <id,id,…>"] {
+        assert!(help.stdout.contains(command), "{command}");
+    }
 }
 
 #[test]
@@ -549,7 +573,7 @@ fn a_new_widget_that_uses_the_network_is_a_draft_until_its_hosts_are_allowed() {
     sandbox.run(&["ai", "set", "--base-url", &greedy.url()]).expect(0);
     let refused = sandbox.run(&["ai", "new", "x", "--name", "Greedy", "--quiet", "--allow-new-hosts"]).expect(EXIT_FAILED);
     assert_eq!((&refused["error"]["kind"], &refused["applied"]), (&json!("ai.unconverged"), &json!(false)));
-    assert!(greedy.asked(1).contains("Invalid package declaration"));
+    assert!(greedy.asked(1).contains("The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]; no other permission can be declared."));
     assert!(!sandbox.data().join("Packages/Greedy").exists());
 }
 
@@ -584,4 +608,212 @@ fn what_never_runs_is_not_installed_and_a_refusal_is_reported_without_the_key() 
     sandbox.run(&["ai", "set", "--base-url", &format!("https://127.0.0.1:{closed}")]).expect(0);
     assert_eq!(sandbox.run(&["ai", "models"]).expect(EXIT_USAGE)["error"]["kind"], "ai.network");
     sandbox.assert_no_key_on_disk();
+}
+
+#[test]
+fn the_skills_the_user_enabled_are_added_to_the_request_and_nothing_else_is() {
+    let sandbox = Sandbox::new();
+    let provider = Provider::start(vec![reply("Shows the time.", CLOCK, None)]);
+    sandbox.configure(&provider);
+
+    // Nothing is enabled at first: the request names no Skill.
+    let plain = sandbox.run(&["ai", "new", "a clock", "--name", "Plain", "--quiet"]).expect(0);
+    assert_eq!(plain["skills"], json!([]));
+    assert!(!provider.asked(0).contains("ScriptWidget skills"), "{}", provider.asked(0));
+
+    // One Skill shipped with the program and one imported from a folder. Importing does not enable.
+    let seed = repository().join("Gallery/skills/privacy-review");
+    sandbox.run(&["skills", "import", seed.to_str().unwrap()]).expect(0);
+    sandbox.run(&["skills", "enable", "accessible-design"]).expect(0);
+    let made = sandbox.run(&["ai", "new", "a clock", "--name", "Readable", "--quiet"]).expect(0);
+    assert_eq!(made["skills"], json!([{ "id": "accessible-design", "title": "Accessible Design", "version": "1.0.0" }]));
+    let asked = provider.asked(1);
+    assert!(asked.contains("Apply these ScriptWidget skills") && asked.contains("- Accessible Design v1.0.0:") && asked.contains("Use strong text/background contrast"), "{asked}");
+    assert!(!asked.contains("Privacy Review"), "an imported Skill is off until it is enabled");
+    assert!(asked.contains("a clock"));
+
+    sandbox.run(&["skills", "enable", "app.scriptwidget.gallery.privacy-review"]).expect(0);
+    let continued = sandbox.run(&["ai", "continue", "Readable", "make the time larger", "--quiet"]).expect(0);
+    assert_eq!(continued["skills"].as_array().unwrap().len(), 2);
+    let asked = provider.asked(2);
+    let instruction = std::fs::read_to_string(seed.join("SKILL.md")).unwrap();
+    assert!(asked.contains("- Privacy Review v1.0.0:") && asked.contains(instruction.lines().next().unwrap()), "{asked}");
+
+    // A Skill is text in the request: it gave the widget no permission and no host, and the key went nowhere new.
+    let manifest: Value = serde_json::from_str(&sandbox.installed("Readable", "widget.json")).unwrap();
+    assert_eq!((&manifest["permissions"], &manifest["networkDomains"]), (&json!([]), &json!([])));
+    sandbox.assert_no_key_on_disk_or_in(&["Skills"]);
+
+    sandbox.run(&["skills", "disable", "accessible-design"]).expect(0);
+    sandbox.run(&["skills", "remove", "app.scriptwidget.gallery.privacy-review"]).expect(0);
+    sandbox.run(&["ai", "continue", "Readable", "and bolder", "--quiet"]).expect(0);
+    assert!(!provider.asked(3).contains("ScriptWidget skills"));
+}
+
+/// Port of `AIConversationSession.retry`: the request is sent again from the version the turn
+/// started from, wherever the conversation is by then, and takes the place of the failed turn.
+#[test]
+fn a_request_that_did_not_succeed_is_sent_again_from_the_version_it_started_from() {
+    let sandbox = Sandbox::new();
+    let red = CLOCK.replace("color=\"white\">12:00", "color=\"#ef4444\">12:00");
+    let dated = red.replace("Monday", "Monday 1 June");
+    let provider = Provider::start(vec![reply("Shows the time.", CLOCK, None), reply("Red.", &red, None), Reply::Status(401), reply("With the date.", &dated, None)]);
+    sandbox.configure(&provider);
+    sandbox.run(&["ai", "new", "a clock", "--name", "Clock", "--quiet"]).expect(0);
+    assert_eq!(sandbox.run(&["ai", "retry", "Clock"]).expect(EXIT_FAILED)["error"]["kind"], "ai.nothing_to_retry", "a request that succeeded is not sent again");
+    sandbox.run(&["ai", "continue", "Clock", "make the time red", "--quiet"]).expect(0);
+    let failed = sandbox.run(&["ai", "continue", "Clock", "add the date", "--quiet"]).expect(EXIT_USAGE);
+    assert_eq!((&failed["error"]["kind"], &failed["turn"]["status"]), (&json!("ai.request_failed"), &json!("failed")));
+    let id = failed["conversation"]["id"].as_str().unwrap();
+    let before = sandbox.run(&["ai", "conversations", id]).expect(0);
+    let second = before["versions"][1]["id"].clone();
+    assert_eq!((&before["turns"][2]["baseVersionId"], before["turns"].as_array().unwrap().len()), (&second, 3));
+
+    // The user goes back to the first version; the widget and the conversation are there now.
+    sandbox.run(&["ai", "apply", "Clock", "--version", "1"]).expect(0);
+    assert_eq!(sandbox.installed("Clock", "main.jsx"), format!("{CLOCK}\n"));
+    assert_eq!(sandbox.run(&["ai", "conversations", id]).expect(0)["conversation"]["currentVersion"], 1);
+
+    let again = sandbox.run(&["ai", "retry", "Clock", "--quiet"]).expect(0);
+    assert_eq!((&again["command"], &again["turn"]["status"], &again["turn"]["request"], &again["turn"]["baseVersionId"]), (&json!("ai retry"), &json!("succeeded"), &json!("add the date"), &second));
+    assert_eq!((&again["version"]["number"], &again["applied"], &again["changes"]["added"], &again["changes"]["removed"]), (&json!(3), &json!(true), &json!(1), &json!(1)), "compared with the red version it started from");
+    let asked = provider.asked(3);
+    assert!(asked.contains(&format!("Current working widget code:\n\n```jsx\n{red}\n")) && asked.contains("The user now asks:\nadd the date"), "{asked}");
+    assert!(asked.contains("2. User: make the time red\n   You: Red."), "{asked}");
+    assert_eq!(sandbox.installed("Clock", "main.jsx"), format!("{dated}\n"));
+    let after = sandbox.run(&["ai", "conversations", id]).expect(0);
+    assert_eq!(after["turns"].as_array().unwrap().iter().map(|turn| turn["status"].as_str().unwrap()).collect::<Vec<_>>(), ["succeeded", "succeeded", "succeeded"], "the new turn took the place of the failed one");
+
+    assert_eq!(sandbox.run(&["ai", "retry", id]).expect(EXIT_FAILED)["error"]["kind"], "ai.nothing_to_retry");
+    assert_eq!(sandbox.run(&["ai", "retry", "No Such Widget"]).expect(EXIT_FAILED)["error"]["kind"], "ai.no_conversation");
+    sandbox.run(&["ai", "retry"]).expect(EXIT_USAGE);
+    assert_eq!(provider.requests().len(), 4, "nothing was sent for a retry that was refused");
+    sandbox.assert_no_key_on_disk();
+}
+
+#[test]
+fn a_draft_is_continued_by_its_id_and_a_failed_draft_is_retried() {
+    let sandbox = Sandbox::new();
+    let quote = "$render(<vstack><text>Stay curious.</text></vstack>);";
+    let bold = "$render(<vstack><text font=\"headline\">Stay curious.</text></vstack>);";
+    let titled = bold.replace("<vstack>", "<vstack><text font=\"caption\">QUOTE</text>");
+    let provider = Provider::start(vec![reply("A quote.", quote, None), reply("Bolder.", bold, None), Reply::Status(429), reply("With a title.", &titled, None)]);
+    sandbox.configure(&provider);
+    let draft = sandbox.run(&["ai", "new", "a quote", "--no-apply", "--family", "small", "--quiet"]).expect(0);
+    let id = draft["conversation"]["id"].as_str().unwrap();
+
+    // The draft is continued where it is: nothing is installed while --no-apply is given.
+    let second = sandbox.run(&["ai", "continue", id, "make it bolder", "--no-apply", "--quiet"]).expect(0);
+    assert_eq!((&second["command"], &second["conversation"]["id"], &second["version"]["number"], &second["applied"], &second["conversation"]["size"]), (&json!("ai continue"), &json!(id), &json!(2), &json!(false), &json!("small")));
+    let asked = provider.asked(1);
+    assert!(asked.contains("1. User: a quote\n   You: A quote.") && asked.contains(&format!("Current working widget code:\n\n```jsx\n{quote}\n")) && asked.contains("The user now asks:\nmake it bolder"), "{asked}");
+    assert_eq!(sandbox.run(&["list"]).expect(0)["packages"], json!([]));
+    assert_eq!(sandbox.run(&["ai", "continue", id, "x", "--name", "../escape"]).expect(EXIT_USAGE)["error"]["kind"], "usage");
+
+    // A turn of the draft that the provider refused is sent again, and this time the draft becomes a widget.
+    let refused = sandbox.run(&["ai", "continue", id, "add a title", "--name", "Quote", "--quiet"]).expect(EXIT_USAGE);
+    assert_eq!((&refused["error"]["kind"], &refused["applied"]), (&json!("ai.request_failed"), &json!(false)));
+    assert!(refused["error"]["message"].as_str().unwrap().contains("usage limit"));
+    let again = sandbox.run(&["ai", "retry", id, "--name", "Quote", "--quiet"]).expect(0);
+    assert_eq!((&again["turn"]["request"], &again["version"]["number"], &again["applied"], &again["package"]["name"]), (&json!("add a title"), &json!(3), &json!(true), &json!("Quote")));
+    assert_eq!(sandbox.installed("Quote", "main.jsx"), format!("{titled}\n"));
+    let shown = sandbox.run(&["ai", "conversations", id]).expect(0);
+    assert_eq!((&shown["conversation"]["package"], &shown["conversation"]["draft"]), (&json!("Quote"), &json!(false)));
+
+    // Now it belongs to the widget: its id and the widget's name mean the same conversation, and --name is refused.
+    assert_eq!(sandbox.run(&["ai", "continue", id, "x", "--name", "Other"]).expect(EXIT_USAGE)["error"]["kind"], "usage");
+    assert_eq!(provider.requests().len(), 4);
+}
+
+#[test]
+fn a_new_conversation_starts_from_the_current_version_with_nothing_earlier_to_send() {
+    let sandbox = Sandbox::new();
+    let red = CLOCK.replace("color=\"white\">12:00", "color=\"#ef4444\">12:00");
+    let provider = Provider::start(vec![reply("Shows the time.", CLOCK, None), reply("Red.", &red, None), reply("Larger.", &red.replace("font=\"title\"", "font=\"largeTitle\""), None)]);
+    sandbox.configure(&provider);
+    let first = sandbox.run(&["ai", "new", "a clock", "--name", "Clock", "--quiet", "--skills", "visual-polish"]).expect(0);
+    let old = first["conversation"]["id"].as_str().unwrap().to_owned();
+    sandbox.run(&["ai", "continue", "Clock", "make the time red", "--quiet"]).expect(0);
+
+    let restarted = sandbox.run(&["ai", "restart", "Clock"]).expect(0);
+    let new = restarted["conversation"]["id"].as_str().unwrap().to_owned();
+    assert_ne!(new, old);
+    assert_eq!((&restarted["command"], &restarted["from"]["id"], &restarted["conversation"]["versions"], &restarted["conversation"]["draft"], &restarted["version"]["number"]), (&json!("ai restart"), &json!(old), &json!(1), &json!(false), &json!(1)));
+    assert_eq!(restarted["conversation"]["skillIds"], json!(["visual-polish"]), "the Skills of the conversation come along");
+    assert_eq!(sandbox.installed("Clock", "main.jsx"), format!("{red}\n"), "the widget is not touched");
+
+    // The widget's conversation is the new one now: the next request sends the code and no earlier turn.
+    let next = sandbox.run(&["ai", "continue", "Clock", "larger", "--quiet"]).expect(0);
+    assert_eq!((&next["conversation"]["id"], &next["version"]["number"], &next["applied"]), (&json!(new), &json!(2), &json!(true)));
+    let asked = provider.asked(2);
+    assert!(asked.contains(&format!("Current working widget code:\n\n```jsx\n{red}\n")) && !asked.contains("Earlier turns") && !asked.contains("make the time red"), "{asked}");
+    assert!(asked.contains("- Visual Polish v1.0.0:"), "{asked}");
+    // The old conversation is still there, as it was.
+    let kept = sandbox.run(&["ai", "conversations", &old]).expect(0);
+    assert_eq!((kept["turns"].as_array().unwrap().len(), kept["versions"].as_array().unwrap().len()), (2, 2));
+
+    // A draft starts over by its id; what has no version, or is no conversation, does not.
+    let draft = sandbox.run(&["ai", "restart", &old]).expect(0);
+    assert_eq!(draft["from"]["id"], json!(old));
+    assert_eq!(sandbox.run(&["ai", "restart", "No Such Widget"]).expect(EXIT_FAILED)["error"]["kind"], "ai.no_conversation");
+    let folder = sandbox.path("src/Hand");
+    std::fs::create_dir_all(&folder).unwrap();
+    std::fs::write(folder.join("main.jsx"), CLOCK).unwrap();
+    sandbox.run(&["install", folder.to_str().unwrap()]).expect(0);
+    assert_eq!(sandbox.run(&["ai", "restart", "Hand"]).expect(EXIT_FAILED)["error"]["kind"], "ai.no_conversation", "a widget nobody talked about has no conversation to start from");
+    sandbox.run(&["ai", "restart"]).expect(EXIT_USAGE);
+    assert_eq!(provider.requests().len(), 3);
+}
+
+#[test]
+fn a_conversation_keeps_the_skills_chosen_for_it_whatever_is_enabled() {
+    let sandbox = Sandbox::new();
+    let provider = Provider::start(vec![reply("Shows the time.", CLOCK, None)]);
+    sandbox.configure(&provider);
+    // Chosen for this conversation without being enabled.
+    let made = sandbox.run(&["ai", "new", "a clock", "--no-apply", "--quiet", "--skills", "visual-polish, accessible-design"]).expect(0);
+    assert_eq!(made["skills"].as_array().unwrap().iter().map(|skill| skill["id"].as_str().unwrap()).collect::<Vec<_>>(), ["accessible-design", "visual-polish"]);
+    assert!(provider.asked(0).contains("- Accessible Design v1.0.0:") && provider.asked(0).contains("- Visual Polish v1.0.0:"));
+    let id = made["conversation"]["id"].as_str().unwrap();
+    assert_eq!(sandbox.run(&["ai", "conversations", id]).expect(0)["conversation"]["skillIds"], json!(["accessible-design", "visual-polish"]));
+    assert_eq!(sandbox.run(&["skills", "list"]).expect(0)["skills"].as_array().unwrap().iter().filter(|skill| skill["enabled"] == true).count(), 0, "choosing for a conversation enables nothing");
+
+    // What is enabled afterwards does not change the conversation's choice.
+    sandbox.run(&["skills", "enable", "responsive-layout"]).expect(0);
+    let next = sandbox.run(&["ai", "continue", id, "larger", "--no-apply", "--quiet"]).expect(0);
+    assert_eq!(next["skills"].as_array().unwrap().len(), 2);
+    assert!(!provider.asked(1).contains("Responsive Layout") && provider.asked(1).contains("- Visual Polish v1.0.0:"));
+    // No Skill is a choice too; and a conversation without a choice follows what is enabled.
+    let none = sandbox.run(&["ai", "continue", id, "smaller", "--no-apply", "--quiet", "--skills", ""]).expect(0);
+    assert_eq!(none["skills"], json!([]));
+    assert!(!provider.asked(2).contains("ScriptWidget skills"));
+    assert_eq!(sandbox.run(&["ai", "conversations", id]).expect(0)["conversation"]["skillIds"], json!([]));
+    let plain = sandbox.run(&["ai", "new", "a clock", "--no-apply", "--quiet"]).expect(0);
+    assert_eq!(plain["skills"].as_array().unwrap().iter().map(|skill| skill["id"].as_str().unwrap()).collect::<Vec<_>>(), ["responsive-layout"]);
+    assert_eq!(sandbox.run(&["ai", "conversations", plain["conversation"]["id"].as_str().unwrap()]).expect(0)["conversation"]["skillIds"], Value::Null);
+
+    // A Skill that is not here is refused before anything is sent.
+    let unknown = sandbox.run(&["ai", "new", "a clock", "--skills", "no.such.skill"]).expect(EXIT_USAGE);
+    assert!(unknown["error"]["message"].as_str().unwrap().contains("no.such.skill"));
+    assert_eq!(provider.requests().len(), 4);
+}
+
+/// Port of the last `catch` of `AIClient.chatStream`, over a real connection.
+#[test]
+fn a_streamed_request_whose_connection_breaks_is_asked_once_more_in_the_plain_way() {
+    let sandbox = Sandbox::new();
+    let provider = Provider::start(vec![Reply::Hangup, Reply::Plain(format!("SUMMARY: Shows the time.\n```jsx\n{CLOCK}\n```"))]);
+    sandbox.configure(&provider);
+    let made = sandbox.run(&["ai", "new", "a clock", "--name", "Clock", "--quiet"]).expect(0);
+    assert_eq!((&made["turn"]["status"], &made["turn"]["repairs"], &made["applied"]), (&json!("succeeded"), &json!(0), &json!(true)));
+    assert_eq!(provider.requests().len(), 2);
+    assert_eq!((&provider.body(0)["stream"], provider.body(1).get("stream")), (&json!(true), None));
+    assert_eq!(provider.asked(0), provider.asked(1), "the same request, once more");
+
+    // When the plain request finds no server either, that is the answer: no third request.
+    let gone = Provider::start(vec![Reply::Hangup]);
+    sandbox.run(&["ai", "set", "--base-url", &gone.url()]).expect(0);
+    let failed = sandbox.run(&["ai", "new", "a clock", "--name", "Other", "--quiet"]).expect(EXIT_USAGE);
+    assert_eq!((&failed["error"]["kind"], &failed["turn"]["status"]), (&json!("ai.request_failed"), &json!("failed")));
+    assert_eq!(gone.requests().len(), 2);
 }

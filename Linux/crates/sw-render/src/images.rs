@@ -100,7 +100,7 @@ impl PackageImageSource {
 }
 
 /// Decodes PNG, JPEG, WebP, BMP and the other formats Skia reads into pixels.
-fn decode_still(data: &[u8]) -> Option<Image> {
+pub(crate) fn decode_still(data: &[u8]) -> Option<Image> {
     let mut codec = Codec::from_data(Data::new_copy(data))?;
     // The header says how large the picture is, before any of it is decoded.
     let size = codec.dimensions();

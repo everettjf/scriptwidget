@@ -91,7 +91,7 @@ pub struct BundledPackage {
 pub struct UnavailableTemplate {
     pub group: String,
     pub name: String,
-    /// The first such global in its entry, with the dollar sign.
+    /// The first such global in its scripts, with the dollar sign.
     pub api: String,
 }
 
@@ -100,10 +100,12 @@ pub const INSTALLATION_FILE: &str = ".scriptwidget-installation";
 
 const GROUPS: [&str; 3] = ["template", "component", "api"];
 
-/// Script globals Linux does not implement in this release (plan 4.9). A
-/// template that uses one would only show "not supported", so it is left out
-/// of the template list. The same list as on Windows.
-const UNSUPPORTED_APIS: [&str; 14] = ["health", "calendar", "reminders", "photos", "contacts", "home", "icloud", "alarms", "maps", "services", "music", "notifications", "location", "documents"];
+/// Script globals Linux does not implement. A template that uses one would
+/// only show "not supported", so it is left out of the template list; the AI
+/// prompt and the Gallery warning read the same list. A desktop has no single
+/// source for most of them; `$location` would need GeoClue, which Omarchy
+/// does not ship.
+const UNSUPPORTED_APIS: [&str; 9] = ["health", "calendar", "reminders", "contacts", "home", "icloud", "alarms", "maps", "location"];
 
 /// What marks a script as asking the network for data.
 const NETWORK_TOKENS: [&str; 4] = ["fetch(", "$http.", "$weather.", "$dataSource."];
@@ -233,12 +235,20 @@ impl Library {
             for name in names {
                 let package = directory.join(&name);
                 // Read through the package view: a linked or oversized entry is no template.
-                let Some(main) = DiskPackageFiles::new(&package).read_bytes_up_to(manifests::LEGACY_ENTRY, MAX_FILE_BYTES).and_then(|bytes| String::from_utf8(bytes).ok()) else { continue };
-                let unsupported = unsupported_api(&main);
+                if DiskPackageFiles::new(&package).read_bytes_up_to(manifests::LEGACY_ENTRY, MAX_FILE_BYTES).and_then(|bytes| String::from_utf8(bytes).ok()).is_none() {
+                    continue;
+                }
                 let mut bundled = BundledPackage { group: group.to_owned(), name, directory: package, network: false };
-                bundled.network = self.bundled_files(&bundled).iter().any(|(path, content)| {
-                    (path.ends_with(".js") || path.ends_with(".jsx")) && std::str::from_utf8(content).is_ok_and(|source| NETWORK_TOKENS.iter().any(|token| source.contains(token)))
-                });
+                // Every script of the template is looked at, the entry first: a global used in an
+                // imported file stops the template as surely as one in main.jsx.
+                let files = self.bundled_files(&bundled);
+                let scripts = || {
+                    let is_script = |path: &str| path.ends_with(".js") || path.ends_with(".jsx");
+                    let entry = files.get_key_value(manifests::LEGACY_ENTRY).into_iter();
+                    entry.chain(files.iter().filter(move |(path, _)| is_script(path) && path.as_str() != manifests::LEGACY_ENTRY)).filter_map(|(_, content)| std::str::from_utf8(content).ok())
+                };
+                let unsupported = scripts().find_map(unsupported_api);
+                bundled.network = scripts().any(|source| NETWORK_TOKENS.iter().any(|token| source.contains(token)));
                 result.push((bundled, unsupported));
             }
         }
@@ -448,14 +458,15 @@ mod tests {
 
     #[test]
     fn names_the_globals_linux_does_not_implement() {
-        for name in ["health", "calendar", "location", "music"] {
+        for name in ["health", "calendar", "location", "reminders", "contacts", "home", "icloud", "alarms", "maps"] {
             assert!(is_unsupported_api(name), "{name}");
         }
-        for name in ["storage", "device", "system", "file", "http", "xml", "weather", "dataSource", "healthy", ""] {
+        for name in ["storage", "device", "system", "file", "http", "xml", "weather", "dataSource", "music", "notifications", "services", "documents", "photos", "healthy", ""] {
             assert!(!is_unsupported_api(name), "{name}");
         }
         assert_eq!(unsupported_api("const steps = await $health.steps();").as_deref(), Some("$health"));
-        assert_eq!(unsupported_api("$storage.get('a'); if ($music) {}").as_deref(), Some("$music"));
+        assert_eq!(unsupported_api("$storage.get('a'); if ($maps) {}").as_deref(), Some("$maps"));
+        assert_eq!(unsupported_api("$music.current(); $photos.items(); $documents.list(); $services.status('github'); $notifications.pending()"), None);
         assert_eq!(unsupported_api("$healthy(); $locations; health.steps(); $calendar_x"), None);
         assert_eq!(unsupported_api("x = $location"), Some("$location".into()));
     }

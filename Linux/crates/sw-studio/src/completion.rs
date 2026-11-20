@@ -392,10 +392,15 @@ mod tests {
     #[test]
     fn globals_linux_does_not_implement_are_not_offered() {
         let globals = labels("$|");
-        for missing in ["$health", "$calendar", "$location", "$music"] {
+        for missing in ["$health", "$calendar", "$location", "$maps"] {
             assert!(!globals.contains(&missing.to_owned()), "{missing}");
         }
         assert_eq!(labels("$health.|"), Vec::<String>::new());
+        // What Linux implements is completed like any other global.
+        for present in ["$music", "$notifications", "$documents", "$photos", "$services"] {
+            assert!(globals.contains(&present.to_owned()), "{present}");
+        }
+        assert!(labels("$music.|").contains(&"current".to_owned()), "{:?}", labels("$music.|"));
     }
 
     #[test]

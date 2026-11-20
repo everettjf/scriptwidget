@@ -29,6 +29,9 @@ use crate::strings::{t, tf};
 /// How long after the last key the preview runs again.
 const PREVIEW_DELAY: Duration = Duration::from_millis(400);
 const ADD_LIMIT: Duration = Duration::from_secs(20);
+const RELOAD_LIMIT: Duration = Duration::from_secs(10);
+/// The width of the list of pages on the left.
+pub(super) const SIDEBAR_WIDTH: f32 = 208.0;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub(super) enum Page {
@@ -36,6 +39,10 @@ pub(super) enum Page {
     Templates,
     Template,
     Editor,
+    /// The AI conversation about a widget that does not exist yet.
+    Draft,
+    Gallery,
+    Skills,
     Settings,
 }
 
@@ -46,9 +53,13 @@ pub(super) enum Target {
     Templates,
     Components,
     Apis,
+    Gallery,
+    Skills,
     Settings,
     Template(String),
     Editor(String),
+    /// "New with AI".
+    Draft,
 }
 
 pub struct StudioWindow {
@@ -57,8 +68,21 @@ pub struct StudioWindow {
     /// The AI conversation and the provider settings (see [`crate::ai`]).
     pub(super) ai: Arc<crate::ai::AiService>,
     pub(super) ai_settings: Option<super::ai::AiSettingsForm>,
+    /// The conversation about a widget that does not exist yet, while its page is shown.
+    pub(super) draft: Option<super::ai::AiView>,
+    /// The verified catalog and what is installed from it (see [`crate::gallery`]).
+    pub(super) gallery: Arc<crate::gallery::Gallery>,
+    pub(super) gallery_page: Option<super::gallery::GalleryPage>,
+    /// The Skills of the AI conversation (see [`crate::skills`]).
+    pub(super) skills: Arc<crate::skills::Skills>,
+    pub(super) skills_page: super::skills::SkillsPage,
+    /// What the user allows and picks for the data APIs, and the GitHub account (see [`crate::access`]).
+    pub(super) access: Arc<crate::access::DataAccess>,
+    pub(super) github_form: Option<super::access::GithubForm>,
     pub(super) settings: Settings,
     cli: PathBuf,
+    /// True once the user said that unsaved changes may be lost with the window.
+    close_confirmed: bool,
     pub(super) page: Page,
     pub(super) widgets: Vec<WidgetCard>,
     pub(super) library_error: Option<String>,
@@ -72,8 +96,10 @@ pub struct StudioWindow {
     pub(super) editor: Option<EditorSession>,
     pub(super) previews: Debouncer<PreviewRequest>,
     /// Pictures that are no longer shown; their textures are released at the next frame.
-    retired: Vec<Shown>,
+    pub(super) retired: Vec<Shown>,
     pub(super) scale: f32,
+    /// The width of the window in points, for a page that gives a pane the room that is left.
+    pub(super) width: f32,
     pub(super) refresh_minutes: u32,
     focus: FocusHandle,
     _subscriptions: Vec<Subscription>,
@@ -117,6 +143,14 @@ impl StudioWindow {
             api: Arc::new(ApiReference::embedded()),
             ai: super::ai::service(studio.clone()),
             ai_settings: None,
+            draft: None,
+            gallery: Arc::new(crate::gallery::Gallery::new(studio.clone())),
+            gallery_page: None,
+            skills: Arc::new(crate::skills::Skills::new(studio.clone())),
+            skills_page: Default::default(),
+            access: Arc::new(crate::access::DataAccess::new(studio.clone())),
+            github_form: None,
+            close_confirmed: false,
             refresh_minutes: settings.selected_interval(),
             settings,
             cli: service::command_line(|name| std::env::var_os(name), std::env::current_exe().ok().as_deref()),
@@ -132,12 +166,16 @@ impl StudioWindow {
             previews,
             retired: Vec::new(),
             scale: window.scale_factor(),
+            width: f32::from(window.viewport_size().width),
             focus: cx.focus_handle(),
             studio,
             _subscriptions: vec![appearance],
             _tasks: vec![preview_task, request_task],
         };
         this.reload_library(cx);
+        // Closing the window asks first when changes would be lost with it.
+        let entity = cx.weak_entity();
+        window.on_window_should_close(cx, move |window, cx| entity.update(cx, |this, cx| this.may_close(window, cx)).unwrap_or(true));
         // Where the program was asked to start. Not done here but once the
         // window exists: a start that fails (a widget that is not installed, a
         // file that cannot be read) shows a message, and a message needs the
@@ -150,6 +188,8 @@ impl StudioWindow {
                     Some(StartPage::Templates) => this.go(Target::Templates, window, cx),
                     Some(StartPage::Components) => this.go(Target::Components, window, cx),
                     Some(StartPage::Apis) => this.go(Target::Apis, window, cx),
+                    Some(StartPage::Gallery) => this.go(Target::Gallery, window, cx),
+                    Some(StartPage::Skills) => this.go(Target::Skills, window, cx),
                     Some(StartPage::Settings) => this.go(Target::Settings, window, cx),
                     Some(StartPage::Template(reference)) => this.go(Target::Template(reference), window, cx),
                     Some(StartPage::Editor(name)) => this.go(Target::Editor(name), window, cx),
@@ -174,8 +214,18 @@ impl StudioWindow {
     /// Goes to `target`, asking first when the editor holds unsaved changes.
     pub(super) fn navigate(&mut self, target: Target, window: &mut Window, cx: &mut Context<Self>) {
         let unsaved = self.editor.as_ref().filter(|session| self.page == Page::Editor && session.dirty).map(|session| session.path.clone());
-        let Some(path) = unsaved else { return self.go(target, window, cx) };
         let this = cx.weak_entity();
+        if self.draft_has_unsaved_widget() {
+            // A widget that was made and not saved: its conversation stays a file, the window shows it no more.
+            return window.open_alert_dialog(cx, move |alert, _, _| {
+                let (this, target) = (this.clone(), target.clone());
+                alert.title(t("ai.leave.title")).description(t("ai.leave.detail")).confirm().ok_text(t("ai.leave.confirm")).cancel_text(t("action.cancel")).on_ok(move |_, window, cx| {
+                    let _ = this.update(cx, |this, cx| this.go(target.clone(), window, cx));
+                    true
+                })
+            });
+        }
+        let Some(path) = unsaved else { return self.go(target, window, cx) };
         window.open_alert_dialog(cx, move |alert, _, _| {
             let (this, target) = (this.clone(), target.clone());
             alert.title(t("editor.discard.title")).description(tf("editor.discard.detail", &[&path])).confirm().ok_text(t("editor.discard.confirm")).cancel_text(t("action.cancel")).on_ok(move |_, window, cx| {
@@ -185,14 +235,42 @@ impl StudioWindow {
         });
     }
 
+    /// Whether the window may close now. With unsaved changes in the editor, or
+    /// a widget a conversation made that was not saved, it stays open and
+    /// asks; agreeing closes it.
+    fn may_close(&mut self, window: &mut Window, cx: &mut Context<Self>) -> bool {
+        if self.close_confirmed {
+            return true;
+        }
+        let unsaved = self.editor.as_ref().filter(|session| self.page == Page::Editor && session.dirty).map(|session| session.path.clone());
+        let (title, detail, confirm) = match unsaved {
+            Some(path) => (t("editor.discard.title"), tf("editor.discard.detail", &[&path]), t("editor.close.confirm")),
+            None if self.draft_has_unsaved_widget() => (t("ai.leave.title"), t("ai.leave.detail"), t("editor.close.confirm")),
+            None => return true,
+        };
+        let this = cx.weak_entity();
+        window.open_alert_dialog(cx, move |alert, _, _| {
+            let this = this.clone();
+            alert.title(title.clone()).description(detail.clone()).confirm().ok_text(confirm.clone()).cancel_text(t("action.cancel")).on_ok(move |_, window, cx| {
+                let _ = this.update(cx, |this, _| this.close_confirmed = true);
+                window.remove_window();
+                true
+            })
+        });
+        false
+    }
+
     /// Goes to `target` without asking.
     pub(super) fn go(&mut self, target: Target, window: &mut Window, cx: &mut Context<Self>) {
         if let Some(session) = self.editor.take() {
             // A turn of the conversation that is still running ends with the page it was on.
-            if let Some(view) = &session.ai {
-                view.panel.cancel();
+            if let Some(view) = session.ai {
+                self.retire_ai(view);
             }
             self.retired.extend(session.pane.shown);
+        }
+        if let Some(view) = self.draft.take() {
+            self.retire_ai(view);
         }
         if let Some(session) = self.template.take() {
             self.retired.extend(session.pane.shown);
@@ -211,13 +289,20 @@ impl StudioWindow {
                 self.page = Page::Templates;
                 self.make_thumbnails(cx);
             }
+            Target::Gallery => self.open_gallery(window, cx),
+            Target::Skills => {
+                self.page = Page::Skills;
+                self.reload_skills(cx);
+            }
             Target::Settings => {
                 self.refresh_minutes = self.settings.selected_interval();
                 self.load_ai_settings(window, cx);
+                self.load_github_settings(window, cx);
                 self.page = Page::Settings;
             }
             Target::Template(reference) => self.open_template(&reference, window, cx),
             Target::Editor(name) => self.open_editor(&name, None, window, cx),
+            Target::Draft => return self.open_draft(window, cx),
         }
         self.focus.focus(window, cx);
         cx.notify();
@@ -303,6 +388,8 @@ impl StudioWindow {
         match self.page {
             Page::Editor => self.editor.as_mut().map(|session| &mut session.pane),
             Page::Template => self.template.as_mut().map(|session| &mut session.pane),
+            // The version a conversation about a new widget has made.
+            Page::Draft => self.draft.as_mut().and_then(|view| view.pane.as_mut()),
             _ => None,
         }
     }
@@ -313,6 +400,7 @@ impl StudioWindow {
         let source = match self.page {
             Page::Editor => self.editor.as_ref().map(|session| PreviewSource::Installed { name: session.name.clone(), edits: session.unsaved(cx) }),
             Page::Template => self.template.as_ref().map(|session| PreviewSource::Bundled(session.detail.reference.clone())),
+            Page::Draft => self.draft.as_ref().and_then(|view| view.shown_candidate()),
             _ => None,
         };
         let scale = self.scale;
@@ -352,6 +440,14 @@ impl StudioWindow {
 
     pub(super) fn notify_error(&self, message: impl Into<SharedString>, window: &mut Window, cx: &mut App) {
         window.push_notification(Notification::error(message).title(t("dialog.error.title")), cx);
+    }
+
+    /// Tells the background service that the settings changed, through the
+    /// `scriptwidget` command and off this thread. A service that is not
+    /// running reads the settings when it starts, so nothing is said then.
+    pub(super) fn reload_service_settings(&self, cx: &mut Context<Self>) {
+        let cli = self.cli.clone();
+        cx.background_executor().spawn(async move { service::reload_settings(&cli, RELOAD_LIMIT) }).detach();
     }
 
     /// Asks the background service to place a widget, through the `scriptwidget` command.
@@ -426,7 +522,7 @@ impl StudioWindow {
     }
 
     /// A dialog with one line for a path, for desktops without a file chooser.
-    fn ask_path(&mut self, title: String, hint: String, initial: PathBuf, window: &mut Window, cx: &mut Context<Self>, then: impl Fn(&mut Self, PathBuf, &mut Window, &mut Context<Self>) + 'static) {
+    pub(super) fn ask_path(&mut self, title: String, hint: String, initial: PathBuf, window: &mut Window, cx: &mut Context<Self>, then: impl Fn(&mut Self, PathBuf, &mut Window, &mut Context<Self>) + 'static) {
         let input = cx.new(|cx| InputState::new(window, cx).placeholder(hint.clone()).default_value(initial.display().to_string()));
         self.ask_text(title, input, window, cx, move |this, text, window, cx| {
             let path = PathBuf::from(text);
@@ -517,18 +613,20 @@ impl StudioWindow {
         let entry = |id: &'static str, icon: IconName, label: String, selected: bool, target: Target, cx: &mut Context<Self>| {
             Button::new(id).child(h_flex().w_full().gap_2().child(gpui_kit::component::Icon::new(icon)).child(label)).ghost().selected(selected).w_full().on_click(cx.listener(move |this, _, window, cx| this.navigate(target.clone(), window, cx)))
         };
-        let library = entry("nav-library", IconName::LayoutDashboard, t("nav.library"), matches!(self.page, Page::Library | Page::Editor), Target::Library, cx);
+        let library = entry("nav-library", IconName::LayoutDashboard, t("nav.library"), matches!(self.page, Page::Library | Page::Editor | Page::Draft), Target::Library, cx);
         let listing = matches!(self.page, Page::Templates | Page::Template);
         let templates = entry("nav-templates", IconName::GalleryVerticalEnd, t("nav.templates"), listing && self.group == "template", Target::Templates, cx);
         let components = entry("nav-components", IconName::Frame, t("nav.components"), listing && self.group == "component", Target::Components, cx);
         let apis = entry("nav-apis", IconName::SquareTerminal, t("nav.apis"), listing && self.group == "api", Target::Apis, cx);
+        let gallery = entry("nav-gallery", IconName::Star, t("nav.gallery"), self.page == Page::Gallery, Target::Gallery, cx);
+        let skills = entry("nav-skills", IconName::BookOpen, t("nav.skills"), self.page == Page::Skills, Target::Skills, cx);
         let settings = entry("nav-settings", IconName::Settings, t("nav.settings"), self.page == Page::Settings, Target::Settings, cx);
-        v_flex().w(px(208.)).h_full().flex_shrink_0().p_2().gap_1().bg(background).border_r_1().border_color(border).child(library).child(templates).child(components).child(apis).child(div().flex_1()).child(settings)
+        v_flex().w(px(SIDEBAR_WIDTH)).h_full().flex_shrink_0().p_2().gap_1().bg(background).border_r_1().border_color(border).child(library).child(templates).child(components).child(apis).child(gallery).child(skills).child(div().flex_1()).child(settings)
     }
 }
 
 /// Where exports go by default: the user's download folder, or the home folder.
-fn downloads_folder() -> PathBuf {
+pub(super) fn downloads_folder() -> PathBuf {
     let home = std::env::var_os("HOME").map(PathBuf::from).filter(|path| path.is_absolute()).unwrap_or_else(|| PathBuf::from("/"));
     let named = std::env::var_os("XDG_DOWNLOAD_DIR").map(PathBuf::from).filter(|path| path.is_absolute());
     named.or_else(|| Some(home.join("Downloads")).filter(|folder| folder.is_dir())).unwrap_or(home)
@@ -546,6 +644,7 @@ impl Render for StudioWindow {
             cx.drop_image(shown.image, Some(window));
         }
         self.scale = window.scale_factor();
+        self.width = f32::from(window.viewport_size().width);
         let theme = cx.theme();
         let (background, foreground) = (theme.background, theme.foreground);
         let page = match self.page {
@@ -553,6 +652,9 @@ impl Render for StudioWindow {
             Page::Templates => self.render_templates(cx).into_any_element(),
             Page::Template => self.render_template(cx).into_any_element(),
             Page::Editor => self.render_editor(cx).into_any_element(),
+            Page::Draft => self.render_draft(cx).into_any_element(),
+            Page::Gallery => self.render_gallery(cx).into_any_element(),
+            Page::Skills => self.render_skills(cx).into_any_element(),
             Page::Settings => self.render_settings(cx).into_any_element(),
         };
         h_flex()
@@ -582,8 +684,9 @@ impl StudioWindow {
     /// The page above the one shown: the list a template or a widget was opened from.
     pub(super) fn back(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         match self.page {
-            Page::Editor => self.navigate(Target::Library, window, cx),
+            Page::Editor | Page::Draft => self.navigate(Target::Library, window, cx),
             Page::Template => self.navigate(Self::list_of(self.group), window, cx),
+            Page::Gallery if self.gallery_item_open() => self.back_in_gallery(cx),
             _ => {}
         }
     }

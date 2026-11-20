@@ -49,13 +49,24 @@ impl AiConversationTurns {
         Some(Started { turn_id, loop_request })
     }
 
-    /// Sends a turn that did not succeed again: it is taken out and its request starts a new turn.
+    /// Whether [`AiConversationTurns::retry`] would send `turn` again: it did not succeed, it is not
+    /// running, and it is a request, not a change made outside the conversation.
+    pub fn can_retry(conversation: &AiConversation, turn_id: &str) -> bool {
+        conversation.turn(turn_id).is_some_and(|turn| !conversation.is_running() && !turn.is_manual_edit && !matches!(turn.status, Status::Succeeded | Status::Running))
+    }
+
+    /// Sends a turn that did not succeed again, from the version it started from: that version
+    /// becomes the current one when it still exists, the turn is taken out and its request starts
+    /// a new turn. Port of `AIConversationSession.retry`.
     pub fn retry(conversation: &mut AiConversation, turn_id: &str, system_prompt: &str, skills_text: Option<&str>, now: i64) -> Option<Started> {
-        let turn = conversation.turn(turn_id)?;
-        if conversation.is_running() || turn.is_manual_edit || matches!(turn.status, Status::Succeeded | Status::Running) {
+        if !Self::can_retry(conversation, turn_id) {
             return None;
         }
+        let turn = conversation.turn(turn_id)?;
         let request = turn.request.clone();
+        if let Some(base) = turn.base_version_id.clone().filter(|base| conversation.version(Some(base)).is_some()) {
+            conversation.current_version_id = Some(base);
+        }
         conversation.turns.retain(|turn| turn.id != turn_id);
         Self::begin(conversation, &request, system_prompt, skills_text, None, now)
     }

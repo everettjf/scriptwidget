@@ -4,11 +4,14 @@
 //! writing archives, the `scriptwidget` child process) runs on background
 //! threads and comes back as a message.
 
+mod access;
 mod ai;
 mod editor;
+mod gallery;
 mod library;
 mod preview_pane;
 mod settings;
+mod skills;
 mod templates;
 mod window;
 

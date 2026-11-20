@@ -268,23 +268,26 @@ fn a_list_is_drawn_in_place_with_its_visible_tap_targets() {
     assert_eq!(pixel(&rendered, 4, rendered.pixel_height - 4), (0, 0, 255, 255));
 }
 
-/// The dark bitmap takes the dark palette, and without a palette the names are unknown, as on iPhone.
+/// The dark bitmap takes the dark palette. Linux has no wallpaper palette: without one, and for a role
+/// a palette leaves out, the names are the fixed colors that iPhone, iPad and Mac draw.
 #[test]
-fn theme_colors_follow_the_appearance_and_are_unknown_without_a_palette() {
+fn theme_colors_follow_the_appearance_and_are_fixed_without_a_palette() {
     let mut request = RenderRequest::new(list_tree(3), 200.0, 200.0, 1.0);
     request.dark_mode = true;
     request.colors = Some(test_colors());
     assert_eq!(pixel(&renderer().render(request).expect("render"), 2, 198), (10, 20, 30, 255));
-    // The widget keeps the system background: white in light mode, and not white in dark mode.
-    assert_eq!(pixel(&render(&list_tree(3), 200.0, 200.0, 1.0), 2, 198), (255, 255, 255, 255));
+    // No palette: `material.surface` of the baseline Material 3 scheme, #FEF7FF in light mode and #141218 in dark mode.
+    assert_eq!(pixel(&render(&list_tree(3), 200.0, 200.0, 1.0), 2, 198), (0xFE, 0xF7, 0xFF, 255));
     let mut dark = RenderRequest::new(list_tree(3), 200.0, 200.0, 1.0);
     dark.dark_mode = true;
-    let dark = pixel(&renderer().render(dark).expect("render"), 2, 198);
-    assert!(dark.3 == 255 && dark.0 < 80, "{dark:?}");
-    // A malformed palette is ignored rather than failing the render.
+    assert_eq!(pixel(&renderer().render(dark).expect("render"), 2, 198), (0x14, 0x12, 0x18, 255));
+    // A malformed palette does not fail the render: its roles are the fixed colors too.
     let mut request = RenderRequest::new(list_tree(3), 200.0, 200.0, 1.0);
     request.colors = Some(json!({ "light": { "surface": "red", "primary": [1, 2] } }));
-    assert_eq!(pixel(&renderer().render(request).expect("render"), 2, 198), (255, 255, 255, 255));
+    assert_eq!(pixel(&renderer().render(request).expect("render"), 2, 198), (0xFE, 0xF7, 0xFF, 255));
+    // A role that does not exist is still ignored: the widget keeps the system background, white in light mode.
+    let unknown = r##"{"$element":"vstack","props":{"frame":"max","background":"material.nothing"},"children":[]}"##;
+    assert_eq!(pixel(&render(unknown, 200.0, 200.0, 1.0), 2, 198), (255, 255, 255, 255));
 }
 
 // MARK: - Dates and animation

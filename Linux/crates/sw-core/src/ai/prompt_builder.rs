@@ -158,9 +158,25 @@ impl LinuxPromptNotes {
             "Lock Screen accessory sizes (accessoryInline, accessoryCircular, accessoryRectangular) do not exist; only small, medium, large and extraLarge.".into(),
             "Live Activities, Dynamic Island content ($dynamic_island), Control Widgets and push-triggered refresh are not available.".into(),
             "backgroundMaterial falls back to a plain background color; do not rely on it.".into(),
-            "The animation property is drawn as its first frame only; do not rely on movement.".into(),
+            "The animation property moves on the desktop: clock hands follow the time, swings and custom intervals play at up to 20 frames a second. Previews show one frame.".into(),
             "<link> opens http, https and mailto URLs only.".into(),
             "The scrolling <list> tag and the material.<role> colors exist only on Android; never use them.".into(),
+        ]
+    }
+
+    /// The system data APIs Linux implements, with what a model needs to know
+    /// about each. The Linux counterpart of `AndroidPromptNotes.systemDataLines`:
+    /// one line each, because the reference has their examples.
+    pub fn system_data_lines() -> Vec<String> {
+        vec![
+            "Each needs its permission in widget.json, which you cannot declare (rule 3), and a step by the user in the ScriptWidget window (Data access, in the editor). \
+In this preview they report unavailable or reject: check isAvailable() and authorizationStatus() where they exist, wrap calls in try/catch and render a short setup message. The user adds the permission after saving."
+                .into(),
+            "$music.current() is what a media player on this desktop plays ({state, hasItem, title, artist, album, duration, position}); its provider is \"mpris\". There are no playback controls and no artwork.".into(),
+            "$photos.items({limit: 4}) returns only pictures the user picked for this widget, as items[].image for <image url>; there are no albums.".into(),
+            "$documents.list(), readJSON(id) and readCSV(id) read only the JSON and CSV files the user picked for this widget.".into(),
+            "$services.status(\"github\") and profile(\"github\") use a GitHub token the user enters in Settings (no sign-in), with the services and network permissions and api.github.com. Never put a token in code.".into(),
+            "$notifications (status, pending, schedule, cancel): schedule and cancel work only in a button or toggle action, and a notification is shown only while the ScriptWidget service runs.".into(),
         ]
     }
 
@@ -255,7 +271,7 @@ RULES:
    Do not invent `$storage.set` or `$storage.get`.
    `$storage` stays on this device.
 7. Only use tags, props, and APIs that appear in the REFERENCE
-   section below. Do not invent new ones.
+   section or under SYSTEM DATA below. Do not invent new ones.
 8. When calling `fetch`, always wrap it in try/catch so the
    widget still renders something useful on network failure.
 9. Prefer readable typography (`font="title"`, `"headline"`,
@@ -296,6 +312,10 @@ RULES:
 impl PromptBuilder {
     /// Skills text beyond this many characters is cut; Skills 1.0 instructions are at most 64 KiB each.
     pub const MAXIMUM_SKILLS_CHARACTERS: usize = 64 * 1024;
+    /// As much of one console line as a repair request repeats.
+    pub const MAXIMUM_LOG_LINE_CHARACTERS: usize = 300;
+    /// As many of the last console lines as a repair or a runtime diagnostic carries.
+    pub const MAXIMUM_LOG_LINES: usize = 10;
 
     /// How a turn that changes existing code may answer: with all of the code, or with the
     /// places that change. The same words as `PromptBuilder.editReplyRule`; see [`super::AiSourceEdits`].
@@ -325,9 +345,9 @@ and the full code when most of the widget changes. Never use both forms in one r
     /// list, then the component/API reference.
     ///
     /// The rules are those of the Android prompt, which follow the Swift one.
-    /// Rules about capabilities Linux does not implement (iCloud, Calendar,
-    /// Photos, Health, Music, Reminders, Location, Runtime 1.6 system APIs)
-    /// are replaced by the unsupported list, and the output contract has the
+    /// Its long rules about the system data APIs are replaced by the short
+    /// SYSTEM DATA section for the ones Linux implements and by the
+    /// unsupported list for the rest, and the output contract has the
     /// optional package declaration because a package made here always has a
     /// manifest that must declare network access.
     pub fn system_prompt_with(reference: &AiReference, unsupported: &[String], runtime_limits: &[String]) -> String {
@@ -338,6 +358,10 @@ and the full code when most of the widget changes. Never use both forms in one r
         }
         out.push_str("\nNOT SUPPORTED ON LINUX (never use these; if the request needs one, render a short explanation instead):\n");
         for line in unsupported {
+            out.push_str(&format!("- {line}\n"));
+        }
+        out.push_str("\nSYSTEM DATA ON LINUX (these work; use one only when the request needs it):\n");
+        for line in LinuxPromptNotes::system_data_lines() {
             out.push_str(&format!("- {line}\n"));
         }
         out.push('\n');
@@ -367,12 +391,29 @@ and the full code when most of the widget changes. Never use both forms in one r
     }
 
     /// Port of `userPromptFix`: the failed code, the runtime feedback and the last ten log lines.
+    /// A script may print anything, including what it read from this computer, so only the start
+    /// of each of those lines is sent.
     pub fn user_prompt_fix(previous_code: &str, error_summary: &str, recent_logs: &[String]) -> String {
-        let log_block = if recent_logs.is_empty() { "(no console output)".to_owned() } else { recent_logs[recent_logs.len().saturating_sub(10)..].join("\n") };
+        let log_block = if recent_logs.is_empty() {
+            "(no console output)".to_owned()
+        } else {
+            recent_logs[recent_logs.len().saturating_sub(Self::MAXIMUM_LOG_LINES)..].iter().map(|line| Self::clip(line, Self::MAXIMUM_LOG_LINE_CHARACTERS)).collect::<Vec<_>>().join("\n")
+        };
         let text = format!(
             "Your previous code failed to run:\n\n```jsx\n{previous_code}\n```\n\nRuntime feedback:\n{error_summary}\n\nLast console output:\n{log_block}\n\nFix the code and return the FULL corrected JSX only (plus the network declaration block only if it uses the network). No explanation."
         );
         trim(&text).to_owned()
+    }
+
+    /// What a turn is told about a version that failed when the preview ran it: the error, then the
+    /// last console lines under the limits of a repair. Port of `PromptBuilder.runtimeDiagnostic`;
+    /// [`Self::user_prompt_turn`] cuts the whole to 2,000 characters.
+    pub fn runtime_diagnostic(error_summary: &str, logs: &[String]) -> String {
+        if logs.is_empty() {
+            return error_summary.to_owned();
+        }
+        let lines: Vec<String> = logs[logs.len().saturating_sub(Self::MAXIMUM_LOG_LINES)..].iter().map(|line| Self::clip(line, Self::MAXIMUM_LOG_LINE_CHARACTERS)).collect();
+        format!("{error_summary}\nLast console output:\n{}", lines.join("\n"))
     }
 
     /// Port of `userPromptRefine` / `userPromptCopilot`: improve an installed widget.
@@ -434,7 +475,7 @@ and the full code when most of the widget changes. Never use both forms in one r
         let code_rule = if current.is_none() { "then the FULL widget code in one ```jsx fenced block." } else { Self::EDIT_REPLY_RULE };
         parts.push(format!(
             "Reply in exactly this form, which replaces the output rule above for this conversation:
-SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
+SUMMARY: one short sentence saying what you made or changed, written in the language of the request below (a request in English gets an English sentence)
 {code_rule}
 If, and only if, the widget uses `fetch` or `$http`, end with one more fenced block
 that declares every host it contacts:

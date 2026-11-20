@@ -9,12 +9,15 @@
 //! program so that one file is installed and the command line can never be a
 //! different version from the service it talks to.
 
+mod access;
 mod ai;
 mod arguments;
 mod commands;
 mod desktop;
+mod gallery;
 mod output;
 mod report;
+mod skills;
 
 use std::process::ExitCode;
 
@@ -45,6 +48,7 @@ fn dispatch(command: &str, rest: &[String]) -> Result<Report, Failure> {
         "remove" => desktop::remove(command, rest),
         "widgets" => desktop::widgets(command, rest),
         "refresh" => desktop::refresh(command, rest),
+        "reload" => desktop::reload(command, rest),
         "peek" | "arrange" => desktop::switch(command, rest),
         "tap" => desktop::tap(command, rest),
         "move" => desktop::move_widget(command, rest),
@@ -85,6 +89,22 @@ fn execute() -> i32 {
             return if arguments.len() == 1 { EXIT_USAGE } else { 0 };
         }
         return ai::run(&arguments[1..]).finish();
+    }
+    for (word, wants_help, help, run) in [("skills", skills::wants_help as fn(&[String]) -> bool, skills::help as fn() -> &'static str, skills::run as fn(&[String]) -> Report), ("gallery", gallery::wants_help, gallery::help, gallery::run)] {
+        if command == word {
+            if arguments.len() == 1 || wants_help(&arguments[1..]) {
+                print!("{}", help());
+                return if arguments.len() == 1 { EXIT_USAGE } else { 0 };
+            }
+            return run(&arguments[1..]).finish();
+        }
+    }
+    if access::GROUPS.contains(&command.as_str()) {
+        if arguments.len() == 1 || access::wants_help(&arguments[1..]) {
+            print!("{}", access::help());
+            return if arguments.len() == 1 { EXIT_USAGE } else { 0 };
+        }
+        return access::run(&command, &arguments[1..]).finish();
     }
     // The commands that print lines for as long as they run, and the service itself.
     if let Some(code) = desktop::stream(&command, &arguments[1..]) {

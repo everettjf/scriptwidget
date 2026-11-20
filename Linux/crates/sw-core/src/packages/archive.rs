@@ -288,6 +288,28 @@ fn copy_entry(archive: &[u8], entry: &Entry, directory: &OwnedFd, file_name: &st
     Ok(count)
 }
 
+/// The bytes of one preflighted entry, inflated in memory for the callers that
+/// read a small archive without extracting it (Skills). Only bytes that were
+/// actually produced count: an entry that inflates to more or less than its
+/// declared size, exceeds `maximum_bytes` or fails its CRC-32 is refused.
+pub(crate) fn read_entry(archive: &[u8], entry: &Entry, maximum_bytes: u64) -> Result<Vec<u8>, PackageError> {
+    if entry.is_directory || entry.uncompressed_size > maximum_bytes {
+        return Err(PackageError::new(codes::ARCHIVE_FILE_TOO_LARGE, format!("Archive entry {} is too large.", entry.name)));
+    }
+    let data = entry_data(archive, entry)?;
+    let input: Box<dyn Read + '_> = if entry.method == 8 { Box::new(DeflateDecoder::new(data)) } else { Box::new(data) };
+    let mut bytes = Vec::new();
+    // One byte more than declared is enough to see that the declaration is false.
+    input.take(entry.uncompressed_size + 1).read_to_end(&mut bytes).map_err(|error| corrupt(&entry.name, Some(error)))?;
+    if bytes.len() as u64 != entry.uncompressed_size {
+        return Err(PackageError::new(codes::ARCHIVE_SIZE_MISMATCH, format!("Archive entry {} does not match its declared size.", entry.name)));
+    }
+    if crc32(&bytes) != entry.crc {
+        return Err(corrupt(&entry.name, None));
+    }
+    Ok(bytes)
+}
+
 fn corrupt(name: &str, cause: Option<std::io::Error>) -> PackageError {
     PackageError { code: codes::ARCHIVE_CORRUPT.into(), message: format!("Archive entry {name} is corrupt."), cause }
 }

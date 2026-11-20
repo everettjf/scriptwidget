@@ -15,7 +15,11 @@ const WEBSITE: &str = "https://atomsprout.com/scriptwidget/";
 impl StudioWindow {
     fn set_refresh(&mut self, minutes: u32, window: &mut Window, cx: &mut Context<Self>) {
         match self.settings.set_refresh_minutes(minutes) {
-            Ok(()) => self.refresh_minutes = minutes,
+            Ok(()) => {
+                self.refresh_minutes = minutes;
+                // The service plans the next runs by the new interval now, not after the ones it had planned.
+                self.reload_service_settings(cx);
+            }
             Err(error) => self.notify_error(tf("settings.failed", &[&error.to_string()]), window, cx),
         }
         cx.notify();
@@ -37,6 +41,6 @@ impl StudioWindow {
             .child(div().text_sm().text_color(muted).child(t("settings.licence")))
             .child(div().text_sm().text_color(muted).child(t("settings.licences")))
             .child(h_flex().child(Button::new("settings-website").label(t("settings.website")).small().link().on_click(cx.listener(|_, _, _, cx| cx.open_url(WEBSITE)))));
-        div().id("settings").size_full().overflow_y_scrollbar().child(v_flex().p_6().gap_4().max_w(gpui_kit::px(760.)).child(div().text_2xl().font_semibold().child(t("settings.title"))).child(refresh).child(self.render_ai_settings(cx)).child(data).child(about))
+        div().id("settings").size_full().overflow_y_scrollbar().child(v_flex().p_6().gap_4().max_w(gpui_kit::px(760.)).child(div().text_2xl().font_semibold().child(t("settings.title"))).child(refresh).child(self.render_ai_settings(cx)).child(self.render_github_settings(cx)).child(data).child(about))
     }
 }

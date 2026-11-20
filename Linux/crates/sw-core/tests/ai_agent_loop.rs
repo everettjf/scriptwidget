@@ -193,7 +193,8 @@ fn invalid_declaration_is_fed_back_without_running_the_widget() {
     assert!(matches!(outcome, AgentLoopOutcome::Succeeded { .. }));
     assert_eq!(runs, 1);
     let repair = &chat.conversations()[1][3].content;
-    assert!(repair.contains("Invalid package declaration") && repair.contains("location"));
+    assert!(repair.contains("The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]; no other permission can be declared."));
+    assert!(!repair.contains("Invalid package declaration"));
 }
 
 #[test]

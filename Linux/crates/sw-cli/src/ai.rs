@@ -49,15 +49,25 @@ Usage: scriptwidget ai <command> [options]
                         --name <name>  --family <small|medium|large|extraLarge>  --no-apply (keep a draft)
                         A widget that contacts hosts is installed only with --allow-new-hosts; without it
                         the widget is kept as a draft and the report names the hosts.
-  continue <package> <request>
-                        Continue the conversation about an installed widget (or start one from its code).
+  continue <conversation | package> <request>
+                        Continue the conversation about an installed widget (or start one from its code),
+                        or a draft by its id (--name names the widget it is installed as).
                         --allow-new-hosts lets the change add hosts the widget may contact.
+  retry <conversation | package>
+                        Send the last request again when it did not succeed, from the version it started from.
+  restart <conversation | package>
+                        Start a new conversation from the current version: same widget and size, no
+                        earlier turn to send. The way out when a conversation has grown heavy.
   apply <conversation | package>
                         Install the current version of a draft as a new widget (--name), or write the
                         current version of a widget's conversation into the widget. --version <n> picks another.
   conversations [<id>]  List the conversations, or show one.
 
-Options for new and continue:
+The Skills you enabled (scriptwidget skills enable <id>) add their instructions to every request of
+new, continue and retry; the report names them under skills. --skills <id,id,…> chooses the Skills of
+one conversation instead, enabled or not, from then on (an empty --skills value for none).
+
+Options for new, continue and retry:
   --events              Progress as one JSON object a line on standard error, instead of text.
   --quiet               No progress on standard error.
   --data <dir>          The data folder (default: yours).
@@ -133,6 +143,8 @@ fn dispatch(arguments: &[String]) -> Result<Report, Failure> {
         "models" => models(rest),
         "new" => new(rest),
         "continue" => continue_conversation(rest),
+        "retry" => retry(rest),
+        "restart" => restart(rest),
         "apply" => apply(rest),
         "conversations" => conversations(rest),
         _ => Err(Failure::usage(format!("Unknown ai command {word}. scriptwidget ai --help lists them."))),
@@ -247,10 +259,10 @@ fn set(arguments: &[String]) -> Result<Report, Failure> {
 const MAXIMUM_KEY_INPUT_BYTES: u64 = 8 * 1024;
 
 /// Turns the echo of the terminal off for as long as it lives.
-struct NoEcho(libc::termios);
+pub(crate) struct NoEcho(libc::termios);
 
 impl NoEcho {
-    fn start() -> Option<Self> {
+    pub(crate) fn start() -> Option<Self> {
         // SAFETY: `termios` is plain data that `tcgetattr` fills in; descriptor 0 is standard input for the life of the process.
         unsafe {
             let mut settings: libc::termios = std::mem::zeroed();
@@ -428,7 +440,7 @@ impl Narrator {
     }
 }
 
-const TURN_VALUES: &[&str] = &["data", "family", "name"];
+const TURN_VALUES: &[&str] = &["data", "family", "name", "skills"];
 const TURN_FLAGS: &[&str] = &["no-apply", "allow-new-hosts", "events", "quiet"];
 
 fn progress(arguments: &Arguments) -> Result<Progress, Failure> {
@@ -455,7 +467,7 @@ fn usage_json(usage: AiTokenUsage) -> Value {
 fn turn_json(turn: &AiConversationTurn) -> Value {
     json!({
         "id": turn.id, "request": turn.request, "status": turn.status.id(), "note": turn.note, "error": turn.error_summary,
-        "repairs": turn.repairs, "versionId": turn.version_id, "failedSource": turn.failed_source, "usage": usage_json(turn.usage),
+        "repairs": turn.repairs, "versionId": turn.version_id, "baseVersionId": turn.base_version_id, "failedSource": turn.failed_source, "usage": usage_json(turn.usage),
         "abandoned": turn.is_abandoned, "manualEdit": turn.is_manual_edit, "createdAt": turn.created_at,
     })
 }
@@ -521,14 +533,50 @@ impl Engine {
     }
 }
 
+/// What a turn sends.
+#[derive(Clone, Copy)]
+enum Ask<'a> {
+    /// A new request, from the current version.
+    Request(&'a str),
+    /// The turn with this id again, from the version it started from.
+    Again(&'a str),
+}
+
+/// `--skills`: the Skills of this conversation from now on. Every id must be a Skill that is here.
+fn choose_skills(arguments: &Arguments, paths: &DataPaths, conversation: &mut AiConversation) -> Result<(), Failure> {
+    let Some(text) = arguments.value("skills") else { return Ok(()) };
+    let ids: Vec<&str> = text.split(',').map(str::trim).filter(|id| !id.is_empty()).collect();
+    let skills = sw_core::skills::SkillStore::new(paths.skills());
+    if let Some(unknown) = ids.iter().find(|id| skills.find(id).is_none()) {
+        return Err(Failure::usage(format!("There is no Skill {unknown}. scriptwidget skills list shows them.")));
+    }
+    conversation.choose_skills(ids, now_milliseconds());
+    Ok(())
+}
+
 /// Runs one turn of `conversation` and records it. The conversation is saved before the model is
 /// asked and after the turn ended, so a turn the program did not survive reads back as interrupted.
 #[allow(clippy::too_many_arguments)]
-fn run_turn(report: &mut Report, session: &Session, engine: &Engine, store: &AiConversationStore, conversation: &mut AiConversation, installed: Option<&InstalledPackage>, request: &str, mode: Progress) -> Result<AiConversationTurn, Failure> {
+fn run_turn(report: &mut Report, session: &Session, engine: &Engine, store: &AiConversationStore, conversation: &mut AiConversation, installed: Option<&InstalledPackage>, ask: Ask<'_>, mode: Progress) -> Result<AiConversationTurn, Failure> {
     let reference = AiReference::load(engine.resources.templates.as_deref());
     let system_prompt = PromptBuilder::system_prompt(&reference);
+    // The Skills of the conversation, or without a choice the ones the user enabled, read when the
+    // turn is sent. They add text to the request and nothing else.
+    let skills = sw_core::skills::SkillStore::new(session.paths.skills());
+    let used = skills.skills_for(conversation.skill_ids.as_deref());
+    let skills_text = Some(match &conversation.skill_ids {
+        Some(ids) => skills.prompt_text(ids),
+        None => skills.enabled_skills_prompt_text(),
+    })
+    .filter(|text| !text.trim().is_empty());
+    report.set("skills", used.iter().map(|skill| json!({ "id": skill.id, "title": skill.title, "version": skill.version })).collect());
+    let now = now_milliseconds();
+    let started = match ask {
+        Ask::Request(request) => AiConversationTurns::begin(conversation, request, &system_prompt, skills_text.as_deref(), None, now).ok_or_else(|| Failure::usage("The request is empty."))?,
+        Ask::Again(turn) => AiConversationTurns::retry(conversation, turn, &system_prompt, skills_text.as_deref(), now).ok_or_else(|| Failure::new(EXIT_FAILED, "ai.nothing_to_retry", "That request cannot be sent again."))?,
+    };
+    // What the turn starts from: for a request sent again, the version it started from the first time.
     let baseline = conversation.current_version().map(|version| version.source.clone());
-    let started = AiConversationTurns::begin(conversation, request, &system_prompt, None, None, now_milliseconds()).ok_or_else(|| Failure::usage("The request is empty."))?;
     save(store, conversation)?;
 
     let client = AiClient::default();
@@ -574,9 +622,7 @@ fn name_for(conversation: &AiConversation, wanted: Option<&str>) -> Result<Strin
     if let Some(name) = wanted {
         return if names::is_valid(name) { Ok(name.to_owned()) } else { Err(Failure::usage(format!("{name:?} cannot be a package name: no path separators, leading dot or control characters, at most 80 characters"))) };
     }
-    let title: String = conversation.title.trim_end_matches('…').chars().map(|character| if character.is_control() || "/\\:".contains(character) { ' ' } else { character }).collect();
-    let title = title.trim().trim_start_matches('.').trim();
-    Ok(if !title.is_empty() && names::is_valid(title) { title.to_owned() } else { "AI Widget".to_owned() })
+    Ok(AiCandidates::suggested_name(&conversation.title))
 }
 
 fn new(arguments: &[String]) -> Result<Report, Failure> {
@@ -591,21 +637,38 @@ fn new(arguments: &[String]) -> Result<Report, Failure> {
         name_for(&conversation, Some(name))?;
     }
     let session = Session::open(&arguments)?;
+    choose_skills(&arguments, &session.paths, &mut conversation)?;
     let engine = Engine::start(&session.paths)?;
     let store = conversation_store(&session.paths);
+    let library = Library::new(&session.paths, engine.resources.templates.clone());
     let mut report = Report::new("ai new");
-    let turn = run_turn(&mut report, &session, &engine, &store, &mut conversation, None, request, mode)?;
+    let turn = run_turn(&mut report, &session, &engine, &store, &mut conversation, None, Ask::Request(request), mode)?;
+    after_turn(&mut report, &library, &store, &mut conversation, None, &turn, &arguments)?;
+    Ok(report)
+}
+
+/// What follows a turn that ran: its version goes into the widget, or a draft becomes a widget,
+/// unless `--no-apply` keeps it in the conversation only.
+fn after_turn(report: &mut Report, library: &Library, store: &AiConversationStore, conversation: &mut AiConversation, installed: Option<&InstalledPackage>, turn: &AiConversationTurn, arguments: &Arguments) -> Result<(), Failure> {
     report.set("applied", json!(false));
     if turn.status != Status::Succeeded || arguments.flag("no-apply") {
-        return Ok(report);
+        return Ok(());
     }
-    let library = Library::new(&session.paths, engine.resources.templates.clone());
-    let name = name_for(&conversation, arguments.value("name"))?;
     // The widget was made; whether it is installed is a second question, and a refusal there is not lost work.
-    if let Err(failure) = install_new(&mut report, &library, &store, &mut conversation, &name, arguments.flag("allow-new-hosts")) {
+    let done = match installed {
+        Some(installed) => match conversation.current_version().cloned() {
+            Some(version) => apply_to(report, library, installed, &version, arguments.flag("allow-new-hosts")),
+            None => Ok(()),
+        },
+        None => {
+            let name = name_for(conversation, arguments.value("name"))?;
+            install_new(report, library, store, conversation, &name, arguments.flag("allow-new-hosts"))
+        }
+    };
+    if let Err(failure) = done {
         report.absorb(&failure);
     }
-    Ok(report)
+    Ok(())
 }
 
 /// Saves the current version as a new widget and ties the conversation to it. A version that
@@ -653,48 +716,124 @@ fn find_package(library: &Library, name: &str) -> Result<InstalledPackage, Failu
     Ok(package)
 }
 
-/// The conversation about an installed widget: its newest one, or a new one. Either way it starts from the code the widget has now.
-fn conversation_for(store: &AiConversationStore, library: &Library, installed: &InstalledPackage, now: i64) -> Result<AiConversation, Failure> {
-    let mut conversation = store.latest(&installed.installation).unwrap_or_else(|| {
+/// Takes over the code the widget holds now when it is not what the conversation knows as current:
+/// code that was changed outside the conversation is taken over, not overwritten by an older version.
+fn adopt_installed(library: &Library, installed: &InstalledPackage, conversation: &mut AiConversation, now: i64) -> Result<(), Failure> {
+    let entry = AiCandidates::entry_of(installed);
+    let source = library.store().read_file(&installed.name, &entry).map_err(Failure::from).and_then(|bytes| String::from_utf8(bytes).map_err(|_| Failure::new(EXIT_FAILED, codes::INVALID_ENTRY, format!("{entry} is not text."))))?;
+    conversation.adopt_external_source(&source, AiCandidates::allowed_hosts(Some(installed)), now);
+    Ok(())
+}
+
+/// The conversation about an installed widget: its newest one, or a new one.
+fn conversation_for(store: &AiConversationStore, installed: &InstalledPackage, now: i64) -> AiConversation {
+    store.latest(&installed.installation).unwrap_or_else(|| {
         let mut fresh = AiConversation::new(now);
         fresh.package_id = Some(installed.installation.clone());
         fresh.title = installed.display_name();
         fresh
-    });
-    let entry = AiCandidates::entry_of(installed);
-    let source = library.store().read_file(&installed.name, &entry).map_err(Failure::from).and_then(|bytes| String::from_utf8(bytes).map_err(|_| Failure::new(EXIT_FAILED, codes::INVALID_ENTRY, format!("{entry} is not text."))))?;
-    // Code that was changed outside the conversation is taken over, not overwritten by an older version.
-    conversation.adopt_external_source(&source, AiCandidates::allowed_hosts(Some(installed)), now);
-    Ok(conversation)
+    })
+}
+
+/// What `<conversation | package>` names: a conversation by its id, with the widget it belongs to
+/// when that is still installed, or the newest conversation of an installed widget. A conversation
+/// without an installed widget is a draft. With `create`, a widget nobody talked about yet gets a new one.
+fn conversation_named(store: &AiConversationStore, library: &Library, target: &str, create: bool) -> Result<(AiConversation, Option<InstalledPackage>), Failure> {
+    if let Some(conversation) = store.load(target) {
+        let installed = match conversation.package_id.as_deref().and_then(|installation| library.find_by_installation(installation)) {
+            Some(bound) => Some(find_package(library, &bound.name)?),
+            None => None,
+        };
+        return Ok((conversation, installed));
+    }
+    let missing = || Failure::new(EXIT_FAILED, "ai.no_conversation", format!("{target} is neither a conversation nor an installed widget. scriptwidget ai conversations lists the conversations."));
+    if create {
+        let installed = find_package(library, target)?;
+        return Ok((conversation_for(store, &installed, now_milliseconds()), Some(installed)));
+    }
+    let installed = find_package(library, target).map_err(|_| missing())?;
+    let conversation = store.latest(&installed.installation).ok_or_else(|| Failure::new(EXIT_FAILED, "ai.no_conversation", format!("There is no conversation about {}.", installed.name)))?;
+    Ok((conversation, Some(installed)))
+}
+
+/// `--name` is for a draft: an installed widget keeps its name.
+fn name_is_for_a_draft(arguments: &Arguments, conversation: &AiConversation, installed: Option<&InstalledPackage>) -> Result<(), Failure> {
+    match (arguments.value("name"), installed) {
+        (Some(_), Some(installed)) => Err(Failure::usage(format!("This conversation belongs to {}; --name is for a draft.", installed.name))),
+        (Some(name), None) => name_for(conversation, Some(name)).map(|_| ()),
+        (None, _) => Ok(()),
+    }
 }
 
 fn continue_conversation(arguments: &[String]) -> Result<Report, Failure> {
-    let arguments = Arguments::parse(arguments, &shape(&["data", "family"], TURN_FLAGS, 2, 2, "an installed widget and what to change, as one argument each"))?;
+    let arguments = Arguments::parse(arguments, &shape(TURN_VALUES, TURN_FLAGS, 2, 2, "a conversation or an installed widget, and what to change, as one argument each"))?;
     let mode = progress(&arguments)?;
     let size = family(&arguments)?;
     let paths = user_data(&arguments)?;
     let library = Library::new(&paths, None);
-    let installed = find_package(&library, arguments.positional(0).unwrap_or_default())?;
+    let store = conversation_store(&paths);
+    let (mut conversation, installed) = conversation_named(&store, &library, arguments.positional(0).unwrap_or_default(), true)?;
+    name_is_for_a_draft(&arguments, &conversation, installed.as_ref())?;
     let session = Session::open(&arguments)?;
+    choose_skills(&arguments, &session.paths, &mut conversation)?;
     let engine = Engine::start(&session.paths)?;
-    let store = conversation_store(&session.paths);
-    let mut conversation = conversation_for(&store, &library, &installed, now_milliseconds())?;
+    if let Some(installed) = &installed {
+        adopt_installed(&library, installed, &mut conversation, now_milliseconds())?;
+    }
     if let Some(size) = size {
         conversation.size = size;
-    } else if conversation.turns.iter().all(|turn| turn.is_manual_edit) {
+    } else if let Some(installed) = installed.as_ref().filter(|_| conversation.turns.iter().all(|turn| turn.is_manual_edit)) {
         // A first turn about this widget: a size it can be placed at.
         let families = installed.families();
         conversation.size = AiWidgetSize::from_family(Some(if families.contains(&"medium") { "medium" } else { families.first().copied().unwrap_or("medium") }));
     }
     let mut report = Report::new("ai continue");
-    let turn = run_turn(&mut report, &session, &engine, &store, &mut conversation, Some(&installed), arguments.positional(1).unwrap_or_default(), mode)?;
-    report.set("applied", json!(false));
-    if turn.status != Status::Succeeded || arguments.flag("no-apply") {
-        return Ok(report);
-    }
-    let Some(version) = conversation.current_version().cloned() else { return Ok(report) };
-    if let Err(failure) = apply_to(&mut report, &library, &installed, &version, arguments.flag("allow-new-hosts")) {
-        report.absorb(&failure);
+    let turn = run_turn(&mut report, &session, &engine, &store, &mut conversation, installed.as_ref(), Ask::Request(arguments.positional(1).unwrap_or_default()), mode)?;
+    after_turn(&mut report, &library, &store, &mut conversation, installed.as_ref(), &turn, &arguments)?;
+    Ok(report)
+}
+
+/// Sends the last request of a conversation again when it did not succeed. It starts from the
+/// version the turn started from, as on the other platforms, and takes the place of that turn.
+fn retry(arguments: &[String]) -> Result<Report, Failure> {
+    let arguments = Arguments::parse(arguments, &shape(&["data", "name", "skills"], TURN_FLAGS, 1, 1, "a conversation or an installed widget"))?;
+    let mode = progress(&arguments)?;
+    let paths = user_data(&arguments)?;
+    let library = Library::new(&paths, None);
+    let store = conversation_store(&paths);
+    let (mut conversation, installed) = conversation_named(&store, &library, arguments.positional(0).unwrap_or_default(), false)?;
+    name_is_for_a_draft(&arguments, &conversation, installed.as_ref())?;
+    let last = conversation.turns.iter().rfind(|turn| !turn.is_manual_edit).map(|turn| (turn.id.clone(), turn.status));
+    let turn_id = match last {
+        Some((id, _)) if AiConversationTurns::can_retry(&conversation, &id) => id,
+        Some((_, Status::Succeeded)) => return Err(Failure::new(EXIT_FAILED, "ai.nothing_to_retry", "The last request of this conversation succeeded; there is nothing to send again.")),
+        _ => return Err(Failure::new(EXIT_FAILED, "ai.nothing_to_retry", "This conversation has no request to send again.")),
+    };
+    let session = Session::open(&arguments)?;
+    choose_skills(&arguments, &session.paths, &mut conversation)?;
+    let engine = Engine::start(&session.paths)?;
+    let mut report = Report::new("ai retry");
+    let turn = run_turn(&mut report, &session, &engine, &store, &mut conversation, installed.as_ref(), Ask::Again(&turn_id), mode)?;
+    after_turn(&mut report, &library, &store, &mut conversation, installed.as_ref(), &turn, &arguments)?;
+    Ok(report)
+}
+
+/// Starts a new conversation from the current version of another: the way out when one has grown heavy.
+/// The old conversation stays where it is; the new one is the widget's newest, so `continue` takes it.
+fn restart(arguments: &[String]) -> Result<Report, Failure> {
+    let arguments = Arguments::parse(arguments, &shape(DATA, &[], 1, 1, "a conversation or an installed widget"))?;
+    let paths = user_data(&arguments)?;
+    let library = Library::new(&paths, None);
+    let store = conversation_store(&paths);
+    let (conversation, _) = conversation_named(&store, &library, arguments.positional(0).unwrap_or_default(), false)?;
+    // Later than the one it comes from, also within the same millisecond.
+    let next = conversation.continued_from_current_version(now_milliseconds().max(conversation.updated_at + 1)).ok_or_else(|| Failure::new(EXIT_FAILED, "ai.no_version", "The conversation has no version to start from."))?;
+    save(&store, &next)?;
+    let mut report = Report::new("ai restart");
+    report.set("from", json!({ "id": conversation.id, "advice": conversation.usage_advice().map(|advice| advice.message()) }));
+    report.set("conversation", json!({ "id": next.id, "title": next.title, "size": next.size.family(), "versions": next.versions.len(), "draft": next.is_draft(), "skillIds": next.skill_ids }));
+    if let Some(version) = next.current_version() {
+        report.set("version", version_json(version, false));
     }
     Ok(report)
 }
@@ -705,13 +844,7 @@ fn apply(arguments: &[String]) -> Result<Report, Failure> {
     let library = Library::new(&paths, None);
     let store = conversation_store(&paths);
     let target = arguments.positional(0).unwrap_or_default();
-    let mut conversation = match store.load(target) {
-        Some(conversation) => conversation,
-        None => {
-            let package = find_package(&library, target).map_err(|_| Failure::new(EXIT_FAILED, "ai.no_conversation", format!("{target} is neither a conversation nor an installed widget. scriptwidget ai conversations lists the conversations.")))?;
-            store.latest(&package.installation).ok_or_else(|| Failure::new(EXIT_FAILED, "ai.no_conversation", format!("There is no conversation about {}.", package.name)))?
-        }
-    };
+    let (mut conversation, _) = conversation_named(&store, &library, target, false)?;
     if let Some(text) = arguments.value("version") {
         let number: i64 = text.parse().map_err(|_| Failure::usage("--version must be the number of a version"))?;
         let id = conversation.versions.iter().find(|version| version.number == number).map(|version| version.id.clone()).ok_or_else(|| Failure::new(EXIT_FAILED, "ai.no_version", format!("The conversation has no version {number}.")))?;
@@ -773,6 +906,7 @@ fn conversations(arguments: &[String]) -> Result<Report, Failure> {
                     "id": conversation.id, "title": conversation.title, "size": conversation.size.family(), "package": package_of(conversation.package_id.as_deref()),
                     "draft": conversation.is_draft(), "currentVersion": conversation.current_version().map(|version| version.number), "usage": usage_json(usage),
                     "advice": conversation.usage_advice().map(|advice| advice.message()), "createdAt": conversation.created_at, "updatedAt": conversation.updated_at,
+                    "skillIds": conversation.skill_ids,
                 }),
             );
             report.set("turns", conversation.turns.iter().map(turn_json).collect());
@@ -809,7 +943,7 @@ mod tests {
     fn the_commands_take_only_their_own_options() {
         let folder = std::env::temp_dir().join(format!("scriptwidget-cli-ai-{}", std::process::id()));
         let with_data = |words: &[&str]| words.iter().map(|word| word.to_string()).chain(["--data".to_owned(), folder.display().to_string()]).collect::<Vec<_>>();
-        for words in [&["show", "extra"][..], &["set", "--key", "sk-x"], &["set", "--api-key=sk-x"], &["key"], &["key", "set", "sk-on-the-command-line"], &["new"], &["new", "a", "b"], &["continue", "only-one"], &["bogus"], &[]] {
+        for words in [&["show", "extra"][..], &["set", "--key", "sk-x"], &["set", "--api-key=sk-x"], &["key"], &["key", "set", "sk-on-the-command-line"], &["new"], &["new", "a", "b"], &["continue", "only-one"], &["retry"], &["retry", "a", "b"], &["retry", "a", "--family", "small"], &["restart"], &["restart", "a", "--skills", "x"], &["bogus"], &[]] {
             let failure = dispatch(&with_data(words)).err().unwrap_or_else(|| panic!("{words:?} was accepted"));
             assert_eq!(failure.code, "usage", "{words:?}: {}", failure.message);
             assert!(!failure.message.contains("sk-x"), "an argument that looks like a key is not repeated: {}", failure.message);

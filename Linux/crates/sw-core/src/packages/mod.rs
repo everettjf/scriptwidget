@@ -36,8 +36,8 @@ pub mod limits;
 pub mod manifests;
 pub mod names;
 pub mod path_rules;
-mod preflight;
-mod safe_files;
+pub(crate) mod preflight;
+pub(crate) mod safe_files;
 mod store;
 mod tree;
 

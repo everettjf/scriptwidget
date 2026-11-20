@@ -5,7 +5,6 @@
 <mime-info xmlns="http://www.freedesktop.org/standards/shared-mime-info">
   <mime-type type="application/x-scriptwidget-package">
     <comment>ScriptWidget widget</comment>
-    <comment xml:lang="zh_CN">ScriptWidget 小组件</comment>
     <sub-class-of type="application/zip"/>
     <icon name="scriptwidget-studio"/>
     <glob pattern="*.swt" weight="60"/>

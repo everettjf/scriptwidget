@@ -22,6 +22,42 @@ fn memory(files: &[(&str, &str)]) -> Arc<dyn PackageFiles> {
     Arc::new(MemoryPackageFiles::new(files.iter().map(|(path, text)| (path.to_string(), text.to_string())), []))
 }
 
+/// The real shipped templates: the one that asks for the device's location in a file main.jsx imports is not offered.
+#[test]
+fn a_template_is_judged_by_all_of_its_scripts() {
+    let scratch = TemporaryFolder::new();
+    scratch.new_file("templates/template/Local Weather/main.jsx", "$import('location.js');\n$render(<text>{await place()}</text>);");
+    scratch.new_file("templates/template/Local Weather/location.js", "async function place() { const fix = await $location.current({timeout: 10}); return String(fix.latitude); }");
+    scratch.new_file("templates/template/Now Playing/main.jsx", "$import('player.jsx');\n$render(<text>{await title()}</text>);");
+    scratch.new_file("templates/template/Now Playing/player.jsx", "async function title() { return (await $music.current()).title; }");
+    scratch.new_file("templates/template/Notes/main.jsx", "$render(<text>notes</text>);");
+    // Not a script: what a text or data file says is not what the widget calls.
+    scratch.new_file("templates/template/Notes/readme.md", "This widget does not use $health or $location.");
+    scratch.new_file("templates/template/Both/main.jsx", "$import('a.js');\n$render(<text>{String($calendar.isAvailable())}</text>);");
+    scratch.new_file("templates/template/Both/a.js", "const steps = $health.isAvailable();");
+    let library = Library::new(&DataPaths::new(Some(&scratch.path("data"))).unwrap(), Some(scratch.path("templates")));
+    let names: Vec<String> = library.bundled().into_iter().map(|package| package.name).collect();
+    assert_eq!(names, ["Notes", "Now Playing"], "$music is implemented; $location is not, wherever it is used");
+    let unavailable: Vec<(String, String)> = library.unavailable().into_iter().map(|template| (template.name, template.api)).collect();
+    assert_eq!(unavailable, [("Both".to_owned(), "$calendar".to_owned()), ("Local Weather".to_owned(), "$location".to_owned())], "the entry's own global is named first");
+    assert!(library.find_bundled("Local Weather").is_none());
+
+    // The templates this repository ships, when the test runs in a checkout.
+    let shipped = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../Shared/ScriptWidgetRuntime/Resource/Script.bundle");
+    if shipped.join("template").is_dir() {
+        let library = Library::new(&DataPaths::new(Some(&scratch.path("data"))).unwrap(), Some(shipped));
+        assert!(library.find_bundled("Local Weather (Location)").is_none(), "it needs $location, which Linux does not implement");
+        assert!(library.unavailable().iter().any(|template| template.name == "Local Weather (Location)" && template.api == "$location"));
+        for template in library.bundled() {
+            for (path, content) in library.bundled_files(&template) {
+                if path.ends_with(".js") || path.ends_with(".jsx") {
+                    assert_eq!(sw_core::library::unsupported_api(&String::from_utf8_lossy(&content)), None, "{}/{} {path}", template.group, template.name);
+                }
+            }
+        }
+    }
+}
+
 /// A templates folder with one runnable template, one that needs an API Linux lacks, and entries that are no templates.
 fn templates(scratch: &TemporaryFolder) -> PathBuf {
     scratch.new_file("templates/template/Clock/main.jsx", "$import('lib/label.js');\n$render(<text>{label()}</text>);");

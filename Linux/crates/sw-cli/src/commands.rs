@@ -55,6 +55,21 @@ Library commands (use your data folder, or --data <dir>):
   templates                           List the bundled templates that run on Linux.
   doctor                              Check this installation.
 
+Gallery commands (use your data folder, or --data <dir>; scriptwidget gallery --help says more):
+  gallery list [--kind <widget|skill>] [--refresh]
+                                      The verified catalog of community widgets and Skills.
+  gallery show <id>                   One item and the files it installs.
+  gallery install <id>                Download, check against the catalog's sizes and SHA-256, and install.
+
+Skills commands (use your data folder, or --data <dir>; scriptwidget skills --help says more):
+  skills list                         The Skills, and which are enabled for AI requests.
+  skills show <id>                    One Skill with its instructions.
+  skills import <file.swskill | dir>  Import a Skill (skill.json and SKILL.md, nothing else).
+  skills export <id> [--output <file.swskill>] [--force]
+  skills enable <id> | skills disable <id>
+                                      Add a Skill's instructions to AI requests, or stop.
+  skills remove <id>                  Delete an imported Skill.
+
 AI commands (use your data folder, or --data <dir>; scriptwidget ai --help says more):
   ai show                             The provider, endpoint and model, and whether a key is stored.
   ai set [--provider <name>] [--base-url <https://…>] [--model <name>]
@@ -64,17 +79,32 @@ AI commands (use your data folder, or --data <dir>; scriptwidget ai --help says 
   ai models                           Ask the endpoint which models it lists.
   ai new <request> [--name <name>] [--family <name>] [--no-apply] [--allow-new-hosts]
                                       Start a conversation: make a new widget and install it.
-  ai continue <package> <request> [--no-apply] [--allow-new-hosts]
-                                      Continue the conversation about an installed widget and apply the change.
+  ai continue <conversation | package> <request> [--no-apply] [--allow-new-hosts]
+                                      Continue the conversation about an installed widget and apply the change,
+                                      or continue a draft by its id.
+  ai retry <conversation | package>   Send the last request again when it did not succeed.
+  ai restart <conversation | package> Start a new conversation from the current version.
   ai apply <conversation | package> [--name <name>] [--version <n>] [--allow-new-hosts]
                                       Install or apply a version a conversation holds.
   ai conversations [<id>]             List the conversations, or show one.
+
+Data access commands (use your data folder, or --data <dir>; scriptwidget services --help says more):
+  services status | connect | disconnect | allow <package> | deny <package>
+                                      The GitHub account of $services: a fine-grained token, kept in the
+                                      system keyring, and the widgets that may read its profile.
+  notifications status [<package>] | allow <package> | deny <package>
+                                      Which widgets may schedule notifications, and what is pending.
+  documents list <package> | add <package> <file> | remove <package> <id>
+                                      The JSON and CSV files a widget may read with $documents.
+  photos list <package> | add <package> <file> | remove <package> <id>
+                                      The pictures a widget may show with $photos.
 
 Desktop commands (need the background service):
   add <package> [--family <name>]     Put a widget of an installed package on the desktop.
   remove <id>                         Take a widget off the desktop.
   widgets                             List the widgets on the desktop.
   refresh [<id>] [--package <name>]   Run one widget, the widgets of a package, or all of them again.
+  reload                              Read the settings again, so a new refresh interval takes effect now.
   dev <dir> [--family <name>] [--adopt]
                                       Copy a package folder into the library whenever it changes and
                                       refresh its widgets; prints one JSON line each time.

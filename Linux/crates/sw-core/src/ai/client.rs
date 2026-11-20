@@ -164,15 +164,26 @@ impl AiClient {
 
     /// Sends `messages` asking for a streamed reply and reports the text so far through `on_text`.
     /// Port of `AIClient.chatStream`. A server that refuses the streamed form, answers it in the
-    /// plain form, or sends nothing that can be read is asked once more in the plain way.
+    /// plain form, or sends nothing that can be read is asked once more in the plain way. So is
+    /// one the streamed request did not reach or that broke off, as long as no text had arrived:
+    /// text already shown is never replaced by a second, different answer. Authentication, the
+    /// usage limit, a redirect and cancellation are reported as they are.
     pub fn chat_stream(&self, messages: &[AiMessage], settings: &AiSettings, api_key: &str, cancellation: &AiCancellation, on_text: &mut dyn FnMut(&str)) -> Result<AiChatResult, AiClientError> {
         let request = self.build_chat_request(messages, settings, api_key, true)?;
         if cancellation.is_cancelled() {
             return Err(AiClientError::cancelled());
         }
         let mut events = AiStreamReader::new(settings.profile.kind.uses_anthropic_messages());
-        // What was already read is not a reply; a stream that broke off is not retried.
-        let response = scrub(api_key, self.transport.execute_streaming(&request, cancellation, &mut |bytes| events.feed(bytes, on_text)))?;
+        let response = match scrub(api_key, self.transport.execute_streaming(&request, cancellation, &mut |bytes| events.feed(bytes, on_text))) {
+            Ok(response) => response,
+            // The connection failed, not the server: once more, in the plain way.
+            Err(error) if matches!(error.kind, AiErrorKind::Network | AiErrorKind::Timeout) && events.text().is_empty() && !cancellation.is_cancelled() => {
+                let plain = self.chat(messages, settings, api_key, cancellation)?;
+                on_text(&plain.content);
+                return Ok(plain);
+            }
+            Err(error) => return Err(error),
+        };
         let result = (|| {
             if matches!(response.status, 401 | 403 | 429) {
                 return Err(http_error(&response));
@@ -245,13 +256,14 @@ impl AiClient {
             path = "/v1/messages";
             // The Messages API takes the system prompt as a top-level field and requires max_tokens.
             // Sampling parameters are not sent: current Claude models reject them.
+            // A message without text is refused by the API, so it is left out.
             body.insert("max_tokens".into(), json!(Self::ANTHROPIC_MAX_TOKENS));
             let system: Vec<&str> = messages.iter().filter(|message| message.role == Role::System).map(|message| message.content.as_str()).collect();
             let system = system.join("\n\n");
             if !system.is_empty() {
                 body.insert("system".into(), json!(system));
             }
-            body.insert("messages".into(), messages.iter().filter(|message| message.role != Role::System).map(wire).collect());
+            body.insert("messages".into(), messages.iter().filter(|message| message.role != Role::System && !is_blank(&message.content)).map(wire).collect());
         } else {
             path = "/v1/chat/completions";
             body.insert("messages".into(), messages.iter().map(wire).collect());
@@ -478,7 +490,7 @@ impl AiStreamReader {
         }
         let Ok(json) = crate::json::parse_object(payload) else { return Ok(()) };
         self.saw_event = true;
-        let piece = if self.anthropic { self.anthropic_event(&json) } else { self.chat_completion_event(&json) };
+        let piece = if self.anthropic { self.anthropic_event(&json)? } else { self.chat_completion_event(&json) };
         let Some(piece) = piece.filter(|piece| !piece.is_empty()) else { return Ok(()) };
         if self.content.len() + piece.len() > AiClient::MAXIMUM_RESPONSE_BYTES {
             return Err(AiClientError::new(AiErrorKind::ResponseTooLarge, TOO_LARGE_MESSAGE));
@@ -504,7 +516,7 @@ impl AiStreamReader {
         choice.get("delta")?.as_object()?.get("content")?.as_str().map(str::to_owned)
     }
 
-    fn anthropic_event(&mut self, json: &Object) -> Option<String> {
+    fn anthropic_event(&mut self, json: &Object) -> Result<Option<String>, AiClientError> {
         match json.get("type").and_then(Value::as_str).unwrap_or("") {
             "message_start" => {
                 if let Some(usage) = json.get("message").and_then(Value::as_object).and_then(|message| message.get("usage")).and_then(Value::as_object) {
@@ -522,14 +534,14 @@ impl AiStreamReader {
                 }
             }
             "content_block_delta" => {
-                let delta = json.get("delta")?.as_object()?;
                 // Thinking and tool input are not widget code.
-                if delta.get("type").and_then(Value::as_str) == Some("text_delta") {
-                    return delta.get("text")?.as_str().map(str::to_owned);
-                }
+                let delta = json.get("delta").and_then(Value::as_object).filter(|delta| delta.get("type").and_then(Value::as_str) == Some("text_delta"));
+                return Ok(delta.and_then(|delta| delta.get("text")).and_then(Value::as_str).map(str::to_owned));
             }
+            // The stream broke off; what was read so far is not a reply.
+            "error" => return Err(AiClientError::new(AiErrorKind::Http, format!("The AI server reported an error{}.", error_code(Some(json))))),
             _ => {}
         }
-        None
+        Ok(None)
     }
 }

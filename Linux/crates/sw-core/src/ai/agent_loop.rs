@@ -177,7 +177,7 @@ impl<'a> AgentLoop<'a> {
 
             let extracted = if is_turn {
                 let reply = PromptBuilder::parse_turn_reply(&result.content);
-                // A repair may leave the summary out; the first one still describes the turn.
+                // A repair may leave the summary out: the last one that was given still describes the turn.
                 if let Some(text) = &reply.note {
                     note = Some(text.clone());
                     on_event(&AgentLoopEvent::Note { iteration, text: text.clone() });
@@ -229,7 +229,7 @@ impl<'a> AgentLoop<'a> {
             } else if result.truncated {
                 ValidationResult::failure("The reply was cut off at the output limit. Return a shorter, complete widget.", Vec::new())
             } else if let Some(error) = &declaration_error {
-                ValidationResult::failure(format!("Invalid package declaration: {error}"), Vec::new())
+                ValidationResult::failure(AiManifestDeclaration::failure_text(error), Vec::new())
             } else {
                 validate(&candidate.source, candidate.manifest_json.as_deref())
             };

@@ -810,7 +810,15 @@ fn templates_lists_what_runs_on_linux() {
     assert_eq!(named("template", "Daily Quote").unwrap()["network"], true);
     assert!(Path::new(named("component", "text").unwrap()["directory"].as_str().unwrap()).join("main.jsx").is_file());
     // The ones that use an API Linux does not implement are left out, with the reason.
-    assert!(named("api", "health").is_none() && named("template", "Music Playback").is_none());
+    assert!(named("api", "health").is_none() && named("api", "location").is_none());
+    // One that asks for the location in a file its main.jsx imports is left out as well.
+    assert!(named("template", "Local Weather (Location)").is_none());
+    assert!(report["unavailable"].as_array().unwrap().iter().any(|template| template["name"] == "Local Weather (Location)" && template["api"] == "$location"));
+    // What Linux implements is offered: the media player, notifications, picked files and pictures, GitHub.
+    for global in ["$music", "$notifications", "$documents", "$photos", "$services"] {
+        assert!(!report["unavailable"].as_array().unwrap().iter().any(|template| template["api"] == global), "{global}");
+    }
+    assert!(named("template", "Music Playback").is_some());
     let unavailable = report["unavailable"].as_array().unwrap();
     assert!(unavailable.iter().any(|template| template["group"] == "api" && template["name"] == "health" && template["api"] == "$health"), "{unavailable:?}");
     assert_eq!(templates.len() + unavailable.len(), ["template", "component", "api"].iter().map(|group| std::fs::read_dir(bundled_templates().join(group)).unwrap().filter(|entry| entry.as_ref().unwrap().path().join("main.jsx").is_file()).count()).sum::<usize>());
@@ -952,4 +960,306 @@ fn missing_runtime_files_are_an_environment_error() {
 fn sha256(bytes: &[u8]) -> Vec<u8> {
     use sha2::Digest;
     sha2::Sha256::digest(bytes).to_vec()
+}
+
+// Skills
+
+const PRIVACY_REVIEW: &str = "app.scriptwidget.gallery.privacy-review";
+
+fn skill_seed() -> PathBuf {
+    repository().join("Gallery/skills/privacy-review")
+}
+
+fn skill<'a>(report: &'a Value, id: &str) -> &'a Value {
+    report["skills"].as_array().expect("skills").iter().find(|skill| skill["id"] == id).unwrap_or_else(|| panic!("{id} is not listed"))
+}
+
+#[test]
+fn skills_and_gallery_explain_themselves() {
+    let sandbox = Sandbox::new();
+    for group in ["skills", "gallery"] {
+        let help = sandbox.run(&[group, "--help"]);
+        assert_eq!(help.code, 0);
+        assert!(help.stdout.starts_with(&format!("Usage: scriptwidget {group} <command>")) && help.stderr.is_empty());
+        let bare = sandbox.run(&[group]);
+        assert_eq!(bare.code, EXIT_USAGE);
+        assert!(bare.stdout.starts_with("Usage: scriptwidget"));
+        let unknown = sandbox.run(&[group, "frobnicate"]).expect(EXIT_USAGE);
+        assert_eq!((unknown["command"].as_str(), unknown["error"]["kind"].as_str()), (Some(format!("{group} frobnicate").as_str()), Some("usage")));
+    }
+    assert!(sandbox.run(&["--help"]).stdout.contains("gallery install <id>"));
+    assert!(!sandbox.data().join("Skills").exists(), "asking for help writes nothing");
+}
+
+#[test]
+fn skills_are_listed_imported_enabled_and_removed() {
+    let sandbox = Sandbox::new();
+    let listed = sandbox.run(&["skills", "list"]).expect(0);
+    assert_eq!(listed["command"], "skills list");
+    let skills = listed["skills"].as_array().unwrap();
+    assert_eq!(skills.len(), 5, "the Skills shipped with the program");
+    assert!(skills.iter().all(|skill| skill["builtIn"] == true && skill["enabled"] == false && skill.get("instruction").is_none()));
+    assert_eq!(listed["directory"], text(&sandbox.data().join("Skills")));
+
+    // From a folder: the seed the Gallery ships.
+    let imported = sandbox.run(&["skills", "import", text(&skill_seed())]).expect(0);
+    assert_eq!((imported["skill"]["id"].as_str(), imported["skill"]["title"].as_str(), imported["skill"]["builtIn"].as_bool(), imported["skill"]["enabled"].as_bool()), (Some(PRIVACY_REVIEW), Some("Privacy Review"), Some(false), Some(false)));
+    assert_eq!(support::tree(&sandbox.data().join("Skills")), ["privacy-review/", "privacy-review/SKILL.md", "privacy-review/skill.json"]);
+    let shown = sandbox.run(&["skills", "show", PRIVACY_REVIEW]).expect(0);
+    assert_eq!(shown["skill"]["instruction"].as_str().unwrap(), std::fs::read_to_string(skill_seed().join("SKILL.md")).unwrap());
+    let again = sandbox.run(&["skills", "import", text(&skill_seed())]).expect(EXIT_FAILED);
+    assert_eq!(again["error"]["kind"], "skills.duplicate_skill");
+
+    // Enabled, it is named; a built-in can be enabled as well.
+    let enabled = sandbox.run(&["skills", "enable", PRIVACY_REVIEW]).expect(0);
+    assert_eq!((enabled["command"].as_str(), enabled["enabled"].as_bool()), (Some("skills enable"), Some(true)));
+    sandbox.run(&["skills", "enable", "accessible-design"]).expect(0);
+    let listed = sandbox.run(&["skills", "list"]).expect(0);
+    assert_eq!((skill(&listed, PRIVACY_REVIEW)["enabled"].as_bool(), skill(&listed, "accessible-design")["enabled"].as_bool(), skill(&listed, "visual-polish")["enabled"].as_bool()), (Some(true), Some(true), Some(false)));
+    let disabled = sandbox.run(&["skills", "disable", "accessible-design"]).expect(0);
+    assert_eq!(disabled["enabledSkills"], serde_json::json!([PRIVACY_REVIEW]));
+    assert_eq!(sandbox.run(&["skills", "enable", "com.example.missing"]).expect(EXIT_USAGE)["error"]["kind"], "skills.skill_not_found");
+    sandbox.run(&["skills", "disable", "com.example.missing"]).expect(0);
+
+    // Exported and imported by another user, byte for byte, and not enabled there.
+    let exported = sandbox.run(&["skills", "export", PRIVACY_REVIEW]).expect(0);
+    let archive = sandbox.work().join("privacy-review.swskill");
+    assert_eq!(exported["output"], text(&archive));
+    let entries = read_zip(&std::fs::read(&archive).unwrap());
+    assert_eq!(entries.iter().map(|(name, _)| name.as_str()).collect::<Vec<_>>(), ["skill.json", "SKILL.md"]);
+    assert_eq!(entries[0].1, std::fs::read(skill_seed().join("skill.json")).unwrap());
+    assert_eq!(sandbox.run(&["skills", "export", PRIVACY_REVIEW]).expect(EXIT_USAGE)["error"]["kind"], "output.exists");
+    sandbox.run(&["skills", "export", PRIVACY_REVIEW, "--force"]).expect(0);
+    assert_eq!(sandbox.run(&["skills", "export", PRIVACY_REVIEW, "--output", "skill.txt"]).expect(EXIT_USAGE)["error"]["kind"], "usage");
+    let other = Sandbox::new();
+    let received = other.run(&["skills", "import", text(&archive)]).expect(0);
+    assert_eq!((received["skill"]["id"].as_str(), received["skill"]["enabled"].as_bool()), (Some(PRIVACY_REVIEW), Some(false)));
+
+    // Removed, it is gone and no longer enabled; what ships with the program stays.
+    sandbox.run(&["skills", "remove", PRIVACY_REVIEW]).expect(0);
+    let listed = sandbox.run(&["skills", "list"]).expect(0);
+    assert_eq!(listed["skills"].as_array().unwrap().len(), 5);
+    assert!(listed["skills"].as_array().unwrap().iter().all(|skill| skill["enabled"] == false));
+    assert_eq!(sandbox.run(&["skills", "remove", PRIVACY_REVIEW]).expect(EXIT_USAGE)["error"]["kind"], "skills.skill_not_found");
+    assert_eq!(sandbox.run(&["skills", "remove", "visual-polish"]).expect(EXIT_USAGE)["error"]["kind"], "skills.built_in_skill");
+    assert_eq!(sandbox.run(&["skills", "show", "com.example.missing"]).expect(EXIT_USAGE)["error"]["kind"], "skills.skill_not_found");
+}
+
+#[test]
+fn a_skill_that_is_more_than_two_text_files_is_refused() {
+    let sandbox = Sandbox::new();
+    let manifest = std::fs::read_to_string(skill_seed().join("skill.json")).unwrap();
+    let archive = |name: &str, entries: &[RawEntry]| {
+        let path = sandbox.work().join(name);
+        std::fs::write(&path, raw_zip(entries)).unwrap();
+        path
+    };
+    let json = || RawEntry::new("skill.json", manifest.as_str());
+    let text_entry = || RawEntry::new("SKILL.md", "Prefer on-device data.");
+    let with_tool = manifest.replacen('{', "{\"tools\":[\"shell\"],", 1);
+    let refused = [
+        (archive("payload.swskill", &[json(), text_entry(), RawEntry::new("run.sh", "#!/bin/sh")]), "skills.invalid_package"),
+        (archive("traversal.swskill", &[json(), text_entry(), RawEntry::new("../escape.md", "x")]), "skills.invalid_archive"),
+        (archive("link.swskill", &[json(), RawEntry::new("SKILL.md", "/etc/passwd").mode(SYMBOLIC_LINK)]), "skills.invalid_archive"),
+        (archive("tools.swskill", &[RawEntry::new("skill.json", with_tool.as_str()), text_entry()]), "skills.unknown_field"),
+        (archive("permissions.swskill", &[RawEntry::new("skill.json", manifest.replacen('{', "{\"permissions\":[\"network\"],", 1)), text_entry()]), "skills.unknown_field"),
+        (archive("version.swskill", &[RawEntry::new("skill.json", manifest.replace("\"formatVersion\": 1", "\"formatVersion\": 2")), text_entry()]), "skills.invalid_skill"),
+        (archive("large.swskill", &[json(), RawEntry::new("SKILL.md", "x".repeat(64 * 1024 + 1))]), "skills.invalid_archive"),
+    ];
+    for (path, code) in &refused {
+        let report = sandbox.run(&["skills", "import", text(path)]).expect(EXIT_FAILED);
+        assert_eq!(report["error"]["kind"], *code, "{}", path.display());
+    }
+    // A folder with anything else in it, and a file that is not there.
+    let folder = sandbox.scratch.new_folder("work/skill");
+    sandbox.scratch.new_file("work/skill/skill.json", &manifest);
+    sandbox.scratch.new_file("work/skill/SKILL.md", "Prefer on-device data.");
+    sandbox.scratch.new_file("work/skill/install.sh", "#!/bin/sh");
+    assert_eq!(sandbox.run(&["skills", "import", text(&folder)]).expect(EXIT_FAILED)["error"]["kind"], "skills.invalid_package");
+    assert_eq!(sandbox.run(&["skills", "import", "nothing.swskill"]).expect(EXIT_USAGE)["error"]["kind"], "input.file");
+    assert_eq!(support::tree(&sandbox.data().join("Skills")), [] as [&str; 0], "nothing was stored");
+    assert!(!sandbox.work().join("../escape.md").exists() && !sandbox.data().join("escape.md").exists());
+    assert_eq!(sandbox.run(&["skills", "list"]).expect(0)["skills"].as_array().unwrap().len(), 5);
+}
+
+// The Gallery, from a copy of the catalog that is already on disk. The program cannot be pointed at
+// another server, so nothing here fetches anything; installing is tested in `src/gallery.rs`.
+
+/// Puts the catalog checked into this repository where the program keeps its verified copy, as if fetched just now.
+fn seed_catalog(sandbox: &Sandbox, index: &[u8]) {
+    let cache = sandbox.scratch.new_folder("data/Cache/Gallery");
+    std::fs::write(cache.join("index.json"), index).unwrap();
+    let now = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_millis();
+    std::fs::write(cache.join("metadata.json"), format!("{{\"fetchedAt\":{now}}}")).unwrap();
+}
+
+#[test]
+fn the_gallery_is_listed_and_shown_from_the_verified_copy() {
+    let sandbox = Sandbox::new();
+    seed_catalog(&sandbox, &std::fs::read(repository().join("Gallery/index.json")).unwrap());
+    let listed = sandbox.run(&["gallery", "list"]).expect(0);
+    assert_eq!(listed["command"], "gallery list");
+    assert_eq!((listed["catalog"]["offline"].as_bool(), listed["catalog"]["url"].as_str()), (Some(false), Some("https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/index.json")));
+    let items = listed["items"].as_array().unwrap();
+    assert_eq!(listed["catalog"]["items"], items.len());
+    assert!(items.len() >= 2 && items.iter().all(|item| item["install"]["state"] == "notInstalled"));
+    let hello = items.iter().find(|item| item["id"] == "app.scriptwidget.gallery.hello-card").expect("the hello card");
+    assert_eq!((hello["kind"].as_str(), hello["name"].as_str(), hello["files"].as_u64()), (Some("widget"), Some("Gallery Hello Card"), Some(2)));
+    let skills = sandbox.run(&["gallery", "list", "--kind", "skill"]).expect(0);
+    assert_eq!(skills["items"].as_array().unwrap().iter().map(|item| item["id"].as_str().unwrap()).collect::<Vec<_>>(), [PRIVACY_REVIEW]);
+
+    let shown = sandbox.run(&["gallery", "show", PRIVACY_REVIEW]).expect(0);
+    let files = shown["item"]["files"].as_array().unwrap();
+    assert_eq!(files.len(), 2);
+    for file in files {
+        let local = std::fs::read(skill_seed().join(file["path"].as_str().unwrap())).unwrap();
+        assert_eq!((file["bytes"].as_u64(), file["sha256"].as_str().map(str::to_owned)), (Some(local.len() as u64), Some(hex(&sha256(&local)))));
+    }
+    assert_eq!(sandbox.run(&["gallery", "show", "com.example.missing"]).expect(EXIT_USAGE)["error"]["kind"], "usage");
+    assert_eq!(sandbox.run(&["gallery", "install", "com.example.missing"]).expect(EXIT_USAGE)["error"]["kind"], "usage");
+    // There is no way to name another catalog.
+    for arguments in [&["gallery", "list", "--index", "https://example.com/index.json"][..], &["gallery", "list", "--url=https://example.com/index.json"], &["gallery", "install", "--from", "https://example.com", PRIVACY_REVIEW]] {
+        assert_eq!(sandbox.run(arguments).expect(EXIT_USAGE)["error"]["kind"], "usage", "{arguments:?}");
+    }
+    assert_eq!(package_files(&sandbox.data().join("Packages")), [] as [&str; 0]);
+    assert!(!sandbox.data().join("gallery-installations.json").exists() && !sandbox.data().join("Skills").exists());
+}
+
+fn hex(bytes: &[u8]) -> String {
+    bytes.iter().map(|byte| format!("{byte:02x}")).collect()
+}
+
+// Data access: what the user grants and picks for a widget
+
+/// An installed package that declares `permissions` and Runtime 1.6.
+fn install_with(sandbox: &Sandbox, name: &str, permissions: &str) {
+    let directory = sandbox.scratch.new_folder(&format!("work/{name}"));
+    sandbox.scratch.new_file(&format!("work/{name}/main.jsx"), "$render(<text>hi</text>);");
+    sandbox.scratch.new_file(&format!("work/{name}/widget.json"), &manifest(name, r#","minimumRuntimeVersion":"1.6""#).replace(r#""permissions":[]"#, &format!(r#""permissions":[{permissions}]"#)));
+    sandbox.run(&["install", text(&directory)]).expect(0);
+}
+
+#[test]
+fn the_data_access_commands_explain_themselves() {
+    let sandbox = Sandbox::new();
+    for group in ["services", "notifications", "documents", "photos"] {
+        let help = sandbox.run(&[group, "--help"]);
+        assert_eq!(help.code, 0);
+        assert!(help.stdout.starts_with("Usage: scriptwidget <services | notifications | documents | photos> <command>") && help.stderr.is_empty());
+        assert_eq!(sandbox.run(&[group]).code, EXIT_USAGE);
+        let unknown = sandbox.run(&[group, "frobnicate"]).expect(EXIT_USAGE);
+        assert_eq!((unknown["command"].as_str(), unknown["error"]["kind"].as_str()), (Some(format!("{group} frobnicate").as_str()), Some("usage")));
+    }
+    let usage = sandbox.run(&["--help"]).stdout;
+    for line in ["services status | connect | disconnect", "notifications status [<package>]", "documents list <package>", "photos list <package>", "reload  "] {
+        assert!(usage.contains(line), "{line}");
+    }
+    assert!(!sandbox.data().join("System").exists(), "asking for help writes nothing");
+    // The interval is the service's to apply: without one the command says so.
+    assert_eq!(sandbox.run(&["reload"]).expect(EXIT_NEEDS_SERVICE)["error"]["kind"], "service.unavailable");
+}
+
+#[test]
+fn documents_are_picked_listed_and_removed_per_widget() {
+    let sandbox = Sandbox::new();
+    install_with(&sandbox, "Budget", r#""documents""#);
+    install_with(&sandbox, "Other", "");
+    let budget = sandbox.scratch.new_file("home/Documents/budget.json", r#"{"total": 12.5}"#);
+    let rows = sandbox.scratch.new_file("home/Documents/rows.csv", "a,b\n1,2\n");
+    assert_eq!(sandbox.run(&["documents", "list", "Budget"]).expect(0)["documents"], serde_json::json!([]));
+    let added = sandbox.run(&["documents", "add", "Budget", text(&budget)]).expect(0);
+    assert_eq!((added["added"]["name"].as_str(), added["added"]["type"].as_str(), added["declared"].as_bool()), (Some("budget.json"), Some("json"), Some(true)));
+    // A path relative to where the command runs is recorded as the absolute one.
+    std::fs::copy(&rows, sandbox.work().join("rows.csv")).unwrap();
+    let relative = sandbox.run(&["documents", "add", "Budget", "rows.csv"]).expect(0);
+    assert!(Path::new(relative["added"]["path"].as_str().unwrap()).is_absolute());
+    let listed = sandbox.run(&["documents", "list", "Budget"]).expect(0);
+    let documents = listed["documents"].as_array().unwrap();
+    assert_eq!(documents.iter().map(|document| (document["name"].as_str().unwrap(), document["bytes"].as_u64().unwrap())).collect::<Vec<_>>(), [("budget.json", 15), ("rows.csv", 8)]);
+    assert_eq!(sandbox.run(&["documents", "list", "Other"]).expect(0)["documents"], serde_json::json!([]), "a list is one widget's");
+    // The record is private to the user and below System/ in the data folder.
+    use std::os::unix::fs::PermissionsExt;
+    let index = support::tree(&sandbox.data().join("System/Documents")).into_iter().find(|path| path.ends_with("index.json")).expect("the index");
+    assert_eq!(std::fs::metadata(sandbox.data().join("System/Documents").join(&index)).unwrap().permissions().mode() & 0o777, 0o600);
+
+    // What cannot be a widget's document is refused with the reason; a widget that does not ask for documents gets a warning.
+    let cases = [("notes.txt", "{}", "documents.unsupported_type"), ("broken.json", "{ nope", "documents.invalid_content"), ("scalar.json", "7", "documents.invalid_content"), ("ragged.csv", "a,b\n1\n", "documents.invalid_content")];
+    for (name, content, code) in cases {
+        let file = sandbox.scratch.new_file(&format!("home/{name}"), content);
+        assert_eq!(sandbox.run(&["documents", "add", "Budget", text(&file)]).expect(EXIT_FAILED)["error"]["kind"], code, "{name}");
+    }
+    let large = sandbox.scratch.new_file("home/large.json", &format!("[\"{}\"]", "x".repeat(262_144)));
+    assert_eq!(sandbox.run(&["documents", "add", "Budget", text(&large)]).expect(EXIT_FAILED)["error"]["kind"], "documents.too_large");
+    assert_eq!(sandbox.run(&["documents", "add", "Budget", text(&budget)]).expect(EXIT_FAILED)["error"]["kind"], "documents.duplicate");
+    assert_eq!(sandbox.run(&["documents", "add", "Budget", "/nonexistent/x.json"]).expect(EXIT_FAILED)["error"]["kind"], "documents.unreadable");
+    assert_eq!(sandbox.run(&["documents", "add", "Missing", text(&budget)]).expect(EXIT_USAGE)["error"]["kind"], "package.unknown");
+    let undeclared = sandbox.run(&["documents", "add", "Other", text(&budget)]).expect(0);
+    assert_eq!((undeclared["declared"].as_bool(), codes(&undeclared)), (Some(false), vec!["permission.undeclared"]));
+
+    let id = documents[0]["id"].as_str().unwrap();
+    let removed = sandbox.run(&["documents", "remove", "Budget", id]).expect(0);
+    assert_eq!(removed["documents"].as_array().unwrap().len(), 1);
+    assert!(budget.is_file(), "the file itself is not touched");
+    assert_eq!(sandbox.run(&["documents", "remove", "Budget", id]).expect(EXIT_USAGE)["error"]["kind"], "documents.not_found");
+    assert_eq!(sandbox.run(&["documents", "remove", "Budget", "../../etc"]).expect(EXIT_USAGE)["error"]["kind"], "documents.not_found");
+}
+
+#[test]
+fn pictures_are_picked_as_thumbnails_and_what_is_no_picture_is_refused() {
+    let sandbox = Sandbox::new();
+    install_with(&sandbox, "Frame", r#""photos""#);
+    // A real picture: this program's own drawing of a widget.
+    let package = sandbox.package("Drawn", r##"$render(<vstack frame="max" background="#1d4ed8"><text color="white">picture</text></vstack>);"##);
+    let picture = sandbox.path("home/picture.png");
+    sandbox.run(&["render", text(&package), "--output", text(&picture), "--family", "large", "--scale", "3"]).expect(0);
+    let added = sandbox.run(&["photos", "add", "Frame", text(&picture)]).expect(0);
+    assert_eq!((added["added"]["width"].as_u64(), added["added"]["height"].as_u64()), (Some(987), Some(1035)), "the original size");
+    let listed = sandbox.run(&["photos", "list", "Frame"]).expect(0);
+    assert_eq!((listed["photos"].as_array().unwrap().len(), listed["photos"][0]["readable"].as_bool()), (1, Some(true)));
+    // The thumbnail is a JPEG in the cache folder, no larger than the limits.
+    let thumbnails: Vec<String> = support::tree(&sandbox.data().join("Cache/photos")).into_iter().filter(|path| path.ends_with(".jpg")).collect();
+    assert_eq!(thumbnails.len(), 1);
+    let bytes = std::fs::read(sandbox.data().join("Cache/photos").join(&thumbnails[0])).unwrap();
+    assert!(bytes.starts_with(&[0xff, 0xd8, 0xff]) && bytes.len() <= 128 * 1024, "{} bytes", bytes.len());
+
+    let text_file = sandbox.scratch.new_file("home/notes.png", "not a picture");
+    assert_eq!(sandbox.run(&["photos", "add", "Frame", text(&text_file)]).expect(EXIT_FAILED)["error"]["kind"], "photos.invalid_content");
+    assert_eq!(sandbox.run(&["photos", "add", "Frame", text(&picture)]).expect(EXIT_FAILED)["error"]["kind"], "photos.duplicate");
+    assert_eq!(sandbox.run(&["photos", "add", "Frame", text(&sandbox.work())]).expect(EXIT_FAILED)["error"]["kind"], "photos.unreadable");
+    let id = listed["photos"][0]["id"].as_str().unwrap();
+    assert_eq!(sandbox.run(&["photos", "remove", "Frame", id]).expect(0)["photos"], serde_json::json!([]));
+    assert!(picture.is_file());
+}
+
+#[test]
+fn notifications_are_allowed_per_widget_and_services_start_unconnected() {
+    let sandbox = Sandbox::new();
+    install_with(&sandbox, "Reminder", r#""notifications""#);
+    install_with(&sandbox, "Quiet", "");
+    let status = sandbox.run(&["notifications", "status"]).expect(0);
+    // No session bus in the test's empty environment: no service is running, and nothing is shown anywhere.
+    assert_eq!(status["serviceRunning"], false);
+    assert_eq!(status["widgets"], serde_json::json!([{"package": "Reminder", "declared": true, "allowed": false, "pending": []}]), "only the widgets that ask");
+    let allowed = sandbox.run(&["notifications", "allow", "Reminder"]).expect(0);
+    assert_eq!((allowed["allowed"].as_bool(), allowed["declared"].as_bool()), (Some(true), Some(true)));
+    assert_eq!(sandbox.run(&["notifications", "status", "Reminder"]).expect(0)["widgets"][0]["allowed"], true);
+    assert_eq!(codes(&sandbox.run(&["notifications", "allow", "Quiet"]).expect(0)), ["permission.undeclared"]);
+    let denied = sandbox.run(&["notifications", "deny", "Reminder"]).expect(0);
+    assert_eq!((denied["allowed"].as_bool(), denied["cancelled"].as_u64()), (Some(false), Some(0)));
+    assert_eq!(sandbox.run(&["notifications", "status", "Reminder"]).expect(0)["widgets"][0]["allowed"], false);
+    assert_eq!(sandbox.run(&["notifications", "allow", "Missing"]).expect(EXIT_USAGE)["error"]["kind"], "package.unknown");
+
+    // $services: nothing is connected, and nothing can be allowed before something is.
+    assert_eq!(sandbox.run(&["services", "status"]).expect(0)["github"], serde_json::json!({"service": "github", "connected": false}));
+    assert_eq!(sandbox.run(&["services", "allow", "Reminder"]).expect(EXIT_USAGE)["error"]["kind"], "services.service_not_connected");
+    // What is not a fine-grained token is refused before anything is sent anywhere (the input here is not one).
+    let mut command = sandbox.command();
+    command.args(["services", "connect"]).stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::piped());
+    let mut child = command.spawn().unwrap();
+    std::io::Write::write_all(child.stdin.as_mut().unwrap(), b"not-a-token-at-all\n").unwrap();
+    let output = child.wait_with_output().unwrap();
+    let report: Value = serde_json::from_slice(&output.stdout).unwrap();
+    assert_eq!((output.status.code(), report["error"]["kind"].as_str()), (Some(EXIT_USAGE), Some("services.service_credential")));
+    assert!(!String::from_utf8_lossy(&output.stdout).contains("not-a-token-at-all") && !String::from_utf8_lossy(&output.stderr).contains("not-a-token-at-all"), "what was typed is not repeated");
+    assert!(!sandbox.data().join("System/services.json").exists());
 }

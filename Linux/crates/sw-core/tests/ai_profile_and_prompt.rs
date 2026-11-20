@@ -86,8 +86,16 @@ fn system_prompt_contains_rules_limits_unsupported_list_and_reference() {
     for global in LinuxPromptNotes::unsupported_globals() {
         assert!(prompt.contains(&global), "{global}");
     }
-    for name in ["$health", "$location", "$calendar", "$maps", "$icloud", "$reminders", "$music", "accessoryCircular", "$dynamic_island", "backgroundMaterial", "Control Widgets", "<list>", "material.<role>"] {
+    for name in ["$health", "$location", "$calendar", "$maps", "$icloud", "$reminders", "accessoryCircular", "$dynamic_island", "backgroundMaterial", "Control Widgets", "<list>", "material.<role>"] {
         assert!(prompt.contains(name), "{name}");
+    }
+    // What Linux does implement is described, not forbidden.
+    let (_, system_data) = prompt.split_once("SYSTEM DATA ON LINUX").expect("the system data section");
+    for name in ["$music.current()", "\"mpris\"", "$photos.items", "$documents.list()", "$services.status(\"github\")", "$notifications", "Never put a token in code"] {
+        assert!(system_data.contains(name), "{name}");
+    }
+    for global in ["$music", "$photos", "$documents", "$services", "$notifications"] {
+        assert!(!LinuxPromptNotes::unsupported_globals().iter().any(|unsupported| unsupported == global), "{global}");
     }
     // Network declaration contract and the reference.
     assert!(prompt.contains("\"networkDomains\""));
@@ -175,6 +183,12 @@ fn user_prompts_carry_the_request_size_and_failure() {
     assert!(fix.contains("Runtime feedback:\nscriptError: x is not defined"));
     assert!(!fix.contains("[log] 2\n") && fix.contains("[log] 3\n") && fix.contains("[log] 12"));
     assert!(PromptBuilder::user_prompt_fix("CODE", "e", &[]).contains("(no console output)"));
+    // A script may print anything: of each console line only the first 300 characters are repeated.
+    let long = vec![format!("[log] {}TAIL", "é".repeat(400)), "[log] short".to_owned(), format!("[error] {}", "x".repeat(292))];
+    let fix = PromptBuilder::user_prompt_fix("CODE", "e", &long);
+    assert!(fix.contains(&format!("Last console output:\n[log] {}…\n[log] short\n[error] {}\n", "é".repeat(294), "x".repeat(292))), "{fix}");
+    assert!(!fix.contains("TAIL"));
+    assert_eq!(PromptBuilder::MAXIMUM_LOG_LINE_CHARACTERS, 300);
     let refine = PromptBuilder::user_prompt_refine("OLD", "make it blue", Some(r#"{"permissions":["network"],"networkDomains":["a.example.com"]}"#), Some("scriptError: boom"));
     for part in ["```jsx\nOLD\n```", "a.example.com", "scriptError: boom", "Apply this change request from the user:\nmake it blue"] {
         assert!(refine.contains(part), "{part}");
@@ -254,6 +268,26 @@ fn candidate_round_trips_through_the_assistant_message() {
     assert_eq!(AiCandidate::new("code", None).as_assistant_message(), "code");
 }
 
+/// `aRuntimeDiagnosticCarriesTheErrorAndTheEndsOfTheLastConsoleLines` of `AiProfileAndPromptTest.kt`.
+#[test]
+fn a_runtime_diagnostic_carries_the_error_and_the_ends_of_the_last_console_lines() {
+    assert_eq!(PromptBuilder::runtime_diagnostic("scriptError: boom", &[]), "scriptError: boom");
+    let long = format!("[log] {}", "z".repeat(400));
+    let mut logs: Vec<String> = (1..=11).map(|number| format!("[log] line {number}")).collect();
+    logs.push(long.clone());
+    let text = PromptBuilder::runtime_diagnostic("scriptError: boom", &logs);
+    assert!(text.starts_with("scriptError: boom\nLast console output:\n[log] line 3\n"), "{text}");
+    assert!(!text.contains("[log] line 2\n"));
+    assert!(text.ends_with(&format!("{}…", &long[..300])));
+    assert_eq!(text.lines().count(), 2 + PromptBuilder::MAXIMUM_LOG_LINES);
+    // It reaches the model inside the turn, cut to 2,000 characters.
+    let mut context = AiTurnContext::new(Some("CODE"), "fix it", AiWidgetSize::Small);
+    context.runtime_diagnostic = Some(PromptBuilder::runtime_diagnostic(&"e".repeat(3_000), &["[log] tail".to_owned()]));
+    let turn = PromptBuilder::user_prompt_turn(&context);
+    assert!(turn.contains(&format!("The latest local ScriptWidget runtime diagnostic is:\n{}…", "e".repeat(2_000))));
+    assert!(!turn.contains("[log] tail"));
+}
+
 #[test]
 fn declaration_accepts_only_network_and_public_hosts() {
     let parsed = AiManifestDeclaration::parse(r#"{"permissions":["network","network"],"networkDomains":["API.Example.com","*.example.org"]}"#).unwrap();
@@ -262,7 +296,17 @@ fn declaration_accepts_only_network_and_public_hosts() {
     assert_eq!(parsed.to_json(), r#"{"permissions":["network"],"networkDomains":["api.example.com","*.example.org"]}"#);
     let empty = AiManifestDeclaration::parse("{}").unwrap();
     assert!(empty.permissions.is_empty() && empty.network_domains.is_empty());
-    let many: Vec<String> = (1..=17).map(|number| format!("\"h{number}.example.com\"")).collect();
+    // As many hosts and bytes as the Apple apps read (`AINetworkDeclaration`), and what they say beyond that.
+    assert_eq!((AiManifestDeclaration::MAXIMUM_DOMAINS, AiManifestDeclaration::MAXIMUM_BYTES), (8, 4_096));
+    let hosts = |count: usize| (1..=count).map(|number| format!("\"h{number}.example.com\"")).collect::<Vec<String>>();
+    let declaring = |hosts: &[String]| format!(r#"{{"permissions":["network"],"networkDomains":[{}]}}"#, hosts.join(","));
+    assert_eq!(AiManifestDeclaration::parse(&declaring(&hosts(8))).unwrap().network_domains.len(), 8);
+    assert_eq!(AiManifestDeclaration::parse(&declaring(&hosts(9))).unwrap_err(), "\"networkDomains\" must list 1 to 8 hosts");
+    let padded = |bytes: usize| format!("{{\"permissions\":[],\"networkDomains\":[]{}}}", " ".repeat(bytes - 38));
+    assert_eq!(padded(4_096).len(), 4_096);
+    assert!(AiManifestDeclaration::parse(&padded(4_096)).is_ok());
+    assert_eq!(AiManifestDeclaration::parse(&padded(4_097)).unwrap_err(), "it is not a JSON object");
+    let many = hosts(9);
     let rejected = [
         "[]".to_owned(),
         "not json".to_owned(),
@@ -296,7 +340,23 @@ fn declaration_accepts_only_network_and_public_hosts() {
     for json in &rejected {
         assert!(AiManifestDeclaration::parse(json).is_err_and(|message| !message.is_empty()), "accepted {json}");
     }
-    assert!(AiManifestDeclaration::parse(r#"{"permissions":["location"]}"#).unwrap_err().contains("on Linux"));
+    // The whole sentence the model reads is the one of `AgentLoop.swift` and `AiOutput.kt`.
+    let refusal = |json: &str| AiManifestDeclaration::failure_text(&AiManifestDeclaration::parse(json).unwrap_err());
+    let prefix = "The network declaration block is not valid: ";
+    assert_eq!(refusal(&declaring(&hosts(9))), format!("{prefix}\"networkDomains\" must list 1 to 8 hosts."));
+    assert_eq!(refusal(r#"{"permissions":["network"],"networkDomains":[]}"#), format!("{prefix}\"networkDomains\" must list 1 to 8 hosts."));
+    assert_eq!(refusal(r#"{"permissions":["network"]}"#), format!("{prefix}\"networkDomains\" must list 1 to 8 hosts."));
+    assert_eq!(refusal("not json"), format!("{prefix}it is not a JSON object."));
+    assert_eq!(refusal("[]"), format!("{prefix}it is not a JSON object."));
+    assert_eq!(refusal(&padded(4_097)), format!("{prefix}it is not a JSON object."));
+    assert_eq!(refusal(r#"{"permissions":["network"],"networkDomains":["a.example.com"],"id":"evil"}"#), format!("{prefix}only \"permissions\" and \"networkDomains\" may appear."));
+    let only_network = format!("{prefix}\"permissions\" must be exactly [\"network\"]; no other permission can be declared.");
+    assert_eq!(refusal(r#"{"permissions":["location"]}"#), only_network);
+    assert_eq!(refusal(r#"{"permissions":["network","health"],"networkDomains":["localhost"]}"#), only_network);
+    assert_eq!(refusal(r#"{"networkDomains":["a.example.com"]}"#), only_network);
+    assert_eq!(refusal(r#"{"permissions":"network"}"#), format!("{prefix}\"permissions\" must be an array of strings."));
+    assert_eq!(refusal(r#"{"permissions":["network"],"networkDomains":[1]}"#), format!("{prefix}\"networkDomains\" must be an array of strings."));
+    assert_eq!(refusal(r#"{"permissions":["network"],"networkDomains":["LOCALHOST"]}"#), format!("{prefix}\"localhost\" is not a public host name; use a host such as api.example.com, without scheme or path."));
 }
 
 #[test]

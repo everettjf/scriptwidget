@@ -38,6 +38,7 @@ impl StudioWindow {
                 h_flex()
                     .gap_2()
                     .child(Button::new("library-import").label(t("library.import")).outline().on_click(cx.listener(|this, _, window, cx| this.choose_import(window, cx))))
+                    .child(Button::new("library-new-ai").label(t("library.newWithAi")).outline().on_click(cx.listener(|this, _, window, cx| this.navigate(Target::Draft, window, cx))))
                     .child(Button::new("library-new").icon(IconName::Plus).label(t("library.new")).primary().on_click(cx.listener(|this, _, window, cx| this.ask_new_widget(window, cx)))),
             );
         let body = if let Some(error) = &self.library_error {

@@ -23,6 +23,9 @@ use std::thread::JoinHandle;
 use std::time::Duration;
 
 use serde_json::{Map, Value, json};
+use sw_core::api::SystemStores;
+use sw_core::api::fetch::FetchModule;
+use sw_core::api::notifications::{NotificationDelivery, NotificationPlatform};
 use sw_core::api::system::Screen;
 use sw_core::library::Library;
 use sw_core::{DataPaths, Resources, SharedScripts, WidgetRuntime};
@@ -62,11 +65,13 @@ pub struct ServiceOptions {
     pub expected_user: Option<u32>,
     /// See [`DEFAULT_FRAME_GRACE`].
     pub frame_grace: u64,
+    /// What shows the notifications widgets schedule; `None` is the desktop's notification service. For tests.
+    pub notification_platform: Option<Arc<dyn NotificationPlatform>>,
 }
 
 impl ServiceOptions {
     pub fn new(runtime: RuntimePaths, data: DataPaths, resources: Resources) -> Self {
-        Self { runtime, data, resources, clock: Arc::new(SystemClock::new()), launcher: Arc::new(SystemLauncher), expected_user: None, frame_grace: DEFAULT_FRAME_GRACE }
+        Self { runtime, data, resources, clock: Arc::new(SystemClock::new()), launcher: Arc::new(SystemLauncher), expected_user: None, frame_grace: DEFAULT_FRAME_GRACE, notification_platform: None }
     }
 }
 
@@ -137,7 +142,14 @@ impl Service {
         };
         let frames = Arc::new(FrameStore::new(options.runtime.frames())?);
         let scripts = Arc::new(SharedScripts::new(&options.resources.runtime)?);
-        let runtime = WidgetRuntime::new(scripts.clone(), &options.data)?;
+        let mut system = SystemStores::for_runs(&options.data, Arc::new(FetchModule::new()));
+        if let Some(platform) = options.notification_platform {
+            system.notification_platform = platform;
+        }
+        // The painter makes the thumbnails of `$photos`.
+        system.photos.set_maker(Arc::new(sw_render::SkiaThumbnails));
+        let notifications = NotificationDelivery::new(system.notifications.clone(), system.notification_platform.clone());
+        let runtime = WidgetRuntime::with_stores(scripts.clone(), &options.data, system)?;
         let renderer = WidgetRenderer::new(scripts)?;
         let templates = options.resources.templates.clone();
         let worker = Worker::new(runtime, renderer, Library::new(&options.data, templates.clone()), frames.clone(), options.clock.clone());
@@ -166,6 +178,8 @@ impl Service {
             library: Library::new(&options.data, templates),
             placements: Placements::load(options.data.widgets()),
             settings: Settings::new(options.data.settings()),
+            notifications,
+            next_notification: None,
             display: DisplayMemory::load(&display_file),
             display_file,
             widgets: Vec::new(),
@@ -263,11 +277,13 @@ struct Widget {
     next_redraw: Option<u64>,
     /// How often the script has run; for the list and for tests.
     runs: u64,
+    /// When it last ran, on the steady clock.
+    last_run: Option<u64>,
 }
 
 impl Widget {
     fn new(id: &str) -> Self {
-        Self { id: id.to_owned(), version: 0, published: None, previous: Vec::new(), busy: None, pending: None, kept: None, next_run: None, next_redraw: None, runs: 0 }
+        Self { id: id.to_owned(), version: 0, published: None, previous: Vec::new(), busy: None, pending: None, kept: None, next_run: None, next_redraw: None, runs: 0, last_run: None }
     }
 }
 
@@ -278,6 +294,10 @@ struct Host {
     library: Library,
     placements: Placements,
     settings: Settings,
+    /// Shows the notifications widgets scheduled when their time has come.
+    notifications: NotificationDelivery,
+    /// When the next of them is due, on the steady clock.
+    next_notification: Option<u64>,
     display: DisplayMemory,
     display_file: PathBuf,
     widgets: Vec<Widget>,
@@ -404,6 +424,10 @@ impl Host {
         for widget in &mut self.widgets {
             widget.previous.retain(|(_, _, forgotten)| *forgotten > now);
         }
+        // Notifications are shown whether or not the session is locked: showing them is the desktop's decision.
+        let wall = self.clock.wall();
+        let library = &self.library;
+        self.next_notification = self.notifications.deliver_due(wall, &|installation| library.find_by_installation(installation).is_some()).map(|due| now + (due - wall).max(1) as u64);
         // While the session is locked nothing runs and nothing is drawn.
         if !self.locked() {
             let due: Vec<(String, bool)> = self
@@ -437,7 +461,7 @@ impl Host {
         let forgetting = self.widgets.iter().flat_map(|widget| widget.previous.iter().map(|(_, _, forgotten)| *forgotten));
         let scheduled = self.widgets.iter().filter(|widget| widget.busy.is_none() && !self.locked()).flat_map(|widget| [widget.next_run, widget.next_redraw]).flatten();
         let release = (self.renderer_live && idle).then_some(self.last_job + RELEASE_AFTER);
-        retiring.chain(forgetting).chain(scheduled).chain(release).min()
+        retiring.chain(forgetting).chain(scheduled).chain(release).chain(self.next_notification).min()
     }
 
     // Jobs
@@ -526,6 +550,7 @@ impl Host {
         if let Some(kept) = outcome.kept {
             if outcome.ran {
                 widget.runs += 1;
+                widget.last_run = Some(now);
                 widget.next_run = Some(now + schedule::run_delay(refresh_minutes, kept.next_transition, wall));
             }
             // The dates of the tree, its clock hands and the motions that no cycle of pictures shows.
@@ -558,6 +583,8 @@ impl Host {
             SessionEvent::Sleeping => {}
             SessionEvent::Resumed | SessionEvent::ClockChanged => {
                 self.clock_offset = self.clock.wall() - now as i64;
+                // The times of day of the daily notifications are worked out again.
+                self.notifications.rearm();
                 // Everything may be stale: time passed that no timer counted, or the time itself changed.
                 // While locked the unlock does it.
                 if !self.locked() && self.last_refresh_all.is_none_or(|last| now >= last + REFRESH_ALL_DEBOUNCE) {
@@ -806,6 +833,21 @@ impl Host {
             Request::Session { locked } => {
                 self.session(SessionEvent::DisplayLocked(locked));
                 Ok(json!({ "ok": true, "locked": self.locked() }))
+            }
+            Request::Reload => {
+                // The interval is read again (the file's time stamp says it changed), and every widget
+                // that waits for its next run waits by the new interval from when it last ran.
+                let minutes = self.settings.refresh_minutes();
+                let (now, wall) = (self.clock.now(), self.clock.wall());
+                let mut planned = 0;
+                for widget in self.widgets.iter_mut().filter(|widget| widget.busy.is_none() && widget.next_run.is_some()) {
+                    let (Some(kept), Some(last_run)) = (&widget.kept, widget.last_run) else { continue };
+                    let by_interval = last_run + minutes * 60_000;
+                    let by_transition = kept.next_transition.map(|transition| now + (transition - wall).max(1000) as u64);
+                    widget.next_run = Some(by_transition.map_or(by_interval, |transition| transition.min(by_interval)).max(now));
+                    planned += 1;
+                }
+                Ok(json!({ "ok": true, "refreshMinutes": minutes, "widgets": planned }))
             }
         }
     }

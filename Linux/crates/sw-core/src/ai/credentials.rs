@@ -20,10 +20,9 @@
 use std::collections::HashMap;
 use std::ffi::OsString;
 use std::fmt;
-use std::io::Write;
 use std::path::PathBuf;
-use std::process::{Command, Stdio};
 use std::sync::Mutex;
+use std::time::Duration;
 
 use super::client::require_key;
 use super::profile::AiProviderKind;
@@ -121,11 +120,17 @@ Check that a keyring such as GNOME Keyring or KeePassXC is running and unlocked,
 /// More than a key can be: what `secret-tool` printed is then not one.
 const MAXIMUM_OUTPUT_BYTES: usize = 16 * 1024;
 
+/// How long `secret-tool` may take: a keyring that is locked asks the user for its password first.
+const INTERACTIVE_LIMIT: Duration = Duration::from_secs(120);
+
 /// The Secret Service through `secret-tool`. An item is found by its
 /// attributes: `application scriptwidget`, `kind ai-api-key` and
 /// `account <provider>`.
 pub struct SecretToolStore {
     program: PathBuf,
+    kind: &'static str,
+    label: &'static str,
+    limit: Duration,
 }
 
 impl Default for SecretToolStore {
@@ -137,32 +142,47 @@ impl Default for SecretToolStore {
 impl SecretToolStore {
     /// `secret-tool` as the `PATH` finds it.
     pub fn new() -> Self {
-        Self { program: PathBuf::from("secret-tool") }
+        Self::with_program("secret-tool")
     }
 
     /// Another program that takes the same arguments; for tests.
     pub fn with_program(program: impl Into<PathBuf>) -> Self {
-        Self { program: program.into() }
+        Self { program: program.into(), kind: "ai-api-key", label: "ScriptWidget AI key", limit: INTERACTIVE_LIMIT }
     }
 
-    fn attributes(account: &str) -> [&str; 6] {
-        ["application", "scriptwidget", "kind", "ai-api-key", "account", account]
+    /// The same keyring for another kind of secret: items carry `kind <kind>`
+    /// instead of `ai-api-key` and are labelled `<label> (<account>)`, so the
+    /// two kinds never find each other's items.
+    pub fn for_kind(mut self, kind: &'static str, label: &'static str) -> Self {
+        self.kind = kind;
+        self.label = label;
+        self
+    }
+
+    /// How long one operation may take before `secret-tool` is stopped. A
+    /// caller that cannot wait for the user to unlock a keyring sets a short time.
+    pub fn with_limit(mut self, limit: Duration) -> Self {
+        self.limit = limit;
+        self
+    }
+
+    fn attributes<'a>(&self, account: &'a str) -> [&'a str; 6] {
+        ["application", "scriptwidget", "kind", self.kind, "account", account]
     }
 
     /// Runs `secret-tool`; `secret` goes to its standard input. Returns whether it succeeded, what it printed, and whether it complained.
     fn run(&self, arguments: &[&str], secret: Option<&str>) -> Result<(bool, Vec<u8>, bool), CredentialError> {
-        let mut command = Command::new(&self.program);
+        use crate::process::{RunError, run_bounded};
+        // secret-tool reads to the end of its input and takes all of it as the secret: no line break is added.
         // The child gets no key through its environment, whatever this process was started with.
-        command.args(arguments).env_remove(ENVIRONMENT_KEY).stdin(if secret.is_some() { Stdio::piped() } else { Stdio::null() }).stdout(Stdio::piped()).stderr(Stdio::piped());
-        let mut child = command.spawn().map_err(|error| CredentialError::Unavailable(if error.kind() == std::io::ErrorKind::NotFound { NOT_INSTALLED } else { KEYRING_FAILED }.into()))?;
-        if let (Some(secret), Some(mut input)) = (secret, child.stdin.take()) {
-            // secret-tool reads to the end of its input and takes all of it as the secret: no line break is added.
-            // A program that ended without reading is reported by its exit status below.
-            let _ = input.write_all(secret.as_bytes());
-        }
-        let output = child.wait_with_output().map_err(|_| CredentialError::Unavailable(KEYRING_FAILED.into()))?;
         // What the program wrote to standard error is not forwarded and not logged.
-        Ok((output.status.success(), output.stdout, !output.stderr.iter().all(u8::is_ascii_whitespace)))
+        match run_bounded(&self.program, arguments, secret.map(str::as_bytes), self.limit, MAXIMUM_OUTPUT_BYTES, &[ENVIRONMENT_KEY]) {
+            Ok(finished) => Ok((finished.success, finished.stdout, finished.complained)),
+            Err(RunError::NotFound) => Err(CredentialError::Unavailable(NOT_INSTALLED.into())),
+            // More than a secret can be is not one; the caller reports it as such.
+            Err(RunError::TooMuchOutput) => Ok((true, vec![0xff], false)),
+            Err(RunError::Failed | RunError::TimedOut) => Err(CredentialError::Unavailable(KEYRING_FAILED.into())),
+        }
     }
 }
 
@@ -170,7 +190,7 @@ impl CredentialStore for SecretToolStore {
     fn load(&self, account: &str) -> Result<Option<ApiKey>, CredentialError> {
         valid_account(account)?;
         let mut arguments = vec!["lookup"];
-        arguments.extend(Self::attributes(account));
+        arguments.extend(self.attributes(account));
         let (succeeded, output, complained) = self.run(&arguments, None)?;
         if !succeeded {
             // Without an item secret-tool ends with a failure and says nothing; with no keyring it says why.
@@ -185,9 +205,9 @@ impl CredentialStore for SecretToolStore {
 
     fn save(&self, account: &str, key: &ApiKey) -> Result<(), CredentialError> {
         valid_account(account)?;
-        let label = format!("--label=ScriptWidget AI key ({account})");
+        let label = format!("--label={} ({account})", self.label);
         let mut arguments = vec!["store", label.as_str()];
-        arguments.extend(Self::attributes(account));
+        arguments.extend(self.attributes(account));
         let (succeeded, _, _) = self.run(&arguments, Some(key.expose()))?;
         if succeeded { Ok(()) } else { Err(CredentialError::Unavailable(KEYRING_FAILED.into())) }
     }
@@ -204,7 +224,7 @@ impl CredentialStore for SecretToolStore {
             return Ok(false);
         }
         let mut arguments = vec!["clear"];
-        arguments.extend(Self::attributes(account));
+        arguments.extend(self.attributes(account));
         let (succeeded, _, _) = self.run(&arguments, None)?;
         if succeeded { Ok(existed) } else { Err(CredentialError::Unavailable(KEYRING_FAILED.into())) }
     }

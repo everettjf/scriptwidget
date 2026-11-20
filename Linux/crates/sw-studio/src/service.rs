@@ -74,11 +74,48 @@ pub fn add_to_desktop(program: &Path, package: &str, family: Option<&str>, limit
     }
 }
 
+/// Runs `<program> reload`, which tells a running service that the settings
+/// changed, and waits for it, at most `limit`. True when the service took
+/// the change; false when no service runs (it reads the file when it
+/// starts), the program is missing, or the service did not answer.
+pub fn reload_settings(program: &Path, limit: Duration) -> bool {
+    let Ok(mut child) = Command::new(program).arg("reload").stdin(Stdio::null()).stdout(Stdio::null()).stderr(Stdio::null()).spawn() else { return false };
+    let deadline = Instant::now() + limit;
+    loop {
+        match child.try_wait() {
+            Ok(Some(status)) => return status.success(),
+            Ok(None) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(20)),
+            _ => {
+                let _ = child.kill();
+                let _ = child.wait();
+                return false;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::testing::Scratch;
     use std::os::unix::fs::PermissionsExt;
+
+    #[test]
+    fn a_changed_setting_is_told_to_the_service_through_the_command_line() {
+        let scratch = Scratch::new("service-reload");
+        assert!(reload_settings(&fake(&scratch, 0, ""), LIMIT));
+        assert_eq!(recorded(&scratch), ["reload"]);
+        // No service (exit 69), no program, a program that hangs: the setting is saved all the same, and this says the service was not told.
+        assert!(!reload_settings(&fake(&Scratch::new("service-reload-69"), 69, "error: [service.unavailable] no service"), LIMIT));
+        assert!(!reload_settings(&scratch.path("no-such-program"), LIMIT));
+        let hanging = Scratch::new("service-reload-hang");
+        let program = hanging.path("scriptwidget");
+        std::fs::write(&program, "#!/bin/sh\nexec sleep 30\n").unwrap();
+        std::fs::set_permissions(&program, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let started = Instant::now();
+        assert!(!reload_settings(&program, Duration::from_millis(300)));
+        assert!(started.elapsed() < Duration::from_secs(5));
+    }
 
     /// A stand-in for the command line that records its arguments, one per line, and exits with `code`.
     fn fake(scratch: &Scratch, code: i32, says: &str) -> PathBuf {

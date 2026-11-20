@@ -63,6 +63,17 @@ impl PreviewPane {
         Self { family: family.to_owned(), families, dark, shown: None, error: None, logs: Vec::new(), elapsed: None, running: false, ticket: 0 }
     }
 
+    /// Empties the pane: nothing is shown and nothing is waited for. Returns the picture to release.
+    pub fn clear(&mut self) -> Option<Shown> {
+        self.running = false;
+        self.error = None;
+        self.logs.clear();
+        self.elapsed = None;
+        // No request has this ticket: a result that is still on its way is dropped.
+        self.ticket = 0;
+        self.shown.take()
+    }
+
     /// Takes a result; returns the picture it replaces, for the caller to release.
     pub fn take(&mut self, result: PreviewResult) -> Option<Shown> {
         self.running = false;
@@ -74,8 +85,25 @@ impl PreviewPane {
     }
 }
 
+/// Where a preview pane stands.
+pub(super) enum PaneLayout {
+    /// Beside the code, at [`PANE_WIDTH`].
+    Beside,
+    /// The rest of the page, `width` points wide; `empty` is said while there is nothing to show.
+    Filling { width: f32, empty: String },
+}
+
 impl StudioWindow {
     pub(super) fn render_pane(&self, pane: &PreviewPane, cx: &mut Context<Self>) -> impl IntoElement {
+        self.render_pane_in(pane, PaneLayout::Beside, cx)
+    }
+
+    pub(super) fn render_pane_in(&self, pane: &PreviewPane, layout: PaneLayout, cx: &mut Context<Self>) -> impl IntoElement {
+        // The box the picture is fitted into, and what an empty pane says.
+        let (filling, box_width, box_height, empty) = match layout {
+            PaneLayout::Beside => (false, PANE_WIDTH - 24.0, 226.0, String::new()),
+            PaneLayout::Filling { width, empty } => (true, (width - 48.0).max(120.0), 380.0, empty),
+        };
         let theme = cx.theme();
         let (muted, danger, border, secondary, mono) = (theme.muted_foreground, theme.danger, theme.border, theme.secondary, theme.mono_font_family.clone());
         let appearance = if pane.dark { t("editor.dark") } else { t("editor.light") };
@@ -90,12 +118,12 @@ impl StudioWindow {
                 .on_click(cx.listener(move |this, _, _, cx| this.set_preview_family(family, cx)))
         }));
 
-        let picture = div().w_full().h(px(250.)).flex().items_center().justify_center().rounded_lg().bg(secondary).map(|area| match &pane.shown {
+        let picture = div().w_full().h(px(box_height + 24.0)).flex().items_center().justify_center().rounded_lg().bg(secondary).map(|area| match &pane.shown {
             Some(shown) => {
-                let (width, height) = shown.fitted(PANE_WIDTH - 24.0, 226.0);
+                let (width, height) = shown.fitted(box_width, box_height);
                 area.child(img(shown.image.clone()).w(px(width)).h(px(height)))
             }
-            None => area.child(div().text_sm().text_color(muted).child(if pane.running { t("editor.running") } else { String::new() })),
+            None => area.child(div().px_4().text_sm().text_color(muted).child(if pane.running { t("editor.running") } else { empty })),
         });
 
         let status = match (&pane.error, pane.elapsed) {
@@ -115,12 +143,11 @@ impl StudioWindow {
         };
 
         v_flex()
-            .w(px(PANE_WIDTH))
             .h_full()
-            .flex_shrink_0()
             .p_3()
             .gap_3()
-            .border_l_1()
+            // A pane that fills the page stands beside a panel that draws the line between them.
+            .map(|pane| if filling { pane.flex_1().min_w_0() } else { pane.w(px(PANE_WIDTH)).flex_shrink_0().border_l_1() })
             .border_color(border)
             .child(
                 h_flex().justify_between().child(div().font_semibold().child(t("editor.preview"))).child(

@@ -99,6 +99,111 @@ fn a_provider_failure_is_shown_and_can_be_retried() {
     assert!(AiConversationTurns::retry(&mut conversation, &started.turn_id, "SYSTEM", None, 7).is_none(), "a turn that ran can not be sent again");
 }
 
+/// Port of `AIConversationSession.retry`: the turn is sent again from the version it started from,
+/// wherever the user went in the meantime.
+#[test]
+fn a_retried_turn_starts_from_the_version_the_failed_turn_started_from() {
+    let mut conversation = new();
+    easy(&mut conversation, "a clock", "Made a clock.", "ONE");
+    easy(&mut conversation, "bigger", "Bigger.", "TWO");
+    let two = conversation.current_version_id.clone().unwrap();
+    let failed = turn(&mut conversation, "add a chart", &says(reply("Tried.", "BAD", None)), |_, _| fail("scriptError: no chart"));
+    assert_eq!((failed.status, failed.base_version_id.as_deref()), (Status::Unconverged, Some(two.as_str())));
+    assert!(AiConversationTurns::can_retry(&conversation, &failed.id));
+
+    // The user looks at the first version, and a turn from there makes a third.
+    let one = conversation.versions[0].id.clone();
+    conversation.select_version(&one, 3);
+    easy(&mut conversation, "make it red", "Red.", "THREE");
+    assert_eq!(conversation.current_version().unwrap().source, "THREE\n");
+
+    let started = AiConversationTurns::retry(&mut conversation, &failed.id, "SYSTEM", None, 5).unwrap();
+    assert_eq!(conversation.current_version_id.as_deref(), Some(two.as_str()), "the version the failed turn started from is the current one again");
+    let again = conversation.turn(&started.turn_id).unwrap();
+    assert_eq!((again.request.as_str(), again.base_version_id.as_deref()), ("add a chart", Some(two.as_str())));
+    assert!(conversation.turn(&failed.id).is_none(), "the new turn takes the place of the one that did not succeed");
+    let Mode::Turn { context } = &started.loop_request.mode else { panic!("a turn") };
+    assert_eq!((context.current_code.as_deref(), context.previous_code.as_deref()), (Some("TWO\n"), Some("ONE\n")));
+    assert_eq!(context.history.iter().map(|exchange| exchange.request.as_str()).collect::<Vec<_>>(), ["a clock", "bigger"], "the turn made from the first version is off this path");
+    assert!(conversation.turns.iter().find(|turn| turn.request == "make it red").unwrap().is_abandoned);
+
+    let outcome = run(&says(reply("A chart.", "FOUR", None)), &started.loop_request, |_, _| ok());
+    AiConversationTurns::apply_outcome(&mut conversation, &started.turn_id, Some(&outcome), 6);
+    let made = conversation.current_version().unwrap();
+    assert_eq!((made.source.as_str(), made.parent_id.as_deref()), ("FOUR\n", Some(two.as_str())));
+    assert!(!AiConversationTurns::can_retry(&conversation, &started.turn_id));
+}
+
+#[test]
+fn a_retry_continues_from_the_current_version_when_the_base_is_gone() {
+    let mut conversation = new();
+    // The first turn of a new widget has no version to start from.
+    let failed = turn(&mut conversation, "a clock", &FakeChat::new(vec![AiClientError::new(AiErrorKind::Network, "The AI server could not be reached.").into()]), |_, _| ok());
+    assert_eq!(failed.base_version_id, None);
+    easy(&mut conversation, "a quote", "A quote.", "QUOTE");
+    let started = AiConversationTurns::retry(&mut conversation, &failed.id, "SYSTEM", None, 4).unwrap();
+    let Mode::Turn { context } = &started.loop_request.mode else { panic!("a turn") };
+    assert_eq!(context.current_code.as_deref(), Some("QUOTE\n"));
+    AiConversationTurns::apply_outcome(&mut conversation, &started.turn_id, None, 5);
+
+    // A base that was pruned away: the turn continues from where the conversation is.
+    let mut conversation = new();
+    easy(&mut conversation, "a clock", "Made a clock.", "ONE");
+    let failed = turn(&mut conversation, "x", &says(reply("Tried.", "BAD", None)), |_, _| fail("scriptError: x"));
+    let base = failed.base_version_id.clone().unwrap();
+    for index in 0..AiConversationLimits::MAX_VERSIONS + 1 {
+        conversation.add_version(&format!("v{index}"), Vec::new(), 2);
+    }
+    assert!(conversation.version(Some(&base)).is_none());
+    let current = conversation.current_version_id.clone();
+    assert!(AiConversationTurns::retry(&mut conversation, &failed.id, "SYSTEM", None, 6).is_some());
+    assert_eq!(conversation.current_version_id, current);
+    assert!(AiConversationTurns::retry(&mut conversation, "no-such-turn", "SYSTEM", None, 7).is_none());
+}
+
+/// The optional `skillIds` of the format the Android app shares (`AiConversation.kt`).
+#[test]
+fn a_conversation_names_its_own_skills_and_an_old_file_names_none() {
+    let mut conversation = new();
+    easy(&mut conversation, "a clock", "Clock.", "ONE");
+    assert_eq!(conversation.skill_ids, None);
+    assert!(conversation.to_json().get("skillIds").is_none(), "a file without the field means the Skills enabled in the program");
+    let old = AiConversation::from_json(&conversation.to_json()).unwrap();
+    assert_eq!(old.skill_ids, None);
+
+    let long = "x".repeat(AiConversationLimits::SKILL_ID_CHARACTERS + 1);
+    conversation.choose_skills(["visual-polish", "com.example.brief", "", "visual-polish", long.as_str(), "accessible-design"], 9);
+    assert_eq!(conversation.skill_ids.as_deref(), Some(&["accessible-design".to_owned(), "com.example.brief".to_owned(), "visual-polish".to_owned()][..]), "distinct and sorted, as Swift stores them");
+    assert_eq!(conversation.updated_at, 9);
+    assert_eq!(conversation.to_json()["skillIds"], json!(["accessible-design", "com.example.brief", "visual-polish"]));
+    let read = AiConversation::from_json(&serde_json::from_str(&conversation.to_json().to_string()).unwrap()).unwrap();
+    assert_eq!(read, conversation);
+
+    // No Skill is a choice too, and is written.
+    conversation.choose_skills([], 10);
+    assert_eq!(conversation.to_json()["skillIds"], json!([]));
+    assert_eq!(AiConversation::from_json(&conversation.to_json()).unwrap().skill_ids, Some(Vec::new()));
+    let many: Vec<String> = (0..AiConversationLimits::MAX_SKILLS + 5).map(|index| format!("skill-{index:03}")).collect();
+    conversation.choose_skills(many.iter().map(String::as_str), 11);
+    assert_eq!(conversation.skill_ids.as_ref().unwrap().len(), AiConversationLimits::MAX_SKILLS);
+
+    // A new conversation from this version keeps the choice.
+    assert_eq!(conversation.continued_from_current_version(12).unwrap().skill_ids, conversation.skill_ids);
+
+    // Present, it must be a short list of short strings; anything else is not a conversation.
+    let good = conversation.to_json();
+    let with = |value: Value| {
+        let mut changed = good.clone();
+        changed["skillIds"] = value;
+        AiConversation::from_json(&changed)
+    };
+    assert_eq!(with(Value::Null).unwrap().skill_ids, None);
+    assert_eq!(with(json!(["a"])).unwrap().skill_ids, Some(vec!["a".to_owned()]));
+    for bad in [json!("visual-polish"), json!({}), json!([1]), json!([""]), json!([null]), json!([long]), json!(vec!["a"; AiConversationLimits::MAX_SKILLS + 1])] {
+        assert!(with(bad.clone()).is_none(), "{bad}");
+    }
+}
+
 /// Android's "unknown failure shows no exception text": the outcome that has nothing to say.
 #[test]
 fn a_failure_without_an_outcome_shows_a_fixed_sentence() {
@@ -151,7 +256,7 @@ fn an_invalid_declaration_is_not_run_and_is_repaired() {
     });
     assert_eq!(ran, ["PLAIN\n"]);
     assert_eq!(turn.repairs, 1);
-    assert!(chat.last_of(1).contains("Invalid package declaration"));
+    assert!(chat.last_of(1).contains("The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]; no other permission can be declared."));
 }
 
 #[test]

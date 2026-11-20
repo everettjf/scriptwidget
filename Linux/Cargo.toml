@@ -58,6 +58,24 @@ icu_normalizer = "2"
 # archives.
 rustls = { version = "0.23", default-features = false, features = ["ring", "std", "tls12"] }
 rustls-native-certs = "0.8"
+# D-Bus ($music over MPRIS, $notifications over org.freedesktop.Notifications)
+# has no crate here. The runtime asks the session bus four things: which names
+# are on it, the properties of a media player, whether a notification service
+# is there, and to show a notification. They go through
+# `busctl --user --json=short` (part of systemd, so present on every Arch and
+# Omarchy system) as a child process with a fixed argument list, a deadline
+# and a bounded answer (crates/sw-core/src/process.rs and api/bus.rs), the way
+# the keyring is reached through `secret-tool`. Reasons: the maintained
+# pure-Rust client (zbus) is asynchronous and brings an executor and a
+# dependency tree larger than everything else in this file together, for four
+# calls from a synchronous runtime; bindings to libdbus add a C library to
+# link, which the choices above avoid everywhere but QuickJS, ICU, Skia and
+# ring. A child process also keeps the parser of whatever another program
+# puts on the bus out of the process that holds the user's data, gives every
+# call a hard time limit (the child is killed), and needs nothing when there
+# is no bus. The price is one process start for each call and no signals:
+# nothing is pushed to a widget, it reads when it runs. Text that comes from
+# a package is only ever a value after `--` and after the D-Bus signature.
 sw-core = { path = "crates/sw-core" }
 sw-render = { path = "crates/sw-render" }
 sw-host = { path = "crates/sw-host" }

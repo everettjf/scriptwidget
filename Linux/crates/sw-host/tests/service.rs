@@ -24,6 +24,23 @@ const WAIT: Duration = Duration::from_secs(30);
 /// 2026-01-01 12:00:20 UTC.
 const START: i64 = 1_767_268_820_000;
 
+/// A desktop that records the notifications it is asked to show.
+#[derive(Default)]
+struct Desktop {
+    shown: Mutex<Vec<(String, String)>>,
+}
+
+impl sw_core::api::notifications::NotificationPlatform for Desktop {
+    fn enabled(&self) -> bool {
+        true
+    }
+
+    fn post(&self, title: &str, body: &str) -> bool {
+        self.shown.lock().unwrap().push((title.to_owned(), body.to_owned()));
+        true
+    }
+}
+
 #[derive(Default)]
 struct Recorder {
     links: Mutex<Vec<String>>,
@@ -48,6 +65,7 @@ struct Session {
     runtime: RuntimePaths,
     data: DataPaths,
     launcher: Arc<Recorder>,
+    desktop: Arc<Desktop>,
     manual: Arc<ManualClock>,
     /// How long a replaced picture stays, in milliseconds.
     grace: u64,
@@ -62,7 +80,7 @@ impl Session {
         std::fs::DirBuilder::new().mode(0o700).create(&root).unwrap();
         std::fs::DirBuilder::new().mode(0o700).create(root.join("run")).unwrap();
         let data = DataPaths::new(Some(&root.join("data"))).unwrap();
-        Self { runtime: RuntimePaths::under(&root.join("run")), data, root, launcher: Arc::default(), manual: Arc::new(ManualClock::new(START)), grace: 300 }
+        Self { runtime: RuntimePaths::under(&root.join("run")), data, root, launcher: Arc::default(), desktop: Arc::default(), manual: Arc::new(ManualClock::new(START)), grace: 300 }
     }
 
     fn options(&self) -> ServiceOptions {
@@ -70,6 +88,8 @@ impl Session {
         let resources = Resources { runtime: repository.join("Linux/assets/scriptwidget"), templates: None };
         let mut options = ServiceOptions::new(self.runtime.clone(), self.data.clone(), resources);
         options.launcher = self.launcher.clone();
+        // No test shows a notification on the desktop of whoever runs it.
+        options.notification_platform = Some(self.desktop.clone());
         options.frame_grace = self.grace;
         options
     }
@@ -902,6 +922,89 @@ fn scripts_run_on_schedule() {
     assert_eq!(session.ask(Request::Refresh { id: None, package: None })["refreshed"], 1);
     session.runs(&id, 13);
     assert_eq!(session.refused(Request::Refresh { id: None, package: Some("Missing".into()) }), "package.unknown");
+}
+
+#[test]
+fn a_new_refresh_interval_takes_effect_when_the_service_is_told() {
+    let session = Session::new();
+    session.install("Plain", PLAIN, "", "");
+    let service = session.start_manual();
+    let controller = service.controller();
+    let clock = session.manual.clone();
+    let id = session.add("Plain", None);
+    let pass = |milliseconds: u64| {
+        clock.advance(milliseconds);
+        controller.poke();
+        std::thread::sleep(Duration::from_millis(150));
+    };
+    // A longer interval: the run that was planned for 15 minutes from the last one moves out.
+    std::fs::write(session.data.settings(), "{\"refreshMinutes\":60}").unwrap();
+    assert_eq!(session.ask(Request::Reload), json!({ "ok": true, "refreshMinutes": 60, "widgets": 1 }));
+    pass(15 * 60_000 + 1);
+    assert_eq!(session.runs(&id, 1)["runs"], 1, "no longer every 15 minutes");
+    // A shorter one: the widget last ran more than five minutes ago, so it runs now, and then every five minutes.
+    std::fs::write(session.data.settings(), "{\"refreshMinutes\":5}").unwrap();
+    assert_eq!(session.ask(Request::Reload)["refreshMinutes"], 5);
+    session.runs(&id, 2);
+    pass(4 * 60_000);
+    assert_eq!(session.runs(&id, 2)["runs"], 2);
+    pass(60_000 + 1);
+    session.runs(&id, 3);
+    // Without a change nothing is planned differently, and nothing runs because of the request.
+    assert_eq!(session.ask(Request::Reload)["refreshMinutes"], 5);
+    std::thread::sleep(Duration::from_millis(150));
+    assert_eq!(session.runs(&id, 3)["runs"], 3);
+    pass(5 * 60_000 + 1);
+    session.runs(&id, 4);
+}
+
+/// One button with a declared action that schedules a notification two seconds ahead and keeps what it was told.
+const REMINDER: &str = r##"
+async function remind() {
+  let said;
+  try { said = (await $notifications.schedule({key: "tea", title: "Tea --is ready", body: "<b>Pour</b> & enjoy", date: new Date(Date.now() + 2000).toISOString()})).status; }
+  catch (error) { said = String(error.message ?? error); }
+  $storage.setString("said", said);
+}
+let pending = "?";
+try { pending = String((await $notifications.pending()).length); } catch (error) { pending = "denied"; }
+$render(<vstack frame="max"><button actionID="remind.me"><text>{"pending " + pending}</text></button></vstack>);
+"##;
+
+#[test]
+fn a_notification_a_widget_schedules_is_shown_when_it_is_due() {
+    let session = Session::new();
+    session.install("Reminder", REMINDER, "\"notifications\",\"storage\"", r#","minimumRuntimeVersion":"1.6","actions":[{"id":"remind.me","title":"Remind","systemImage":"bell","function":"remind"}]"#);
+    let installation = session.library().find("Reminder").unwrap().installation;
+    let grants = sw_core::api::support::SystemAccessGrants::new(session.data.system().join("grants.json"));
+    let store = sw_core::api::notifications::NotificationStore::new(session.data.system().join("notifications.json"));
+    let said = || sw_core::api::StorageModule::new(session.data.storage()).get_string(&installation, "said");
+    let _service = session.start();
+    let id = session.add("Reminder", None);
+
+    // The package declares the permission, but the user has not allowed this widget: nothing is scheduled.
+    session.ask(Request::Tap { id: id.clone(), n: 0, version: None });
+    session.runs(&id, 2);
+    assert_eq!(said(), "[permission_denied] System operation could not complete. Existing user data is preserved.");
+    assert!(store.all().unwrap().is_empty());
+
+    // With the user's grant the tap schedules it, and the service shows it about two seconds later.
+    assert!(grants.set(&installation, "notifications", true));
+    session.ask(Request::Tap { id: id.clone(), n: 0, version: None });
+    session.runs(&id, 3);
+    assert_eq!(said(), "scheduled");
+    assert_eq!(store.all().unwrap().len(), 1);
+    assert!(session.desktop.shown.lock().unwrap().is_empty(), "not before its time");
+    let deadline = Instant::now() + WAIT;
+    while session.desktop.shown.lock().unwrap().is_empty() {
+        assert!(Instant::now() < deadline, "the notification was never shown");
+        std::thread::sleep(Duration::from_millis(50));
+    }
+    // The text is the widget's, as text: the desktop side decides how to escape it.
+    assert_eq!(*session.desktop.shown.lock().unwrap(), [("Tea --is ready".to_owned(), "<b>Pour</b> & enjoy".to_owned())]);
+    assert!(store.all().unwrap().is_empty(), "shown once, then gone from the list");
+    std::thread::sleep(Duration::from_millis(300));
+    assert_eq!(session.desktop.shown.lock().unwrap().len(), 1);
 }
 
 #[test]

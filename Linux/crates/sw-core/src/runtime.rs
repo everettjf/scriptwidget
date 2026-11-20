@@ -20,7 +20,12 @@ use crate::api::fetch::{self, FetchModule, Url};
 use crate::api::policy::{self, NetworkDeclaration};
 use crate::api::system::{self, Screen};
 use crate::api::weather::FetchWeatherTransport;
-use crate::api::{StorageModule, WeatherModule};
+use crate::api::documents::DocumentsModule;
+use crate::api::music::{MprisPlatform, MusicModule};
+use crate::api::notifications::NotificationsModule;
+use crate::api::photos::PhotosModule;
+use crate::api::services::ServicesModule;
+use crate::api::{StorageModule, SystemStores, WeatherModule};
 use crate::compiler::{PackageCompiler, PrepareOptions, PreparedPackage, RuntimeError, is_text_file};
 use crate::data_paths::DataPaths;
 use crate::executor::{ExecutionError, ExecutionRequest, ExecutionResult, ExecutionSession, NativeModule, ScriptExecutor};
@@ -109,6 +114,7 @@ pub struct WidgetRuntime {
     storage: Arc<StorageModule>,
     fetch: Arc<FetchModule>,
     plugins: Arc<PluginStore>,
+    system: SystemStores,
     modules: Vec<Arc<dyn NativeModule>>,
     image_cache: PathBuf,
 }
@@ -126,7 +132,31 @@ impl WidgetRuntime {
         let fetch = Arc::new(FetchModule::new());
         let plugins = Arc::new(PluginStore::new(paths.plugins()));
         let weather = WeatherModule::new(Arc::new(FetchWeatherTransport::new(fetch.clone())), paths.cache().join("weather"), WeatherModule::user_agent(env!("CARGO_PKG_VERSION")));
-        let mut modules: Vec<Arc<dyn NativeModule>> = vec![storage.clone(), fetch.clone(), Arc::new(DataSourceModule::new(plugins.clone())), Arc::new(weather)];
+        Self::with_system(scripts, paths, SystemStores::for_runs(paths, fetch.clone()), storage, fetch, plugins, weather, extra_modules)
+    }
+
+    /// [`WidgetRuntime::new`] over other stores for the data APIs: another keyring, another `busctl`. For tests.
+    pub fn with_stores(scripts: Arc<SharedScripts>, paths: &DataPaths, system: SystemStores) -> io::Result<Self> {
+        let storage = Arc::new(StorageModule::new(paths.storage()));
+        let fetch = Arc::new(FetchModule::new());
+        let plugins = Arc::new(PluginStore::new(paths.plugins()));
+        let weather = WeatherModule::new(Arc::new(FetchWeatherTransport::new(fetch.clone())), paths.cache().join("weather"), WeatherModule::user_agent(env!("CARGO_PKG_VERSION")));
+        Self::with_system(scripts, paths, system, storage, fetch, plugins, weather, Vec::new())
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn with_system(scripts: Arc<SharedScripts>, paths: &DataPaths, system: SystemStores, storage: Arc<StorageModule>, fetch: Arc<FetchModule>, plugins: Arc<PluginStore>, weather: WeatherModule, extra_modules: Vec<Arc<dyn NativeModule>>) -> io::Result<Self> {
+        let mut modules: Vec<Arc<dyn NativeModule>> = vec![
+            storage.clone(),
+            fetch.clone(),
+            Arc::new(DataSourceModule::new(plugins.clone())),
+            Arc::new(weather),
+            Arc::new(MusicModule::new(Arc::new(MprisPlatform::new(system.bus.clone())))),
+            Arc::new(NotificationsModule::new(system.notification_platform.clone(), system.notifications.clone(), system.grants.clone())),
+            Arc::new(ServicesModule::new(system.services.clone())),
+            Arc::new(DocumentsModule::new(system.documents.clone())),
+            Arc::new(PhotosModule::new(system.photos.clone())),
+        ];
         modules.extend(extra_modules);
         Ok(Self {
             compiler: PackageCompiler::new(scripts.clone())?,
@@ -136,6 +166,7 @@ impl WidgetRuntime {
             storage,
             fetch,
             plugins,
+            system,
             modules,
             image_cache: paths.cache().join("remote-images"),
         })
@@ -159,6 +190,11 @@ impl WidgetRuntime {
 
     pub fn plugins(&self) -> &PluginStore {
         &self.plugins
+    }
+
+    /// What the data APIs keep between runs: grants, picked files, pending notifications, the connected service.
+    pub fn system(&self) -> &SystemStores {
+        &self.system
     }
 
     /// Compiles a package, reusing the cached artifact when no source changed.

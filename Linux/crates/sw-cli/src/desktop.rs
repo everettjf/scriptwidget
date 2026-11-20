@@ -167,6 +167,12 @@ pub fn menu(command: &str, arguments: &[String]) -> Result<Report, Failure> {
     Ok(report(command, ask(command, Request::Menu { id: identifier(arguments.positional(0).unwrap_or_default())?, word: word.to_owned() })?))
 }
 
+/// Tells the service that `settings.json` changed, so the refresh interval takes effect now.
+pub fn reload(command: &str, arguments: &[String]) -> Result<Report, Failure> {
+    Arguments::parse(arguments, &shape(0, 0, ""))?;
+    Ok(report(command, ask(command, Request::Reload)?))
+}
+
 pub fn session(command: &str, arguments: &[String]) -> Result<Report, Failure> {
     let arguments = Arguments::parse(arguments, &shape(1, 1, "locked or unlocked"))?;
     let locked = match arguments.positional(0) {
