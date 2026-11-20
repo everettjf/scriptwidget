@@ -1,6 +1,6 @@
 # Windows preview release draft
 
-Prepared for the next Windows preview. These texts are for owner review and have not been published or submitted. Local candidate packages use version 0.1.1; choose the final release version and complete the remaining acceptance items in [testing.md](testing.md) before distribution.
+Prepared for Windows preview 0.1.1. The Windows privacy section is published on the Company website, and the English listing and certification notes were adapted for Store Submission 2 (`1152921505702462477`), submitted on 20 November 2026. Partner Center shows the update in certification; Microsoft approval and Store-signed installation remain pending. See the exact artifact, CI and submission receipt in [testing.md](testing.md). No GitHub Release was published.
 
 ## English release notes
 
@@ -18,7 +18,7 @@ Windows 11 is required. Widgets remain desktop windows rather than entries in th
 
 ## Windows privacy section
 
-The following section is intended for the official [ScriptWidget privacy policy](https://atomsprout.com/scriptwidget/privacy/). When integrating it, scope the general credential-storage sentence by platform, for example: “AI provider credentials use the credential storage described for each platform below.”
+The following section was integrated into the official [ScriptWidget privacy policy](https://atomsprout.com/scriptwidget/privacy/), with the general credential-storage sentence scoped by platform.
 
 ### Windows
 
