@@ -1,4 +1,3 @@
-import { snippet } from "@codemirror/autocomplete";
 import { scriptWidgetAPI } from "./scriptWidgetAPI.js";
 import { editorAPI } from "./hostAPI.js";
 
@@ -24,14 +23,21 @@ function componentOptions(components) {
 }
 
 // An option's `template` is a CodeMirror snippet: "${}" marks where the
-// cursor goes. Inserting it as plain text would leave the marks in the code.
-// After a typed "<" the completion starts behind it, so the template's own
-// "<" is left out there.
+// cursor goes. This module imports no package, because Web Studio bundles it
+// from another folder; the editor hands over CodeMirror's `snippet` function
+// with useSnippets. Without it the marks are simply left out. After a typed
+// "<" the completion starts behind it, so the template's own "<" is left out
+// there.
+let makeSnippet = null;
+export function useSnippets(snippet) {
+  makeSnippet = typeof snippet === "function" ? snippet : null;
+}
+
 function insertable(options, afterOpeningBracket = false) {
   return options.map((option) => {
     if (typeof option.template !== "string") return option;
     const template = afterOpeningBracket && option.template.startsWith("<") ? option.template.slice(1) : option.template;
-    return { ...option, apply: snippet(template) };
+    return { ...option, apply: makeSnippet ? makeSnippet(template) : template.replaceAll("${}", "") };
   });
 }
 

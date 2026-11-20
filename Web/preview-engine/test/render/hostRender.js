@@ -1,8 +1,8 @@
 // Renders trees the way the QuickJS hosts do (Android, Windows, Linux): through
 // the Android render entry, with a recording document and a text measurer that
-// needs no system fonts. appleFallback.test.js compares the digests with the
-// ones recorded in host-baseline.json, so a change to the shared renderer that
-// alters what those three hosts draw cannot go unnoticed.
+// needs no system fonts. The digests differ between machines, so no recorded
+// copy is kept in the repository; record before and after a change on one
+// machine and compare the two files.
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -11,7 +11,6 @@ import { render } from "../../../../Android/core/src/main/js/render/entry.mjs";
 import { renderWidget } from "../../src/render/renderer.js";
 import { readNativeTrees } from "../parity/corpus.js";
 
-export const baselineFile = path.join(path.dirname(fileURLToPath(import.meta.url)), "host-baseline.json");
 
 /// A stand-in for the host's text engine: every character is 0.55 em wide.
 function nativeCall(name, payload) {
@@ -122,8 +121,10 @@ export function usesMaterialColors(name) {
   return /"material\.[A-Za-z]/.test(tree);
 }
 
-// node test/render/hostRender.js --record writes the baseline. Do that only for
-// a change that is meant to alter what Android, Windows and Linux draw.
+// node test/render/hostRender.js --record <file> writes the digests of this
+// machine to <file>.
 if (process.argv[1] === fileURLToPath(import.meta.url) && process.argv.includes("--record")) {
-  fs.writeFileSync(baselineFile, JSON.stringify(await hostDigests(), null, 1) + "\n");
+  const file = process.argv[process.argv.indexOf("--record") + 1];
+  if (!file) throw new Error("usage: node test/render/hostRender.js --record <file>");
+  fs.writeFileSync(file, JSON.stringify(await hostDigests(), null, 1) + "\n");
 }

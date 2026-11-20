@@ -25,13 +25,15 @@ import {
   foldKeymap,
   indentOnInput,
 } from "@codemirror/language";
-import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from "@codemirror/autocomplete";
+import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap, snippet } from "@codemirror/autocomplete";
 import { javascript } from "@codemirror/lang-javascript";
 import { searchKeymap, highlightSelectionMatches } from "@codemirror/search";
 import { lintGutter, linter, setDiagnostics } from "@codemirror/lint";
 import { connectNativeBridge, announceReady, callNative } from "./bridge.js";
 import { STUDIO_PROTOCOL_VERSION, StudioMessage } from "./studioProtocol.js";
-import { scriptWidgetCompletions } from "./scriptWidgetCompletions.js";
+import { scriptWidgetCompletions, useSnippets } from "./scriptWidgetCompletions.js";
+
+useSnippets(snippet);
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "./scriptWidgetLanguage.js";
 import { studioTheme } from "./studioTheme.js";
 import { visualLayoutEditor } from "./visualLayoutEditor.js";

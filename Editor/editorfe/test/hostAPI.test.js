@@ -90,7 +90,8 @@ test("the host's tag completes, with its attributes, hover and attribute check",
     assert.deepEqual(labels, [...Object.keys(scriptWidgetAPI.components), "list"]);
     const list = tags.options.find((option) => option.label === "list");
     assert.equal(list.template, "<list>\n  ${}\n</list>");
-    assert.equal(typeof list.apply, "function");
+    // Without CodeMirror's snippet function the marks are left out and the typed "<" is not repeated.
+    assert.equal(list.apply, "list>\n  \n</list>");
     assert.equal(list.info, "Scrolls.");
 
     const attributes = scriptWidgetCompletions(context("<list sp")).options;
@@ -161,7 +162,9 @@ test("the Android bridge describes <list> and the material colors in a form the 
 
 test("accepting a completion writes the tag once and leaves no snippet marks", async () => {
   const { EditorState } = await import("@codemirror/state");
-  const { scriptWidgetCompletions: complete } = await import("../src/scriptWidgetCompletions.js");
+  const { snippet } = await import("@codemirror/autocomplete");
+  const { scriptWidgetCompletions: complete, useSnippets } = await import("../src/scriptWidgetCompletions.js");
+  useSnippets(snippet);
   // Runs a completion's apply function against a minimal view and returns the document.
   function accept(text, label) {
     let state = EditorState.create({ doc: text, selection: { anchor: text.length } });

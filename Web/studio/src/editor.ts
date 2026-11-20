@@ -1,4 +1,4 @@
-import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap } from "@codemirror/autocomplete";
+import { closeBrackets, closeBracketsKeymap, autocompletion, completionKeymap, snippet } from "@codemirror/autocomplete";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { javascript } from "@codemirror/lang-javascript";
 import { bracketMatching, foldGutter, foldKeymap, indentOnInput } from "@codemirror/language";
@@ -9,11 +9,13 @@ import {
   EditorView, crosshairCursor, drawSelection, dropCursor, highlightActiveLine, highlightActiveLineGutter,
   highlightSpecialChars, hoverTooltip, keymap, lineNumbers, rectangularSelection,
 } from "@codemirror/view";
-import { scriptWidgetCompletions } from "../../../Editor/editorfe/src/scriptWidgetCompletions.js";
+import { scriptWidgetCompletions, useSnippets } from "../../../Editor/editorfe/src/scriptWidgetCompletions.js";
 import { scriptWidgetDiagnostics, scriptWidgetHover } from "../../../Editor/editorfe/src/scriptWidgetLanguage.js";
 import { studioTheme } from "../../../Editor/editorfe/src/studioTheme.js";
 import { visualLayoutEditor } from "../../../Editor/editorfe/src/visualLayoutEditor.js";
 import { setVisualLayoutResources } from "../../../Editor/editorfe/src/visualAssets.js";
+
+useSnippets(snippet);
 
 export interface StudioEditor {
   readonly view: EditorView;
