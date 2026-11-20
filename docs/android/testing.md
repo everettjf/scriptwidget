@@ -6,9 +6,9 @@ What was run before handing this build to testers, and what was not.
 
 | Suite | Count | Where | Command |
 | --- | --- | --- | --- |
-| Unit tests | 502 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
-| Core device tests | 27 | see below | `Android/scripts/device-test.sh core` |
-| App device tests | 56 | see below | `Android/scripts/device-test.sh app` |
+| Unit tests | 532 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
+| Core device tests | 30 | see below | `Android/scripts/device-test.sh core` |
+| App device tests | 69 | see below | `Android/scripts/device-test.sh app` |
 
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
@@ -60,6 +60,21 @@ On 16 November 2026, after the Habit Heatmap template gained a total count, the 
 ### After the shared-JavaScript build moved to `Scripts/lib/shared-js.mjs` (`windows` branch)
 
 The build script now calls the library shared with Windows, and `android-apis.js` takes the platform name in its "not supported" message from the host (default: Android). In CI on that branch: the regenerated assets equal the checked-in ones, `:core:testDebugUnitTest` passes (run 44081171658), and on an API 35 x86_64 emulator the core instrumented suite passes 30 of 30 and the app suite (`foss` flavor) 63 of 63 (run 44094364212; start it from Actions > Android > Run workflow). Earlier emulator runs failed for reasons of the job, not of the code: Open-Meteo did not answer once, and with system animations turned off the four widget animation tests fail, because the app shows no animation frames then. Not re-run: both instrumented suites on the Pixel 6.
+
+## 19 November 2026: copies of bundled templates, the Android-only prompt section, Chinese for the AI conversation
+
+Uncommitted changes on top of commit `5b9b656b`. No API key and no real AI provider were used.
+
+| Command | Where | Result |
+| --- | --- | --- |
+| `./gradlew :core:testDebugUnitTest :app:assembleDebug` | Mac | 532 tests, 0 failures; `play` and `foss` debug APKs built |
+| `sh Android/scripts/device-test.sh core` | Pixel 6 | 30 tests passed. Ran before the last change, which touched only the app |
+| `SUFFIX=.dev sh Android/scripts/device-test.sh app` | Pixel 6, the `.dev` copy, updated in place | 69 tests passed; the live-model, push-wait and picked-folder tests were skipped as before |
+| `./gradlew :app:lintVitalPlayRelease` | Mac | passed |
+
+- **Copies of bundled templates that use the network.** Reproduced on the Pixel 6 before the fix with `LibraryTest#aCopyOfABundledTemplateThatUsesTheNetworkDeclaresItsOwnHostsOnly`: Daily Quote failed with "Network host is not declared in widget.json". After the fix it passes for Daily Quote, Currency Pulse, Weather and `api/http`, and Month Calendar gets no network permission. The test requires that the manifest no longer refuses the request; it does not assert what the network returned.
+- **Chinese.** `AiConversationLanguageTest` checks by resource lookup that zh-CN, zh-Hans-CN, zh-Hans-SG and zh-SG get Chinese and that en, fr, ja, zh-TW and zh-Hant-HK get English. The phone's language was not changed, so the Chinese screen was not looked at: wording in context and layout are unchecked.
+- **The "ONLY ON ANDROID" prompt section** was not tried with a live model.
 
 ## Checked by hand on the Pixel 6
 

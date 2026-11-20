@@ -44,7 +44,8 @@ What is left before 1.0.0 (version code 1) is public on Google Play. On 15 Novem
 Scrolling lists, wallpaper colors and the automation entry point are done; see [Only on Android](README.md#only-on-android).
 
 
-- AI generation and the Studio completions do not know `<list>` and the `material.` colors yet; the reference they use is the iOS one. (The check for tags that do not exist does accept `<list>` on Android.)
+- The Studio completions do not know `<list>` and the `material.` colors yet. The editor is a WebView that loads the same `StudioEditor.bundle` as iOS, and the completions are compiled into it, so this needs a change in `Editor/editorfe` (an optional host-supplied list that only the Android bridge sets) and a rebuild of both bundles. The AI prompt on Android describes both since 19 November 2026 (a section of about 250 tokens; not tried with a live model).
+- The AI conversation screen is in English and Simplified Chinese since 19 November 2026. Still English there: the Name/OK/Cancel of the shared name dialog, the example chips and the heavy-conversation notice (they come from `core`), error lines from the runtime or a provider, and the default name "AI Widget". The rest of the app has no Chinese.
 - Edit replies, the attribute check, the changed lines, the heavy-conversation notice and streamed replies have not been run with a live model on a device; see `docs/ai-conversation-plan.md`. The stream readers for Anthropic and OpenAI-compatible servers are tested against recorded event shapes only.
 - A way for a script to hand data to an action (a row's own identifier), so a list row can do more than toggle a stored value.
 - Sending broadcasts from a script to automation apps, after a separate security review.
@@ -54,4 +55,4 @@ Scrolling lists, wallpaper colors and the automation entry point are done; see [
 
 ## Found while testing Windows
 
-- **Bundled templates without `widget.json` that use the network.** On Windows, a copy of such a template (Daily Quote, Currency Pulse, Weather and six more) failed with "Network host is not declared in widget.json": `PackageStore.create` gives the copy a manifest with no permissions. `Library.installBundled` in the Android app calls the same `create` the same way, so the same failure is expected here. This comes from reading the code; it was not reproduced on a device. The Windows fix is `Library.BundledManifest` in `Windows/src/ScriptWidget.Core/Hosting/Library.cs`.
+- **Bundled templates without `widget.json` that use the network: fixed on 19 November 2026, not committed yet.** A copy of such a template (Daily Quote, Currency Pulse, Weather and six more) failed with "Network host is not declared in widget.json"; this was reproduced on the Pixel 6. As on Windows, the copy now gets a manifest that declares `network` and exactly the hosts named in its own script files (no wildcard, no `localhost`, no IP address; a template that names no host gets no permission). Like Windows, it also declares hosts that are only link targets, so the `link` example gets `www.baidu.com`, `www.bing.com`, `www.google.com` and `atomsprout.com`.

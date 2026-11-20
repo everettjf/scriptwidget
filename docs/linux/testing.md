@@ -669,6 +669,28 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 
 两个文件下载到 Mac 上用各自的 `.sha256` 核对过（x86_64：`c015be2d22afd6cf6300fb5daac7c07d4d260e30f3bc643a6aff65721dd71af4`）。PR 82 合并的时候 Apple 平台那一项检查还在跑，其余的都通过了；是按用户的要求直接合并的，`main` 上那一项的结果要另外看。标签 `linux-v0.1.4` 打在 `44318e19`。0.1.3 的发布说明里加了"已被 0.1.4 取代"。
 
+## 2026-11-19，测试虚拟机：`animation` 播放和 AI 对话
+
+工作区里未提交的改动（基于提交 `5b9b656b`），同步到测试虚拟机（RiftVM，Omarchy 4.5.0-3，aarch64，内核 7.3.5，Rust 1.100.0）后编译运行。屏幕上的结果用 `grim` 截图、`wf-recorder` 录屏，输入用 `/dev/uinput` 的虚拟指针和虚拟键盘。
+
+| 做了什么 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里） | 682 个通过，0 个失败，2 个忽略。第一次有 1 个失败（`every_bundled_widget_passes`）：虚拟机里的内置模板是旧的，同步之后通过 |
+| `cargo test --locked --workspace`（Mac 上，要设 `PKG_CONFIG_PATH` 指向 Homebrew 的 ICU） | 676 个通过，0 个失败，2 个忽略 |
+| `cargo build --release -p sw-cli`、`-p sw-studio --features ui`（虚拟机里） | 通过，装进 `~/.local/bin` 并重启后台服务，`doctor` 通过 |
+| Animation Clock、Animation Spirograph、Animation Aquarium 放到桌面 | 三个都每秒换一张图；Animation Clock 相隔 7 秒的两张图里秒针从约 10 秒走到约 17 秒，显示的时间与系统一致 |
+| 开销（上面三个加 Nyan Cat 的 GIF，20 秒采样） | 后台服务约 3% 的一个核，外壳约 4% |
+| 自写的测试小组件：一秒来回的摆动加两秒一圈的指针 | 做成 40 帧的一组。录屏 5 秒（约 60 帧/秒）逐帧取小球位置：97 次换帧，90 次间隔 50 毫秒，其余 33 或 67 毫秒；位置是完整的正弦，每 20 帧重复，首尾没有跳；摆到中间时相邻两帧差约 15 像素。帧画好后后台服务不占处理器，外壳约 11% 的一个核 |
+| `ai key set`（从标准输入）、`ai show`、`ai key remove`，对着真实的 gnome-keyring | 存、读、删都通过；钥匙串里的条目属性是 `application=scriptwidget`、`kind=ai-api-key`、`account=<服务商>`；数据目录和配置里搜不到密钥。用的是一把假的测试密钥 |
+| 密钥不存在时再 `ai key remove` | 发现一个缺陷：报成“钥匙串不可用”。原因是真实的 `secret-tool clear` 在没有条目时以失败结束且不输出，测试里的替身没有照这样做。已修，替身也改成和真实程序一致；在虚拟机上重试通过（`removed: false`） |
+| `ai continue Clock "make the time red"`，服务商是虚拟机里一个按脚本回答的 HTTPS 程序（自签的测试证书经 `SSL_CERT_FILE` 信任） | 回复逐段写到标准错误；代码先在本机运行通过，再写进包；请求带了密钥头；数据目录里搜不到密钥 |
+| 管理窗口：设置页的 AI 一节 | 显示服务商、地址、模型、密钥状态；截图在 `images/studio-settings-ai.png` |
+| 管理窗口：点 Ask AI，输入一句话，回车 | 回复逐字出现，结束后列出改动的那一行和 Apply 按钮（`images/studio-ai-reply.png`）；点 Apply 后代码和预览都变了（`images/studio-ai-applied.png`），包里的文件也变了 |
+
+没做的：真实模型（没有用任何真实密钥，也没有向真实服务商发请求）；在设置页里输入密钥、在终端里不回显地输入密钥；对话界面的中文；真实显卡上的动画；周期重新发布时有没有跳；被窗口盖住或锁屏时是否暂停；x86_64。动画是否“看起来流畅”没有人看过，上面是录屏的逐帧数据。
+
+虚拟机里留下的东西：`~/ai-standin`（按脚本回答的程序、测试证书、单独的数据目录）、`~/work-swing`（测试小组件）、`~/shots`（截图）、库里多出的 Animation Clock、Animation Spirograph、Animation Aquarium、Fast Swing 四个包（桌面上已移除）、`~/scriptwidget.0.1.4.bak` 和 `~/scriptwidget-studio.0.1.4.bak`（换下来的 0.1.4 程序）。`~/.local/bin` 里现在是这次的开发版。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

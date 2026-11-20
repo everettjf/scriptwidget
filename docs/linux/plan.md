@@ -252,7 +252,7 @@ omarchy-plugin/
 - `$system.platform()` 返回 `"linux"`。
 - 尺寸：`small` 170×170、`medium` 329×170、`large` 329×345、`extraLarge` 639×345 点，乘以显示缩放。和 Mac、Windows 相同，没有锁屏尺寸。
 - 渲染模式固定 `fullColor`；`backgroundMaterial` 用不透明的 `background` 回退；时间线在每个切换点重新执行脚本。和 Windows 相同。
-- `<gif>` 会动（见 4.8）；`animation` 属性的过渡动画第一版不做，显示最终状态。
+- `<gif>` 会动（见 4.8）；`animation` 属性的过渡动画第一版不做，显示最终状态。（2026-11-19 之后：`animation` 也会动了，AI 对话也搬过来了，见 [README](README.md) 和 [测试记录](testing.md)。）
 - `<date>` 的计时样式每秒重画，时钟样式每分钟重画。
 
 | API | Linux 第一版 |

@@ -13,10 +13,13 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 
 ## Still to do
 
+- **AI conversation, not yet verified:** a live model (everything ran against a scripted stand-in on the test machine and in the tests; the stream readers were written from the API formats, not from captured traffic); typing the key at the no-echo prompt of `ai key set` and into the Settings page (only standard input and `SCRIPTWIDGET_AI_KEY` were used); the Chinese texts of the conversation on screen; a keyring that is locked or absent on a real desktop; the x86_64 build. The trial run of a new widget contacts the hosts the widget declares before the user is asked to accept them, as on Android. Skills are not on Linux, so a conversation never has Skill text. `libsecret` has to be listed as an optional dependency when there is an AUR package.
+- **`animation`, not yet verified:** a real GPU and a real screen. In the test machine a one-second swing changed pictures every 50 ms, which is 20 a second against about 30 on an iPhone, and the shell used about 11% of one core for it under software rendering. Not looked at: the moment a cycle is published again (each refresh, and each minute beside a clock), the drift of a custom interval between refreshes, pausing behind a window or the lock screen. There is no reduce-motion setting. `scriptwidget render` cannot choose the instant of a swing. Tap regions inside a moving element stay where the first frame has them.
+
 - **Lock screen.** Omarchy locks through its own shell and sends nothing on logind, and the plugin does not report it, so the service keeps refreshing behind the lock screen.
 - **Screens.** No message tells the service a display went away: a widget on a display that is gone is shown on the first display at the same coordinates, still drawn at the old display's scale until it is moved. Dragging a widget from one display to another has code but never ran.
 - **Time zone changes** are not noticed until the next refresh.
-- **Management window:** closing it with unsaved changes does not ask (moving to another page does); no "new file" button; the components and API reference pages of the Windows app are missing; changing the refresh interval writes the setting but does not tell the running service; in the test machine the editor's blinking cursor costs a quarter of a core under software rendering.
+- **Management window:** closing it with unsaved changes does not ask (moving to another page does); no "new file" button; Gallery and Skills are missing; changing the refresh interval writes the setting but does not tell the running service; in the test machine the editor's blinking cursor costs a quarter of a core under software rendering.
 - **Plugin:** a widget takes the pointer over its whole area, so while widgets are shown on top the windows under them cannot be clicked through them; frames do not pause behind ordinary windows or on the lock screen; the bar entry starts `scriptwidget-studio` without checking that it exists; widgets are not moved when the dock appears later; the Chinese strings were not seen on screen.
 - **Service:** real suspend and resume and the path that drops a slow display were not exercised; `doctor` does not ask the plugin for its status.
 - `docs/platform-support.md`, the website and Web Studio list Linux; the root README files do not yet.
@@ -38,7 +41,7 @@ The plan is in [plan.md](plan.md) (Chinese); what was tested is in [testing.md](
 Differences from the Windows painter, or things not compared:
 
 - No picture has been compared pixel for pixel with Windows or iPhone; about 25 pictures were looked at by eye.
-- Live date slots, motion slots and scrolling-list slots are not ported: Linux draws again instead, and a `<list>` is drawn in place with only its visible tap targets.
+- Live date slots and scrolling-list slots are not ported: Linux draws again instead, and a `<list>` is drawn in place with only its visible tap targets. Motion is computed in `sw-render/src/motion.rs` from the record the shared renderer writes; for Animation Clock the result is pixel-identical to the shared renderer's for the same instant.
 - GIF: every frame keeps its own delay (at most 60 frames, 8 MB, 16 million pixels); Windows samples 24 frames. The service caches decoded frames while it draws an animation.
 - Images are decoded at full size before being reduced (limit 40 megapixels). HEIC is probably not decodable; not tested.
 - Rounded corners of the widget itself are left to the display, as on Windows.

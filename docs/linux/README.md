@@ -13,7 +13,7 @@ On other desktops the command line and the management window work, but nothing i
 | Part | What it does |
 | --- | --- |
 | `scriptwidget` | The command line, and the background service (`scriptwidget host run`): it runs the scripts on a schedule, draws the pictures and handles clicks. It opens no window |
-| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the code editor with a live preview, the settings. Closing it frees its memory; the widgets keep running |
+| `scriptwidget-studio` | The management window: your widgets, the templates, the component examples, the API examples, the code editor with a live preview and the AI conversation, the settings. Closing it frees its memory; the widgets keep running |
 | Omarchy plugin `com.atomsprout.scriptwidget` | Shows the pictures on the desktop layer and adds an entry to the bar. It only shows pictures and forwards numbers and coordinates |
 
 ## Pictures
@@ -55,6 +55,9 @@ sh install.sh
 - **Click.** A left click works on buttons, toggles and links; elsewhere on a widget it does nothing.
 - **See widgets above your windows.** "Show widgets on top" in the bar entry, or `scriptwidget peek`; once more puts them back.
 - **Edit.** The preview next to the code is drawn by the same painter as the desktop widget. `scriptwidget dev <folder>` watches a folder and refreshes the placed widgets of that package on save.
+- **Ask AI.** In Settings, choose a provider and store its API key (it goes to the system keyring). Then "Ask AI" in the editor opens the conversation beside the code: say what the widget should show or what to change; the reply is written out as it arrives, the result is run on this computer, and the changed lines are shown. Nothing changes until "Apply to the widget". From a terminal: `scriptwidget ai new "a clock"` and `scriptwidget ai continue <name> "make the time red"`. See [AI conversation](../ai-conversation.md).
+
+  ![The AI conversation beside the code, with the changed line and the Apply button](images/studio-ai-reply.png)
 - **Move a widget to another device.** Export it as a `.swt` file and open that file in ScriptWidget on the other device; a `.swt` from another device is imported the same way.
 
 ## Parts in the source
@@ -123,6 +126,8 @@ Every command prints one JSON report on standard output; errors and warnings are
 | `scriptwidget add <package> [--family F]`, `remove <id>`, `widgets`, `refresh [id]` | Widgets on the desktop |
 | `scriptwidget dev <folder>` | Watches a package folder and refreshes its placed widgets on save |
 | `scriptwidget peek`, `arrange` | Toggle "on top" and arrange mode |
+| `scriptwidget ai show`, `ai set`, `ai key set`, `ai key remove`, `ai models` | The AI provider: Anthropic, OpenAI or an OpenAI-compatible endpoint, its address (always `https://`) and model, and the API key in the system keyring |
+| `scriptwidget ai new <request>`, `ai continue <package> <request>`, `ai apply`, `ai conversations` | The [AI conversation](../ai-conversation.md): makes a widget or changes an installed one. The reply is written to standard error as it arrives (`--events` for JSON lines); the code is run here before it is applied. A new widget that uses the network stays a draft unless `--allow-new-hosts` is given |
 | `watch`, `tap`, `move`, `screen`, `theme`, `menu`, `session` | Used by the display; see [protocol.md](protocol.md) |
 
 The commands from `add` on need the background service; without it they exit with 69 and say how to start it.
@@ -160,7 +165,7 @@ Every bundled package that needs no live data produces the same element tree on 
 | --- | --- |
 | Rendering modes | Always `fullColor`; `backgroundMaterial` uses the opaque `background` fallback |
 | Fonts | Inter is built into the program. The six display fonts of the other platforms are not shipped, because the repository records no licence for them: text that asks for one is drawn with Inter, unless the font file is put in `~/.local/share/scriptwidget/fonts` (or the folder `SCRIPTWIDGET_FONTS` names). Chinese, Japanese, Korean and emoji use system fonts found through fontconfig; the order of the Chinese, Japanese and Korean faces follows the locale. Monospace and serif are the user's fontconfig choices |
-| `animation` | The first frame, as on Android and Windows |
+| `animation` | Moves on the desktop. Standard clock hands are redrawn every second (with a second hand) or every minute. Swings and custom intervals are drawn as a cycle of at most 60 pictures, one every 50 ms, through the same frames as a GIF; a motion whose cycle is longer than 60 seconds is redrawn once a second instead. `render` and the previews show one frame: hands at the current time, a swing at rest |
 | `<gif>` | Animated on the desktop, at most 60 frames; `render` and the previews show the first frame |
 | `<date>` | A running timer is redrawn every second and a clock time every minute |
 | Timeline | The script runs again at each transition |
@@ -179,6 +184,7 @@ Scripts, imported archives and network responses are untrusted, as on every plat
 - **Package files** are opened relative to the package folder with `openat2` (`RESOLVE_BENEATH`, no symlinks, no magic links) and must be regular files with one link. Where the kernel has no `openat2` the path is walked one component at a time with `O_NOFOLLOW`. Traversal, absolute paths, backslashes, symlinks, hard links, case collisions and names that are not UTF-8 are refused. Files are created with mode 0600, folders 0700.
 - **Archives** are checked whole before anything is extracted (entry count, file size, expanded size, names), extracted through the same reading of the archive that checked them, into a unique staging folder on the same filesystem, and published with a rename that refuses to replace anything.
 - **Network.** Requests go over a small HTTP/1.1 client on rustls. It resolves the host itself, refuses private, loopback and link-local addresses, and connects only to the address it checked. Redirects are followed by hand with the same checks at every hop, and a redirect to another origin does not receive the `Authorization` or `Cookie` header the script set. The system proxy is not used. Requests name the client as `ScriptWidget-Linux/<version>` unless the script sets its own `User-Agent`.
+- **AI.** The API key is kept in the Secret Service (GNOME Keyring, KeePassXC and others) through `secret-tool` from libsecret, which gets the key on its standard input. It is never written to the settings, a package, a prompt or a saved conversation, and never passed in an argument. Without a keyring nothing is stored; `SCRIPTWIDGET_AI_KEY` gives a key for one run. The provider address is the user's choice and must be `https://`; redirects are not followed. Requests and the widget's code go to that provider and nowhere else. AI output is untrusted like any script: it runs with the permissions its manifest declares, and applying it is the user's step.
 - **Engine isolation.** Package code runs inside the program's process, as on the other platforms: QuickJS exposes no system interface, and memory, stack and time are bounded.
 - **Service socket.** `$XDG_RUNTIME_DIR/scriptwidget/host.sock` is readable by the user only, and the service checks that the peer is the same user. Requests are single lines that name packages, widget ids, integers and fixed words; nothing received is run as code or used as a path.
 - **The display plugin** runs inside the Omarchy shell, unsandboxed like every plugin, so it is kept small: it shows PNG files from the service's own folder, ignores any other path, and sends back only a widget id with a region number or coordinates. Which action a region stands for is looked up in the service.
