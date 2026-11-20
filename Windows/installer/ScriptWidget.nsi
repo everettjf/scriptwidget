@@ -52,20 +52,13 @@ VIAddVersionKey "LegalCopyright" "${PUBLISHER}"
 !insertmacro MUI_UNPAGE_INSTFILES
 
 !insertmacro MUI_LANGUAGE "English"
-!insertmacro MUI_LANGUAGE "SimpChinese"
 
 LangString RunText ${LANG_ENGLISH} "Open ScriptWidget"
-LangString RunText ${LANG_SIMPCHINESE} "打开 ScriptWidget"
 LangString NeedsWindows11 ${LANG_ENGLISH} "ScriptWidget needs Windows 11."
-LangString NeedsWindows11 ${LANG_SIMPCHINESE} "ScriptWidget 需要 Windows 11。"
 LangString WrongProcessor ${LANG_ENGLISH} "This installer is for ${ARCH} computers. Download the installer that matches this computer."
-LangString WrongProcessor ${LANG_SIMPCHINESE} "此安装程序适用于 ${ARCH} 电脑。请下载与本机匹配的安装程序。"
 LangString StillRunning ${LANG_ENGLISH} "ScriptWidget is still running and could not be closed. Quit it from its tray icon, then try again."
-LangString StillRunning ${LANG_SIMPCHINESE} "ScriptWidget 仍在运行，无法关闭。请从托盘图标退出后重试。"
 LangString RemoveData ${LANG_ENGLISH} "Also delete your widgets and settings?$\r$\n$\r$\nThey are kept in $LOCALAPPDATA\${APP}. Choose No to keep them for a later installation."
-LangString RemoveData ${LANG_SIMPCHINESE} "是否同时删除你的小组件和设置？$\r$\n$\r$\n它们保存在 $LOCALAPPDATA\${APP}。选择“否”可保留，供以后重新安装时使用。"
 LangString FileTypeName ${LANG_ENGLISH} "ScriptWidget package"
-LangString FileTypeName ${LANG_SIMPCHINESE} "ScriptWidget 小组件包"
 
 ; Stops the copy of the program that runs from $INSTDIR, and no other: a copy installed from the
 ; Microsoft Store has the same process names. The host is asked to quit and is given five seconds,

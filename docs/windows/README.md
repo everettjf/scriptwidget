@@ -27,9 +27,7 @@ The management window, as the program drew it on 2026-11-17 (saved by the progra
 | ![A template opened: preview and code](images/template-detail.png) | ![API reference](images/apis.png) |
 | ![Components](images/components.png) | |
 
-The interface follows the Windows display language, English or Simplified Chinese:
-
-![My widgets in Chinese](images/library-zh.png)
+The interface is in English.
 
 ## Installing it
 

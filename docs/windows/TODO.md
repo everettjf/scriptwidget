@@ -26,7 +26,7 @@ The installer on GitHub Releases:
 - **It is not signed.** SmartScreen warns on every download. A code-signing certificate (or Azure Trusted Signing) would remove the warning.
 - **No automatic update.** A newer version has to be downloaded and run by hand. A check for a newer release, or a winget manifest, would help.
 - **The installer and the Store version do not know of each other.** Both can be installed; there is one host per user and each keeps its widgets in its own folder. Neither warns about the other.
-- **Seen by a person:** the installer's pages in English and Chinese, the question about deleting the widgets when uninstalling, a double-click on a `.swt` file, and an installation on a PC without the development tools.
+- **Seen by a person:** the installer's pages, the question about deleting the widgets when uninstalling, a double-click on a `.swt` file, and an installation on a PC without the development tools.
 
 Decisions and accounts:
 
@@ -36,7 +36,6 @@ Decisions and accounts:
 
 Known gaps in the code:
 
-- **The API reference is in English only**, also in the Chinese interface: its sentences come from the editor's completion metadata, which has no translations.
 - **The reference has no entry for `console`, `$getenv`, `$render`, `$import` and the animation attributes**; those are listed with their example only.
 
 - **A slow request is reported as "Script exceeded the 5-second execution limit".** The message does not say that the script was waiting for the network. Daily Quote's preview failed this way four times in the management window on 17 November 2026 and then never again; the cause was not found (see the test notes).
@@ -54,6 +53,8 @@ Known gaps in the code:
 
 Written on 19 November 2026 from a Mac, while the same work was done for Linux and Android; nothing here was started. It needs a Windows 11 PC. The plan for all platforms is in [the alignment plan](../platform-parity-plan.md).
 
+- **For the owner: remove the Simplified Chinese Store listing.** The interface is English only since 19 November 2026 and the package now declares English only, but the Microsoft Store listing was submitted in English and Simplified Chinese. The owner decided on 19 November 2026 to delete the Chinese listing in Partner Center himself; nothing in the repository does it.
+- **After the Chinese interface was removed** (19 November 2026, edited on a Mac: the texts of the management window, the desktop host and the installer, `zh-cn` in the package manifest, `zh-Hans` in the satellite resource languages): on a Windows PC, build, run the tests, `Windows/scripts/desktop-check.ps1` and `Windows/scripts/installer-check.ps1`, and look once at the management window, the tray menu and the installer's pages. Nothing of this was built or run on Windows.
 - **AI conversation.** Port `Linux/crates/sw-core/src/ai` (itself a port of `Android/core/.../core/ai`) into `ScriptWidget.Core`: profiles, the streaming client for Anthropic and OpenAI-compatible endpoints, edits and diffs, the JSX check, the prompt, the repair loop on the Windows executor, saved conversations. Then `swcli ai …` as `scriptwidget ai …` on Linux, and a conversation panel beside the editor and an AI section in the settings of the management window, as `Linux/crates/sw-studio/src/ai.rs` and `ui/ai.rs`.
   - The key goes to the Windows credential locker (`PasswordVault`) or DPAPI, never to settings, packages, prompts or conversations; a test must show a saved profile and a saved conversation hold no key.
   - The provider address is `https://` only and redirects are not followed, as on Android and Linux.

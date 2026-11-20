@@ -219,3 +219,5 @@ Two things seen while doing this, neither changed:
 - Signing out and in, a second display, a scale change, a full-screen program in front.
 - ARM64 in a person's hands: it ran on the CI ARM64 machine only.
 - The Android instrumented suites on a phone after the shared-JavaScript refactor. The JVM tests and both suites on an emulator pass in CI.
+
+19 November 2026: the Simplified Chinese interface (management window, desktop host, installer, the `zh-cn` language of the package) was removed; the interface is English only on every platform. The change was made on a Mac and has not been built or run on Windows, so the rows above about the Chinese interface describe earlier versions.

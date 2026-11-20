@@ -34,7 +34,7 @@ public sealed class RenderRequest
     public bool LiveMotion { get; init; }
     /// <summary>Leave the rows of the first <c>&lt;list&gt;</c> out of the bitmap; the host scrolls them (see <see cref="RenderOutput.ListSlots"/>). Android only; Windows hosts leave it off.</summary>
     public bool LiveLists { get; init; }
-    /// <summary>System theme colors behind the <c>material.&lt;role&gt;</c> names; null leaves them unknown. Android only; Windows hosts leave it off.</summary>
+    /// <summary>System theme colors behind the <c>material.&lt;role&gt;</c> names; null gives the fixed Material 3 baseline colors. Android supplies the wallpaper palette; Windows hosts leave it off.</summary>
     public JsonObject? Colors { get; init; }
 }
 

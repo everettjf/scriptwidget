@@ -264,18 +264,23 @@ public class RenderTests(RendererFixture fixture, ITestOutputHelper output) : IC
         Assert.True(Count(rendered.Pixels, IsRed) > 500);
     }
 
-    /// <summary>The dark bitmap takes the dark palette, and without a palette the names are unknown, as on iPhone.</summary>
+    /// <summary>The dark bitmap takes the dark palette. Windows has no wallpaper palette: without one, and for a role a palette leaves out, the names are the fixed colors that iPhone, iPad and Mac draw.</summary>
     [Fact]
-    public void ThemeColorsFollowTheAppearanceAndAreUnknownWithoutAPalette()
+    public void ThemeColorsFollowTheAppearanceAndAreFixedWithoutAPalette()
     {
         var dark = Renderer.Render(new RenderRequest { Tree = ListTree(3), Width = 200f, Height = 200f, Density = 1f, DarkMode = true, Colors = TestColors() });
         Assert.Equal(((byte)0x1E, (byte)0x14, (byte)0x0A, (byte)0xFF), Pixel(dark, 2, 198));
+        // No palette: material.surface of the baseline Material 3 scheme, #FEF7FF in light mode and #141218 in dark mode. A pixel is blue, green, red, alpha.
         var plain = Renderer.Render(new RenderRequest { Tree = ListTree(3), Width = 200f, Height = 200f, Density = 1f });
-        // The widget keeps the system background: white in light mode.
-        Assert.Equal(((byte)255, (byte)255, (byte)255, (byte)255), Pixel(plain, 2, 198));
-        // A malformed palette is ignored rather than failing the render.
+        Assert.Equal(((byte)0xFF, (byte)0xF7, (byte)0xFE, (byte)0xFF), Pixel(plain, 2, 198));
+        var plainDark = Renderer.Render(new RenderRequest { Tree = ListTree(3), Width = 200f, Height = 200f, Density = 1f, DarkMode = true });
+        Assert.Equal(((byte)0x18, (byte)0x12, (byte)0x14, (byte)0xFF), Pixel(plainDark, 2, 198));
+        // A malformed palette does not fail the render: its roles are the fixed colors too.
         var broken = Renderer.Render(new RenderRequest { Tree = ListTree(3), Width = 200f, Height = 200f, Density = 1f, Colors = Json.ParseObject("{\"light\":{\"surface\":\"red\",\"primary\":[1,2]}}") });
-        Assert.Equal(((byte)255, (byte)255, (byte)255, (byte)255), Pixel(broken, 2, 198));
+        Assert.Equal(((byte)0xFF, (byte)0xF7, (byte)0xFE, (byte)0xFF), Pixel(broken, 2, 198));
+        // A role that does not exist is still ignored: the widget keeps the system background, white in light mode.
+        var unknown = Renderer.Render(new RenderRequest { Tree = "{\"$element\":\"vstack\",\"props\":{\"frame\":\"max\",\"background\":\"material.nothing\"},\"children\":[]}", Width = 200f, Height = 200f, Density = 1f });
+        Assert.Equal(((byte)255, (byte)255, (byte)255, (byte)255), Pixel(unknown, 2, 198));
     }
 
     // MARK: - Output
