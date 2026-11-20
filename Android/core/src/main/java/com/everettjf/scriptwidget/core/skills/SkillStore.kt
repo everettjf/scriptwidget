@@ -149,8 +149,18 @@ class SkillStore(root: File) {
      * This is the only way a Skill influences the app: as untrusted advice inside a prompt. It
      * grants no tool, file, network or runtime permission.
      */
-    fun enabledSkillsPromptText(): String {
-        val selected = enabledSkills()
+    fun enabledSkillsPromptText(): String = promptText(enabledSkills())
+
+    /**
+     * The same text for the Skills with [ids], whether enabled or not: a conversation names its
+     * own Skills. An id that no longer exists or no longer validates contributes nothing.
+     */
+    fun promptText(ids: Collection<String>): String {
+        val wanted = ids.toSet()
+        return promptText(list().filter { it.id in wanted })
+    }
+
+    private fun promptText(selected: List<Skill>): String {
         if (selected.isEmpty()) return ""
         return "Apply these ScriptWidget skills:\n" + selected.joinToString("\n") { "- ${it.title} v${it.version}:\n  ${it.instruction.replace("\n", "\n  ")}" }
     }

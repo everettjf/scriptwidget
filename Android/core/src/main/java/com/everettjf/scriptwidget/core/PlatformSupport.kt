@@ -12,11 +12,22 @@ object PlatformSupport {
     /** Android release line of this build: "1.0", "1.1" or "1.2". */
     const val RELEASE = "1.2"
 
+    /**
+     * Script globals of the shared contract with no Android implementation in this release,
+     * with the reason shown to the user. Every other global of the contract is implemented by a
+     * native module. This is the one list: the manifest check below and the AI prompt
+     * (`AndroidPromptNotes`) are both derived from it.
+     */
+    val unsupportedGlobals: Map<String, String> = linkedMapOf(
+        "\$reminders" to "Reminders (\$reminders) has no system equivalent on Android.",
+        "\$home" to "Home control (\$home) has no Android equivalent.",
+    )
+
     /** Manifest permissions with no Android implementation in this release, with the reason shown to the user. */
     val unsupportedPermissions: Map<String, String> = linkedMapOf(
-        "reminders" to "Reminders (\$reminders) has no system equivalent on Android.",
-        "remindersWrite" to "Reminders (\$reminders) has no system equivalent on Android.",
-        "home" to "Home control (\$home) has no Android equivalent.",
+        "reminders" to unsupportedGlobals.getValue("\$reminders"),
+        "remindersWrite" to unsupportedGlobals.getValue("\$reminders"),
+        "home" to unsupportedGlobals.getValue("\$home"),
     )
 
     /** Manifest features with no Android surface in this release. */
@@ -24,10 +35,11 @@ object PlatformSupport {
         "pushUpdates" to "Push-triggered refresh works only in builds configured with a Firebase project.",
     )
 
-    private val unsupportedFamilies = setOf("accessoryCircular", "accessoryRectangular", "accessoryInline")
+    /** Widget families Android can not place. */
+    val unsupportedFamilies: Set<String> = linkedSetOf("accessoryInline", "accessoryCircular", "accessoryRectangular")
 
-    /** Source markers for capabilities that only exist on Apple platforms. */
-    private val unsupportedSourceMarkers: Map<String, String> = linkedMapOf(
+    /** Source markers for capabilities that only exist on Apple platforms, with the reason. */
+    val unsupportedSourceMarkers: Map<String, String> = linkedMapOf(
         "\$dynamic_island" to "Dynamic Island content is not shown on Android.",
         "backgroundMaterial" to "Frosted material backgrounds fall back to the plain background color.",
         "\$maps.snapshot" to "Map images (\$maps.snapshot) are not available on Android; place search and geocoding are.",

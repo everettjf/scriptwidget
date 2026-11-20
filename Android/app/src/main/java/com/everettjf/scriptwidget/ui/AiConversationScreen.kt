@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.DeleteOutline
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Language
@@ -50,6 +51,7 @@ import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -118,6 +120,7 @@ import com.everettjf.scriptwidget.core.ai.AiConversationTurn
 import com.everettjf.scriptwidget.core.ai.AiSourceDiff
 import com.everettjf.scriptwidget.core.ai.AiConversationTurns
 import com.everettjf.scriptwidget.core.ai.AiConversationVersion
+import com.everettjf.scriptwidget.core.ai.AiConversationUsageAdvice
 import com.everettjf.scriptwidget.core.ai.AiExamplePrompts
 import com.everettjf.scriptwidget.core.ai.AiManifestDeclaration
 import com.everettjf.scriptwidget.core.ai.AiManifests
@@ -127,6 +130,8 @@ import com.everettjf.scriptwidget.core.ai.AiWidgetSize
 import com.everettjf.scriptwidget.core.ai.PromptBuilder
 import com.everettjf.scriptwidget.core.ai.ValidationResult
 import com.everettjf.scriptwidget.core.pkg.PackageLimits
+import com.everettjf.scriptwidget.core.runtime.ExecutionResult
+import com.everettjf.scriptwidget.core.skills.Skill
 import com.everettjf.scriptwidget.core.runtime.MemoryPackageFiles
 import com.everettjf.scriptwidget.core.runtime.PackageFiles
 import com.everettjf.scriptwidget.widget.WidgetScheduler
@@ -216,14 +221,23 @@ class AiConversationViewModel : ViewModel() {
     var installedSource by mutableStateOf<String?>(null); private set
     var isLoading by mutableStateOf(true); private set
     var isMissing by mutableStateOf(false); private set
+    /** The widget has a `widget.json` that can not be read: the conversation is refused, never run as a legacy widget. */
+    var isManifestUnreadable by mutableStateOf(false); private set
+    /** What the preview reported when it last ran a version; null until it has. */
+    var previewRun by mutableStateOf<PreviewRun?>(null); private set
     /** What is happening in the running turn, in words. */
     var activity by mutableStateOf<String?>(null); private set
     /** The end of the code being written, while a reply arrives; empty otherwise. */
     var liveText by mutableStateOf(""); private set
     var drafts by mutableStateOf<List<AiConversationSummary>>(emptyList()); private set
 
+    /** One run of a version in the preview: why it failed, if it did, and what it printed. */
+    class PreviewRun(val versionId: String, val error: String?, val logs: List<String>)
+
     private var cancellation: AiCancellation? = null
     private var generation = 0
+    /** How many attempts the running turn may make; the progress line counts against it. */
+    private var attemptLimit = AiConversationLimits.MAX_ATTEMPTS_PER_TURN
     private var opened = false
     /** The application, for the texts of [activity]; set when a turn starts. */
     private var strings: Context? = null
@@ -246,6 +260,8 @@ class AiConversationViewModel : ViewModel() {
             val (target, source, existing) = loaded.first
             drafts = loaded.second
             if (name != null && (target == null || source == null)) { isMissing = true; isLoading = false; return@launch }
+            // A manifest that is there and can not be read is not a missing one: nothing is run, sent or written.
+            if (target?.manifestUnreadable == true) { isManifestUnreadable = true; isLoading = false; return@launch }
             installed = target
             installedSource = source
             if (target != null && source != null) {
@@ -314,8 +330,38 @@ class AiConversationViewModel : ViewModel() {
         if (conversation.selectVersion(id)) changed(context)
     }
 
+    /** Records what the preview's run of the version [versionId] reported. */
+    fun previewRan(versionId: String, result: ExecutionResult?) {
+        val logs = result?.logs.orEmpty().map { "[${it.level}] ${it.message}" }
+        // Judged as the loop judges an attempt, so "it runs" means the same in both places.
+        val judged = if (result == null) ValidationResult.failure("internalError: the widget could not be run.")
+        else ValidationResult.fromExecution(result.tree, result.error?.kind, result.error?.message, logs)
+        previewRun = PreviewRun(versionId, if (judged.ok) null else judged.errorSummary ?: "Runtime returned no element.", logs)
+    }
+
+    /** The failure of the version on screen, if its last run in the preview failed. */
+    val runtimeFailure: PreviewRun? get() = previewRun?.takeIf { it.versionId == conversation.currentVersionId && it.error != null }
+
+    /** Chooses the Skills that apply to every turn of this conversation. */
+    fun chooseSkills(context: Context, ids: Collection<String>) {
+        conversation.chooseSkills(ids)
+        changed(context)
+    }
+
     /** Sends [request] as the next turn. */
     fun send(context: Context, request: String) = start(context) { AiConversationTurns.begin(conversation, request, "", null) }
+
+    /**
+     * Asks the AI to repair the version on screen, which failed when the preview ran it, and
+     * tells it what the run reported. [typed] is what the user wrote, if anything; without it
+     * the request is the fixed sentence of the Apple apps.
+     */
+    fun fixRuntimeError(context: Context, typed: String) {
+        val failure = runtimeFailure ?: return
+        val request = typed.trim().ifEmpty { context.getString(R.string.ai_fix_runtime_request) }
+        val diagnostic = PromptBuilder.runtimeDiagnostic(failure.error.orEmpty(), failure.logs)
+        start(context) { AiConversationTurns.begin(conversation, request, "", null, diagnostic) }
+    }
 
     /** Sends a turn that did not succeed again. */
     fun retry(context: Context, turnId: String) = start(context) { AiConversationTurns.retry(conversation, turnId, "", null) }
@@ -335,6 +381,9 @@ class AiConversationViewModel : ViewModel() {
         val target = installed
         val family = conversation.size.family
         val mode = started.loopRequest.mode as AgentLoopRequest.Mode.Turn
+        attemptLimit = AgentLoop.iterationLimit(started.loopRequest.maxIterations)
+        // Null until the user chose Skills for this conversation: then the ones enabled in the app apply.
+        val skillIds = conversation.skillIds
 
         viewModelScope.launch {
             val outcome: AgentLoopOutcome? = withContext(Dispatchers.IO) {
@@ -344,13 +393,13 @@ class AiConversationViewModel : ViewModel() {
                     val key = AiServices.credentials(application).get(settings.profile.kind.id)
                         ?: return@withContext AgentLoopOutcome.Failed(application.getString(R.string.ai_no_key), AiTokenUsage.ZERO)
                     val baseline = target?.let { PlatformSupport.unsupported(it.manifest, it.files).toSet() } ?: emptySet()
-                    // Skills are read when the turn is sent, so a Skill switched on mid-conversation applies from the next turn.
+                    // The text of the Skills is read when the turn is sent: the conversation keeps their ids only.
                     val context = mode.context
                     val withSkills = com.everettjf.scriptwidget.core.ai.AiTurnContext(
-                        context.history, context.currentCode, context.previousCode, context.request, AppServices.skillsPrompt(),
+                        context.history, context.currentCode, context.previousCode, context.request, AppServices.skillsPrompt(skillIds),
                         context.size, context.currentDeclaration, context.runtimeDiagnostic,
                     )
-                    val request = AgentLoopRequest(AgentLoopRequest.Mode.Turn(withSkills), context.size, PromptBuilder.systemPrompt(AiServices.reference(application)), AiConversationLimits.MAX_ATTEMPTS_PER_TURN)
+                    val request = AgentLoopRequest(AgentLoopRequest.Mode.Turn(withSkills), context.size, PromptBuilder.systemPrompt(AiServices.reference(application)), started.loopRequest.maxIterations)
                     AgentLoop(chatFactory(settings, key)).run(
                         request,
                         validate = { source, declaration -> AiCandidates.validate(target, source, declaration, family, baseline) },
@@ -374,7 +423,7 @@ class AiConversationViewModel : ViewModel() {
     private fun apply(turnId: String, event: AgentLoopEvent) {
         AiConversationTurns.applyEvent(conversation, turnId, event)
         when (event) {
-            is AgentLoopEvent.Thinking -> { liveText = ""; activity = if (event.iteration == 1) strings?.getString(R.string.ai_activity_writing) else strings?.getString(R.string.ai_activity_fixing, event.iteration, AiConversationLimits.MAX_ATTEMPTS_PER_TURN) }
+            is AgentLoopEvent.Thinking -> { liveText = ""; activity = if (event.iteration == 1) strings?.getString(R.string.ai_activity_writing) else strings?.getString(R.string.ai_activity_fixing, event.iteration, attemptLimit) }
             is AgentLoopEvent.Running -> { activity = strings?.getString(R.string.ai_activity_checking); liveText = "" }
             // Only the last lines are kept: that is all the screen shows.
             is AgentLoopEvent.Partial -> liveText = PromptBuilder.previewOfPartialReply(event.text).trimEnd().lines().takeLast(LIVE_LINES).joinToString("\n")
@@ -459,6 +508,8 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
     var askName by remember { mutableStateOf(false) }
     var confirmNetwork by remember { mutableStateOf<String?>(null) }
     var confirmApply by remember { mutableStateOf(false) }
+    var showLogs by remember { mutableStateOf(false) }
+    var showSkills by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val dark = isSystemInDarkTheme()
 
@@ -468,7 +519,8 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
     val current = conversation.currentVersion
     val running = model.isRunning
 
-    if (model.isMissing) { Text(stringResource(R.string.ai_missing), Modifier.padding(32.dp)); return }
+    if (model.isMissing) { Refusal(stringResource(R.string.ai_missing)) { navigation.popBackStack() }; return }
+    if (model.isManifestUnreadable) { Refusal(stringResource(R.string.ai_manifest_unreadable)) { navigation.popBackStack() }; return }
 
     fun leave() { model.stop(context); navigation.popBackStack() }
 
@@ -531,6 +583,8 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                     DropdownMenu(expanded = menu, onDismissRequest = { menu = false }) {
                         DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_new)) }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; draft = ""; model.startNew(context) })
                         if (installed == null) DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_delete_draft)) }, enabled = !running && conversation.turns.isNotEmpty(), onClick = { menu = false; model.deleteDraft(context, conversation.id) })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_skills)) }, enabled = !running, onClick = { menu = false; showSkills = true })
+                        DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_logs)) }, enabled = current != null && model.previewRun?.versionId == current.id, onClick = { menu = false; showLogs = true })
                         DropdownMenuItem(text = { Text(stringResource(R.string.ai_menu_settings)) }, onClick = { menu = false; navigation.navigate("settings") })
                     }
                 },
@@ -541,7 +595,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             @Suppress("UNUSED_VARIABLE") val redrawNotice = model.revision
             conversation.usageAdvice?.let { advice ->
                 Row(Modifier.fillMaxWidth().background(MaterialTheme.colorScheme.surfaceContainer).padding(start = 16.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                    Text(advice.message, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
+                    Text(usageAdviceText(advice), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.weight(1f))
                     if (current != null) TextButton(enabled = !running, onClick = { draft = ""; model.continueFromHere(context) }) { Text(stringResource(R.string.ai_start_new_from_here)) }
                 }
             }
@@ -572,6 +626,9 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
                     previousId = ordered.getOrNull(index - 1)?.id, nextId = if (index >= 0) ordered.getOrNull(index + 1)?.id else null,
                     installed = installed, dark = dark, running = running,
                     applied = installed != null && model.installedSource == current.source,
+                    failure = model.runtimeFailure?.error, canFix = ready && !running,
+                    onRan = { result -> model.previewRan(current.id, result) },
+                    onFix = { val typed = draft; draft = ""; model.fixRuntimeError(context, typed) },
                     onSize = { model.setSize(context, it) }, onVersion = { model.selectVersion(context, it) },
                     onCode = { shownCode = context.getString(R.string.ai_version, current.number) to current.source },
                     onSave = { if (installed == null) askName = true else confirmApply = true },
@@ -627,7 +684,7 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
         )
     }
 
-    if (askName && current != null) NameDialog(stringResource(R.string.ai_save_as_title), suggestedName(conversation.title), onDismiss = { askName = false }) { newName ->
+    if (askName && current != null) NameDialog(stringResource(R.string.ai_save_as_title), suggestedName(conversation.title, stringResource(R.string.ai_default_name)), onDismiss = { askName = false }) { newName ->
         askName = false
         if (current.networkDomains.isEmpty()) saveNew(newName, current) else confirmNetwork = newName
     }
@@ -653,6 +710,21 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             dismissButton = { TextButton(onClick = { confirmApply = false }) { Text(stringResource(R.string.ai_cancel)) } },
         )
     }
+    if (showLogs) {
+        val run = model.previewRun?.takeIf { it.versionId == current?.id }
+        if (run == null) showLogs = false else AlertDialog(
+            onDismissRequest = { showLogs = false }, title = { Text(stringResource(R.string.ai_logs_title)) },
+            text = {
+                Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(run.error ?: stringResource(R.string.ai_logs_ran), style = MaterialTheme.typography.bodyMedium, color = if (run.error != null) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (run.logs.isEmpty()) Text(stringResource(R.string.ai_logs_empty), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    for (line in run.logs.takeLast(MAXIMUM_LOG_LINES_SHOWN)) Text(line, style = MaterialTheme.typography.bodySmall, fontFamily = FontFamily.Monospace)
+                }
+            },
+            confirmButton = { TextButton(onClick = { showLogs = false }) { Text(stringResource(R.string.ai_close)) } },
+        )
+    }
+    if (showSkills) SkillsDialog(chosen = conversation.skillIds, onDismiss = { showSkills = false }) { ids -> showSkills = false; model.chooseSkills(context, ids) }
     if (showDrafts) ModalBottomSheet(onDismissRequest = { showDrafts = false }) {
         Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
             Text(stringResource(R.string.ai_drafts), style = MaterialTheme.typography.titleMedium, modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp))
@@ -664,6 +736,63 @@ fun AiConversationScreen(navigation: NavController, name: String?) {
             }
         }
     }
+}
+
+/** Why there is no conversation about this widget, with the way back. */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun Refusal(text: String, onBack: () -> Unit) {
+    Scaffold(topBar = {
+        TopAppBar(title = { Text(stringResource(R.string.ai_subtitle_installed)) }, navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, stringResource(R.string.ai_back)) } })
+    }) { padding -> Text(text, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(padding).padding(24.dp)) }
+}
+
+/** How many console lines the Logs dialog shows: the last ones. */
+private const val MAXIMUM_LOG_LINES_SHOWN = 200
+
+/**
+ * Chooses the Skills of a conversation. [chosen] is what the conversation holds; null means it
+ * has no choice of its own yet, and the Skills enabled in the app are shown ticked, because
+ * those are the ones that apply until a choice is made here.
+ */
+@Composable
+private fun SkillsDialog(chosen: List<String>?, onDismiss: () -> Unit, onChoose: (List<String>) -> Unit) {
+    val context = LocalContext.current
+    var skills by remember { mutableStateOf<List<Skill>?>(null) }
+    var ticked by remember { mutableStateOf<Set<String>>(emptySet()) }
+    LaunchedEffect(Unit) {
+        val loaded = withContext(Dispatchers.IO) {
+            runCatching { com.everettjf.scriptwidget.GalleryServices.get(context).skills.let { it.list() to it.enabledIds() } }.getOrDefault(emptyList<Skill>() to emptySet())
+        }
+        ticked = (chosen?.toSet() ?: loaded.second) intersect loaded.first.map { it.id }.toSet()
+        skills = loaded.first
+    }
+    AlertDialog(
+        onDismissRequest = onDismiss, title = { Text(stringResource(R.string.ai_skills_title)) },
+        text = {
+            Column(Modifier.heightIn(max = 420.dp).verticalScroll(rememberScrollState())) {
+                Text(stringResource(R.string.ai_skills_text), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(bottom = 8.dp))
+                val all = skills
+                if (all == null) CircularProgressIndicator(Modifier.size(20.dp), strokeWidth = 2.dp)
+                else if (all.isEmpty()) Text(stringResource(R.string.ai_skills_none), style = MaterialTheme.typography.bodyMedium)
+                else for (skill in all) {
+                    val on = skill.id in ticked
+                    Row(
+                        Modifier.fillMaxWidth().selectable(selected = on, role = Role.Checkbox, onClick = { ticked = if (on) ticked - skill.id else ticked + skill.id }).padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Checkbox(checked = on, onCheckedChange = null)
+                        Column(Modifier.padding(start = 12.dp)) {
+                            Text(skill.title, style = MaterialTheme.typography.bodyLarge)
+                            if (skill.summary.isNotBlank()) Text(skill.summary, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(enabled = skills != null, onClick = { onChoose(ticked.toList()) }) { Text(stringResource(R.string.ai_skills_done)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.ai_cancel)) } },
+    )
 }
 
 @Composable
@@ -682,20 +811,48 @@ private fun DraftRow(item: AiConversationSummary, onOpen: () -> Unit, onDelete: 
 }
 
 /** A short name for a new widget from what the user first asked: its first phrase, a few words long. */
-internal fun suggestedName(title: String): String {
+internal fun suggestedName(title: String, fallback: String = "AI Widget"): String {
     val phrase = title.trim().split('.', ',', ':', ';', '!', '?', '。', '，', '\n').firstOrNull { it.isNotBlank() }?.trim().orEmpty().removeSuffix("…")
     val words = phrase.split(' ').filter { it.isNotBlank() }
     var name = ""
     for (word in words) { if ((name + " " + word).trim().length > 28) break; name = (name + " " + word).trim() }
     if (name.isEmpty()) name = phrase.take(28)
-    return name.replace(Regex("[/\\\\:*?\"<>|]"), " ").trim().ifBlank { "AI Widget" }.replaceFirstChar { it.uppercase() }
+    return name.replace(Regex("[/\\\\:*?\"<>|]"), " ").trim().ifBlank { fallback }.replaceFirstChar { it.uppercase() }
 }
 
-/** A text with a count in it: the singular for 1, as English needs when it stands in for another language. */
+/** The text of an example's chip; an example without a text here keeps its title. */
+internal fun exampleTitleResource(title: String): Int? = when (title) {
+    "Weather" -> R.string.ai_example_weather
+    "Clock" -> R.string.ai_example_clock
+    "Countdown" -> R.string.ai_example_countdown
+    "Crypto Price" -> R.string.ai_example_crypto_price
+    "Battery Ring" -> R.string.ai_example_battery_ring
+    "Quote" -> R.string.ai_example_quote
+    "Steps" -> R.string.ai_example_steps
+    "Habit Grid" -> R.string.ai_example_habit_grid
+    else -> null
+}
+
+@Composable
+private fun exampleTitle(example: com.everettjf.scriptwidget.core.ai.AiExamplePrompt): String =
+    exampleTitleResource(example.title)?.let { stringResource(it) } ?: example.title
+
+/** [AiConversationUsageAdvice.message] from the string resources. */
+internal fun usageAdviceText(resources: android.content.res.Resources, advice: AiConversationUsageAdvice): String = when (advice.reason) {
+    AiConversationUsageAdvice.Reason.HEAVY_REQUESTS -> resources.getString(R.string.ai_advice_heavy_requests, "%,d".format(advice.tokens))
+    AiConversationUsageAdvice.Reason.HEAVY_TOTAL -> resources.getString(R.string.ai_advice_heavy_total, "%,d".format(advice.tokens))
+    AiConversationUsageAdvice.Reason.VERSIONS_FULL -> resources.getString(R.string.ai_advice_versions_full, AiConversationLimits.MAX_VERSIONS)
+    AiConversationUsageAdvice.Reason.HISTORY_FULL -> resources.getString(R.string.ai_advice_history_full, AiConversationLimits.HISTORY_TURNS)
+}
+
+@Composable
+private fun usageAdviceText(advice: AiConversationUsageAdvice): String = usageAdviceText(LocalContext.current.resources, advice)
+
+/** A text with a count in it: the singular for 1. */
 @Composable
 private fun counted(count: Int, one: Int, other: Int): String = stringResource(if (count == 1) one else other, count)
 
-/** The name of a size in the user's language. */
+/** The name of a size. */
 private fun sizeName(size: AiWidgetSize): Int = when (size) {
     AiWidgetSize.SMALL -> R.string.ai_size_small
     AiWidgetSize.MEDIUM -> R.string.ai_size_medium
@@ -722,6 +879,8 @@ private fun SizeThumbnail(option: AiWidgetSize, selected: Boolean, files: com.ev
 private fun PreviewPanel(
     size: AiWidgetSize, version: AiConversationVersion, position: Int, count: Int, previousId: String?, nextId: String?,
     installed: InstalledPackage?, dark: Boolean, running: Boolean, applied: Boolean,
+    /** Why the version failed when the preview last ran it; null when it ran. */
+    failure: String?, canFix: Boolean, onRan: (ExecutionResult?) -> Unit, onFix: () -> Unit,
     onSize: (AiWidgetSize) -> Unit, onVersion: (String) -> Unit, onCode: () -> Unit, onSave: () -> Unit,
 ) {
     Surface(color = MaterialTheme.colorScheme.surfaceContainerLow, modifier = Modifier.fillMaxWidth()) {
@@ -729,7 +888,7 @@ private fun PreviewPanel(
             // The version runs from memory with exactly the manifest it would be saved with.
             val files = remember(version.id, installed?.installation) { AiCandidates.files(installed, version.source, version.networkDomains) }
             Box(contentAlignment = Alignment.TopEnd) {
-                WidgetPreview(files = files, packageID = PREVIEW_PACKAGE_ID, family = size.family, dark = dark, revision = version.number, maxHeight = 190f)
+                WidgetPreview(files = files, packageID = PREVIEW_PACKAGE_ID, family = size.family, dark = dark, revision = version.number, maxHeight = 190f, onResult = onRan)
                 if (running) Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surface.copy(alpha = 0.92f), modifier = Modifier.padding(8.dp)) {
                     Text(stringResource(R.string.ai_version_while_working, version.number), style = MaterialTheme.typography.labelSmall, modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp))
                 }
@@ -747,6 +906,15 @@ private fun PreviewPanel(
             if (version.networkDomains.isNotEmpty()) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Language, null, Modifier.size(14.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 Text(stringResource(R.string.ai_may_contact, version.networkDomains.joinToString(", ")), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(start = 6.dp))
+            }
+            // A version that ran when it was made can fail later (the network is gone), and code taken over from the editor may never have run.
+            if (failure != null) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.ErrorOutline, null, Modifier.size(16.dp), tint = MaterialTheme.colorScheme.error)
+                Text(
+                    failure.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty(), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.error,
+                    maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.weight(1f).padding(start = 6.dp),
+                )
+                TextButton(enabled = canFix, onClick = onFix) { Text(stringResource(R.string.ai_fix_runtime_error)) }
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 TextButton(onClick = onCode) { Icon(Icons.Default.Code, null, Modifier.size(18.dp)); Text(stringResource(R.string.ai_code), Modifier.padding(start = 6.dp)) }
@@ -773,7 +941,7 @@ private fun EmptyState(
             Text(stringResource(R.string.ai_empty_text), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text(stringResource(R.string.ai_try_example), style = MaterialTheme.typography.labelLarge)
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                for (example in AiExamplePrompts.all) AssistChip(enabled = enabled, onClick = { onExample(example) }, label = { Text(example.title) })
+                for (example in AiExamplePrompts.all) AssistChip(enabled = enabled, onClick = { onExample(example) }, label = { Text(exampleTitle(example)) })
             }
             if (drafts.isNotEmpty()) {
                 Text(stringResource(R.string.ai_continue_draft), style = MaterialTheme.typography.labelLarge)

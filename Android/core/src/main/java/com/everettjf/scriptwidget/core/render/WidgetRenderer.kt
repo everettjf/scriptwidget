@@ -43,7 +43,7 @@ class RenderRequest(
     val liveMotion: Boolean = false,
     /** Leave the rows of the first `<list>` out of the bitmap; the host scrolls them (see [RenderOutput.listSlots]). */
     val liveLists: Boolean = false,
-    /** System theme colors behind the `material.<role>` names (see [com.everettjf.scriptwidget.core.api.ThemeColors]); null leaves them unknown. */
+    /** System theme colors behind the `material.<role>` names (see [com.everettjf.scriptwidget.core.api.ThemeColors]); a role that is missing, or null for all of them, takes the fixed Material 3 baseline color. */
     val colors: JSONObject? = null,
 )
 

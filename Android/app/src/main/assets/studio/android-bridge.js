@@ -5,6 +5,32 @@
   "use strict";
   var native = window.ScriptWidgetAndroid;
   if (!native || window.WKWebViewJavascriptBridge) return;
+  // What only Android has, for the editor's completion, hover and attribute
+  // check (Editor/editorfe/src/hostAPI.js reads this as data). The roles are
+  // ThemeColors.roleNames and the attributes of <list> are those of the
+  // "tag@android list" line in AiJsxSurfaceData; StudioHostApiTest fails when
+  // either list here differs from the Kotlin one.
+  var materialRoles = [
+    "primary", "onPrimary", "primaryContainer", "onPrimaryContainer",
+    "secondary", "onSecondary", "secondaryContainer", "onSecondaryContainer",
+    "tertiary", "onTertiary", "tertiaryContainer", "onTertiaryContainer",
+    "background", "onBackground", "surface", "onSurface", "surfaceVariant", "onSurfaceVariant",
+    "surfaceContainerLowest", "surfaceContainerLow", "surfaceContainer", "surfaceContainerHigh", "surfaceContainerHighest",
+    "outline", "outlineVariant"
+  ];
+  var listAttributes = {
+    "spacing": { type: "number", documentation: "Gap between rows. Default 0." }
+  };
+  window.ScriptWidgetHostAPI = {
+    components: {
+      list: {
+        documentation: "Android only. A vertical stack that scrolls inside the widget; its children are the rows, at most 100. On iPhone the tag is unknown, so check $system.platform() first.",
+        children: true,
+        properties: listAttributes
+      }
+    },
+    colors: materialRoles.map(function (role) { return "material." + role; })
+  };
   var handlers = {};
   var callbacks = {};
   var sequence = 0;

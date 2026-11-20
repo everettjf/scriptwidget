@@ -30,35 +30,43 @@ class AiManifestDeclaration(val permissions: List<String>, val networkDomains: L
     companion object {
         /** Permissions generated code may request. Anything else needs a human editing the manifest. */
         val GRANTABLE_PERMISSIONS = setOf("network")
-        const val MAXIMUM_DOMAINS = 16
-        const val MAXIMUM_BYTES = 8 * 1024
+        /** `AINetworkDeclaration.maximumDomains`. */
+        const val MAXIMUM_DOMAINS = 8
+        /** The same 4,096 bytes `AINetworkDeclaration.parse` reads. */
+        const val MAXIMUM_BYTES = 4_096
         private val HOST = Regex("^(\\*\\.)?([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\\.)+[a-z]([a-z0-9-]{0,61}[a-z0-9])?$")
+
+        /** What the model is told when a declaration is refused; the same sentence as `AgentLoop.swift`. */
+        fun failureText(reason: String): String = "The network declaration block is not valid: $reason."
 
         /**
          * Parses a declaration, failing closed.
-         * @throws IllegalArgumentException with a message that can be fed back to the model.
+         * @throws IllegalArgumentException whose message is the reason, worded as
+         *   `AINetworkDeclaration.parse` words it, for [failureText] to complete.
          */
         fun parse(json: String): AiManifestDeclaration {
-            if (json.toByteArray(Charsets.UTF_8).size > MAXIMUM_BYTES) throw IllegalArgumentException("The package declaration is too large.")
-            val root = try { JSONObject(json) } catch (_: Exception) { throw IllegalArgumentException("The package declaration is not a JSON object.") }
+            if (json.toByteArray(Charsets.UTF_8).size > MAXIMUM_BYTES) throw IllegalArgumentException(NOT_AN_OBJECT)
+            val root = try { JSONObject(json) } catch (_: Exception) { throw IllegalArgumentException(NOT_AN_OBJECT) }
             for (key in root.keys()) if (key != "permissions" && key != "networkDomains") {
-                throw IllegalArgumentException("The package declaration may only contain \"permissions\" and \"networkDomains\"; remove \"${key.take(40)}\".")
+                throw IllegalArgumentException("only \"permissions\" and \"networkDomains\" may appear")
             }
             val permissions = strings(root, "permissions").distinct()
-            for (permission in permissions) if (permission !in GRANTABLE_PERMISSIONS) {
-                throw IllegalArgumentException("Permission \"${permission.take(40)}\" cannot be declared by generated widgets on Android; only \"network\" can.")
-            }
+            for (permission in permissions) if (permission !in GRANTABLE_PERMISSIONS) throw IllegalArgumentException(ONLY_NETWORK)
             val domains = strings(root, "networkDomains").map { it.lowercase() }.distinct()
-            if (domains.size > MAXIMUM_DOMAINS) throw IllegalArgumentException("Declare at most $MAXIMUM_DOMAINS network domains.")
+            if (domains.isNotEmpty() && "network" !in permissions) throw IllegalArgumentException(ONLY_NETWORK)
+            if (domains.size > MAXIMUM_DOMAINS || ("network" in permissions && domains.isEmpty())) {
+                throw IllegalArgumentException("\"networkDomains\" must list 1 to $MAXIMUM_DOMAINS hosts")
+            }
             for (domain in domains) {
                 if (domain.length > 253 || !HOST.matches(domain) || RuntimePolicy.blockedHostName(domain.removePrefix("*."))) {
-                    throw IllegalArgumentException("\"${domain.take(80)}\" is not a public host name. Use a host such as api.example.com, without scheme or path.")
+                    throw IllegalArgumentException("\"${domain.take(80)}\" is not a public host name; use a host such as api.example.com, without scheme or path")
                 }
             }
-            if (domains.isNotEmpty() && "network" !in permissions) throw IllegalArgumentException("networkDomains requires the \"network\" permission.")
-            if ("network" in permissions && domains.isEmpty()) throw IllegalArgumentException("The \"network\" permission requires at least one entry in networkDomains.")
             return AiManifestDeclaration(permissions, domains)
         }
+
+        private const val NOT_AN_OBJECT = "it is not a JSON object"
+        private const val ONLY_NETWORK = "\"permissions\" must be exactly [\"network\"]; no other permission can be declared"
 
         /** The declaration an existing manifest amounts to, or null when it declares no network access. */
         fun fromManifest(manifest: JSONObject?): AiManifestDeclaration? {
@@ -70,8 +78,8 @@ class AiManifestDeclaration(val permissions: List<String>, val networkDomains: L
 
         private fun strings(root: JSONObject, key: String): List<String> {
             if (!root.has(key)) return emptyList()
-            val array = root.opt(key) as? JSONArray ?: throw IllegalArgumentException("\"$key\" must be an array of strings.")
-            return List(array.length()) { index -> array.opt(index) as? String ?: throw IllegalArgumentException("\"$key\" must be an array of strings.") }
+            val array = root.opt(key) as? JSONArray ?: throw IllegalArgumentException("\"$key\" must be an array of strings")
+            return List(array.length()) { index -> array.opt(index) as? String ?: throw IllegalArgumentException("\"$key\" must be an array of strings") }
         }
     }
 }

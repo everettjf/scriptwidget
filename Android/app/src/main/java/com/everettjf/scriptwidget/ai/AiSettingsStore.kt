@@ -50,13 +50,8 @@ class AiSettingsStore(context: Context, private val credentials: CredentialStore
         }
     }
 
-    /** `AISettings.maxIterations`, clamped to the documented 5...100 range. */
-    var maxIterations: Int
-        get() = preferences.getInt("maxIterations", AiSettings.DEFAULT_MAX_ITERATIONS).coerceIn(AiSettings.MINIMUM_MAX_ITERATIONS, AiSettings.MAXIMUM_MAX_ITERATIONS)
-        set(value) { preferences.edit().putInt("maxIterations", value.coerceIn(AiSettings.MINIMUM_MAX_ITERATIONS, AiSettings.MAXIMUM_MAX_ITERATIONS)).apply() }
-
-    /** Snapshot for the client and the agent loop. */
-    fun load(): AiSettings = AiSettings(profile(activeKind), maxIterations, AiSettings.DEFAULT_TEMPERATURE)
+    /** Snapshot for the client. */
+    fun load(): AiSettings = AiSettings(profile(activeKind), AiSettings.DEFAULT_TEMPERATURE)
 }
 
 /** Process-wide AI services, created on first use. */

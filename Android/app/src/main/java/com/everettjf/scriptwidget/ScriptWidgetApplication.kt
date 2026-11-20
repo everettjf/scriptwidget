@@ -15,8 +15,15 @@ object AppServices {
 
     private fun requireContext(): Context = context ?: error("AppServices used before Application.onCreate")
 
-    /** Instructions of the Skills the user enabled, appended to AI requests; null when none are enabled. */
-    fun skillsPrompt(): String? = runCatching { GalleryServices.get(requireContext()).skills.enabledSkillsPromptText() }.getOrNull()?.takeIf { it.isNotBlank() }
+    /**
+     * Instructions of Skills, appended to AI requests; null when there are none. With [ids] null
+     * these are the Skills the user enabled in the app; otherwise the Skills a conversation
+     * names, enabled or not.
+     */
+    fun skillsPrompt(ids: List<String>? = null): String? = runCatching {
+        val skills = GalleryServices.get(requireContext()).skills
+        if (ids == null) skills.enabledSkillsPromptText() else skills.promptText(ids)
+    }.getOrNull()?.takeIf { it.isNotBlank() }
 
     /**
      * Full Package 2.0 validation (manifest rules and a compile of every script) for packages

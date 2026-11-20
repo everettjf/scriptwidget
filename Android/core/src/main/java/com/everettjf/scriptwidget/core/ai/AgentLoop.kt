@@ -143,7 +143,7 @@ class AgentLoop(
 
             val extracted = if (isTurn) {
                 val reply = PromptBuilder.parseTurnReply(result.content)
-                // A repair may leave the summary out; the first one still describes the turn.
+                // A repair may leave the summary out: the last one that was given still describes the turn.
                 reply.note?.let { note = it; onEvent(AgentLoopEvent.Note(iteration, it)) }
                 val edited = try {
                     AiSourceEdits.parse(result.content)?.let { edits ->
@@ -176,7 +176,7 @@ class AgentLoop(
             val ran = when {
                 candidate.source.isEmpty() -> ValidationResult.failure("The reply contained no JSX code.")
                 result.truncated -> ValidationResult.failure("The reply was cut off at the output limit. Return a shorter, complete widget.")
-                declarationError != null -> ValidationResult.failure("Invalid package declaration: $declarationError")
+                declarationError != null -> ValidationResult.failure(AiManifestDeclaration.failureText(declarationError.orEmpty()))
                 else -> try {
                     validate(candidate.source, candidate.manifestJson)
                 } catch (_: Exception) {

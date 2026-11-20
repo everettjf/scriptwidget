@@ -36,10 +36,15 @@ object AiConversationTurns {
 
     class Started(val turn: AiConversationTurn, val loopRequest: AgentLoopRequest)
 
-    /** Sends a turn that did not succeed again: it is taken out and its request starts a new turn. */
+    /**
+     * Sends a turn that did not succeed again, from the version it started from: that version
+     * becomes the current one when it still exists, the turn is taken out and its request starts
+     * a new turn. Port of `AIConversationSession.retry`.
+     */
     fun retry(conversation: AiConversation, turnId: String, systemPrompt: String, skillsText: String?, now: Long = System.currentTimeMillis()): Started? {
         val turn = conversation.turn(turnId) ?: return null
         if (conversation.isRunning || turn.isManualEdit || turn.status == AiConversationTurn.Status.SUCCEEDED || turn.status == AiConversationTurn.Status.RUNNING) return null
+        turn.baseVersionId?.let { base -> if (conversation.version(base) != null) conversation.currentVersionId = base }
         conversation.turns.remove(turn)
         return begin(conversation, turn.request, systemPrompt, skillsText, now = now)
     }

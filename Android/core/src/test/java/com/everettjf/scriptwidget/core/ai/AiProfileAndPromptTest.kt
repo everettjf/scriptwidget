@@ -73,17 +73,117 @@ class AiProfileAndPromptTest {
         assertTrue(prompt.contains("2 MiB"))
         assertTrue(prompt.contains("1024 keys"))
         assertTrue(prompt.contains("512 KiB"))
-        // Android unsupported list: every stub global and every PlatformSupport reason.
+        // Android unsupported list: every PlatformSupport reason, and the names a candidate is searched for.
         assertTrue(prompt.contains("NOT SUPPORTED ON ANDROID"))
-        for (global in AndroidPromptNotes.UNSUPPORTED_GLOBALS) assertTrue(global, prompt.contains(global))
+        for (reason in PlatformSupport.unsupportedGlobals.values) assertTrue(reason, prompt.contains(reason))
         for (reason in PlatformSupport.unsupportedPermissions.values) assertTrue(reason, prompt.contains(reason))
-        for (name in listOf("\$health", "\$location", "\$calendar", "\$maps.snapshot", "accessoryCircular", "\$dynamic_island", "backgroundMaterial", "Control Widgets")) assertTrue(name, prompt.contains(name))
+        for (reason in PlatformSupport.unsupportedSourceMarkers.values) assertTrue(reason, prompt.contains(reason))
+        for (name in PlatformSupport.unsupportedSourceMarkers.keys + PlatformSupport.unsupportedFamilies + PlatformSupport.unsupportedGlobals.keys) assertTrue(name, unsupportedSection(prompt).contains(name))
         // Network declaration contract and the reference.
         assertTrue(prompt.contains("\"networkDomains\""))
         assertTrue(prompt.contains("=== COMPONENTS (JSX tags) ===\n// === text ===\n<text>hi</text>"))
         assertTrue(prompt.contains("=== APIs (globals) ===\n// === fetch ===\nawait fetch(url)"))
         // The prompt never tells the model to use what Android lacks.
         assertFalse(prompt.contains("requires permission `icloud`"))
+    }
+
+    /** The part of the prompt that says what Android cannot do. */
+    private fun unsupportedSection(prompt: String): String {
+        val start = prompt.indexOf("NOT SUPPORTED ON ANDROID")
+        val end = prompt.indexOf("SYSTEM DATA ON ANDROID")
+        assertTrue(start in 0 until end)
+        return prompt.substring(start, end)
+    }
+
+    /** The globals of the shared contract that may be missing on a platform: the names in the stub table of android-apis.js. */
+    private fun contractGlobals(): Set<String> {
+        val source = java.io.File("src/main/js/android-apis.js").readText()
+        val table = source.substring(source.indexOf("const groups = {"), source.indexOf("for (const name of Object.keys(groups))"))
+        return Regex("""^\s{4}(\$[A-Za-z_]+): \{""", RegexOption.MULTILINE).findAll(table).map { it.groupValues[1] }.toSet()
+    }
+
+    /**
+     * The globals a native module implements (`override val apis` of the modules in `core/system`
+     * and `core/plugin`). `AiLoopOnDeviceTest.thePromptOnTheDeviceNamesNoRegisteredModuleAsUnsupported`
+     * checks the modules the app really registers on a device.
+     */
+    private val implemented = setOf(
+        "\$health", "\$music", "\$photos", "\$calendar", "\$location", "\$services", "\$icloud", "\$notifications",
+        "\$alarms", "\$documents", "\$contacts", "\$maps", "\$weather", "\$dataSource",
+    )
+
+    /** [global] named as a whole, not as the owner of one method: `$maps` but not `$maps.snapshot`. */
+    private fun names(text: String, global: String) = Regex(Regex.escape(global) + """(?![A-Za-z0-9_.])""").containsMatchIn(text)
+
+    @Test
+    fun thePromptNeverNamesASupportedApiAsUnsupported() {
+        // Every global of the contract is either implemented or in PlatformSupport, never both and never neither.
+        assertEquals(contractGlobals(), implemented + PlatformSupport.unsupportedGlobals.keys)
+        assertTrue((implemented intersect PlatformSupport.unsupportedGlobals.keys).isEmpty())
+
+        val section = unsupportedSection(PromptBuilder.systemPrompt(AiReference.EMPTY))
+        for (global in implemented) {
+            assertFalse("$global is implemented and must not be listed as unsupported", names(section, global))
+            for (line in AndroidPromptNotes.unsupportedLines()) assertFalse("$global in: $line", names(line, global))
+        }
+        // The one method that is missing is named with its method.
+        assertTrue(section.contains("\$maps.snapshot"))
+        // The words that used to say it: no sentence anywhere tells the model that a supported global fails.
+        val prompt = PromptBuilder.systemPrompt(AiReference.EMPTY)
+        assertFalse(prompt.contains("not implemented and every call fails"))
+        for (reason in PlatformSupport.unsupportedGlobals.values) assertTrue(reason, section.contains(reason))
+    }
+
+    @Test
+    fun thePromptSaysWhatDiffersForTheSystemDataThatWorks() {
+        val prompt = PromptBuilder.systemPrompt(AiReference.EMPTY)
+        val start = prompt.indexOf("SYSTEM DATA ON ANDROID")
+        val section = prompt.substring(start, prompt.indexOf("ONLY ON ANDROID"))
+        // Every implemented global is named where the model is told it works.
+        for (global in implemented) assertTrue(global, section.contains(global))
+        // The differences docs/android/README.md states under "System data", where a model needs them.
+        for (words in listOf("only photos the user picked", "no albums", "GitHub token", "no sign-in", "Health Connect", "calendars the user selected", "saved position", "androidMediaSession", "not business categories", "sync folder", "about ten minutes late")) {
+            assertTrue(words, section.contains(words))
+        }
+        // The calls the capped examples of the reference do not reach.
+        assertTrue(section.contains("\$health.stepCountToday()") && section.contains("\$location.current("))
+        // A conversation cannot declare these permissions, so the model must write the setup state.
+        assertTrue(section.contains("you cannot declare"))
+        assertTrue(section.contains("try/catch"))
+        assertFalse(names(section, "\$reminders") || names(section, "\$home"))
+        // Rule 7 lets the model use what this section names.
+        assertTrue(prompt.contains("section or under SYSTEM DATA below"))
+        // The prompt is already long: this section stays about 400 tokens.
+        assertTrue("${section.length} characters", section.length < 1_800)
+    }
+
+    @Test
+    fun aRepairSendsOnlyTheStartOfEachOfTheLastTenConsoleLines() {
+        val long = "[log] " + "x".repeat(400)
+        val fix = PromptBuilder.userPromptFix("CODE", "scriptError: boom", (1..11).map { "[log] line $it" } + long)
+        assertFalse(fix.contains("[log] line 2\n"))
+        assertTrue(fix.contains("[log] line 3\n"))
+        // 300 characters of the line, then the mark that it was cut, as PromptBuilder.swift does.
+        assertTrue(fix.contains("\n" + long.take(PromptBuilder.MAXIMUM_LOG_LINE_CHARACTERS) + "…\n"))
+        assertFalse(fix.contains("x".repeat(PromptBuilder.MAXIMUM_LOG_LINE_CHARACTERS)))
+        assertEquals(300, PromptBuilder.MAXIMUM_LOG_LINE_CHARACTERS)
+        // A line of exactly 300 characters is sent whole.
+        val exact = "y".repeat(300)
+        assertTrue(PromptBuilder.userPromptFix("CODE", "e", listOf(exact)).contains("\n$exact\n"))
+    }
+
+    @Test
+    fun aRuntimeDiagnosticCarriesTheErrorAndTheEndsOfTheLastConsoleLines() {
+        assertEquals("scriptError: boom", PromptBuilder.runtimeDiagnostic("scriptError: boom", emptyList()))
+        val long = "[log] " + "z".repeat(400)
+        val text = PromptBuilder.runtimeDiagnostic("scriptError: boom", (1..11).map { "[log] line $it" } + long)
+        assertTrue(text.startsWith("scriptError: boom\nLast console output:\n[log] line 3\n"))
+        assertFalse(text.contains("[log] line 2\n"))
+        assertTrue(text.endsWith(long.take(300) + "…"))
+        // It reaches the model inside the turn, cut to 2,000 characters.
+        val turn = PromptBuilder.userPromptTurn(AiTurnContext(emptyList(), "CODE", null, "fix it", null, AiWidgetSize.SMALL, runtimeDiagnostic = PromptBuilder.runtimeDiagnostic("e".repeat(3_000), listOf("[log] tail"))))
+        assertTrue(turn.contains("The latest local ScriptWidget runtime diagnostic is:\n" + "e".repeat(2_000) + "…"))
+        assertFalse(turn.contains("[log] tail"))
     }
 
     @Test
@@ -116,15 +216,26 @@ class AiProfileAndPromptTest {
         val long = (1..60).joinToString("\n") { "line $it" }
         val reference = AiReference.build(
             mapOf("zstack" to "z", "hstack" to long, "live-activity" to "LIVE"),
-            mapOf("health" to "HEALTH", "location" to "LOCATION", "calendar" to "CALENDAR", "storage" to "s", "fetch" to "f"),
+            mapOf("reminders" to "REMINDERS", "home" to "HOME", "storage" to "s", "fetch" to "f"),
         )
         assertTrue(reference.componentsBlock.startsWith("// === hstack ===\nline 1\n"))
         assertTrue(reference.componentsBlock.contains("line 40\n// ...\n\n// === zstack ===\nz"))
         assertFalse(reference.componentsBlock.contains("line 41"))
         assertFalse(reference.combined.contains("LIVE"))
-        for (excluded in listOf("HEALTH", "LOCATION", "CALENDAR")) assertFalse(reference.combined.contains(excluded))
+        for (excluded in listOf("REMINDERS", "HOME")) assertFalse(reference.combined.contains(excluded))
         assertEquals("// === fetch ===\nf\n\n// === storage ===\ns", reference.apisBlock)
         assertEquals("", AiReference.EMPTY.combined)
+        // Only what PlatformSupport lists is left out.
+        assertEquals(setOf("reminders", "home"), AiReference.ANDROID_EXCLUDED_APIS)
+    }
+
+    @Test
+    fun referenceShowsTheExamplesOfTheSystemDataAndroidImplements() {
+        val reference = AiReference.build(emptyMap(), mapOf("health" to "HEALTH", "location" to "LOCATION", "calendar" to "CALENDAR", "fetch" to "f"))
+        assertEquals("// === calendar ===\nCALENDAR\n\n// === fetch ===\nf\n\n// === health ===\nHEALTH\n\n// === location ===\nLOCATION", reference.apisBlock)
+        // They are also the ones kept when the reference is over its budget.
+        val big = AiReference.build(mapOf("text" to "x".repeat(AiReference.SOFT_CHARACTER_BUDGET)), mapOf("health" to "HEALTH", "location" to "LOCATION", "calendar" to "CALENDAR", "usage-map" to "MAP"))
+        assertEquals("// === calendar ===\nCALENDAR\n\n// === health ===\nHEALTH\n\n// === location ===\nLOCATION", big.apisBlock)
     }
 
     @Test
@@ -165,8 +276,13 @@ class AiProfileAndPromptTest {
     @Test
     fun examplePromptsAvoidUnsupportedApis() {
         assertTrue(AiExamplePrompts.all.size >= 5)
-        for (example in AiExamplePrompts.all) for (global in AndroidPromptNotes.UNSUPPORTED_GLOBALS) assertFalse(example.title, example.prompt.contains(global))
+        for (example in AiExamplePrompts.all) for (global in PlatformSupport.unsupportedGlobals.keys) assertFalse(example.title, example.prompt.contains(global))
         assertFalse(AiExamplePrompts.all.any { it.prompt.contains("device location") })
+        // The Steps example of the Apple apps is back: $health is implemented through Health Connect.
+        val steps = AiExamplePrompts.all.single { it.title == "Steps" }
+        assertEquals(AiWidgetSize.SMALL, steps.size)
+        assertTrue(steps.prompt.contains("step count from \$health"))
+        assertEquals(listOf("Weather", "Clock", "Countdown", "Crypto Price", "Battery Ring", "Quote", "Steps", "Habit Grid"), AiExamplePrompts.all.map { it.title })
     }
 
     // MARK: - Extraction
@@ -238,11 +354,39 @@ class AiProfileAndPromptTest {
             """{"permissions":["network"],"networkDomains":["192.168.1.1"]}""", """{"permissions":["network"],"networkDomains":["printer.local"]}""",
             """{"permissions":["network"],"networkDomains":["*"]}""", """{"permissions":["network"],"networkDomains":["*.com"]}""".replace("*.com", "*."),
             """{"permissions":["network"],"networkDomains":["a.example.com"],"id":"evil"}""", """{"permissions":["network"],"networkDomains":["a.example.com"],"entry":"x.jsx"}""",
-            """{"permissions":["network"],"networkDomains":[${(1..17).joinToString(",") { "\"h$it.example.com\"" }}]}""",
+            """{"permissions":["network"],"networkDomains":[${(1..9).joinToString(",") { "\"h$it.example.com\"" }}]}""",
         )
         for (json in rejected) {
             try { AiManifestDeclaration.parse(json); fail("accepted $json") } catch (expected: IllegalArgumentException) { assertFalse(expected.message.isNullOrEmpty()) }
         }
+    }
+
+    @Test
+    fun declarationLimitsAndFailureTextsAreTheOnesOfTheAppleApps() {
+        fun hosts(count: Int) = """{"permissions":["network"],"networkDomains":[${(1..count).joinToString(",") { "\"h$it.example.com\"" }}]}"""
+        fun refusal(json: String): String = try { AiManifestDeclaration.parse(json); fail("accepted $json"); "" } catch (expected: IllegalArgumentException) { AiManifestDeclaration.failureText(expected.message!!) }
+
+        // AINetworkDeclaration.maximumDomains: 8 hosts pass, 9 do not.
+        assertEquals(8, AiManifestDeclaration.MAXIMUM_DOMAINS)
+        assertEquals(8, AiManifestDeclaration.parse(hosts(8)).networkDomains.size)
+        assertEquals("The network declaration block is not valid: \"networkDomains\" must list 1 to 8 hosts.", refusal(hosts(9)))
+        assertEquals("The network declaration block is not valid: \"networkDomains\" must list 1 to 8 hosts.", refusal("""{"permissions":["network"],"networkDomains":[]}"""))
+
+        // 4,096 bytes of UTF-8 pass, one more does not; Swift calls both that and unreadable text "not a JSON object".
+        assertEquals(4_096, AiManifestDeclaration.MAXIMUM_BYTES)
+        val small = """{"permissions":["network"],"networkDomains":["a.example.com"]}"""
+        val atLimit = small + " ".repeat(4_096 - small.length)
+        assertEquals(4_096, atLimit.toByteArray().size)
+        assertEquals(listOf("a.example.com"), AiManifestDeclaration.parse(atLimit).networkDomains)
+        assertEquals("The network declaration block is not valid: it is not a JSON object.", refusal("$atLimit "))
+        assertEquals("The network declaration block is not valid: it is not a JSON object.", refusal("not json"))
+        // Bytes, not characters: 2,000 characters of two and three bytes are over the limit.
+        assertEquals("The network declaration block is not valid: it is not a JSON object.", refusal("""{"permissions":["network"],"networkDomains":["a.example.com"],"x":"${"é€".repeat(1_000)}"}"""))
+
+        assertEquals("The network declaration block is not valid: only \"permissions\" and \"networkDomains\" may appear.", refusal("""{"permissions":["network"],"networkDomains":["a.example.com"],"id":"evil"}"""))
+        val onlyNetwork = "The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]; no other permission can be declared."
+        assertEquals(onlyNetwork, refusal("""{"permissions":["location"]}"""))
+        assertEquals(onlyNetwork, refusal("""{"networkDomains":["a.example.com"]}"""))
     }
 
     @Test

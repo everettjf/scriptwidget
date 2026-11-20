@@ -86,17 +86,18 @@ data class AiProfile(val kind: AiProviderKind, val baseUrl: String, val model: S
     }
 }
 
-/** Snapshot consumed by [AiClient] and [AgentLoop]: the active profile plus the loop globals. */
+/**
+ * Snapshot consumed by [AiClient]: the active profile and the sampling temperature. How many
+ * attempts a request gets is not a setting: it is [AgentLoopRequest.maxIterations].
+ */
 data class AiSettings(
     val profile: AiProfile,
-    val maxIterations: Int = DEFAULT_MAX_ITERATIONS,
     val temperature: Double = DEFAULT_TEMPERATURE,
 ) {
     companion object {
-        /** `AISettings.defaultMaxIterations`. */
+        /** `AISettings.defaultMaxIterations`: the attempts of an [AgentLoopRequest] that names none. */
         const val DEFAULT_MAX_ITERATIONS = 20
-        /** Range of the Max Iterations control in docs/ai-generate.md. */
-        const val MINIMUM_MAX_ITERATIONS = 5
+        /** The most attempts [AgentLoop.iterationLimit] allows. */
         const val MAXIMUM_MAX_ITERATIONS = 100
         /** `AISettings.defaultTemperature`. */
         const val DEFAULT_TEMPERATURE = 0.7

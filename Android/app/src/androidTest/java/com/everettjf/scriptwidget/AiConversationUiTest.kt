@@ -45,6 +45,8 @@ class AiConversationUiTest {
     private val requests = ArrayList<String>()
     /** When set, the next reply waits for it, so that the running state can be looked at. */
     @Volatile private var gate: CountDownLatch? = null
+    /** The gate holds back the requests from this one on, counted over the whole test; 1 holds every request. */
+    @Volatile private var gateFrom = 1
 
     private var previousKind: AiProviderKind? = null
     private var previousProfile: AiProfile? = null
@@ -71,7 +73,7 @@ class AiConversationUiTest {
                 override fun chatStream(messages: List<AiMessage>, cancellation: AiCancellation, onText: (String) -> Unit): AiChatResult {
                     requests += messages.last().content
                     replies.firstOrNull()?.let { onText(it.take(it.length / 2)) }
-                    gate?.await(20, TimeUnit.SECONDS)
+                    if (requests.size >= gateFrom) gate?.await(20, TimeUnit.SECONDS)
                     Thread.sleep(400)
                     val reply = replies.removeFirst()
                     onText(reply)
@@ -115,6 +117,117 @@ class AiConversationUiTest {
         tap(By.desc("New widget"))
         tap(By.text("Generate with AI"))
         wait(By.text("What should the widget show?"))
+    }
+
+    private fun openApp() {
+        device.executeShellCommand("am start --activity-clear-task -n ${context.packageName}/${MainActivity::class.java.name}")
+        wait(By.desc("New widget"))
+    }
+
+    private fun eventually(what: String, seconds: Long = 10, check: () -> Boolean) {
+        val end = System.currentTimeMillis() + seconds * 1000
+        while (System.currentTimeMillis() < end) { if (check()) return; Thread.sleep(200) }
+        assertTrue(what, check())
+    }
+
+    /** A widget.json that is there and can not be read turns the conversation off; it is never run as a legacy widget. */
+    @Test fun aWidgetWhoseManifestCanNotBeReadIsRefused() {
+        // The name sorts first, so that its tile is on screen.
+        val broken = AppServices.library.create("0 Broken manifest ${System.nanoTime() % 100_000}", widget("#111827", "Broken"))
+        File(broken.directory, "widget.json").writeText("{ not json")
+        openApp()
+        tap(By.text(broken.name))
+        tap(By.text("Improve with AI"))
+        wait(By.textContains("widget.json can not be read"))
+        picture("40-manifest-unreadable")
+        assertTrue("there is no request field", device.findObject(By.clazz("android.widget.EditText")) == null)
+        assertTrue("no preview ran the widget as a legacy one", device.findObject(By.desc("Widget preview")) == null)
+        assertTrue("nothing was sent", requests.isEmpty())
+        assertEquals("the file is left as it was", "{ not json", File(broken.directory, "widget.json").readText())
+        assertTrue("no conversation was started", AiServices.conversations(context).latest(broken.installation) == null)
+    }
+
+    /**
+     * A widget that fails when it runs: the preview says so and offers Fix Runtime Error, which
+     * sends what the run reported. Logs shows what the run printed. The repair counts its
+     * attempts against the limit of a turn.
+     */
+    @Test fun aWidgetThatFailsWhenItRunsIsFixedWithWhatTheRunReported() {
+        val failing = "console.log(\"reading the stock\");\nconst stock = undefined;\n\$render(\n  <vstack frame=\"max\">\n    <text>{stock.price}</text>\n  </vstack>\n);"
+        val item = AppServices.library.create("0 Runtime error ${System.nanoTime() % 100_000}", failing)
+        openApp()
+        tap(By.text(item.name))
+        tap(By.text("Improve with AI"))
+        wait(By.text("Fix Runtime Error"))
+        picture("30-runtime-error")
+
+        tap(By.desc("More"))
+        tap(By.text("Logs"))
+        wait(By.text("Logs of the last run"))
+        wait(By.textContains("reading the stock"))
+        picture("31-logs")
+        tap(By.text("Close"))
+
+        // The first answer does not run either; while the repair is awaited the line counts against the four attempts of a turn.
+        replies += reply("Shows a dash while there is no price.", "\$render(<vstack>")
+        replies += reply("Shows a dash while there is no price.", widget("#0f766e", "No price yet"))
+        val first = requests.size
+        gate = CountDownLatch(1)
+        gateFrom = first + 2
+        tap(By.text("Fix Runtime Error"))
+        // The line changes its text in place ("Writing…", "Checking…", then this). Looked for at once, it was not
+        // found on the Pixel 6 although the picture shows it, so the first look waits until the repair has begun.
+        Thread.sleep(2500)
+        wait(By.text("It did not run. Fixing it, attempt 2 of 4…"))
+        picture("32-attempt-of-limit")
+        gate!!.countDown(); gate = null; gateFrom = 1
+        wait(By.text("Shows a dash while there is no price."))
+        wait(By.text("Fix the current runtime error while keeping the widget's design."))
+        assertTrue("the version that runs is not offered a fix", device.wait(Until.gone(By.text("Fix Runtime Error")), 10_000))
+        picture("33-fixed")
+
+        val sent = requests[first]
+        assertTrue("the request is the fixed sentence", sent.contains("The user now asks:\nFix the current runtime error while keeping the widget's design."))
+        assertTrue("the diagnostic is sent", sent.contains("The latest local ScriptWidget runtime diagnostic is:"))
+        assertTrue("with what the run printed", sent.contains("reading the stock"))
+        assertTrue("and the failing code", sent.contains("stock.price"))
+        assertTrue("the widget is untouched until Apply", AppServices.library.find(item.name)!!.files.readText("main.jsx")!!.contains("stock.price"))
+    }
+
+    /** Skills chosen in a conversation are sent with its turns and kept in its file; what is enabled in the app does not change. */
+    @Test fun theSkillsChosenInAConversationAreSentAndKeptWithIt() {
+        val store = GalleryServices.get(context).skills
+        val enabled = store.enabledIds()
+        val skill = store.list().first { it.id !in enabled }
+        fun saved() = AiServices.conversations(context).summaries().singleOrNull()?.let { AiServices.conversations(context).load(it.id) }
+
+        openNewConversation()
+        tap(By.desc("More"))
+        tap(By.text("Skills"))
+        wait(By.text("Skills for this conversation"))
+        picture("50-skills")
+        tap(By.text(skill.title))
+        tap(By.text("Done"))
+        replies += reply("A plain card.", widget("#334155", "Hello"))
+        ask("A plain card that says hello")
+        wait(By.text("A plain card."))
+        assertTrue("the Skill is part of the turn", requests.last().contains("Apply these ScriptWidget skills in every turn:") && requests.last().contains("- ${skill.title} v${skill.version}:"))
+        eventually("the choice is in the conversation's file") { saved()?.skillIds == (enabled + skill.id).sorted() && saved()?.currentVersion != null }
+        assertEquals("choosing in a conversation enables nothing in the app", enabled, store.enabledIds())
+
+        // Taking it out again applies from the next turn.
+        tap(By.desc("More"))
+        tap(By.text("Skills"))
+        wait(By.text("Skills for this conversation"))
+        tap(By.text(skill.title))
+        tap(By.text("Done"))
+        replies += reply("Blue now.", widget("#1d4ed8", "Hello"))
+        ask("Make it blue")
+        wait(By.text("Blue now."))
+        assertTrue("the Skill is no longer sent", !requests.last().contains("- ${skill.title} v${skill.version}:"))
+        if (enabled.isEmpty()) assertTrue("no Skill at all is sent", !requests.last().contains("Apply these ScriptWidget skills"))
+        eventually("the file holds the new choice") { saved()?.skillIds == enabled.sorted() && saved()?.versions?.size == 2 }
+        assertEquals(enabled, store.enabledIds())
     }
 
     @Test fun aStoppedTurnChangesNothingAndTheDraftIsKept() {

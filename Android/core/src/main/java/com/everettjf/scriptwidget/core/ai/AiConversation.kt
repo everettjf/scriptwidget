@@ -24,6 +24,9 @@ object AiConversationLimits {
     /** From here on the user is told that the conversation has grown heavy. */
     const val HEAVY_PROMPT_TOKENS = 30_000
     const val HEAVY_TOTAL_TOKENS = 300_000
+    /** How many Skills a conversation can name, and how long one id can be. */
+    const val MAX_SKILLS = 64
+    const val SKILL_ID_CHARACTERS = 128
 }
 
 /**
@@ -120,6 +123,13 @@ class AiConversation(
     var packageId: String? = null,
     val createdAt: Long = System.currentTimeMillis(),
     var updatedAt: Long = createdAt,
+    /**
+     * The ids of the Skills chosen for this conversation; they apply to every turn. Null until
+     * the user chooses in the conversation: then the Skills enabled in the app apply, read anew
+     * for each turn, which is what every conversation did before this field existed. An empty
+     * list is a choice too: no Skill. Ids only: a Skill's text is read when a turn is sent.
+     */
+    var skillIds: List<String>? = null,
 ) {
     val isDraft: Boolean get() = packageId == null
     val currentVersion: AiConversationVersion? get() = version(currentVersionId)
@@ -150,7 +160,7 @@ class AiConversation(
      */
     fun continuedFromCurrentVersion(now: Long = System.currentTimeMillis()): AiConversation? {
         val current = currentVersion ?: return null
-        return AiConversation(title = title, size = size, packageId = packageId, createdAt = now).also { it.addVersion(current.source, current.networkDomains, now) }
+        return AiConversation(title = title, size = size, packageId = packageId, createdAt = now, skillIds = skillIds).also { it.addVersion(current.source, current.networkDomains, now) }
     }
 
     fun version(id: String?): AiConversationVersion? = id?.let { wanted -> versions.firstOrNull { it.id == wanted } }
@@ -193,6 +203,12 @@ class AiConversation(
         currentVersionId = id
         updatedAt = now
         return true
+    }
+
+    /** Chooses the Skills of this conversation; ids are deduplicated and sorted, as Swift stores them. */
+    fun chooseSkills(ids: Collection<String>, now: Long = System.currentTimeMillis()) {
+        skillIds = ids.filter { it.isNotEmpty() && it.length <= AiConversationLimits.SKILL_ID_CHARACTERS }.distinct().sorted().take(AiConversationLimits.MAX_SKILLS)
+        updatedAt = now
     }
 
     /** The turns the model is told about: finished, not abandoned, not manual edits, oldest first. */
@@ -261,6 +277,8 @@ class AiConversation(
         root.put("packageId", packageId ?: JSONObject.NULL)
         root.put("createdAt", createdAt)
         root.put("updatedAt", updatedAt)
+        // Written only once the user chose: a file without it means "the Skills enabled in the app".
+        skillIds?.let { root.put("skillIds", JSONArray(it)) }
         root.put("versions", JSONArray().also { array ->
             for (version in versions) array.put(JSONObject()
                 .put("id", version.id).put("number", version.number).put("source", version.source)
@@ -314,11 +332,16 @@ class AiConversation(
             }
             val id = root.getString("id")
             if (!SAFE_ID.matches(id)) return null
+            // Optional. Present, it must be a short list of short strings; anything else is not a conversation.
+            val skillIds = if (root.isNull("skillIds")) null else root.getJSONArray("skillIds").let { array ->
+                if (array.length() > AiConversationLimits.MAX_SKILLS) return null
+                List(array.length()) { index -> (array.get(index) as? String)?.takeIf { it.isNotEmpty() && it.length <= AiConversationLimits.SKILL_ID_CHARACTERS } ?: return null }
+            }
             AiConversation(
                 id = id, title = root.optString("title"), size = AiWidgetSize.fromFamily(root.optString("size")),
                 turns = turns, versions = versions, currentVersionId = text(root, "currentVersionId"),
                 versionCounter = root.getInt("versionCounter"), packageId = text(root, "packageId"),
-                createdAt = root.getLong("createdAt"), updatedAt = root.getLong("updatedAt"),
+                createdAt = root.getLong("createdAt"), updatedAt = root.getLong("updatedAt"), skillIds = skillIds,
             ).also { it.markRunningTurnsInterrupted() }
         }.getOrNull()
 

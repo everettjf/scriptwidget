@@ -59,7 +59,11 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
     /**
      * Sends [messages] asking for a streamed reply and reports the text so far through [onText].
      * Port of `AIClient.chatStream`. A server that refuses the streamed form, answers it in the
-     * plain form, or sends nothing that can be read is asked once more in the plain way.
+     * plain form, or sends nothing that can be read is asked once more in the plain way. So is
+     * one whose streamed request failed in transport (no connection, a broken one, no answer in
+     * time) before any text arrived. After text arrived nothing is sent again: what was shown
+     * must not be replaced by a second, different answer. Authentication, the usage limit, a
+     * redirect, a reply over the size limit and cancellation are reported as they are.
      */
     fun chatStream(messages: List<AiMessage>, settings: AiSettings, apiKey: String, cancellation: AiCancellation = AiCancellation(), onText: (String) -> Unit): AiChatResult {
         val request = buildChatRequest(messages, settings, apiKey, stream = true)
@@ -69,13 +73,15 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
             try {
                 transport.executeStreaming(request, cancellation) { events.feed(it) }
             } catch (error: AiClientException) {
-                // What was already read is not a reply; a stream that broke off is not retried.
-                throw error
+                if (cancellation.isCancelled) throw AiClientException(AiErrorKind.CANCELLED, "Cancelled.")
+                if (error.kind !in TRANSPORT_FAILURES || events.text.isNotEmpty()) throw error
+                null
             } catch (_: Exception) {
                 if (cancellation.isCancelled) throw AiClientException(AiErrorKind.CANCELLED, "Cancelled.")
-                throw AiClientException(AiErrorKind.NETWORK, "The AI request could not be sent.")
+                if (events.text.isNotEmpty()) throw AiClientException(AiErrorKind.NETWORK, "The AI request could not be sent.")
+                null
             }
-        }
+        } ?: return chat(messages, settings, apiKey, cancellation).also { onText(it.content) }
         return scrub(apiKey) {
             if (response.status in listOf(401, 403, 429)) throw httpError(response)
             events.finish()
@@ -124,10 +130,11 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
             path = "/v1/messages"
             // The Messages API takes the system prompt as a top-level field and requires max_tokens.
             // Sampling parameters are not sent: current Claude models reject them.
+            // A message without text is refused by the API, so it is left out.
             body.put("max_tokens", ANTHROPIC_MAX_TOKENS)
             val system = messages.filter { it.role == AiMessage.Role.SYSTEM }.joinToString("\n\n") { it.content }
             if (system.isNotEmpty()) body.put("system", system)
-            body.put("messages", JSONArray(messages.filter { it.role != AiMessage.Role.SYSTEM }.map { JSONObject().put("role", it.role.wire).put("content", it.content) }))
+            body.put("messages", JSONArray(messages.filter { it.role != AiMessage.Role.SYSTEM && it.content.isNotBlank() }.map { JSONObject().put("role", it.role.wire).put("content", it.content) }))
         } else {
             path = "/v1/chat/completions"
             body.put("messages", JSONArray(messages.map { JSONObject().put("role", it.role.wire).put("content", it.content) }))
@@ -210,13 +217,6 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
         return AiClientException(AiErrorKind.HTTP, message, response.status)
     }
 
-    /** A short machine error code such as `invalid_request_error`, never free text. */
-    private fun errorCode(json: JSONObject?): String {
-        val error = json?.optJSONObject("error") ?: return ""
-        val code = sequenceOf("type", "code").mapNotNull { error.opt(it) as? String }.firstOrNull { ERROR_CODE.matches(it) } ?: return ""
-        return " ($code)"
-    }
-
     private fun parseObject(body: ByteArray): JSONObject = try {
         JSONObject(String(body, Charsets.UTF_8))
     } catch (_: Exception) {
@@ -257,8 +257,18 @@ class AiClient(private val transport: AiTransport = HttpsAiTransport()) {
         const val CHAT_TIMEOUT_MILLISECONDS = 300_000
         /** Same 15 s as `AIClient.availableModels`. */
         const val MODELS_TIMEOUT_MILLISECONDS = 15_000
-        private val ERROR_CODE = Regex("[A-Za-z0-9_.-]{1,64}")
+        /** Failures of the connection, not answers of the server: the only ones a streamed request is tried again after. */
+        private val TRANSPORT_FAILURES = setOf(AiErrorKind.NETWORK, AiErrorKind.TIMEOUT)
     }
+}
+
+private val ERROR_CODE = Regex("[A-Za-z0-9_.-]{1,64}")
+
+/** A short machine error code such as `invalid_request_error`, never free text. */
+private fun errorCode(json: JSONObject?): String {
+    val error = json?.optJSONObject("error") ?: return ""
+    val code = sequenceOf("type", "code").mapNotNull { error.opt(it) as? String }.firstOrNull { ERROR_CODE.matches(it) } ?: return ""
+    return " ($code)"
 }
 
 /**
@@ -342,6 +352,8 @@ internal class AiStreamReader(private val anthropic: Boolean, private val onText
                 // Thinking and tool input are not widget code.
                 if (delta.optString("type") == "text_delta") return delta.opt("text") as? String
             }
+            // The stream broke off; what was read so far is not a reply.
+            "error" -> throw AiClientException(AiErrorKind.HTTP, "The AI server reported an error" + errorCode(json) + ".")
         }
         return null
     }

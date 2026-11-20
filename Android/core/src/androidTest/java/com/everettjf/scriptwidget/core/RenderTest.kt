@@ -122,17 +122,17 @@ class RenderTest {
     }
 
     /** The dark bitmap takes the dark palette, and without a palette the names are unknown, as on iPhone. */
-    @Test fun themeColorsFollowTheAppearanceAndAreUnknownWithoutAPalette() {
+    @Test fun themeColorsFollowTheAppearanceAndAreFixedWithoutAPalette() {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val renderer = WidgetRenderer(context, SharedScripts(context))
         val dark = renderer.render(RenderRequest(listTree(3), 200f, 200f, 1f, darkMode = true, colors = testColors))
         assertEquals(0xFF0A141E.toInt(), dark.bitmap.getPixel(2, 198))
         val plain = renderer.render(RenderRequest(listTree(3), 200f, 200f, 1f))
-        // The widget keeps the system background: white in light mode.
-        assertEquals(0xFFFFFFFF.toInt(), plain.bitmap.getPixel(2, 198))
-        // A malformed palette is ignored rather than failing the render.
+        // Without a palette the names give the fixed Material 3 baseline: its light surface.
+        assertEquals(0xFFFEF7FF.toInt(), plain.bitmap.getPixel(2, 198))
+        // A malformed role does not fail the render; it takes the fixed color.
         val broken = renderer.render(RenderRequest(listTree(3), 200f, 200f, 1f, colors = JSONObject("{\"light\":{\"surface\":\"red\",\"primary\":[1,2]}}")))
-        assertEquals(0xFFFFFFFF.toInt(), broken.bitmap.getPixel(2, 198))
+        assertEquals(0xFFFEF7FF.toInt(), broken.bitmap.getPixel(2, 198))
         // The device's own palette has the roles scripts are told about.
         val palette = com.everettjf.scriptwidget.core.api.ThemeColors.palette(context)
         for (mode in listOf("light", "dark")) for (role in listOf("primary", "onPrimary", "primaryContainer", "surface", "onSurface", "surfaceContainer", "outline")) {

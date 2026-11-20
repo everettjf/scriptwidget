@@ -51,6 +51,37 @@ class LibraryTest {
         return ""
     }
 
+    /** A `widget.json` that is there and can not be read is told apart from one that is absent. */
+    @Test fun aManifestThatCanNotBeReadIsNotTakenForAMissingOne() {
+        val library = AppServices.library
+        val legacy = library.create("Unreadable Test ${System.nanoTime()}", "\$render(<text>legacy</text>)").also { created += it.name }
+        java.io.File(legacy.directory, "widget.json").delete()
+        val absent = library.find(legacy.name)!!
+        assertNull(absent.manifest)
+        assertFalse("no widget.json is a legacy package", absent.manifestUnreadable)
+
+        for (broken in listOf("{ not json", "", "[1, 2]", "\"text\"")) {
+            java.io.File(legacy.directory, "widget.json").writeText(broken)
+            val read = library.find(legacy.name)!!
+            assertNull(broken, read.manifest)
+            assertTrue("\"$broken\" is unreadable, not absent", read.manifestUnreadable)
+            assertTrue(library.list().single { it.name == legacy.name }.manifestUnreadable)
+        }
+        // Too large to be read at all.
+        java.io.File(legacy.directory, "widget.json").writeText("{\"name\":\"" + "x".repeat(256 * 1024) + "\"}")
+        assertTrue(library.find(legacy.name)!!.let { it.manifest == null && it.manifestUnreadable })
+        // A directory in its place.
+        java.io.File(legacy.directory, "widget.json").delete()
+        java.io.File(legacy.directory, "widget.json").mkdir()
+        assertTrue(library.find(legacy.name)!!.let { it.manifest == null && it.manifestUnreadable })
+        java.io.File(legacy.directory, "widget.json").delete()
+
+        java.io.File(legacy.directory, "widget.json").writeText("{\"formatVersion\":2,\"name\":\"Fine\"}")
+        val fine = library.find(legacy.name)!!
+        assertEquals("Fine", fine.displayName)
+        assertFalse(fine.manifestUnreadable)
+    }
+
     @Test fun importsAPackageExportedWithATopLevelFolderAndRunsIt() {
         val installed = import(mapOf("Imported/widget.json" to manifest, "Imported/main.jsx" to "\$render(<text>from archive</text>)", "Imported/lib/util.js" to "var helper = 1;"))
         assertEquals(setOf("lib/util.js", "main.jsx", "widget.json"), installed.files.paths().toSet())

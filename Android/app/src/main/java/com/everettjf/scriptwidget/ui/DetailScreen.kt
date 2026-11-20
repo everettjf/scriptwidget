@@ -1,5 +1,6 @@
 package com.everettjf.scriptwidget.ui
 
+import androidx.compose.ui.res.stringResource
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.BroadcastReceiver
@@ -204,7 +205,7 @@ fun DetailScreen(navigation: NavController, name: String) {
                 }
                 FilledTonalButton(onClick = { navigation.navigate("ai/${Uri.encode(item.name)}") }, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.AutoAwesome, null, Modifier.size(18.dp))
-                    Text("Improve with AI", Modifier.padding(start = 8.dp), maxLines = 1)
+                    Text(stringResource(R.string.ai_improve), Modifier.padding(start = 8.dp), maxLines = 1)
                 }
             }
             // A parameter is passed to the script as $getenv("widget-param"); most widgets do not read one.
@@ -249,7 +250,7 @@ fun DetailScreen(navigation: NavController, name: String) {
         }
     }
 
-    if (rename) NameDialog("Rename", item.name, onDismiss = { rename = false }) { newName ->
+    if (rename) NameDialog(stringResource(R.string.name_dialog_rename), item.name, onDismiss = { rename = false }) { newName ->
         rename = false
         runCatching { AppServices.library.rename(item.name, newName) }
             .onSuccess { navigation.navigate("package/${Uri.encode(it.name)}") { popUpTo("home") } }

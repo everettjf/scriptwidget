@@ -125,6 +125,77 @@ class AiConversationTest {
     }
 
     @Test
+    fun retryStartsFromTheVersionTheFailedTurnStartedFrom() {
+        val conversation = AiConversation()
+        turn(conversation, "a clock", FakeChat(listOf(reply("Clock.", "ONE"))))
+        val one = conversation.currentVersion!!
+        turn(conversation, "bigger", FakeChat(listOf(reply("Bigger.", "TWO"))))
+        val two = conversation.currentVersion!!
+        val failed = turn(conversation, "add seconds", FakeChat(listOf(AiClientException(AiErrorKind.NETWORK, "No connection."))))
+        assertEquals(two.id, failed.baseVersionId)
+        // The user looks at an older version, then sends the failed turn again.
+        assertTrue(conversation.selectVersion(one.id))
+
+        val started = AiConversationTurns.retry(conversation, failed.id, "SYSTEM", null)!!
+        assertEquals("the retry goes back to where the turn started", two.id, conversation.currentVersionId)
+        assertEquals(two.id, started.turn.baseVersionId)
+        val context = (started.loopRequest.mode as AgentLoopRequest.Mode.Turn).context
+        assertEquals("TWO\n", context.currentCode)
+        assertEquals("ONE\n", context.previousCode)
+        assertEquals("nothing is left behind: version 2 is the path again", listOf(false, false, false), conversation.turns.map { it.isAbandoned })
+        assertEquals(listOf("a clock", "bigger"), context.history.map { it.request })
+    }
+
+    @Test
+    fun retryOfATurnWhoseBaseIsGoneContinuesFromTheCurrentVersion() {
+        val conversation = AiConversation()
+        // The first turn of a new widget has no base version.
+        val first = turn(conversation, "a clock", FakeChat(listOf(AiClientException(AiErrorKind.NETWORK, "No connection."))))
+        assertNull(first.baseVersionId)
+        assertNull((AiConversationTurns.retry(conversation, first.id, "SYSTEM", null)!!.loopRequest.mode as AgentLoopRequest.Mode.Turn).context.currentCode)
+
+        // A base version that was pruned: the retry stays where the conversation is.
+        val pruned = AiConversation()
+        pruned.addVersion("KEPT")
+        val kept = pruned.currentVersionId
+        pruned.turns += AiConversationTurn(id = "turn-0001", request = "x", baseVersionId = "no-such-version", status = AiConversationTurn.Status.FAILED, createdAt = 1)
+        val started = AiConversationTurns.retry(pruned, "turn-0001", "SYSTEM", null)!!
+        assertEquals(kept, pruned.currentVersionId)
+        assertEquals("KEPT", (started.loopRequest.mode as AgentLoopRequest.Mode.Turn).context.currentCode)
+    }
+
+    @Test
+    fun theSkillsOfAConversationAreAnOptionalFieldOfItsFile() {
+        // No choice yet: the field is not written, and a file without it reads as "no choice".
+        val plain = AiConversation().also { it.addVersion("x") }
+        assertFalse(plain.toJson().has("skillIds"))
+        assertNull(AiConversation.fromJson(JSONObject(plain.toJson().toString()))!!.skillIds)
+        assertNull(AiConversation.fromJson(JSONObject(plain.toJson().toString()).put("skillIds", JSONObject.NULL))!!.skillIds)
+
+        // A choice is kept, sorted and without repeats; choosing nothing is a choice too.
+        plain.chooseSkills(listOf("layout", "builtin.charts", "layout", ""))
+        assertEquals(listOf("builtin.charts", "layout"), plain.skillIds)
+        val written = plain.toJson()
+        assertEquals("""["builtin.charts","layout"]""", written.getJSONArray("skillIds").toString())
+        assertEquals(listOf("builtin.charts", "layout"), AiConversation.fromJson(JSONObject(written.toString()))!!.skillIds)
+        plain.chooseSkills(emptyList())
+        assertEquals(emptyList<String>(), AiConversation.fromJson(JSONObject(plain.toJson().toString()))!!.skillIds)
+
+        // A conversation continued from a version keeps the choice.
+        plain.chooseSkills(listOf("layout"))
+        assertEquals(listOf("layout"), plain.continuedFromCurrentVersion()!!.skillIds)
+
+        // Present and malformed fails closed, and so does an unknown version that has the field.
+        val good = JSONObject(written.toString())
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("skillIds", "layout")))
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("skillIds", org.json.JSONArray().put(7))))
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("skillIds", org.json.JSONArray().put(""))))
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("skillIds", org.json.JSONArray().put("x".repeat(AiConversationLimits.SKILL_ID_CHARACTERS + 1)))))
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("skillIds", org.json.JSONArray((1..AiConversationLimits.MAX_SKILLS + 1).map { "skill-$it" }))))
+        assertNull(AiConversation.fromJson(JSONObject(good.toString()).put("formatVersion", 2)))
+    }
+
+    @Test
     fun anUnknownFailureShowsNoExceptionText() {
         val conversation = AiConversation()
         val failed = turn(conversation, "a clock", FakeChat(listOf(IllegalStateException("Authorization: Bearer sk-secret"))))
@@ -169,7 +240,7 @@ class AiConversationTest {
         val turn = turn(conversation, "my calendar", chat) { source, _ -> ran += source; ValidationResult.success() }
         assertEquals(listOf("PLAIN\n"), ran)
         assertEquals(1, turn.repairs)
-        assertTrue(chat.conversations[1].last().content.contains("Invalid package declaration"))
+        assertTrue(chat.conversations[1].last().content.contains("The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]"))
     }
 
     @Test

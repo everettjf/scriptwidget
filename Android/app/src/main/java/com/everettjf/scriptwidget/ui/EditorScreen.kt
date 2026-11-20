@@ -1,5 +1,7 @@
 package com.everettjf.scriptwidget.ui
 
+import com.everettjf.scriptwidget.R
+import androidx.compose.ui.res.stringResource
 import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.horizontalScroll
@@ -127,7 +129,7 @@ fun EditorScreen(navigation: NavController, name: String) {
             navigationIcon = { IconButton(onClick = { saveThen { navigation.popBackStack() } }) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Back") } },
             actions = {
                 // The conversation about this widget takes what is saved here and gives a version back with Apply.
-                IconButton(onClick = { saveThen { navigation.navigate("ai/${android.net.Uri.encode(installed.name)}") } }) { Icon(Icons.Default.AutoAwesome, "Improve with AI") }
+                IconButton(onClick = { saveThen { navigation.navigate("ai/${android.net.Uri.encode(installed.name)}") } }) { Icon(Icons.Default.AutoAwesome, stringResource(R.string.ai_improve)) }
                 if (!plain) IconButton(onClick = { studio.format() }) { Icon(Icons.Default.AutoFixHigh, "Format") }
                 IconButton(onClick = { saveThen { plain = !plain; text = TextFieldValue(saved) } }) { Icon(Icons.Default.SwapHoriz, if (plain) "Use the Studio editor" else "Use the plain editor") }
                 IconButton(onClick = { saveThen { revision += 1; Toast.makeText(context, "Saved", Toast.LENGTH_SHORT).show() } }) { Icon(Icons.Default.PlayArrow, "Save and run") }

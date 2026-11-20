@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
+import com.everettjf.scriptwidget.R
 import com.everettjf.scriptwidget.widget.ScriptWidgetProvider
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -73,6 +74,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.Lifecycle
@@ -179,7 +181,7 @@ fun HomeScreen(navigation: NavController) {
                             DropdownMenuItem(text = { Text("Edit code") }, leadingIcon = { Icon(Icons.Default.Code, null) }, onClick = {
                                 menuFor = null; navigation.navigate("editor/${Uri.encode(item.name)}")
                             })
-                            DropdownMenuItem(text = { Text("Improve with AI") }, leadingIcon = { Icon(Icons.Default.AutoAwesome, null) }, onClick = {
+                            DropdownMenuItem(text = { Text(stringResource(R.string.ai_improve)) }, leadingIcon = { Icon(Icons.Default.AutoAwesome, null) }, onClick = {
                                 menuFor = null; navigation.navigate("ai/${Uri.encode(item.name)}")
                             })
                         }
@@ -205,7 +207,7 @@ fun HomeScreen(navigation: NavController) {
             }
         }
     }
-    if (showName) NameDialog("New widget", "My Widget", onDismiss = { showName = false }) { name ->
+    if (showName) NameDialog(stringResource(R.string.name_dialog_new_widget), "My Widget", onDismiss = { showName = false }) { name ->
         showName = false
         runCatching { AppServices.library.create(name, BLANK_SOURCE) }
             .onSuccess { navigation.navigate("editor/${Uri.encode(it.name)}") }
@@ -221,8 +223,8 @@ fun NameDialog(title: String, initial: String, onDismiss: () -> Unit, onConfirm:
     var name by remember { mutableStateOf(initial) }
     AlertDialog(
         onDismissRequest = onDismiss, title = { Text(title) },
-        text = { OutlinedTextField(name, { name = it.take(80) }, singleLine = true, label = { Text("Name") }) },
-        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onConfirm(name.trim()) }) { Text("OK") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+        text = { OutlinedTextField(name, { name = it.take(80) }, singleLine = true, label = { Text(stringResource(R.string.name_dialog_label)) }) },
+        confirmButton = { TextButton(enabled = name.isNotBlank(), onClick = { onConfirm(name.trim()) }) { Text(stringResource(R.string.name_dialog_ok)) } },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.name_dialog_cancel)) } },
     )
 }

@@ -64,6 +64,30 @@ class AiLoopOnDeviceTest {
         created.forEach { runCatching { AppServices.library.delete(it) } }
     }
 
+    /**
+     * The prompt built on the device, from the examples the app ships and against the native
+     * modules the app registers: nothing a module implements is called unsupported, and the
+     * examples of the system data Android has are in the reference.
+     */
+    @Test fun thePromptOnTheDeviceNamesNoRegisteredModuleAsUnsupported() {
+        val registered = (SystemModules.create(context) + com.everettjf.scriptwidget.core.plugin.DataSourceModule(AppServices.plugins)).flatMap { it.apis }.toSet()
+        assertTrue("the system modules are registered: $registered", registered.containsAll(listOf("\$health", "\$photos", "\$calendar", "\$location", "\$services", "\$notifications", "\$dataSource")))
+        val unsupported = com.everettjf.scriptwidget.core.PlatformSupport.unsupportedGlobals.keys
+        assertTrue("a global is both registered and listed as unsupported", (registered intersect unsupported).isEmpty())
+
+        val prompt = PromptBuilder.systemPrompt(AiServices.reference(context))
+        val section = prompt.substring(prompt.indexOf("NOT SUPPORTED ON ANDROID"), prompt.indexOf("SYSTEM DATA ON ANDROID"))
+        for (global in registered) {
+            // Named as a whole; "$maps.snapshot" names one method of a module that is otherwise there.
+            assertFalse("$global is registered and listed as unsupported", Regex(Regex.escape(global) + "(?![A-Za-z0-9_.])").containsMatchIn(section))
+            assertTrue("$global is not described", prompt.substring(prompt.indexOf("SYSTEM DATA ON ANDROID"), prompt.indexOf("ONLY ON ANDROID")).contains(global))
+        }
+        for (global in unsupported) assertTrue(global, section.contains(global))
+        for (example in listOf("health", "calendar", "location")) assertTrue("the $example example is in the reference", prompt.contains("// === $example ===\n"))
+        for (example in unsupported) assertFalse(prompt.contains("// === ${example.removePrefix("\$")} ===\n"))
+        assertTrue(prompt.contains("\$health.stepCountToday()"))
+    }
+
     /** Reads one HTTP request and answers with the next scripted model reply. */
     private fun serve(socket: Socket) {
         val input = socket.getInputStream().buffered()
@@ -106,7 +130,7 @@ class AiLoopOnDeviceTest {
     @Test fun aBrokenFirstAnswerIsFedBackAndTheFixedAnswerRendersOnTheDevice() {
         replies += "```jsx\nconst label = ;\n\$render(<text>{label}</text>);\n```"
         replies += "```jsx\n\$render(<vstack frame=\"max\" background=\"#0f172a\"><text color=\"white\" font=\"title3\">Fixed by the model</text></vstack>);\n```"
-        val settings = AiSettings(AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", "claude-fable-5-2"), maxIterations = 5)
+        val settings = AiSettings(AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", "claude-fable-5-2"))
         val secret = "sk-test-not-a-real-key"
         val loop = AgentLoop(AiClient(transport).bind(settings, secret))
         val events = ArrayList<String>()
@@ -143,7 +167,7 @@ class AiLoopOnDeviceTest {
 
     @Test fun theLoopStopsAtItsLimitWhenEveryAnswerFails() {
         repeat(3) { replies += "```jsx\nthrow new Error(\"attempt $it\");\n```" }
-        val settings = AiSettings(AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", "claude-fable-5-2"), maxIterations = 5)
+        val settings = AiSettings(AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", "claude-fable-5-2"))
         val outcome = AgentLoop(AiClient(transport).bind(settings, "sk-test-not-a-real-key")).run(
             AgentLoopRequest(AgentLoopRequest.Mode.Fresh("anything"), AiWidgetSize.SMALL, PromptBuilder.systemPrompt(AiServices.reference(context)), 3),
             validate = ::validate,

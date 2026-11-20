@@ -12,7 +12,15 @@ import java.io.OutputStream
 import java.util.UUID
 
 /** One installed package. [installation] stays the same when the package is renamed. */
-class InstalledPackage(val name: String, val directory: File, val installation: String, val manifest: JSONObject?) {
+class InstalledPackage(
+    val name: String, val directory: File, val installation: String, val manifest: JSONObject?,
+    /**
+     * `widget.json` is there and is not a JSON object that can be read. [manifest] is null then,
+     * which must not be taken for a legacy package without a manifest: whoever would change the
+     * package or decide its permissions from the manifest refuses instead.
+     */
+    val manifestUnreadable: Boolean = false,
+) {
     val files: PackageFiles get() = DiskPackageFiles(directory)
     val buildDirectory: File get() = File(directory, "__Build")
     val displayName: String get() = manifest?.optString("name")?.takeIf { it.isNotEmpty() } ?: name
@@ -44,8 +52,11 @@ class Library(private val context: Context) {
     fun findByInstallation(installation: String): InstalledPackage? = list().firstOrNull { it.installation == installation }
 
     private fun describe(directory: File): InstalledPackage {
-        val manifest = File(directory, "widget.json").takeIf { it.isFile && it.length() < 256 * 1024 }?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
-        return InstalledPackage(directory.name, directory, installation(directory), manifest)
+        val file = File(directory, "widget.json")
+        val manifest = file.takeIf { it.isFile && it.length() < 256 * 1024 }?.let { runCatching { JSONObject(it.readText()) }.getOrNull() }
+        // Anything at that name that gave no manifest (broken JSON, too large, a directory, a link that leads nowhere) is unreadable, not absent.
+        val present = file.exists() || java.nio.file.Files.isSymbolicLink(file.toPath())
+        return InstalledPackage(directory.name, directory, installation(directory), manifest, manifestUnreadable = manifest == null && present)
     }
 
     /** Stable identity kept in a dot-file, which package listings and exports skip. */

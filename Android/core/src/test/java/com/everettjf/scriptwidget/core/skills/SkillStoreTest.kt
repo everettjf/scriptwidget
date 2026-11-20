@@ -221,6 +221,22 @@ class SkillStoreTest {
     }
 
     @Test
+    fun promptTextForChosenIdsIgnoresWhatIsEnabledAndWhatIsGone() {
+        install()
+        install(skillManifest("com.example.alpha", "Alpha Guide", "2.1.0"), "Be brief.")
+        // What is enabled in the app plays no part: a conversation names its own Skills.
+        store.setEnabled("responsive-layout", true)
+        assertEquals("Apply these ScriptWidget skills:\n- Alpha Guide v2.1.0:\n  Be brief.", store.promptText(listOf("com.example.alpha", "com.example.gone", "com.example.alpha")))
+        assertEquals("", store.promptText(emptyList()))
+        assertEquals("", store.promptText(listOf("com.example.gone", "../escape")))
+        // The same text as the enabled form when the ids are the enabled ones, in the list's order.
+        store.setEnabled("com.example.alpha", true)
+        assertEquals(store.enabledSkillsPromptText(), store.promptText(listOf("com.example.alpha", "responsive-layout")))
+        // Asking for a Skill's text enables nothing.
+        assertEquals(setOf("responsive-layout", "com.example.alpha"), store.enabledIds())
+    }
+
+    @Test
     fun aCorruptEnabledFileEnablesNothing() {
         install()
         store.setEnabled(id, true)

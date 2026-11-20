@@ -40,8 +40,12 @@ class AiReference(val componentsBlock: String, val apisBlock: String) {
         const val SOFT_CHARACTER_BUDGET = 60_000
         /** `AIReferenceSnapshotLoader.priorityAPIs`. */
         val PRIORITY_APIS = listOf("fetch", "http", "storage", "location", "health", "calendar", "device", "file", "getenv", "system", "console")
-        /** Bundled API examples for globals Android does not implement; showing them would invite their use. */
-        val ANDROID_EXCLUDED_APIS = setOf("health", "calendar", "location")
+        /**
+         * Bundled API examples for globals Android does not implement; showing them would invite
+         * their use. Derived from [PlatformSupport.unsupportedGlobals]: an example directory is
+         * named after its global without the `$`.
+         */
+        val ANDROID_EXCLUDED_APIS: Set<String> = PlatformSupport.unsupportedGlobals.keys.map { it.removePrefix("\$") }.toSet()
         /** Bundled component examples with no Android surface. */
         val ANDROID_EXCLUDED_COMPONENTS = setOf("live-activity")
 
@@ -69,29 +73,44 @@ class AiReference(val componentsBlock: String, val apisBlock: String) {
     }
 }
 
-/** What Android 1.0 cannot do, phrased for the model. */
+/** What Android cannot do and does differently, phrased for the model. */
 object AndroidPromptNotes {
     /**
-     * Script globals that exist only as "not supported" stubs on Android.
-     * Keep in sync with the stub table in `core/src/main/js/android-apis.js`.
+     * One line per capability Android lacks. Everything here comes from [PlatformSupport], which
+     * is also what the app tells the user and what a candidate is checked against after it ran;
+     * a global that a native module implements must never be named here.
      */
-    val UNSUPPORTED_GLOBALS = listOf(
-        "\$health", "\$reminders", "\$photos", "\$calendar", "\$location", "\$services",
-        "\$notifications", "\$home", "\$dataSource",
-    )
-
-    /** One line per unsupported capability: the stub globals plus everything [PlatformSupport] lists. */
     fun unsupportedLines(): List<String> {
         val lines = LinkedHashSet<String>()
-        lines += "These globals are not implemented and every call fails: ${UNSUPPORTED_GLOBALS.joinToString(", ")}."
-        lines += PlatformSupport.unsupportedPermissions.values
-        lines += "\$maps.snapshot always fails: Android has no map image service. \$maps.search, geocode and reverseGeocode work."
-        lines += "\$icloud works, but its data lives in a sync folder the user chooses in the app, not in iCloud."
-        lines += "Lock Screen accessory sizes (accessoryInline, accessoryCircular, accessoryRectangular) do not exist; only small, medium and large."
-        lines += "Live Activities, Dynamic Island content (\$dynamic_island), Control Widgets and push-triggered refresh are not available."
-        lines += "backgroundMaterial falls back to a plain background color; do not rely on it."
+        lines += PlatformSupport.unsupportedGlobals.values
+        // The marker is what a candidate is searched for, so the model is given it by name.
+        for ((marker, reason) in PlatformSupport.unsupportedSourceMarkers) lines += if (reason.contains(marker)) reason else "$marker: $reason"
+        lines += "Lock Screen accessory sizes (${PlatformSupport.unsupportedFamilies.joinToString(", ")}) do not exist; only small, medium and large."
         return lines.toList()
     }
+
+    /**
+     * The system data APIs, which all work on Android, with what differs from iPhone where a
+     * model needs to know it. Kept to one line each: the table is under "System data" in
+     * `docs/android/README.md`. The reference has an example for `$health`, `$calendar` and `$location`.
+     */
+    fun systemDataLines(): List<String> = listOf(
+        "Each needs its permission in widget.json, which you cannot declare (rule 3), and the user's approval in the app. " +
+            "In this preview they report unavailable or reject: check isAvailable() and authorizationStatus() where they exist, " +
+            "wrap calls in try/catch and render a short setup message. The user adds the permission after saving.",
+        // The examples of these two are longer than the reference shows, so the calls are named here.
+        "await \$health.stepCountToday(), activeEnergyToday() and heartRateLatest() give {value} from Health Connect; ring goals and stand time are null.",
+        "await \$location.current({timeout: 10}) gives {latitude, longitude, accuracy, age, isStale} and may be a saved position: show its age. There is no background location.",
+        "\$calendar sees only the calendars the user selected in the app.",
+        "\$photos.items({limit: 4}) returns only photos the user picked in the app, as items[].image for <image url>; there are no albums.",
+        "\$services.status(\"github\") and profile(\"github\") use a GitHub token the user enters in the app (no sign-in), " +
+            "with the services and network permissions and api.github.com. Never put a token in code.",
+        "\$notifications and \$alarms (status, pending, schedule, cancel) are inexact: up to about ten minutes late, no snooze.",
+        "\$music.current() is the active media session of any app; its provider is \"androidMediaSession\".",
+        "\$maps.search, geocode and reverseGeocode work; search finds named places and addresses, not business categories.",
+        "\$icloud keeps its data in a sync folder the user chooses in the app, not in iCloud.",
+        "\$weather.forecast, \$documents.list/readJSON/readCSV, \$contacts.selected and \$dataSource.request work as on iPhone.",
+    )
 
     /**
      * What only Android has: the scrolling `<list>` and the `material.<role>` colors. The
@@ -133,11 +152,11 @@ object PromptBuilder {
      * The system prompt: generation rules, the Android limits, the unsupported
      * list, what only Android has, then the component/API reference.
      *
-     * The rules follow the Swift prompt. Rules about capabilities Android does
-     * not implement (iCloud, Calendar, Photos, Health, Music, Reminders,
-     * Location, Runtime 1.6 system APIs) are replaced by the unsupported list,
-     * and the output contract gains an optional package declaration because an
-     * Android package always has a manifest that must declare network access.
+     * The rules follow the Swift prompt. Its long rules about the system data
+     * APIs are replaced by the short SYSTEM DATA section, what Android lacks is
+     * in the unsupported list, and the output contract gains an optional
+     * package declaration because an Android package always has a manifest
+     * that must declare network access.
      */
     fun systemPrompt(
         reference: AiReference,
@@ -176,7 +195,7 @@ object PromptBuilder {
                Do not invent `${'$'}storage.set` or `${'$'}storage.get`.
                `${'$'}storage` stays on this device.
             7. Only use tags, props, and APIs that appear in the REFERENCE
-               section below. Do not invent new ones.
+               section or under SYSTEM DATA below. Do not invent new ones.
             8. When calling `fetch`, always wrap it in try/catch so the
                widget still renders something useful on network failure.
             9. Prefer readable typography (`font="title"`, `"headline"`,
@@ -207,7 +226,7 @@ object PromptBuilder {
                 ${'$'}device.isdarkmode().
             14. Preserve the requested labels and values. Do not invent
                 meeting locations, extra events, or live data. For fixed
-                demo data do not call the network.
+                demo data do not call the network or system data APIs.
             15. Scheduled widgets use timeline-date/timeline-slot from ${'$'}getenv, not
                 a replaced Date global. Future entries are read-only: do not save
                 records or fetch live data while projecting them.
@@ -219,6 +238,8 @@ object PromptBuilder {
         for (line in runtimeLimits) out.append("- ").append(line).append('\n')
         out.append("\nNOT SUPPORTED ON ANDROID (never use these; if the request needs one, render a short explanation instead):\n")
         for (line in unsupported) out.append("- ").append(line).append('\n')
+        out.append("\nSYSTEM DATA ON ANDROID (these work; use one only when the request needs it):\n")
+        for (line in AndroidPromptNotes.systemDataLines()) out.append("- ").append(line).append('\n')
         out.append("\nONLY ON ANDROID (use these although the REFERENCE does not show them):\n")
         for (line in AndroidPromptNotes.androidOnlyLines()) out.append("- ").append(line).append('\n')
         out.append('\n').append(reference.combined)
@@ -247,9 +268,19 @@ $userDescription
 Return the complete JSX snippet (plus the network declaration block only if it uses the network). No explanation.
 """.trim()
 
-    /** Port of `userPromptFix`: the failed code, the runtime feedback and the last ten log lines. */
+    /** How much of one console line a repair request carries. */
+    const val MAXIMUM_LOG_LINE_CHARACTERS = 300
+    /** How many console lines a repair request carries: the last ones. */
+    const val MAXIMUM_LOG_LINES = 10
+
+    /**
+     * Port of `userPromptFix`: the failed code, the runtime feedback and the last ten log lines.
+     * A script may print anything, including what it read from the device, so only the start of
+     * each of those lines is sent.
+     */
     fun userPromptFix(previousCode: String, errorSummary: String, recentLogs: List<String>): String {
-        val logBlock = if (recentLogs.isEmpty()) "(no console output)" else recentLogs.takeLast(10).joinToString("\n")
+        val logBlock = if (recentLogs.isEmpty()) "(no console output)"
+        else recentLogs.takeLast(MAXIMUM_LOG_LINES).joinToString("\n") { clip(it, MAXIMUM_LOG_LINE_CHARACTERS) }
         return """
 Your previous code failed to run:
 
@@ -265,6 +296,15 @@ $logBlock
 
 Fix the code and return the FULL corrected JSX only (plus the network declaration block only if it uses the network). No explanation.
 """.trim()
+    }
+
+    /**
+     * What a turn is told about a version that failed when the preview ran it: the error, then the
+     * last console lines under the limits of a repair. [userPromptTurn] cuts the whole to 2,000 characters.
+     */
+    fun runtimeDiagnostic(errorSummary: String, logs: List<String>): String {
+        if (logs.isEmpty()) return errorSummary
+        return errorSummary + "\nLast console output:\n" + logs.takeLast(MAXIMUM_LOG_LINES).joinToString("\n") { clip(it, MAXIMUM_LOG_LINE_CHARACTERS) }
     }
 
     /**
@@ -322,7 +362,7 @@ Return the FULL updated JSX only (plus the network declaration block only if it 
         val codeRule = if (current.isNullOrEmpty()) "then the FULL widget code in one ```jsx fenced block." else EDIT_REPLY_RULE
         parts += """
 Reply in exactly this form, which replaces the output rule above for this conversation:
-SUMMARY: one short sentence saying what you made or changed, in the language the user wrote in
+SUMMARY: one short sentence saying what you made or changed, written in the language of the request below (a request in English gets an English sentence)
 $codeRule
 If, and only if, the widget uses `fetch` or `${'$'}http`, end with one more fenced block
 that declares every host it contacts:
@@ -422,9 +462,9 @@ class AiTurnReply(val note: String?, val candidate: AiCandidate)
 class AiExamplePrompt(val title: String, val size: AiWidgetSize, val prompt: String)
 
 /**
- * Port of `AIExamplePrompts.all`. The Weather prompt uses fixed coordinates
- * and the Steps prompt is omitted because `$location` and `$health` are not
- * available on Android.
+ * Port of `AIExamplePrompts.all`. The Weather prompt uses fixed coordinates, so that the
+ * preview shows a temperature: a conversation cannot declare the `location` permission. The
+ * Steps prompt shows its setup state in the preview for the same reason, as on iPhone.
  */
 object AiExamplePrompts {
     val all: List<AiExamplePrompt> = listOf(
@@ -466,6 +506,12 @@ object AiExamplePrompts {
                 "and display the one matching today's weekday. " +
                 "Quote in a readable body font centered, author on a second line in caption. " +
                 "Soft pastel gradient background.",
+        ),
+        AiExamplePrompt(
+            "Steps", AiWidgetSize.SMALL,
+            "Show today's step count from \$health. Large number centered, " +
+                "'steps' label below in caption. Progress bar at the bottom " +
+                "showing progress toward a 10000-step goal. Dark teal background.",
         ),
         AiExamplePrompt(
             "Habit Grid", AiWidgetSize.LARGE,

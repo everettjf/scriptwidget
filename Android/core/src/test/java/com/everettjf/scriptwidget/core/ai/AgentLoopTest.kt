@@ -167,8 +167,8 @@ class AgentLoopTest {
         val outcome = AgentLoop(chat).run(request(), { _, _ -> runs += 1; ValidationResult.success() })
         assertTrue(outcome is AgentLoopOutcome.Succeeded)
         assertEquals(1, runs)
-        assertTrue(chat.conversations[1][3].content.contains("Invalid package declaration"))
-        assertTrue(chat.conversations[1][3].content.contains("location"))
+        // The same sentence as on Apple platforms.
+        assertTrue(chat.conversations[1][3].content.contains("The network declaration block is not valid: \"permissions\" must be exactly [\"network\"]; no other permission can be declared."))
     }
 
     @Test

@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- The AI conversation screen (ui/AiConversationScreen.kt). Simplified Chinese is in values-b+zh+Hans. -->
+<!-- The AI conversation screen (ui/AiConversationScreen.kt) and the AI settings. English is the app's only language. -->
 <resources>
-    <!-- A text with a count has a _one and an _other form, chosen in code: Android plurals would use
-         the rules of the system language, and give "1 versions" where the English texts are a fallback. -->
+    <!-- A text with a count has a _one and an _other form, chosen in code by the English rule. -->
     <string name="ai_missing">This widget is no longer installed.</string>
     <string name="ai_applied_to">Applied to %1$s</string>
     <string name="ai_save_failed">Could not save the widget</string>
@@ -100,4 +99,64 @@
     <string name="ai_activity_writing">Writing the widget…</string>
     <string name="ai_activity_fixing">It did not run. Fixing it, attempt %1$d of %2$d…</string>
     <string name="ai_activity_checking">Checking that it runs…</string>
+    <!-- Texts that came from core in English: the example chips (AiExamplePrompts), the notice above the
+         request field (AiConversationUsageAdvice) and the name offered when a request gives none. -->
+    <string name="ai_example_weather">Weather</string>
+    <string name="ai_example_clock">Clock</string>
+    <string name="ai_example_countdown">Countdown</string>
+    <string name="ai_example_crypto_price">Crypto Price</string>
+    <string name="ai_example_battery_ring">Battery Ring</string>
+    <string name="ai_example_quote">Quote</string>
+    <string name="ai_example_steps">Steps</string>
+    <string name="ai_example_habit_grid">Habit Grid</string>
+    <string name="ai_advice_heavy_requests">Each request now sends about %1$s tokens. A new conversation from this version sends less.</string>
+    <string name="ai_advice_heavy_total">This conversation has used %1$s tokens. A new conversation from this version starts small again.</string>
+    <string name="ai_advice_versions_full">A conversation keeps %1$d versions; the oldest are dropped from now on.</string>
+    <string name="ai_advice_history_full">The AI is told about the last %1$d turns only; older requests are no longer sent.</string>
+    <string name="ai_default_name">AI Widget</string>
+    <!-- The name dialog (NameDialog in ui/HomeScreen.kt), which the conversation shares with the library. -->
+    <string name="name_dialog_label">Name</string>
+    <string name="name_dialog_ok">OK</string>
+    <string name="name_dialog_cancel">Cancel</string>
+    <string name="name_dialog_new_widget">New widget</string>
+    <string name="name_dialog_rename">Rename</string>
+    <!-- The way into the conversation from the library, a widget's page and the editor. -->
+    <string name="ai_improve">Improve with AI</string>
+    <!-- A widget whose widget.json is there and can not be read: the conversation is refused. -->
+    <string name="ai_manifest_unreadable">This widget\'s widget.json can not be read, so the AI can not work on it. Correct widget.json in the editor, then try again.</string>
+    <!-- A version that fails when the preview runs it, and what the run printed. -->
+    <string name="ai_fix_runtime_error">Fix Runtime Error</string>
+    <string name="ai_fix_runtime_request">Fix the current runtime error while keeping the widget\'s design.</string>
+    <string name="ai_menu_logs">Logs</string>
+    <string name="ai_logs_title">Logs of the last run</string>
+    <string name="ai_logs_ran">The widget ran.</string>
+    <string name="ai_logs_empty">It printed nothing.</string>
+    <!-- The Skills of one conversation. -->
+    <string name="ai_menu_skills">Skills</string>
+    <string name="ai_skills_title">Skills for this conversation</string>
+    <string name="ai_skills_text">Skills chosen here apply to every turn of this conversation. They are text added to the request and grant nothing.</string>
+    <string name="ai_skills_none">No Skills are installed.</string>
+    <string name="ai_skills_done">Done</string>
+    <!-- The AI section of Settings (AiSettings in ui/AiScreen.kt). -->
+    <string name="ai_settings_intro">Widgets can be drafted by a model you choose. The Android app supports API-key providers only; signing in with an OpenAI account (OAuth) is not available.</string>
+    <string name="ai_settings_base_url">API base URL (https)</string>
+    <string name="ai_settings_model">Model</string>
+    <string name="ai_settings_key">API key</string>
+    <string name="ai_settings_key_saved_placeholder">Saved. Enter a new key to replace it</string>
+    <string name="ai_settings_key_placeholder">Paste the API key</string>
+    <string name="ai_settings_key_note_changed">The saved key belongs to the previous base URL and is removed when you save. Enter the key for this endpoint.</string>
+    <string name="ai_settings_key_note_saved">A key is saved, encrypted with the Android Keystore. It is never shown again, backed up, or added to widgets and prompts.</string>
+    <string name="ai_settings_key_note_new">The key is stored encrypted with the Android Keystore and only sent to the base URL above.</string>
+    <string name="ai_settings_save">Save</string>
+    <string name="ai_settings_saved">Saved.</string>
+    <string name="ai_settings_key_not_stored">The key could not be stored securely on this device.</string>
+    <string name="ai_settings_test">Test connection</string>
+    <string name="ai_settings_testing">Testing…</string>
+    <string name="ai_settings_key_not_set">API key is not set.</string>
+    <string name="ai_settings_connected_listed">Connected. %1$d models available; %2$s is one of them.</string>
+    <string name="ai_settings_connected_unlisted">Connected. %1$d models available; %2$s is not in the list, check the model name.</string>
+    <string name="ai_settings_test_failed">The connection test failed.</string>
+    <string name="ai_settings_remove_key">Remove key</string>
+    <string name="ai_settings_key_removed">Key removed.</string>
+    <string name="ai_settings_attempts_note">A request is tried at most %1$d times: once, and up to %2$d repairs when the widget does not run. Each attempt sends a request to the provider and is billed by it. Generated widgets run under the same limits as any other widget.</string>
 </resources>

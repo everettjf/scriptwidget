@@ -41,7 +41,12 @@ class AiLiveModelTest {
     private val arguments = InstrumentationRegistry.getArguments()
     private val key = arguments.getString("aiKey").orEmpty()
     private val model = arguments.getString("aiModel") ?: "claude-fable-5-2"
-    private val settings get() = AiSettings(AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", model), maxIterations = 5)
+    /** `aiBaseUrl` names an OpenAI-compatible endpoint (for example https://api.deepseek.com); without it the provider is Anthropic. */
+    private val baseUrl = arguments.getString("aiBaseUrl").orEmpty()
+    private val settings get() = AiSettings(
+        if (baseUrl.isEmpty()) AiProfile(AiProviderKind.ANTHROPIC, "https://api.anthropic.com", model)
+        else AiProfile(AiProviderKind.OPENAI_COMPATIBLE, baseUrl, model),
+    )
     private val created = ArrayList<String>()
 
     @Before fun start() {
