@@ -31,7 +31,7 @@ The interface is in English.
 
 ## Installing it
 
-Needs Windows 11. Download `ScriptWidget-<version>-x64-setup.exe` (or `-arm64-` for an ARM64 PC) from [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) and run it.
+Needs Windows 11, version 21H2 (build 22000) or later. Download `ScriptWidget-<version>-x64-setup.exe` (or `-arm64-` for an ARM64 PC) from [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) and run it.
 
 - **The installer is not signed.** Windows SmartScreen says "Windows protected your PC"; choose "More info", then "Run anyway". Each release lists the SHA-256 of its files.
 - **It installs for you only**, without administrator rights, into `%LOCALAPPDATA%\Programs\ScriptWidget`, and adds ScriptWidget to the Start menu and to "Installed apps". `.swt` files open in ScriptWidget.

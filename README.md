@@ -54,7 +54,7 @@ It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple plat
 
 The Android app (Android 13 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout), then [become a tester](https://play.google.com/apps/testing/com.atomsprout.scriptwidget) and install from Google Play. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
 
-The Windows and Linux apps are previews: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) needs Windows 11 (see [ScriptWidget for Windows](docs/windows/README.md)), and [Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) is for [Omarchy](https://omarchy.org) 4.5 (see [ScriptWidget for Linux](docs/linux/README.md)). Both run the same widget packages, without the personal-data APIs such as health, calendar and location; Linux has music, notifications and files you choose.
+The Windows and Linux apps are previews: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) needs Windows 11 (21H2, build 22000) or later (see [ScriptWidget for Windows](docs/windows/README.md)), and [Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) is for [Omarchy](https://omarchy.org) 4.5 (see [ScriptWidget for Linux](docs/linux/README.md)). Both run the same widget packages, without the personal-data APIs such as health, calendar and location; Linux has music, notifications and files you choose.
 
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 
@@ -376,7 +376,7 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
 | **Android** | ✅ Released | Android 13+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
-| **Windows** | 🧪 Preview | Windows 11; desktop widgets and a management window with AI, Gallery and Skills. [Microsoft Store](https://apps.microsoft.com/detail/9MVR97B9C938); an [installer](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Windows%22&expanded=true) on GitHub Releases; see [ScriptWidget for Windows](docs/windows/README.md) |
+| **Windows** | 🧪 Preview | Windows 11 (21H2) or later; desktop widgets and a management window with AI, Gallery and Skills. [Microsoft Store](https://apps.microsoft.com/detail/9MVR97B9C938); an [installer](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Windows%22&expanded=true) on GitHub Releases; see [ScriptWidget for Windows](docs/windows/README.md) |
 | **Linux** | 🧪 Preview | [Omarchy](https://omarchy.org) 4.5; widgets on the desktop, a management window with AI, Gallery and Skills, and a command line. [Archives and a PKGBUILD on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true); see [ScriptWidget for Linux](docs/linux/README.md) |
 | **watchOS** | — | Not in the current roadmap |
 | **visionOS** | — | Not in the current roadmap |

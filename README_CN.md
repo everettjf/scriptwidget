@@ -33,7 +33,7 @@ ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要�
 
 Android 版（要求 Android 13 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
-Windows 版和 Linux 版是预览版：[Windows](https://apps.microsoft.com/detail/9MVR97B9C938) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位等设备数据 API；Linux 版有音乐、通知和你选的文件。
+Windows 版和 Linux 版是预览版：[Windows](https://apps.microsoft.com/detail/9MVR97B9C938) 需要 Windows 11（21H2，版本号 22000）或更高版本，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位等设备数据 API；Linux 版有音乐、通知和你选的文件。
 
 ### 各平台截图
 

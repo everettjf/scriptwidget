@@ -7,7 +7,7 @@ const links = [
   { href: productLinks.ios, name: "iOS & iPadOS", detail: "Download on the App Store", icon: Smartphone },
   { href: productLinks.mac, name: "macOS", detail: "Download on the Mac App Store", icon: Monitor },
   { href: productLinks.android, name: "Android APK", detail: "GitHub release · Android 13+", icon: Smartphone },
-  { href: productLinks.windows, name: "Windows (preview)", detail: "Microsoft Store · Windows 11", icon: Monitor },
+  { href: productLinks.windows, name: "Windows (preview)", detail: "Microsoft Store · Windows 11 (21H2) or later", icon: Monitor },
   { href: productLinks.linux, name: "Linux (preview)", detail: "GitHub release · Omarchy 4.5", icon: Monitor },
   { href: productLinks.website, name: "Official website", detail: "ScriptWidget home", icon: Globe },
   { href: productLinks.discord, name: "Discord community", detail: "Discuss widgets and get help", icon: MessageCircle },

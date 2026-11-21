@@ -18,7 +18,7 @@ ScriptWidget é uma plataforma de código aberto sob a licença Apache 2.0 para 
 
 O app para Android (Android 13 ou posterior) está disponível como [APK no GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). No Google Play ele está em teste fechado: para participar, entre no [grupo Atomsprout Testers](https://groups.google.com/g/atomsprout). Consulte [ScriptWidget para Android](docs/android/README.md).
 
-As versões para Windows e Linux são prévias: o [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) requer o Windows 11, consulte [ScriptWidget para Windows](docs/windows/README.md); a versão para Linux funciona por enquanto no [Omarchy](https://omarchy.org) 4.5, os arquivos estão no [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), consulte [ScriptWidget para Linux](docs/linux/README.md). As duas executam os mesmos pacotes de widgets, mas não têm as APIs de dados do dispositivo, como saúde, calendário, localização e música.
+As versões para Windows e Linux são prévias: o [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) requer o Windows 11 (21H2, build 22000) ou posterior, consulte [ScriptWidget para Windows](docs/windows/README.md); a versão para Linux funciona por enquanto no [Omarchy](https://omarchy.org) 4.5, os arquivos estão no [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), consulte [ScriptWidget para Linux](docs/linux/README.md). As duas executam os mesmos pacotes de widgets, mas não têm as APIs de dados do dispositivo, como saúde, calendário, localização e música.
 
 ### Capturas de tela de cada plataforma
 
