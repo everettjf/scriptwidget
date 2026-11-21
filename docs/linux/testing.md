@@ -749,7 +749,26 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 | `pacman -U` 装这个包 | 安装提示照写的出现；`/usr/bin/scriptwidget doctor` 通过，运行时和模板读的是 `/usr/share/scriptwidget`；一个模板能运行；`omarchy plugin validate /usr/share/scriptwidget/omarchy-plugin` 通过。随后 `pacman -R` 删掉，虚拟机回到 `~/.local` 的安装 |
 | `Linux/scripts/sync-plugin-repo.sh` 写进一个新的 git 仓库，再 `git clone` | 克隆出来的目录 `omarchy plugin validate` 通过 |
 
-没跑的：x86_64 的包用 `makepkg` 装（等 CI 的归档）；装了包以后用 `ln -s` 或 `omarchy plugin add` 换掉 `install.sh` 装的插件、由包里的服务显示小组件；AI、动画、数据 API 在 0.1.5 的归档上没有重跑（代码和 11 月 19 日测的一样）。
+没跑的：x86_64 的包用 `makepkg` 装；AI、动画、数据 API 在 0.1.5 的归档上没有重跑（代码和 11 月 19 日测的一样）。从 `install.sh` 换到包的完整流程见下一节。
+
+## 2026-11-21，测试虚拟机：从 install.sh 换到 PKGBUILD 的完整流程
+
+起点：`install.sh` 装的 0.1.5，插件已启用，桌面上 4 个小组件；先把数据目录备份到 `/tmp`。全部用 GitHub 上 `linux-v0.1.5` 发布的文件。
+
+| 做了什么 | 结果 |
+| --- | --- |
+| 下载 aarch64 归档并 `sha256sum -c`，运行它的 `sh uninstall.sh` | 校验通过；程序、服务、插件都去掉，`~/.local/share/scriptwidget` 里 4 个小组件保留 |
+| 下载发布的 `PKGBUILD` 和 `scriptwidget-bin.install`，`makepkg -si --noconfirm` | 从 GitHub 拉归档、校验通过、装上；安装提示照写的出现 |
+| `systemctl --user enable --now scriptwidget.service` | 用的是 `/usr/lib/systemd/user/scriptwidget.service`，`ExecStart=/usr/bin/scriptwidget host run`；`doctor` 通过，运行时和模板在 `/usr/share/scriptwidget`，数据仍是原来的目录 |
+| `omarchy plugin add https://github.com/everettjf/omarchy-scriptwidget.git --enable --yes`，`omarchy restart shell` | 克隆到 `~/.config/omarchy/plugins/com.atomsprout.scriptwidget`（提交 `4454f45`，0.1.5），已启用；插件状态 `running`、4 个小组件、1 个在动；截图里 4 个小组件都在，时间是当时的 |
+| `omarchy plugin update com.atomsprout.scriptwidget --yes` | “is up to date” |
+| `omarchy plugin remove`，再按安装提示 `ln -sfn /usr/share/scriptwidget/omarchy-plugin …` 和 `omarchy plugin enable`，重启外壳 | 链接方式同样启用；状态 `running`、4 个小组件、1 个在动；截图相同 |
+| `/usr/bin/scriptwidget-studio --page library` | 窗口打开，列出原有的小组件 |
+| 还原：停用服务、去掉链接、`pacman -R scriptwidget-bin`，再用归档的 `install.sh` | 回到 `~/.local` 的安装，插件已启用，状态 `running`、4 个小组件；数据目录和备份比较没有差别 |
+
+注意：`omarchy` 的命令要在桌面会话的环境里跑（`OMARCHY_PATH=/usr/share/omarchy`）；只用 SSH 登录时会报 “OMARCHY_PATH is not set”，这次是从外壳进程取的环境。用户在终端里不会遇到。
+
+没跑的：x86_64；在包装好后点小组件、拖动、右键菜单（插件和服务与 `install.sh` 那份是同一份代码）；`pacman -Syu` 那样的升级路径（还没有第二个版本的 PKGBUILD）。
 
 ## 没跑的（汇总）
 
