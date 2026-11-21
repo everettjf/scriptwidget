@@ -18,9 +18,9 @@
 
 ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
 
-تطبيق Android (الإصدار 1.0.0، يتطلب Android 15 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.1.0). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
+تطبيق Android (يتطلب Android 15 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
 
-نسختا Windows وLinux تجريبيتان: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) يتطلب Windows 11، راجع [ScriptWidget لنظام Windows](docs/windows/README.md)؛ ونسخة Linux تعمل حاليًا على [Omarchy](https://omarchy.org) 4.5، والأرشيفات متاحة على [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)، راجع [ScriptWidget لنظام Linux](docs/linux/README.md). تشغّل النسختان حزم الأدوات المصغّرة نفسها، لكن لا تتوفر فيهما واجهات بيانات الجهاز مثل الصحة والتقويم والموقع والموسيقى.
+نسختا Windows وLinux تجريبيتان: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) يتطلب Windows 11، راجع [ScriptWidget لنظام Windows](docs/windows/README.md)؛ ونسخة Linux تعمل حاليًا على [Omarchy](https://omarchy.org) 4.5، والأرشيفات متاحة على [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)، راجع [ScriptWidget لنظام Linux](docs/linux/README.md). تشغّل النسختان حزم الأدوات المصغّرة نفسها، لكن لا تتوفر فيهما واجهات بيانات الجهاز مثل الصحة والتقويم والموقع والموسيقى.
 
 ### لقطات شاشة من كل منصة
 
