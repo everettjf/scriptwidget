@@ -10,6 +10,8 @@ What was run before handing this build to testers, and what was not.
 | Core device tests | 30 | see below | `Android/scripts/device-test.sh core` |
 | App device tests | 77 | see below | `Android/scripts/device-test.sh app` |
 
+For the lowercase GitHub link update (21 November 2026), all 554 JVM tests passed and both debug flavors built on an Apple silicon Mac. The Android 16 `SW_Release_API36` emulator passed all 30 core tests. The Play `.dev` app suite reported one failure in 77 tests when `StudioEditorCompletionTest` timed out waiting for the starter editor. That test passed on its targeted rerun. No physical device was used.
+
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
 After the application ID changed to `com.atomsprout.scriptwidget` (13 November 2026) the JVM tests passed, the debug and release builds carried the new package name, and the app suite passed on the Android 15 emulator (60 tests; the push delivery and picked-folder tests skip there). One test had assumed that class names start with the application ID and was corrected. With the new ID the Android 16 emulator has not been run.

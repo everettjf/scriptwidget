@@ -41,7 +41,7 @@ final class ScriptWidgetRecordsModel: ObservableObject {
     @Published var launcherItems = ScriptWidgetLauncherItem.defaults
     @Published private(set) var launcherTestMessage: String?
     @Published private(set) var launcherTestFailed = false
-    @Published var repository = "everettjf/ScriptWidget"
+    @Published var repository = "everettjf/scriptwidget"
     @Published var healthMetric = "steps"
     @Published var stepsGoal = 8000
     @Published var energyGoal = 500
@@ -242,7 +242,7 @@ final class ScriptWidgetRecordsModel: ObservableObject {
             catch { config = store.kind.defaults; report(error) }
             launcherItems = ScriptWidgetLauncherItem.decode(config["items"]) ?? ScriptWidgetLauncherItem.defaults
             launcherTestMessage = nil
-            repository = config["repository"] as? String ?? "everettjf/ScriptWidget"
+            repository = config["repository"] as? String ?? "everettjf/scriptwidget"
             healthMetric = config["metric"] as? String ?? "steps"
             stepsGoal = config["stepsGoal"] as? Int ?? 8000
             energyGoal = config["energyGoal"] as? Int ?? 500

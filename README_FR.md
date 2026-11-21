@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/everettjf/scriptwidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/scriptwidget/stargazers)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
+[![Release Readiness](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml)
 
 **Créez des widgets pour iPhone, iPad, Mac, Android, Windows et Linux avec JavaScript, JSX et l’IA**
 
@@ -49,7 +49,7 @@ Ce sont toutes de vraies captures d’écran. Windows et Linux sont des prévers
 ## Démarrer en cinq minutes
 
 ```bash
-git clone https://github.com/everettjf/ScriptWidget.git
+git clone https://github.com/everettjf/scriptwidget.git
 cd ScriptWidget
 open macOS/ScriptWidgetMac.xcodeproj
 # Ou : open iOS/ScriptWidget.xcodeproj

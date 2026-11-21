@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/everettjf/scriptwidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/scriptwidget/stargazers)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
+[![Release Readiness](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml)
 
 **JavaScript, JSX, AI로 iPhone, iPad, Mac, Android, Windows, Linux용 위젯을 만드세요**
 
@@ -49,7 +49,7 @@ Windows와 Linux 버전은 미리보기 버전입니다. [Windows](https://apps.
 ## 5분 안에 시작하기
 
 ```bash
-git clone https://github.com/everettjf/ScriptWidget.git
+git clone https://github.com/everettjf/scriptwidget.git
 cd ScriptWidget
 open macOS/ScriptWidgetMac.xcodeproj
 # 또는: open iOS/ScriptWidget.xcodeproj

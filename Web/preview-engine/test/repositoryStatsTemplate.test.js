@@ -4,7 +4,7 @@ import fs from "node:fs";
 import {executePackageInNode} from "../src/node.js";
 const root=new URL("../../../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/GitHub Repo Stats/",import.meta.url);
 const now=Date.parse("2026-01-01T12:15:00Z"),hour=3600000,day=24*hour,key="github.stats.v1";
-const config={repository:"everettjf/ScriptWidget",accent:"blue"};
+const config={repository:"everettjf/scriptwidget",accent:"blue"};
 const url=repo=>`https://api.github.com/repos/${repo.toLowerCase()}`;
 const body=(repo=config.repository,stars=1280)=>({full_name:repo,private:false,stargazers_count:stars,forks_count:96,open_issues_count:18});
 const response=(overrides={})=>({url:url(config.repository),status:200,body:JSON.stringify(body()),headers:{"cache-control":"public, max-age=3600","last-modified":"Thu, 01 Jan 2026 12:00:00 GMT"},...overrides});
@@ -71,7 +71,7 @@ test("repository states match native canonical trees across all families",async(
  const fixture=JSON.parse(fs.readFileSync(new URL("parity/repository-stats-trees.json",import.meta.url),"utf8"));
  for(const mode of ["fresh","history","saved","rate","missing","unavailable"])for(const size of ["small","medium","large","extraLarge","extraLargePortrait","accessoryInline","accessoryCircular","accessoryRectangular"]){
   let prefix=`let repoClock=${now},repoStars=1280,repoStatus=200;Date.now=()=>repoClock;$device.isdarkmode=()=>false;
-    $http.getResponse=()=>({then(resolve,reject){if(repoStatus===0){reject("isolated offline");return;}resolve({status:repoStatus,headers:{"cache-control":"public, max-age=3600","last-modified":"Thu, 01 Jan 2026 12:00:00 GMT","retry-after":"7200"},body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:repoStars,forks_count:96,open_issues_count:18})});}});`;
+    $http.getResponse=()=>({then(resolve,reject){if(repoStatus===0){reject("isolated offline");return;}resolve({status:repoStatus,headers:{"cache-control":"public, max-age=3600","last-modified":"Thu, 01 Jan 2026 12:00:00 GMT","retry-after":"7200"},body:JSON.stringify({full_name:"everettjf/scriptwidget",private:false,stargazers_count:repoStars,forks_count:96,open_issues_count:18})});}});`;
   if(["history","saved","rate","missing"].includes(mode)){
    if(mode!=="saved")prefix+='repoClock-=172800000;repoStars=1200;';
    prefix+=`if(!$import('lib/repository.js'))throw new Error('fixture import');await repositoryStats.load(repositoryStats.options('',''),repoClock,false);repoClock=${now};repoStars=1280;`;

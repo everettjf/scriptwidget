@@ -11,6 +11,8 @@
 
 没有在真实的 Linux 电脑上测过，也没有在 x86_64 上测过。
 
+2026-11-21 在 Apple 芯片的 Mac 上核对了 `scriptwidget.service` 的 `Documentation=` 地址和仓库中的目标文件。此次变更仅涉及文档地址，未重跑 Linux 测试套件或安装服务。
+
 ## 怎么重跑
 
 ```

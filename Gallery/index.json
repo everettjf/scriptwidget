@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T17:57:37.972Z",
+  "generatedAt": "2026-11-21T09:54:14.416Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -124,7 +124,7 @@
         {
           "bytes": 15755,
           "path": "lib/repository.js",
-          "sha256": "e76828ad19edb4b2adb6f6323e850b10e86a843a2e07fa59b332e8a1aff31faf",
+          "sha256": "9de397dcc72175e5e278174b4ce23eaff1efbab348bd640b831d78fbc1076afb",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/github-repo-stats/lib/repository.js"
         },
         {

@@ -11,7 +11,7 @@
 
 [Unit]
 Description=ScriptWidget background service
-Documentation=https://github.com/everettjf/ScriptWidget/blob/main/docs/linux/README.md
+Documentation=https://github.com/everettjf/scriptwidget/blob/main/docs/linux/README.md
 PartOf=graphical-session.target
 After=graphical-session.target
 

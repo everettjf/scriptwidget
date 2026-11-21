@@ -45,7 +45,7 @@ enum ScriptWidgetRecordKind: String, CaseIterable, Codable {
         case .plantCare: return ["title": "My plant", "intervalDays": 3]
         case .pocketPet: return ["title": "Pebble"]
         case .launcher: return ["title": "Quick Launch", "accent": "blue", "items": ScriptWidgetLauncherItem.defaults.map(\.dictionary)]
-        case .repoStats: return ["repository": "everettjf/ScriptWidget", "accent": "blue"]
+        case .repoStats: return ["repository": "everettjf/scriptwidget", "accent": "blue"]
         case .healthCard: return ["metric": "steps", "stepsGoal": 8000, "energyGoal": 500]
         case .weather: return ["city": "", "latitude": 0.0, "longitude": 0.0, "useLocation": true, "unit": "c"]
         case .photoCard: return ["title": "Little moments", "caption": "", "layout": "single", "photos": [String]()]

@@ -126,7 +126,7 @@ fun SettingsScreen(navigation: NavController) {
             for ((title, link) in listOf(
                 "Privacy policy" to "https://atomsprout.com/scriptwidget/privacy/",
                 "Website" to "https://atomsprout.com/scriptwidget/",
-                "Source code" to "https://github.com/everettjf/ScriptWidget",
+                "Source code" to "https://github.com/everettjf/scriptwidget",
             )) ListItem(
                 headlineContent = { Text(title) }, supportingContent = { Text(link.removePrefix("https://")) },
                 modifier = Modifier.clickable {

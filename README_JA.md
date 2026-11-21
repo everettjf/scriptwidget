@@ -2,9 +2,9 @@
 
 <div align="center">
 
-[![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
+[![GitHub Stars](https://img.shields.io/github/stars/everettjf/scriptwidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/scriptwidget/stargazers)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
-[![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
+[![Release Readiness](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml)
 
 **JavaScript、JSX、AI で iPhone、iPad、Mac、Android、Windows、Linux 向けのウィジェットを作成**
 
@@ -49,7 +49,7 @@ Windows 版と Linux 版はプレビュー版です。[Windows](https://apps.mic
 ## 5 分で始める
 
 ```bash
-git clone https://github.com/everettjf/ScriptWidget.git
+git clone https://github.com/everettjf/scriptwidget.git
 cd ScriptWidget
 open macOS/ScriptWidgetMac.xcodeproj
 # または: open iOS/ScriptWidget.xcodeproj

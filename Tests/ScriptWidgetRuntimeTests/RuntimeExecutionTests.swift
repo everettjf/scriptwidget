@@ -1547,7 +1547,7 @@ final class RuntimeExecutionTests: XCTestCase {
     private func repositoryFixtureSource(_ main: String, mode: String) -> String {
         var prefix = """
         let repoClock=1767269700000,repoStars=1280,repoStatus=200;Date.now=()=>repoClock;globalThis.$device.isdarkmode=()=>false;
-        globalThis.$http={getResponse:()=>({then(resolve,reject){if(repoStatus===0){reject("isolated offline");return;}resolve({status:repoStatus,headers:{"cache-control":"public, max-age=3600","last-modified":"Thu, 01 Jan 2026 12:00:00 GMT","retry-after":"7200"},body:JSON.stringify({full_name:"everettjf/ScriptWidget",private:false,stargazers_count:repoStars,forks_count:96,open_issues_count:18})});}})};
+        globalThis.$http={getResponse:()=>({then(resolve,reject){if(repoStatus===0){reject("isolated offline");return;}resolve({status:repoStatus,headers:{"cache-control":"public, max-age=3600","last-modified":"Thu, 01 Jan 2026 12:00:00 GMT","retry-after":"7200"},body:JSON.stringify({full_name:"everettjf/scriptwidget",private:false,stargazers_count:repoStars,forks_count:96,open_issues_count:18})});}})};
         """
         if ["history","saved","rate","missing"].contains(mode) {
             if mode != "saved" { prefix += "\nrepoClock-=172800000;repoStars=1200;" }

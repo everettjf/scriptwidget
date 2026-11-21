@@ -6,7 +6,7 @@ var repositoryStats = (() => {
   const key = "github.stats.v1",
     hour = 3600000,
     day = 24 * hour;
-  const defaults = { repository: "everettjf/ScriptWidget", accent: "blue" };
+  const defaults = { repository: "everettjf/scriptwidget", accent: "blue" };
   // True when `value` is a plain object with exactly the keys listed in `keys` ("a,b,c").
   const closed = (value, keys) =>
     value &&

@@ -3329,7 +3329,7 @@ extension ScriptWidgetRecordStoreTests {
         guard let directory=ProcessInfo.processInfo.environment["SCRIPTWIDGET_EXPORT_REPOSITORY"] else { throw XCTSkip("Set SCRIPTWIDGET_EXPORT_REPOSITORY for repository configuration") }
         let output=URL(fileURLWithPath:directory);try FileManager.default.createDirectory(at:output,withIntermediateDirectories:true)
         let store=try makeStore(.repoStats,name:"My repository"),model=ScriptWidgetRecordsModel(package:store.package,store:store)
-        model.repository="everettjf/ScriptWidget";model.saveConfiguration()
+        model.repository="everettjf/scriptwidget";model.saveConfiguration()
         let host=NSHostingController(rootView:ScriptWidgetRecordsView(model:model).environment(\.colorScheme,.light))
         let window=NSWindow(contentRect:NSRect(x:0,y:0,width:680,height:680),styleMask:[.titled],backing:.buffered,defer:false)
         window.isReleasedWhenClosed=false;window.contentViewController=host;window.orderBack(nil);host.view.layoutSubtreeIfNeeded();defer{window.close()}

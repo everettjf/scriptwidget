@@ -4,12 +4,12 @@ Website: <https://atomsprout.com/scriptwidget/>
 
 <div align="center">
 
-[![GitHub Stars](https://img.shields.io/github/stars/everettjf/ScriptWidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/ScriptWidget/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/everettjf/ScriptWidget?style=flat-square)](https://github.com/everettjf/ScriptWidget/network)
+[![GitHub Stars](https://img.shields.io/github/stars/everettjf/scriptwidget?style=flat-square&color=4ECDC4)](https://github.com/everettjf/scriptwidget/stargazers)
+[![GitHub Forks](https://img.shields.io/github/forks/everettjf/scriptwidget?style=flat-square)](https://github.com/everettjf/scriptwidget/network)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue?style=flat-square)](LICENSE)
 [![Platform](https://img.shields.io/badge/Platform-iOS%20%7C%20macOS%20%7C%20Android%20%7C%20Windows%20%7C%20Linux-lightgrey?style=flat-square)](#-platforms)
 [![App Store](https://img.shields.io/itunes/v/1555600758?label=App%20Store&color=blue&style=flat-square)](https://apps.apple.com/app/id1555600758)
-[![Release Readiness](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/ScriptWidget/actions/workflows/release-readiness.yml)
+[![Release Readiness](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml/badge.svg)](https://github.com/everettjf/scriptwidget/actions/workflows/release-readiness.yml)
 
 **Create widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript, JSX, and AI**
 
@@ -99,7 +99,7 @@ The first-launch guide can create a complete tutorial widget and walk a new user
 
 ```bash
 # Clone the repository
-git clone https://github.com/everettjf/ScriptWidget.git
+git clone https://github.com/everettjf/scriptwidget.git
 cd ScriptWidget
 ```
 
@@ -246,7 +246,7 @@ $render(
 
 ```bash
 # Clone and setup
-git clone https://github.com/everettjf/ScriptWidget.git
+git clone https://github.com/everettjf/scriptwidget.git
 cd ScriptWidget
 
 # Open in Xcode (pick the platform you want)
@@ -447,7 +447,7 @@ Inspired by:
 
 <div align="center">
 
-[![Star History Chart](https://api.star-history.com/svg?repos=everettjf/ScriptWidget&type=Date&theme=dark)](https://star-history.com/#everettjf/ScriptWidget&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=everettjf/scriptwidget&type=Date&theme=dark)](https://star-history.com/#everettjf/scriptwidget&Date)
 
 </div>
 
@@ -457,11 +457,11 @@ Inspired by:
 
 <div align="center">
 
-[![GitHub Issues](https://img.shields.io/badge/Issues-Bug_Reports-FF6B6B?style=for-the-badge&logo=github)](https://github.com/everettjf/ScriptWidget/issues)
-[![GitHub Discussions](https://img.shields.io/badge/Discussions-Q&A-4ECDC4?style=for-the-badge&logo=github)](https://github.com/everettjf/ScriptWidget/discussions)
+[![GitHub Issues](https://img.shields.io/badge/Issues-Bug_Reports-FF6B6B?style=for-the-badge&logo=github)](https://github.com/everettjf/scriptwidget/issues)
+[![GitHub Discussions](https://img.shields.io/badge/Discussions-Q&A-4ECDC4?style=for-the-badge&logo=github)](https://github.com/everettjf/scriptwidget/discussions)
 [![Discord](https://img.shields.io/badge/Discord-Join_Chat-7289DA?style=for-the-badge&logo=discord)](https://discord.gg/eGzEaP6TzR)
 
-**有问题？去 [Issues](https://github.com/everettjf/ScriptWidget/issues) 提问！**
+**有问题？去 [Issues](https://github.com/everettjf/scriptwidget/issues) 提问！**
 
 </div>
 
@@ -471,7 +471,7 @@ Inspired by:
 
 **Made with ❤️ by [Everett](https://github.com/everettjf)**
 
-**Project Link:** [https://github.com/everettjf/ScriptWidget](https://github.com/everettjf/ScriptWidget)
+**Project Link:** [https://github.com/everettjf/scriptwidget](https://github.com/everettjf/scriptwidget)
 
 </div>
 ## System capabilities under development
