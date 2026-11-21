@@ -44,6 +44,12 @@ sh install.sh
 - **Updating.** There is no automatic update. Run `install.sh` of the newer archive; it stops the service, replaces the programs and keeps your widgets.
 - **Removing it.** `sh uninstall.sh` keeps your widgets; `sh uninstall.sh --purge` deletes them too.
 
+### As a package (`makepkg`)
+
+Each release since 0.1.5 also carries a `PKGBUILD` and `scriptwidget-bin.install` that install the same programs for every user, through pacman, from that release's archive (its SHA-256 is in the `PKGBUILD`). Put both files in an empty folder and run `makepkg -si`. Then each user runs `systemctl --user enable --now scriptwidget.service` and adds the plugin, either by linking `/usr/share/scriptwidget/omarchy-plugin` to `~/.config/omarchy/plugins/com.atomsprout.scriptwidget` (it then follows package updates) or with `omarchy plugin add https://github.com/everettjf/omarchy-scriptwidget.git --enable`. Remove an `install.sh` copy first with its `uninstall.sh`: the programs in `~/.local/bin` and the unit in `~/.config/systemd/user` would come first. The package is not on the AUR yet.
+
+The plugin repository [everettjf/omarchy-scriptwidget](https://github.com/everettjf/omarchy-scriptwidget) is a copy of `Linux/omarchy-plugin` written at each release by `Linux/scripts/sync-plugin-repo.sh`. The release `PKGBUILD` is written by `Linux/scripts/pkgbuild.sh` from `Linux/packaging/arch`.
+
 ## Using it
 
 - **Add a widget.** Open ScriptWidget from the launcher or the bar entry, open a template, choose "Use this template", then "Add to desktop". From a terminal: `scriptwidget install <folder or .swt>`, then `scriptwidget add <name> --family medium`.

@@ -39,7 +39,7 @@ Windows 已在 Windows 11 x64 开发机开始对齐，当前工作树尚未发�
 - [x] **AI 对话**：Android 的实现移植到 `sw-core`（`src/ai/`），有 `scriptwidget ai` 命令，管理窗口的编辑器旁有对话面板，设置页有服务商和密钥。密钥只进 Secret Service，不写进任何文件。
 - [x] 在 RiftVM 的 Omarchy 4.5 上验证：全部测试 682 个通过；动画录屏逐帧测过；密钥对着真实的 gnome-keyring 存、读、删；命令行和管理窗口各用脚本模型走通一轮对话并应用。细节和没验证的部分见 [Linux 测试记录](linux/testing.md) 和 [Linux 待办](linux/TODO.md)。
 - [x] 真实模型：2026-11-19 晚用 DeepSeek 在 Mac、Linux、Android 三端都跑过，结果在 [AI 对话计划](ai-conversation-plan.md) 里。
-- [ ] 还差：打 0.1.5 的包。
+- [x] 0.1.5 的包：2026-11-20 发布，同时附上 PKGBUILD；插件另有一个仓库给 `omarchy plugin add` 用。
 
 ## AI 功能的逐项对照（2026-11-19）
 

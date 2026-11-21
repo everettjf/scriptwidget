@@ -738,6 +738,19 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 | 管理窗口：打开这个小组件，Ask AI，输入一句话 | 命令行里的三轮显示在对话里；回复逐字出现；“Version 4 of 4”；列出改动的行 |
 | 说明的语言 | 改提示词之前三轮都是中文（请求是英文）；改之后四遍 12 轮都是英文 |
 
+## 2026-11-20，测试虚拟机：0.1.5 和 PKGBUILD
+
+| 做了什么 | 结果 |
+| --- | --- |
+| `cargo test --locked --workspace`（虚拟机里，共用的 JavaScript 在 Mac 上生成后同步过去） | 896 个通过，0 个失败，2 个忽略 |
+| `sh Linux/scripts/package.sh` | `scriptwidget-0.1.5-linux-aarch64.tar.gz`，38 MB；插件的 `i18n` 里只有 `en.json` |
+| 解开归档，`sh install.sh` 装在 0.1.4 之后的开发版上 | `--version` 是 0.1.5，服务在跑，`doctor` 通过；`omarchy restart shell` 后桌面上原来的五个小组件都在；管理窗口打开 Gallery 页 |
+| `Linux/scripts/pkgbuild.sh` 写出 PKGBUILD（x86_64 的校验值用占位），`makepkg -f` | 用本地的 aarch64 归档建出 `scriptwidget-bin-0.1.5-1-aarch64.pkg.tar.xz`，校验值通过；`makepkg --printsrcinfo` 正常 |
+| `pacman -U` 装这个包 | 安装提示照写的出现；`/usr/bin/scriptwidget doctor` 通过，运行时和模板读的是 `/usr/share/scriptwidget`；一个模板能运行；`omarchy plugin validate /usr/share/scriptwidget/omarchy-plugin` 通过。随后 `pacman -R` 删掉，虚拟机回到 `~/.local` 的安装 |
+| `Linux/scripts/sync-plugin-repo.sh` 写进一个新的 git 仓库，再 `git clone` | 克隆出来的目录 `omarchy plugin validate` 通过 |
+
+没跑的：x86_64 的包用 `makepkg` 装（等 CI 的归档）；装了包以后用 `ln -s` 或 `omarchy plugin add` 换掉 `install.sh` 装的插件、由包里的服务显示小组件；AI、动画、数据 API 在 0.1.5 的归档上没有重跑（代码和 11 月 19 日测的一样）。
+
 ## 没跑的（汇总）
 
 - 真实的 Linux 电脑、真实的 x86_64 处理器、真实显卡、Omarchy 以外的桌面。

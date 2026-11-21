@@ -1,0 +1,50 @@
+# Maintainer: AtomSprout <atomsprout@gmail.com>
+#
+# ScriptWidget for Linux, installed from the release archives on GitHub.
+# This file is written by Linux/scripts/pkgbuild.sh at each release and
+# attached to the release; build it with `makepkg -si`.
+pkgname=scriptwidget-bin
+pkgver=0.1.5
+pkgrel=1
+pkgdesc='Desktop widgets written in JavaScript and JSX, for Omarchy'
+arch=('x86_64' 'aarch64')
+url='https://github.com/everettjf/scriptwidget'
+license=('Apache-2.0' 'OFL-1.1')
+depends=('glibc' 'gcc-libs' 'icu' 'fontconfig' 'freetype2' 'libxkbcommon' 'libxkbcommon-x11' 'libxcb' 'wayland' 'vulkan-icd-loader' 'systemd')
+optdepends=('libsecret: keep the AI key and the GitHub token in the system keyring (secret-tool)'
+            'xdg-utils: open links from widgets'
+            'omarchy: show the widgets on the desktop through the Omarchy shell plugin')
+provides=('scriptwidget')
+conflicts=('scriptwidget')
+install=scriptwidget-bin.install
+options=('!strip' '!debug')
+_archive="scriptwidget-${pkgver}-linux"
+source_x86_64=("${_archive}-x86_64.tar.gz::${url}/releases/download/linux-v${pkgver}/${_archive}-x86_64.tar.gz")
+source_aarch64=("${_archive}-aarch64.tar.gz::${url}/releases/download/linux-v${pkgver}/${_archive}-aarch64.tar.gz")
+sha256sums_x86_64=('@SHA256_X86_64@')
+sha256sums_aarch64=('@SHA256_AARCH64@')
+
+package() {
+  cd "${srcdir}/${_archive}-${CARCH}"
+
+  install -Dm755 bin/scriptwidget "${pkgdir}/usr/bin/scriptwidget"
+  install -Dm755 bin/scriptwidget-studio "${pkgdir}/usr/bin/scriptwidget-studio"
+
+  # The programs find their runtime and templates in /usr/share/scriptwidget.
+  install -d "${pkgdir}/usr/share/scriptwidget"
+  cp -R --no-preserve=ownership share/scriptwidget/runtime share/scriptwidget/templates "${pkgdir}/usr/share/scriptwidget/"
+  # The Omarchy plugin, for linking into ~/.config/omarchy/plugins (see the install message).
+  cp -R --no-preserve=ownership omarchy-plugin "${pkgdir}/usr/share/scriptwidget/omarchy-plugin"
+
+  install -Dm644 share/applications/scriptwidget-studio.desktop "${pkgdir}/usr/share/applications/scriptwidget-studio.desktop"
+  install -Dm644 share/mime/packages/scriptwidget-studio.xml "${pkgdir}/usr/share/mime/packages/scriptwidget-studio.xml"
+  for size in 48x48 128x128 256x256; do
+    install -Dm644 "share/icons/hicolor/${size}/apps/scriptwidget-studio.png" "${pkgdir}/usr/share/icons/hicolor/${size}/apps/scriptwidget-studio.png"
+  done
+  # The unit already runs /usr/bin/scriptwidget.
+  install -Dm644 lib/systemd/user/scriptwidget.service "${pkgdir}/usr/lib/systemd/user/scriptwidget.service"
+
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 OFL-Inter.txt "${pkgdir}/usr/share/licenses/${pkgname}/OFL-Inter.txt"
+  install -Dm644 THIRD-PARTY-NOTICES.txt "${pkgdir}/usr/share/licenses/${pkgname}/THIRD-PARTY-NOTICES.txt"
+}

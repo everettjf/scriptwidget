@@ -1,0 +1,26 @@
+_message() {
+  cat <<'TEXT'
+ScriptWidget is installed for every user. Each user turns it on once:
+
+  systemctl --user enable --now scriptwidget.service
+
+On Omarchy, the widgets are shown by a shell plugin. Link it and enable it:
+
+  mkdir -p ~/.config/omarchy/plugins
+  ln -sfn /usr/share/scriptwidget/omarchy-plugin ~/.config/omarchy/plugins/com.atomsprout.scriptwidget
+  omarchy plugin enable com.atomsprout.scriptwidget
+
+The link follows package updates. If ScriptWidget was installed before with
+install.sh, run its `sh uninstall.sh` first (it keeps your widgets), so that
+the copy in ~/.local does not take precedence.
+TEXT
+}
+
+post_install() {
+  _message
+}
+
+post_upgrade() {
+  echo 'After an update, restart the service and the shell:'
+  echo '  systemctl --user restart scriptwidget.service && omarchy restart shell'
+}
