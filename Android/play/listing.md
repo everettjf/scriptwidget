@@ -1,4 +1,4 @@
-# Google Play listing kit (ScriptWidget 1.0.0)
+# Google Play listing kit (ScriptWidget 1.1.0)
 
 Everything needed to create the Play Console entry and an internal test release.
 
@@ -37,7 +37,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.0.0 (version code 1) |
+| Version | 1.1.0 (version code 2) |
 | Minimum Android | 15 (API 35) |
 | Target API | 36 |
 | Contains ads | No |

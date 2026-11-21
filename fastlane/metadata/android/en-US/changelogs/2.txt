@@ -1,0 +1,6 @@
+- AI is now a conversation about one widget: ask for changes turn by turn, see the reply as it arrives, compare versions and preview three sizes
+- "Fix run error" sends the error and log back to the model; each conversation keeps its own Skills
+- Generated code is checked for tags and attributes that do not exist
+- Copies of bundled templates keep their network access
+- The editor completes <list> and material. colors
+- The interface is in English only

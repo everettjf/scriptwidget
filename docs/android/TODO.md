@@ -27,7 +27,7 @@ What is left before 1.0.0 (version code 1) is public on Google Play. On 15 Novem
 
 ## Other channels
 
-- GitHub Releases: `android-v1.0.0` is published with the `foss` APK (14 November 2026). Later versions follow [Android distribution](distribution.md).
+- GitHub Releases: `android-v1.0.0` (14 November 2026) and `android-v1.1.0` (20 November 2026) are published with the `foss` APK. Later versions follow [Android distribution](distribution.md).
 - IzzyOnDroid: not requested. Its policy rejects apps written with generative AI and apps that integrate with LLM services; see the same page.
 - Samsung Galaxy Store and other stores: put off (decided 15 November 2026) until the app is on Google Play and has users there. Until then the GitHub APK is the only channel besides Play. Read a store's policy before registering for it.
 - Play signing is done: Play signs with the existing key (set on 15 November 2026 with "Export and upload a key from Java keystore"), so a Play install and a GitHub install have the same signature. Updating one from the other has not been tried on a device.
