@@ -8,7 +8,7 @@
 
 **使用 JavaScript、JSX 和 AI，为 iPhone、iPad、Mac、Android、Windows 与 Linux 创建 Widget**
 
-**下载：** [iPhone 和 iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0（APK）](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) · [Windows 0.1.0 预览版（安装程序）](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) · [Linux 0.1.4 预览版（Omarchy，压缩包）](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) · [浏览器里的 Web Studio](https://asp.run/scriptwidget/studio/)
+**下载：** [iPhone 和 iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android 1.0.0（APK）](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.1.0) · [Windows 0.1.0 预览版（安装程序）](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) · [Linux 0.1.5 预览版（Omarchy，压缩包）](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.5) · [浏览器里的 Web Studio](https://asp.run/scriptwidget/studio/)
 
 [English](README.md) | [简体中文](README_CN.md) | [Español](README_ES.md) | [日本語](README_JA.md) | [한국어](README_KO.md) | [Français](README_FR.md) | [Deutsch](README_DE.md) | [Português](README_PT_BR.md) | [Русский](README_RU.md) | [العربية](README_AR.md)
 
@@ -31,9 +31,9 @@ scriptwidget preview ./MyWidget
 
 ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
-Android 版（1.0.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
+Android 版（1.1.0，要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.1.0) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
-Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux 0.1.4](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.4) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位、音乐等设备数据 API。
+Windows 版和 Linux 版是预览版：[Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux 0.1.5](https://github.com/everettjf/scriptwidget/releases/tag/linux-v0.1.5) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位等设备数据 API；Linux 版有音乐、通知和你选的文件。
 
 ### 各平台截图
 

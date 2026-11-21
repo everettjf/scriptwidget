@@ -194,7 +194,8 @@ Every bundled package that needs no live data produces the same element tree on 
 | Where widgets live | On the desktop layer of Omarchy, placed anywhere; not in a panel or dashboard |
 | `$device`, `$system` | `model` is `"PC"`, `name` and `hostName` are the host name, `brightness` is `1`, `thermalState` is `"nominal"`; the battery is the first system battery under `/sys/class/power_supply`, and a machine without one reports level 1 and `"full"`; `systemVersion` is `VERSION_ID` from `os-release`, or the kernel release where there is none |
 | `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource`, `$weather` | Yes, with the same permissions, network-domain declarations, private-address refusal and budgets. `$weather` is the MET Norway forecast |
-| `$calendar`, `$reminders`, `$health`, `$photos`, `$contacts`, `$documents`, `$home`, `$icloud`, `$alarms`, `$maps`, `$services`, `$music`, `$notifications`, `$location` | No. `isAvailable()` returns `false` and calls reject with `[unsupported_platform]`. Templates that use one are left out of the template list |
+| `$music`, `$notifications`, `$services`, `$documents`, `$photos` | Yes, with the same permissions: `$music` reads the player that reports through MPRIS, `$notifications` posts through the desktop notification service, `$services` is GitHub with a token in the keyring, `$documents` and `$photos` read the files and pictures chosen for each widget |
+| `$calendar`, `$reminders`, `$health`, `$contacts`, `$home`, `$icloud`, `$alarms`, `$maps`, `$location` | No. `isAvailable()` returns `false` and calls reject with `[unsupported_platform]`. Templates that use one are left out of the template list |
 
 ## Security
 

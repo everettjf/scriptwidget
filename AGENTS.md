@@ -98,7 +98,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 ## Current Product Priorities
 
 - Stabilize and document the now-versioned runtime, Package 2.0, Skills 1.0, Gallery 1.0, and Data Source Plugin 1.0 contracts before expanding them.
-- Bring Android 1.0.0 from the Google Play closed test to production: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
+- Bring the Android app from the Google Play closed test to production: finish the items in `docs/android/TODO.md`, keep it running the same Package 2.0 widgets as iOS, and document every difference in `docs/android/README.md`.
 - Take the Windows and Linux previews towards a first full release: finish the items in `docs/windows/TODO.md` and `docs/linux/TODO.md`, test on real hardware, and keep `docs/platform-support.md` (written from `Editor/editorfe/src/platformSupport.js`) the one place that says what runs where.
 - Grow the curated Gallery and beginner templates while keeping every example verified, permission-correct, and runnable offline where appropriate.
 - Improve Studio authoring ergonomics, diagnostics, accessibility, and multi-file workflows without weakening crash recovery or iCloud conflict safety.

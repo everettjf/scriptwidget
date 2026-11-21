@@ -16,7 +16,7 @@
 
 ScriptWidget ist eine Open-Source-Plattform unter der Apache 2.0-Lizenz zum Erstellen von Widgets. Du musst kein Swift lernen: Bearbeite `main.jsx` in ScriptWidget Studio auf Mac, iPhone oder iPad, und die Laufzeit bildet deklaratives JSX auf native SwiftUI- und WidgetKit-Oberflächen ab.
 
-Die Android-App (Version 1.0.0, ab Android 15) gibt es als [APK in den GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0). Bei Google Play läuft ein geschlossener Test: Wer teilnehmen möchte, tritt der [Gruppe Atomsprout Testers](https://groups.google.com/g/atomsprout) bei. Siehe [ScriptWidget für Android](docs/android/README.md).
+Die Android-App (Version 1.1.0, ab Android 15) gibt es als [APK in den GitHub Releases](https://github.com/everettjf/scriptwidget/releases/tag/android-v1.1.0). Bei Google Play läuft ein geschlossener Test: Wer teilnehmen möchte, tritt der [Gruppe Atomsprout Testers](https://groups.google.com/g/atomsprout) bei. Siehe [ScriptWidget für Android](docs/android/README.md).
 
 Die Versionen für Windows und Linux sind Vorschauversionen: [Windows 0.1.0](https://github.com/everettjf/scriptwidget/releases/tag/windows-v0.1.0) benötigt Windows 11, siehe [ScriptWidget für Windows](docs/windows/README.md); die Linux-Version läuft derzeit unter [Omarchy](https://omarchy.org) 4.5, die Archive liegen in den [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), siehe [ScriptWidget für Linux](docs/linux/README.md). Beide führen dieselben Widget-Pakete aus, haben aber keine APIs für Gerätedaten wie Gesundheit, Kalender, Standort und Musik.
 

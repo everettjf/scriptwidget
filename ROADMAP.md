@@ -11,7 +11,7 @@ ScriptWidget aims to be the best open-source way for anyone to build their own w
 ## Shipped foundation
 
 - Native WidgetKit runtime for iPhone, iPad, and Mac, including interactive controls, Live Activity, and Dynamic Island surfaces.
-- Android 1.0.0 (App Widgets, QuickJS-NG) and previews for Windows 11 and Linux (Omarchy 4.5) that run the same Package 2.0 widgets.
+- Android 1.1.0 (App Widgets, QuickJS-NG) and previews for Windows 11 and Linux (Omarchy 4.5) that run the same Package 2.0 widgets.
 - ScriptWidget Studio on Mac with CodeMirror, completion, diagnostics, Console, multi-family preview, command shortcuts, and first-run tutorial.
 - Versioned native Runtime API 1.2, Package 2.0 manifests, Skills 1.0, secure archive imports, and generated reference documentation.
 - OpenAI-compatible generation with Keychain credentials, structured prompt context, run/diagnose/refine loops, evaluations, and reusable Skills.

@@ -32,7 +32,7 @@ try {
   assert.deepEqual(await page.evaluate("[...document.querySelectorAll('#downloads a')].map(a=>a.href)"), [
     "https://apps.apple.com/app/id1555600758?platform=iphone",
     "https://apps.apple.com/app/id1555600758?platform=mac",
-    "https://github.com/everettjf/scriptwidget/releases/tag/android-v1.0.0",
+    "https://github.com/everettjf/scriptwidget/releases/tag/android-v1.1.0",
     "https://asp.run/scriptwidget/studio/",
   ]);
   assert.equal(await page.evaluate("document.querySelectorAll('[data-hero-example]').length"), 3);
