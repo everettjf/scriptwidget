@@ -16,7 +16,7 @@
 
 ScriptWidget은 Apache 2.0 라이선스로 공개된 위젯 제작 플랫폼입니다. Swift를 배울 필요 없이 Mac, iPhone, iPad의 ScriptWidget Studio에서 `main.jsx`를 편집하면 런타임이 선언적 JSX를 네이티브 SwiftUI/WidgetKit UI로 변환합니다.
 
-Android 앱(Android 15 이상)은 [GitHub Releases의 APK](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true)로 받을 수 있습니다. Google Play에서는 비공개 테스트 중입니다. 참여하려면 [Atomsprout Testers 그룹](https://groups.google.com/g/atomsprout)에 가입하세요. [Android용 ScriptWidget](docs/android/README.md)을 참고하세요.
+Android 앱(Android 13 이상)은 [GitHub Releases의 APK](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true)로 받을 수 있습니다. Google Play에서는 비공개 테스트 중입니다. 참여하려면 [Atomsprout Testers 그룹](https://groups.google.com/g/atomsprout)에 가입하세요. [Android용 ScriptWidget](docs/android/README.md)을 참고하세요.
 
 Windows와 Linux 버전은 미리보기 버전입니다. [Windows](https://apps.microsoft.com/detail/9MVR97B9C938)은 Windows 11이 필요하며 [Windows용 ScriptWidget](docs/windows/README.md)을 참고하세요. Linux 버전은 현재 [Omarchy](https://omarchy.org) 4.5를 지원하고 아카이브는 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)에 있으며 [Linux용 ScriptWidget](docs/linux/README.md)을 참고하세요. 둘 다 같은 위젯 패키지를 실행하지만 건강, 캘린더, 위치, 음악 같은 기기 데이터 API는 없습니다.
 
@@ -57,7 +57,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 Xcode에서 `ScriptWidgetMac` 또는 `ScriptWidget` 스킴을 선택하고 `iCloud.ScriptWidget` 컨테이너와 `group.everettjf.scriptwidget` App Group을 설정한 뒤 실행하세요. [5분 튜토리얼](docs/five-minute-tutorial.md)도 이용할 수 있습니다.
 
-Android는 Gradle로 빌드합니다(JDK 17 이상과 Android SDK가 필요하며, 앱은 Android 15 이상에서 실행됩니다).
+Android는 Gradle로 빌드합니다(JDK 17 이상과 Android SDK가 필요하며, 앱은 Android 13 이상에서 실행됩니다).
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug

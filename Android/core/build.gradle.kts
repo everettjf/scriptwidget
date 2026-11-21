@@ -8,7 +8,7 @@ android {
     ndkVersion = "28.1.13356709"
 
     defaultConfig {
-        minSdk = 35
+        minSdk = 33
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
         externalNativeBuild { cmake { arguments += listOf("-DANDROID_STL=none") } }

@@ -31,7 +31,7 @@ scriptwidget preview ./MyWidget
 
 ScriptWidget 是一个 Apache 2.0 开源的 Widget 创作平台。你不需要学习 Swift：在 Mac Studio、iPhone 或 iPad 上编辑 `main.jsx`，运行时会把声明式 JSX 映射为原生 SwiftUI/WidgetKit 界面。
 
-Android 版（要求 Android 15 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
+Android 版（要求 Android 13 或更高版本）已在 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) 提供 APK。Google Play 版正在封闭测试：先加入 [Atomsprout Testers 群组](https://groups.google.com/g/atomsprout)，再[成为测试者](https://play.google.com/apps/testing/com.atomsprout.scriptwidget)，然后从 Google Play 安装。与 iOS 的差异详见 [Android 版 ScriptWidget](docs/android/README.md)。
 
 Windows 版和 Linux 版是预览版：[Windows](https://apps.microsoft.com/detail/9MVR97B9C938) 需要 Windows 11，见 [Windows 版 ScriptWidget](docs/windows/README.md)；[Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) 目前支持 [Omarchy](https://omarchy.org) 4.5，见 [Linux 版 ScriptWidget](docs/linux/README.md)。两者运行同样的小组件包，但没有健康、日历、定位等设备数据 API；Linux 版有音乐、通知和你选的文件。
 
@@ -73,7 +73,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 在 Xcode 中选择 `ScriptWidgetMac` 或 `ScriptWidget` scheme，配置 `iCloud.ScriptWidget` container 与 `group.everettjf.scriptwidget` App Group，然后运行。也可以直接按照[五分钟教程](docs/five-minute-tutorial.md)创建第一个 Widget。
 
-Android 版改用 Gradle 构建（需要 JDK 17 或更高版本和 Android SDK；应用要求 Android 15 或更高版本）：
+Android 版改用 Gradle 构建（需要 JDK 17 或更高版本和 Android SDK；应用要求 Android 13 或更高版本）：
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug

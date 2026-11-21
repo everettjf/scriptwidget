@@ -16,7 +16,7 @@
 
 ScriptWidget est une plateforme open source sous licence Apache 2.0 pour créer des widgets. Nul besoin d’apprendre Swift : modifiez `main.jsx` dans ScriptWidget Studio sur Mac, iPhone ou iPad, et le moteur transforme le JSX déclaratif en interfaces SwiftUI et WidgetKit natives.
 
-L’application Android (Android 15 ou ultérieur) est disponible en [APK sur GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). Sur Google Play, elle est en test fermé : pour participer, rejoignez le [groupe Atomsprout Testers](https://groups.google.com/g/atomsprout). Voir [ScriptWidget pour Android](docs/android/README.md).
+L’application Android (Android 13 ou ultérieur) est disponible en [APK sur GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). Sur Google Play, elle est en test fermé : pour participer, rejoignez le [groupe Atomsprout Testers](https://groups.google.com/g/atomsprout). Voir [ScriptWidget pour Android](docs/android/README.md).
 
 Les versions Windows et Linux sont des préversions : [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) nécessite Windows 11, voir [ScriptWidget pour Windows](docs/windows/README.md) ; la version Linux fonctionne pour l’instant sous [Omarchy](https://omarchy.org) 4.5, les archives se trouvent dans les [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), voir [ScriptWidget pour Linux](docs/linux/README.md). Les deux exécutent les mêmes paquets de widgets, mais n’ont pas les API de données de l’appareil comme la santé, le calendrier, la localisation et la musique.
 
@@ -57,7 +57,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 Dans Xcode, choisissez le schéma `ScriptWidgetMac` ou `ScriptWidget`, configurez le conteneur `iCloud.ScriptWidget` et l’App Group `group.everettjf.scriptwidget`, puis lancez le projet. Vous pouvez aussi suivre le [tutoriel de cinq minutes](docs/five-minute-tutorial.md).
 
-Pour Android, compilez plutôt avec Gradle (JDK 17 ou version ultérieure et le SDK Android ; l’application nécessite Android 15 ou version ultérieure) :
+Pour Android, compilez plutôt avec Gradle (JDK 17 ou version ultérieure et le SDK Android ; l’application nécessite Android 13 ou version ultérieure) :
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug

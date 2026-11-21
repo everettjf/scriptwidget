@@ -1,5 +1,6 @@
 package com.everettjf.scriptwidget.core.skills
 
+import com.everettjf.scriptwidget.core.pkg.setFixedLocalTime
 import com.everettjf.scriptwidget.core.gallery.GalleryFiles
 import com.everettjf.scriptwidget.core.pkg.ArchiveLimits
 import com.everettjf.scriptwidget.core.pkg.ArchivePreflight
@@ -250,7 +251,7 @@ class SkillStore(root: File) {
         }
         val zip = ZipOutputStream(output)
         for ((name, bytes) in listOf(SkillManifest.FILE_NAME to manifest, SkillManifest.INSTRUCTION_FILE_NAME to instruction)) {
-            zip.putNextEntry(ZipEntry(name).apply { timeLocal = FIXED_ENTRY_TIME })
+            zip.putNextEntry(ZipEntry(name).apply { setFixedLocalTime(FIXED_ENTRY_TIME) })
             zip.write(bytes)
             zip.closeEntry()
         }

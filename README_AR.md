@@ -18,7 +18,7 @@
 
 ScriptWidget منصة مفتوحة المصدر بترخيص Apache 2.0 لإنشاء الأدوات المصغّرة. لا تحتاج إلى تعلم Swift؛ حرّر `main.jsx` في ScriptWidget Studio على Mac أو iPhone أو iPad، وستحوّل بيئة التشغيل JSX التصريحي إلى واجهات SwiftUI وWidgetKit أصلية.
 
-تطبيق Android (يتطلب Android 15 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
+تطبيق Android (يتطلب Android 13 أو أحدث) متاح كملف [APK على GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). على Google Play هو في اختبار مغلق: للانضمام، انضم إلى [مجموعة Atomsprout Testers](https://groups.google.com/g/atomsprout). راجع [ScriptWidget لنظام Android](docs/android/README.md).
 
 نسختا Windows وLinux تجريبيتان: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) يتطلب Windows 11، راجع [ScriptWidget لنظام Windows](docs/windows/README.md)؛ ونسخة Linux تعمل حاليًا على [Omarchy](https://omarchy.org) 4.5، والأرشيفات متاحة على [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)، راجع [ScriptWidget لنظام Linux](docs/linux/README.md). تشغّل النسختان حزم الأدوات المصغّرة نفسها، لكن لا تتوفر فيهما واجهات بيانات الجهاز مثل الصحة والتقويم والموقع والموسيقى.
 
@@ -63,7 +63,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 في Xcode، اختر مخطط `ScriptWidgetMac` أو `ScriptWidget`، وهيئ حاوية `iCloud.ScriptWidget` وApp Group بالمعرّف `group.everettjf.scriptwidget`، ثم شغّل المشروع. يمكنك أيضًا اتباع [الدليل ذي الدقائق الخمس](docs/five-minute-tutorial.md).
 
-لنظام Android، استخدم Gradle للبناء (JDK 17 أو أحدث وAndroid SDK؛ ويتطلب التطبيق Android 15 أو أحدث):
+لنظام Android، استخدم Gradle للبناء (JDK 17 أو أحدث وAndroid SDK؛ ويتطلب التطبيق Android 13 أو أحدث):
 
 </div>
 

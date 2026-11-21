@@ -1,5 +1,6 @@
 package com.everettjf.scriptwidget.core.plugin
 
+import com.everettjf.scriptwidget.core.pkg.setFixedLocalTime
 import com.everettjf.scriptwidget.core.pkg.ArchiveLimits
 import com.everettjf.scriptwidget.core.pkg.ArchivePreflight
 import com.everettjf.scriptwidget.core.pkg.PackageException
@@ -129,7 +130,7 @@ class PluginStore(root: File) {
         ZipOutputStream(buffer, Charsets.UTF_8).use { zip ->
             for ((name, bytes) in files) {
                 val entry = ZipEntry(name)
-                entry.setTimeLocal(FIXED_ENTRY_TIME)
+                entry.setFixedLocalTime(FIXED_ENTRY_TIME)
                 zip.putNextEntry(entry)
                 zip.write(bytes)
                 zip.closeEntry()

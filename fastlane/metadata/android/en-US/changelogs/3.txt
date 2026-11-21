@@ -1,0 +1,3 @@
+- Runs on Android 13 and 14 as well; Android 15 or later was required before
+- On Android 13, material. colors follow the wallpaper too
+- Exported .swt files are now the same bytes in every time zone

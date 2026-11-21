@@ -14,7 +14,7 @@ What is left before 1.0.0 (version code 1) is public on Google Play. On 15 Novem
 | The AI conversation with a live model, and OpenAI-compatible or local providers | A key typed into Settings → AI by its owner. The screen passed on the Pixel 6 with a scripted model (`AiConversationUiTest`); the loop itself passed against Anthropic in `AiLiveModelTest` |
 | Wallpaper colors after the wallpaper changes | Change the wallpaper or the color theme on a phone with a `material.` widget placed, and check that the widget follows. The colors themselves, in light and dark, were checked on the Pixel 6 |
 | The automation entry point from Tasker or MacroDroid | One of those apps installed, with a Send Intent task. It was exercised with `adb shell am broadcast` and from a device test only |
-| Scrolling lists on other launchers and on Android 15 and 16 | The emulators and other vendors' phones. Lists were checked on the Pixel 6 (Android 17, Pixel Launcher) only |
+| Scrolling lists on other launchers and on Android 13 to 16 | The emulators and other vendors' phones. Lists were checked on the Pixel 6 (Android 17, Pixel Launcher) only |
 
 ## Google Play
 
@@ -27,7 +27,7 @@ What is left before 1.0.0 (version code 1) is public on Google Play. On 15 Novem
 
 ## Other channels
 
-- GitHub Releases: `android-v1.0.0` (14 November 2026) and `android-v1.1.0` (20 November 2026) are published with the `foss` APK. Later versions follow [Android distribution](distribution.md).
+- GitHub Releases: `android-v1.0.0` (14 November 2026), `android-v1.1.0` (20 November 2026) and `android-v1.1.1` (21 November 2026, Android 13 and later) are published with the `foss` APK. Later versions follow [Android distribution](distribution.md).
 - IzzyOnDroid: not requested. Its policy rejects apps written with generative AI and apps that integrate with LLM services; see the same page.
 - Samsung Galaxy Store and other stores: put off (decided 15 November 2026) until the app is on Google Play and has users there. Until then the GitHub APK is the only channel besides Play. Read a store's policy before registering for it.
 - Play signing is done: Play signs with the existing key (set on 15 November 2026 with "Export and upload a key from Java keystore"), so a Play install and a GitHub install have the same signature. Updating one from the other has not been tried on a device.

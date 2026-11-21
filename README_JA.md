@@ -16,7 +16,7 @@
 
 ScriptWidget は、Apache 2.0 ライセンスのオープンソース・ウィジェット作成プラットフォームです。Swift を学ぶ必要はありません。Mac、iPhone、iPad の ScriptWidget Studio で `main.jsx` を編集すると、ランタイムが宣言的 JSX をネイティブな SwiftUI/WidgetKit UI に変換します。
 
-Android アプリ（Android 15 以降）は [GitHub Releases の APK](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) で入手できます。Google Play ではクローズドテスト中です。参加するには [Atomsprout Testers グループ](https://groups.google.com/g/atomsprout) に参加してください。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
+Android アプリ（Android 13 以降）は [GitHub Releases の APK](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) で入手できます。Google Play ではクローズドテスト中です。参加するには [Atomsprout Testers グループ](https://groups.google.com/g/atomsprout) に参加してください。詳しくは [Android 版 ScriptWidget](docs/android/README.md) をご覧ください。
 
 Windows 版と Linux 版はプレビュー版です。[Windows](https://apps.microsoft.com/detail/9MVR97B9C938) には Windows 11 が必要です（[Windows 版 ScriptWidget](docs/windows/README.md) を参照）。Linux 版は現在 [Omarchy](https://omarchy.org) 4.5 に対応しており、アーカイブは [GitHub Releases](https://github.com/everettjf/scriptwidget/releases) にあります（[Linux 版 ScriptWidget](docs/linux/README.md) を参照）。どちらも同じウィジェットパッケージを実行しますが、ヘルスケア、カレンダー、位置情報、ミュージックなどのデバイスデータ API はありません。
 
@@ -57,7 +57,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 Xcode で `ScriptWidgetMac` または `ScriptWidget` スキームを選択し、`iCloud.ScriptWidget` コンテナと `group.everettjf.scriptwidget` App Group を設定して実行します。[5 分間チュートリアル](docs/five-minute-tutorial.md)も利用できます。
 
-Android 版は Gradle でビルドします（JDK 17 以降と Android SDK が必要です。アプリの動作には Android 15 以降が必要です）。
+Android 版は Gradle でビルドします（JDK 17 以降と Android SDK が必要です。アプリの動作には Android 13 以降が必要です）。
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug

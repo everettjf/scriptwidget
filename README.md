@@ -52,7 +52,7 @@ ScriptWidget is an open-source widget development platform for building native w
 
 It combines a JavaScriptCore runtime with native SwiftUI rendering on Apple platforms, a QuickJS-NG runtime with one shared renderer on Android, Windows and Linux, a desktop development environment, a browser studio, secure package sharing, AI-assisted generation, and a GitHub-backed community catalog.
 
-The Android app (Android 15 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout), then [become a tester](https://play.google.com/apps/testing/com.atomsprout.scriptwidget) and install from Google Play. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
+The Android app (Android 13 or later) is available as an [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). On Google Play it is in closed testing: to join, become a member of the [Atomsprout Testers group](https://groups.google.com/g/atomsprout), then [become a tester](https://play.google.com/apps/testing/com.atomsprout.scriptwidget) and install from Google Play. See [ScriptWidget for Android](docs/android/README.md) for what differs from iOS.
 
 The Windows and Linux apps are previews: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) needs Windows 11 (see [ScriptWidget for Windows](docs/windows/README.md)), and [Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) is for [Omarchy](https://omarchy.org) 4.5 (see [ScriptWidget for Linux](docs/linux/README.md)). Both run the same widget packages, without the personal-data APIs such as health, calendar and location; Linux has music, notifications and files you choose.
 
@@ -113,7 +113,7 @@ open iOS/ScriptWidget.xcodeproj
 open macOS/ScriptWidgetMac.xcodeproj
 ```
 
-For Android, build with Gradle instead (JDK 17 or later and the Android SDK; the app needs Android 15 or later):
+For Android, build with Gradle instead (JDK 17 or later and the Android SDK; the app needs Android 13 or later):
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug
@@ -238,7 +238,7 @@ $render(
 ### Prerequisites
 
 - **Xcode** 27+ for the current development branch
-- **JDK 17** or later and the **Android SDK** (API 37 platform) for the Android app, which needs Android 15 or later
+- **JDK 17** or later and the **Android SDK** (API 37 platform) for the Android app, which needs Android 13 or later
 - **macOS** 26+ for ScriptWidget Studio
 - **iOS** 16+ (for iOS widgets)
 
@@ -375,7 +375,7 @@ See [Package 2.0](docs/package-format.md), [modern WidgetKit features](docs/widg
 |----------|---------|-------|
 | **iOS** | ✅ Full | iOS 16+ (iPhone, iPad) |
 | **macOS** | ✅ Full | macOS 26+ (Mac) |
-| **Android** | ✅ Released | Android 15+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
+| **Android** | ✅ Released | Android 13+; [APK on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true), Google Play in closed testing. Runs the same packages; [differences from iOS](docs/android/README.md) |
 | **Windows** | 🧪 Preview | Windows 11; desktop widgets and a management window with AI, Gallery and Skills. [Microsoft Store](https://apps.microsoft.com/detail/9MVR97B9C938); an [installer](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Windows%22&expanded=true) on GitHub Releases; see [ScriptWidget for Windows](docs/windows/README.md) |
 | **Linux** | 🧪 Preview | [Omarchy](https://omarchy.org) 4.5; widgets on the desktop, a management window with AI, Gallery and Skills, and a command line. [Archives and a PKGBUILD on GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true); see [ScriptWidget for Linux](docs/linux/README.md) |
 | **watchOS** | — | Not in the current roadmap |

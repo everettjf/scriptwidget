@@ -16,7 +16,7 @@
 
 ScriptWidget — это открытая платформа для создания виджетов под лицензией Apache 2.0. Swift изучать не нужно: редактируйте `main.jsx` в ScriptWidget Studio на Mac, iPhone или iPad, а среда выполнения преобразует декларативный JSX в нативный интерфейс SwiftUI/WidgetKit.
 
-Приложение для Android (Android 15 и новее) доступно как [APK в GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). В Google Play идёт закрытое тестирование: чтобы участвовать, вступите в [группу Atomsprout Testers](https://groups.google.com/g/atomsprout). См. [ScriptWidget для Android](docs/android/README.md).
+Приложение для Android (Android 13 и новее) доступно как [APK в GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true). В Google Play идёт закрытое тестирование: чтобы участвовать, вступите в [группу Atomsprout Testers](https://groups.google.com/g/atomsprout). См. [ScriptWidget для Android](docs/android/README.md).
 
 Версии для Windows и Linux — предварительные: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) требует Windows 11, см. [ScriptWidget для Windows](docs/windows/README.md); версия для Linux пока работает в [Omarchy](https://omarchy.org) 4.5, архивы лежат в [GitHub Releases](https://github.com/everettjf/scriptwidget/releases), см. [ScriptWidget для Linux](docs/linux/README.md). Обе запускают те же пакеты виджетов, но в них нет API данных устройства: здоровья, календаря, геопозиции, музыки и других.
 
@@ -57,7 +57,7 @@ open macOS/ScriptWidgetMac.xcodeproj
 
 В Xcode выберите схему `ScriptWidgetMac` или `ScriptWidget`, настройте контейнер `iCloud.ScriptWidget` и App Group `group.everettjf.scriptwidget`, затем запустите проект. Также доступен [пятиминутный урок](docs/five-minute-tutorial.md).
 
-Для Android используйте сборку через Gradle (нужны JDK 17 или новее и Android SDK; приложению требуется Android 15 или новее):
+Для Android используйте сборку через Gradle (нужны JDK 17 или новее и Android SDK; приложению требуется Android 13 или новее):
 
 ```bash
 cd Android && ./gradlew :app:assembleDebug

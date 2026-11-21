@@ -157,7 +157,7 @@ object PackageArchive {
                 total += bytes.size
                 if (total > limits.maximumExpandedBytes) throw PackageException(PackageErrors.PACKAGE_TOO_LARGE, "Expanded package exceeds 64 MiB.")
                 val entry = ZipEntry(name)
-                entry.setTimeLocal(fixedEntryTime)
+                entry.setFixedLocalTime(fixedEntryTime)
                 zip.putNextEntry(entry)
                 zip.write(bytes)
                 zip.closeEntry()

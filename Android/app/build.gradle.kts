@@ -13,10 +13,10 @@ android {
     defaultConfig {
         // The Play package name. The Kotlin namespace above keeps its original name.
         applicationId = "com.atomsprout.scriptwidget"
-        minSdk = 35
+        minSdk = 33
         targetSdk = 36
-        versionCode = 2
-        versionName = "1.1.0"
+        versionCode = 3
+        versionName = "1.1.1"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         ndk { abiFilters += listOf("arm64-v8a", "x86_64") }
     }

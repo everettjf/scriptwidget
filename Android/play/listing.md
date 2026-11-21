@@ -39,7 +39,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | Free or paid | Free |
 | Category | Tools |
 | Version | 1.1.0 (version code 2) |
-| Minimum Android | 15 (API 35) |
+| Minimum Android | 13 (API 33) |
 | Target API | 36 |
 | Contains ads | No |
 | In-app purchases | None |
