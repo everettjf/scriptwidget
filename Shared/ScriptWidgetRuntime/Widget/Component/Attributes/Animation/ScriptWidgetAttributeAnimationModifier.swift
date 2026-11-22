@@ -134,10 +134,18 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
     }
     @ViewBuilder func body(content: Content) -> some View {
         #if os(macOS)
-        if ["clockSecond","clockMinute","clockMiniute","clockHour"].contains(animationType) {
+        if WidgetKitClockHand.isAvailable {
+            // The Mac widget extension moves with WidgetKit's clock-hand effect, like iOS.
+            moving(content)
+        } else if ["clockSecond","clockMinute","clockMiniute","clockHour"].contains(animationType) {
+            // The Mac app's previews show standard clock hands at the current time.
             content.rotationEffect(.degrees(ScriptWidgetAnimationPhase.clockAngle(type:animationType,date:referenceDate ?? Date(),timeZone:clockTimezone)),anchor:clockAnchor)
         } else { content }
         #else
+        moving(content)
+        #endif
+    }
+    @ViewBuilder private func moving(_ content: Content) -> some View {
         if ((preview.reduceMotion ?? reduceMotion) || luminanceReduced) && ["clock","swing"].contains(animationType) {
             content
         } else if animationType == "clockSecond" {
@@ -152,7 +160,6 @@ struct ScriptWidgetAttributeAnimationModifier: ViewModifier {
             content.swingAnimation(duration:swingDuration,direction:swingDirection,distance:swingDistance,referenceDate:referenceDate)
         } else if animationType == "error" { Text("animation json error") }
         else { content }
-        #endif
     }
     static func getTimezone(timezone: String) -> TimeZone { TimeZone(identifier:timezone) ?? .current }
 }

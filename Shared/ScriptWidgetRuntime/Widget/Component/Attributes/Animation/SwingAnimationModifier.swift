@@ -43,29 +43,27 @@ public struct SwingAnimationModifier: ViewModifier {
     public let direction: Direction
     public let distance: CGFloat
     var referenceDate: Date? = nil
-    #if !os(macOS)
     @Environment(\.scriptWidgetAnimationPreview) private var preview
-    #endif
 
     @ViewBuilder public func body(content: Content) -> some View {
-        #if os(macOS)
-        content
-        #else
         if preview.date == nil, preview.elapsed == nil, WidgetKitClockHand.isAvailable {
-            // On the Home Screen only WidgetKit's clock-hand effect moves. Two rotations, the
-            // inner one at half the speed the other way, carry the element along a straight
-            // line; a third turns it back upright.
+            // On the Home Screen and the Mac desktop only WidgetKit's clock-hand effect moves.
+            // Two rotations, the inner one at half the speed the other way, carry the element
+            // along a straight line; a third turns it back upright.
             content.hidden().overlay(systemSwing(content: content))
         } else {
+            #if os(macOS)
+            // The Mac app's own previews keep the swing at rest, as before.
+            content
+            #else
             ScriptWidgetAnimationFrame(referenceDate: referenceDate) { _, elapsed in
                 let offset = ScriptWidgetAnimationPhase.swing(elapsed: elapsed, duration: Double(duration), distance: Double(distance))
                 content.offset(x: direction == .horizontal ? offset : 0, y: direction == .vertical ? offset : 0)
             }
+            #endif
         }
-        #endif
     }
 
-    #if !os(macOS)
     private func turning<V: View>(_ view: V, _ seconds: Double) -> AnyView {
         WidgetKitClockHand.apply(view, period: .custom(seconds), timeZone: .current, anchor: .center) ?? AnyView(view)
     }
@@ -100,7 +98,6 @@ public struct SwingAnimationModifier: ViewModifier {
             .frame(width: size.width, height: size.height, alignment: start)
         }
     }
-    #endif
 }
 public extension View {
     func swingAnimation(duration: CGFloat, direction: SwingAnimationModifier.Direction = .horizontal, distance: CGFloat, referenceDate: Date? = nil) -> some View {

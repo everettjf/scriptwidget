@@ -16,7 +16,7 @@ Every component below exists on iPhone, iPad, Mac, Android, Windows and Linux, a
 | `<icon>` and `systemName` images | Yes | Yes | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder | Yes; SF Symbols are drawn with look-alike icons, and a name without one shows a placeholder |
 | `<date>` | Yes | Yes | `timer` and a `time` of now tick by themselves; `relative`, `offset` and `date` are redrawn at each refresh | A timer is redrawn every second and a clock time every minute | A timer is redrawn every second and a clock time every minute |
 | `<gif>` | Animated in the app's preview; in a widget the system decides and may hold one frame | The first frame | Up to 24 sampled frames | Animated on the desktop with bounded sampled frames; previews and CLI render show one frame | Animated on the desktop, at most 60 frames |
-| The `animation` property (clock hands, swing) | Moves on the Home Screen: WidgetKit's clock-hand effect drives clock hands, custom intervals and swings. Reduce Motion and the Always On display show them at rest | Standard clock hands show the time without moving; the others stay at rest | Standard clock hands are a system clock; swing and custom intervals play as frames | Moves on the desktop: clock hands follow local or declared time zones; swing and custom intervals play at up to 20 frames a second. Previews and CLI render show one frame | Moves on the desktop: clock hands follow the time, swings and custom intervals play at up to 20 frames a second; `render` and the previews show one frame |
+| The `animation` property (clock hands, swing) | Moves on the Home Screen: WidgetKit's clock-hand effect drives clock hands, custom intervals and swings. Reduce Motion and the Always On display show them at rest | Moves on the desktop: WidgetKit's clock-hand effect drives clock hands, custom intervals and swings. Reduce Motion shows them at rest; the app's previews show clock hands without moving | Standard clock hands are a system clock; swing and custom intervals play as frames | Moves on the desktop: clock hands follow local or declared time zones; swing and custom intervals play at up to 20 frames a second. Previews and CLI render show one frame | Moves on the desktop: clock hands follow the time, swings and custom intervals play at up to 20 frames a second; `render` and the previews show one frame |
 | `<button>`, `<toggle>` | Yes, from iOS 17 | Yes, from macOS 14 | Yes | Yes | Yes |
 | `<link>` | Yes | Yes | Yes | `http`, `https` and `mailto` only | `http`, `https` and `mailto` only |
 | The `backgroundMaterial` property | Yes | Yes | The opaque `background` fallback | The opaque `background` fallback | The opaque `background` fallback |
@@ -46,7 +46,7 @@ Arrange children vertically.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -72,7 +72,7 @@ Arrange children horizontally.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `spacing` | `number` | No |  |
@@ -98,7 +98,7 @@ Overlay children.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 
@@ -123,7 +123,7 @@ Vertical lazy grid.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -150,7 +150,7 @@ Horizontal lazy grid.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `columns` | `string` | Yes |  |
@@ -177,7 +177,7 @@ Display text content.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -203,7 +203,7 @@ Display a formatted date.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `date` | `date|number` | Yes |  |
@@ -230,7 +230,7 @@ Display a bundled, remote, or SF Symbol image.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | No |  |
@@ -263,7 +263,7 @@ Display a bounded package GIF using system decoding: up to 8 MiB input and 1,048
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `file` | `string` | Yes |  |
@@ -289,7 +289,7 @@ Flexible layout space.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `minLength` | `number` | No |  |
@@ -315,7 +315,7 @@ Rectangle shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -342,7 +342,7 @@ Filled rounded rectangle.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `radius` | `number` | No |  |
@@ -368,7 +368,7 @@ Capsule shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -395,7 +395,7 @@ Ellipse shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -422,7 +422,7 @@ Circle shape.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `trim` | `number|string` | No |  |
@@ -449,7 +449,7 @@ Display a gauge or instrument.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `string` | No |  |
@@ -487,7 +487,7 @@ Render chart data.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `type` | `enum` | No | Values: `bar`, `bar-x`, `bar-y`, `bar-gantt`, `line`, `point`, `line-point`, `area`, `rect`, `rule-x` |
@@ -518,7 +518,7 @@ Open a URL when selected.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `url` | `url` | Yes |  |
@@ -544,7 +544,7 @@ Horizontal or vertical separator.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -571,7 +571,7 @@ Fixed-length line.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `thickness` | `number` | No |  |
@@ -599,7 +599,7 @@ SF Symbol icon.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `systemName` | `string` | Yes |  |
@@ -626,7 +626,7 @@ Text paired with an SF Symbol.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -653,7 +653,7 @@ Linear or circular progress.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -684,7 +684,7 @@ Circular progress ring.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `value` | `number` | Yes |  |
@@ -712,7 +712,7 @@ Compact status badge.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -739,7 +739,7 @@ Outlined metadata chip.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `text` | `string` | No |  |
@@ -767,7 +767,7 @@ Title, value, and subtitle statistic.
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `title` | `string` | No |  |
@@ -796,7 +796,7 @@ Interactive widget button. Use actionID to share a declared Package 2.0 action w
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `action` | `enum` | No | Values: `reload` |
@@ -824,7 +824,7 @@ Interactive widget toggle. A declared actionID requires a package-relative stora
 | `rotation` | `number` | No | Rotation in degrees. |
 | `rotation3d` | `string` | No | Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax. |
 | `shadow` | `string` | No | Shadow color, radius, and offset description. |
-| `animation` | `string` | No | iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
+| `animation` | `string` | No | Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks. |
 | `widgetAccentable` | `boolean` | No | Group this view into the accent layer in tinted and vibrant widget appearances. |
 | `linkurl` | `url` | No | Widget deep link URL. |
 | `on` | `boolean` | Yes |  |

@@ -3,8 +3,8 @@
 // Home Screen widget keeps moving: WidgetKit does not run TimelineView there. The effect
 // is looked up by name, so when a system release removes it the public SwiftUI path below
 // is used instead. The app, tests and fixed-date previews always use the public path.
+// iOS and macOS WidgetKit both have the effect, in the same format.
 // Bridge attribution: giljihun, ClockHandKit, MIT license (ClockHandKit-LICENSE.txt).
-#if !os(macOS)
 import Foundation
 import OSLog
 import SwiftUI
@@ -129,4 +129,3 @@ extension View {
         ClockHandRotation(content: self, period: period, timeZone: timeZone, anchor: anchor, referenceDate: referenceDate)
     }
 }
-#endif

@@ -29,7 +29,7 @@ export const scriptWidgetAPI = {
     "rotation": { "type": "number", "documentation": "Rotation in degrees." },
     "rotation3d": { "type": "string", "documentation": "Static degree,x,y,z rotation with four finite numbers and a nonzero axis. Invalid values are ignored; axis magnitude is normalized. Reduce Motion removes the tilt. This does not read device motion or provide parallax." },
     "shadow": { "type": "string", "documentation": "Shadow color, radius, and offset description." },
-    "animation": { "type": "string", "documentation": "iOS public SwiftUI scheduled clock/swing effect. Mac renders static standard-clock poses; other effects remain at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. App previews can animate; WidgetKit decides cadence and may freeze. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks." },
+    "animation": { "type": "string", "documentation": "Clock hands, custom intervals and swings. iPhone, iPad and Mac widgets move with WidgetKit's clock-hand effect; the iOS app's previews animate, and the Mac app's previews show standard clock poses with other effects at rest. Signed clockCustom intervals specify a half-turn (full cycle = 2 * abs(interval)), minimum magnitude 0.25 seconds. Reduced motion/luminance freezes standard clock poses and keeps custom/swing effects at rest. Dynamic scripts are not rerun on animation ticks." },
     "widgetAccentable": { "type": "boolean", "documentation": "Group this view into the accent layer in tinted and vibrant widget appearances." },
     "linkurl": { "type": "url", "documentation": "Widget deep link URL." }
   },
