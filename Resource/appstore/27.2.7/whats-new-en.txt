@@ -4,7 +4,7 @@ Make and refine widgets by talking to AI.
 • Each change shows the lines it added and removed, and the result is run on your device before you see it.
 • The editor's Copilot is the same conversation, about the widget you have open.
 • Anthropic is available as an AI provider, next to Apple Private Cloud Compute, OpenAI-compatible servers and Ollama.
-• Widgets written for Android now show on iPhone, iPad and Mac: lists draw the rows that fit, and wallpaper colors use a fixed palette.
+• Widgets with scrolling lists or wallpaper colors now show here too: lists draw the rows that fit, and those colors use a fixed palette.
 • Every bundled template is explained with comments and fits its text at each size.
 • Safer AI connections, a fix for scripts that end with a comment, and layout fixes in the editor.
 

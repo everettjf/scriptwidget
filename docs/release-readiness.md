@@ -91,6 +91,8 @@ The repository's Releases list holds five products, told apart by tag prefix: `v
 
 ### Apple build/upload and manual review
 
+App Store text (What's New, description, promotional text, screenshots) names no other platform: App Review rejected 27.2.7 on 21 November 2026 under guideline 2.3.10 because its What's New mentioned Android. Describe the feature on Apple devices instead ("widgets with scrolling lists now show here too"). Review notes for App Review are not shown to users and may explain the cross-platform context.
+
 For the current A/B release, App Review is submitted manually by the user.
 `Scripts/release-apple.sh --testflight-only` increments the shared patch/build
 versions, runs the release gate, archives iOS/macOS and uploads both builds to
