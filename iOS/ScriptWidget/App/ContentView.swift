@@ -15,7 +15,7 @@ enum StudioDesign {
     static let cardCornerRadius: CGFloat = 14
     static let prominentCornerRadius: CGFloat = 18
 
-    // Teal, coral, gold and blue echo the app icon on neutral system surfaces.
+    // The accent is the system tint; coral, gold and blue echo the app icon on neutral system surfaces.
     static let accent = Color.accentColor
     static let coral = Color("BrandCoral")
     static let gold = Color("BrandGold")

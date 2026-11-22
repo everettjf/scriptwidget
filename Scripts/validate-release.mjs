@@ -11,11 +11,18 @@ const packageSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetR
 const skillSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/skill.schema.json"), "utf8"));
 const pluginSchema = JSON.parse(await readFile(join(root, "Shared/ScriptWidgetRuntime/Resource/plugin.schema.json"), "utf8"));
 const failures = [];
-// These component paths must stay on public APIs for distribution. General
-// JavaScriptCore bridging elsewhere has a different contract and is not banned.
-for (const file of ["Attributes/Animation/ClockHandRotationEffect.swift", "Attributes/Animation/SwingAnimationModifier.swift", "Elements/ScriptWidgetElementTagGif.swift"]) {
-  const source = await readFile(join(root, "Shared/ScriptWidgetRuntime/Widget/Component", file), "utf8");
-  if (/_typeByName|_ClockHandRotationEffect|unsafeBitCast/.test(source)) failures.push(`${file}: private animation bridge must not be reintroduced`);
+// WidgetKit's clock-hand effect is the only thing that moves a Home Screen widget. It is
+// looked up by name in ClockHandRotationEffect.swift alone, only inside the widget
+// extension, with the public SwiftUI path as its fallback. Every other component file
+// stays on public APIs.
+const componentRoot = join(root, "Shared/ScriptWidgetRuntime/Widget/Component");
+const clockHand = await readFile(join(componentRoot, "Attributes/Animation/ClockHandRotationEffect.swift"), "utf8");
+if (!/guard isWidgetExtension else \{ return nil \}/.test(clockHand) || !/ScriptWidgetAnimationFrame\(/.test(clockHand) || /unsafeBitCast/.test(clockHand)) {
+  failures.push("ClockHandRotationEffect.swift: the WidgetKit effect must stay limited to the widget extension, with the public fallback");
+}
+for (const file of ["Attributes/Animation/SwingAnimationModifier.swift", "Elements/ScriptWidgetElementTagGif.swift"]) {
+  const source = await readFile(join(componentRoot, file), "utf8");
+  if (/_typeByName|_ClockHandRotationEffect|unsafeBitCast/.test(source)) failures.push(`${file}: private APIs belong only in ClockHandRotationEffect.swift`);
 }
 const names = (await readdir(templateRoot)).sort();
 const metadataSource = await readFile(join(root, "Shared/ScriptWidgetRuntime/Common/ScriptMetadata.swift"), "utf8");

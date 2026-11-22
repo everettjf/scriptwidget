@@ -43,17 +43,64 @@ public struct SwingAnimationModifier: ViewModifier {
     public let direction: Direction
     public let distance: CGFloat
     var referenceDate: Date? = nil
+    #if !os(macOS)
+    @Environment(\.scriptWidgetAnimationPreview) private var preview
+    #endif
 
-    public func body(content: Content) -> some View {
+    @ViewBuilder public func body(content: Content) -> some View {
         #if os(macOS)
         content
         #else
-        ScriptWidgetAnimationFrame(referenceDate: referenceDate) { _, elapsed in
-            let offset = ScriptWidgetAnimationPhase.swing(elapsed: elapsed, duration: Double(duration), distance: Double(distance))
-            content.offset(x: direction == .horizontal ? offset : 0, y: direction == .vertical ? offset : 0)
+        if preview.date == nil, preview.elapsed == nil, WidgetKitClockHand.isAvailable {
+            // On the Home Screen only WidgetKit's clock-hand effect moves. Two rotations, the
+            // inner one at half the speed the other way, carry the element along a straight
+            // line; a third turns it back upright.
+            content.hidden().overlay(systemSwing(content: content))
+        } else {
+            ScriptWidgetAnimationFrame(referenceDate: referenceDate) { _, elapsed in
+                let offset = ScriptWidgetAnimationPhase.swing(elapsed: elapsed, duration: Double(duration), distance: Double(distance))
+                content.offset(x: direction == .horizontal ? offset : 0, y: direction == .vertical ? offset : 0)
+            }
         }
         #endif
     }
+
+    #if !os(macOS)
+    private func turning<V: View>(_ view: V, _ seconds: Double) -> AnyView {
+        WidgetKitClockHand.apply(view, period: .custom(seconds), timeZone: .current, anchor: .center) ?? AnyView(view)
+    }
+
+    private func systemSwing(content: Content) -> some View {
+        let start: Alignment = direction == .vertical ? (distance > 0 ? .top : .bottom) : (distance > 0 ? .leading : .trailing)
+        let end: Alignment = direction == .vertical ? (distance > 0 ? .bottom : .top) : (distance > 0 ? .trailing : .leading)
+        let seconds = Double(duration)
+        return GeometryReader { proxy in
+            let size = proxy.size
+            let extent = direction == .vertical ? size.height : size.width
+            let length = abs(distance) + extent
+            let inner = (length + extent) / 2
+            ZStack(alignment: end) {
+                Color.clear
+                turning(
+                    ZStack(alignment: start) {
+                        Color.clear
+                        turning(
+                            ZStack(alignment: start) {
+                                Color.clear
+                                turning(content, seconds)
+                            }
+                            .frame(width: inner, height: inner),
+                            -seconds / 2
+                        )
+                    }
+                    .frame(width: length, height: length),
+                    seconds
+                )
+            }
+            .frame(width: size.width, height: size.height, alignment: start)
+        }
+    }
+    #endif
 }
 public extension View {
     func swingAnimation(duration: CGFloat, direction: SwingAnimationModifier.Direction = .horizontal, distance: CGFloat, referenceDate: Date? = nil) -> some View {

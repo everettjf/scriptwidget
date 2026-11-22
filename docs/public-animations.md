@@ -1,11 +1,14 @@
-# Public clock, swing and GIF scheduling
+# Clock, swing and GIF scheduling
+
+> **Home Screen motion (November 2026).** WidgetKit does not run `TimelineView` in a widget, so the public path below left every Home Screen clock and swing at rest. Inside the widget extension, clock hands, custom intervals and swings again use WidgetKit's clock-hand effect (`_ClockHandRotationEffect`), looked up by name in `ClockHandRotationEffect.swift` only. When a system release no longer has it, or a test or preview fixes the date, the public path is used. A swing is built from three of those rotations, as before October 2026. The effect is created by decoding JSON, and its format changed: from iOS 26 `period` is the seconds of one full turn and `anchor` is `[x, y]`; earlier systems took `{"custom": {"_0": n}}` and `{"x", "y"}`. The forms are tried newest first and the first that decodes is kept; a custom interval `n` is still half a turn, so it is sent as `2n` seconds. Verified moving on the Home Screen of an iPhone 11 on iOS 26.0.1 (November 22, 2026). The app's own previews, the Mac, Reduce Motion and the Always On display are unchanged. `Scripts/validate-release.mjs` keeps the private name confined to that file and that file to the widget extension.
+
 
 Runtime 1.4's release candidate uses Foundation parsing (without the former SwiftyJSON dependency in this modifier), public SwiftUI `TimelineView`, `rotationEffect`, `offset` and ImageIO. It no longer resolves or decodes a private WidgetKit clock-hand modifier. No timer reruns JavaScript or re-queries personal data on animation ticks.
 
 | Context | Behavior |
 | --- | --- |
 | Active iOS app preview | Public scheduled clock/swing poses and bounded GIF frame selection, requested at no more than 30 updates per second |
-| Widget / Live Activity | The OS controls scheduling and may hold a snapshot; a live app/browser preview does not prove continuous system animation |
+| Widget / Live Activity | WidgetKit's clock-hand effect moves clock hands, custom intervals and swings while the widget is visible; the public frame path is the fallback |
 | Inactive scene or fixed scheduled entry | Clock pose at the fixed date, swing at rest, GIF first frame; no app-owned background animation loop |
 | Reduce Motion / reduced luminance | Standard clock pose at the selected date; custom/swing at rest; bounded first GIF frame |
 | Mac | Standard clock hands now show the selected time without animation; custom/swing remain at rest and GIF remains the first frame |
@@ -36,6 +39,8 @@ The actual native Clock template at the shared fixed snapshot time (hands and ca
 ![Public scheduled native clock snapshot](images/public-animation-clock-native.png)
 
 ## Aquarium layout verification
+
+> November 2026: the template is back to its original hand-placed rows and swing distances (50–100 points). The cell layout below made the motion too small to see and the scene too even. Its record is kept for reference.
 
 The Aquarium template now gives each creature its own bounded cell, varies its composition by widget family, and uses small swing distances. The small preview no longer truncates emoji rows or wraps the seabed. Accessories use static compact compositions; large/extra-large widgets add a swimming row. Edit this dynamic template in Code.
 

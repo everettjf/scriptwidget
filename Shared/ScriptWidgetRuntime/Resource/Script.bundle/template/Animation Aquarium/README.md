@@ -1,7 +1,7 @@
-# Animation scheduling
+# Animation Aquarium
 
-This existing example uses public scheduled previews. WidgetKit controls system refresh and can freeze motion; the app/Web preview is not a guarantee of continuous Home Screen animation. Mac, inactive scenes and accessibility modes have static fallbacks. Custom clock periods are signed half-turn durations. Source is preserved; use native date/text components when accurate continuously updating digital time is needed. See docs/public-animations.md in the repository for compatibility details.
+Sea life laid out by hand in rows of emoji. A pufferfish pair, a tropical fish and a bubble swing back and forth with `$animation`.
 
-# Responsive composition
+On the iPhone and iPad Home Screen the motion is drawn by WidgetKit's clock-hand effect, so it keeps moving while the widget is visible. Reduce Motion, the Always On display and the Mac show the scene at rest. Android, Windows and Linux draw the swings with their own renderer, and their timing may differ from iOS.
 
-Each creature has its own fixed-size cell; spaces are not used for positioning. Small widgets use fewer creatures, large and extra-large widgets add a swimming row, and lock-screen accessories use compact static compositions. Swing distances stay small so fish and bubbles remain within the scene. Edit the `Row` symbol arrays to customize it; this dynamic template is edited in Code. Existing user copies are not overwritten.
+Move a creature by adding or removing spaces in its row. Existing user copies are not overwritten.
