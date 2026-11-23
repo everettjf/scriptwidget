@@ -12,10 +12,11 @@ DRY_RUN=0
 SKIP_CHECKS=0
 ASSUME_YES=0
 SUBMIT_REVIEW=1
+SAME_VERSION=0
 
 usage() {
   cat <<'EOF'
-Usage: ./Scripts/release-apple.sh [--yes] [--dry-run] [--skip-checks] [--testflight-only]
+Usage: ./Scripts/release-apple.sh [--yes] [--dry-run] [--skip-checks] [--testflight-only] [--same-version]
 
 Increments the shared patch/build versions, archives iOS and macOS, uploads both
 builds to TestFlight, waits for processing, and submits both to App Review.
@@ -36,6 +37,8 @@ Options:
   --skip-checks  Skip Scripts/release-readiness.sh (not recommended).
   --testflight-only
                  Upload both builds to TestFlight without submitting App Review.
+  --same-version Keep the version and increment only the build, for a new build
+                 of a version that App Review has not approved yet.
   -h, --help     Show this help.
 EOF
 }
@@ -55,6 +58,7 @@ while [ "$#" -gt 0 ]; do
     --dry-run) DRY_RUN=1 ;;
     --skip-checks) SKIP_CHECKS=1 ;;
     --testflight-only) SUBMIT_REVIEW=0 ;;
+    --same-version) SAME_VERSION=1 ;;
     -h|--help) usage; exit 0 ;;
     *) usage >&2; die "unknown option: $1" ;;
   esac
@@ -76,6 +80,7 @@ NEXT_VERSION=$(printf '%s\n' "$CURRENT_VERSION" | awk -F. '
   NF == 3 && $1 ~ /^[0-9]+$/ && $2 ~ /^[0-9]+$/ && $3 ~ /^[0-9]+$/ { print $1 "." $2 "." ($3 + 1); ok=1 }
   END { if (!ok) exit 1 }
 ') || die "unsupported MARKETING_VERSION: $CURRENT_VERSION"
+[ "$SAME_VERSION" = 0 ] || NEXT_VERSION=$CURRENT_VERSION
 
 IOS_BUILD=$(project_value CURRENT_PROJECT_VERSION "$IOS_PBXPROJ" | sort -nu | tail -n 1)
 MAC_BUILD=$(project_value CURRENT_PROJECT_VERSION "$MAC_PBXPROJ" | sort -nu | tail -n 1)
