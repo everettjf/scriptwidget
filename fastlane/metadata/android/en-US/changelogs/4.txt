@@ -1,0 +1,3 @@
+- Swinging elements move smoothly: up to 64 steps per swing instead of 16
+- The Animation Aquarium template is back to its original scene
+- Repository links in Settings point to the lowercase GitHub address
