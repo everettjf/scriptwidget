@@ -4,7 +4,7 @@
 # This file is written by Linux/scripts/pkgbuild.sh at each release and
 # attached to the release; build it with `makepkg -si`.
 pkgname=scriptwidget-bin
-pkgver=0.1.5
+pkgver=0.1.6
 pkgrel=1
 pkgdesc='Desktop widgets written in JavaScript and JSX, for Omarchy'
 arch=('x86_64' 'aarch64')

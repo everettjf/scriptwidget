@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "com.atomsprout.scriptwidget",
   "name": "ScriptWidget",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "author": "AtomSprout",
   "description": "Shows the widgets ScriptWidget draws on the desktop layer and passes clicks back to it",
   "license": "Apache-2.0",
