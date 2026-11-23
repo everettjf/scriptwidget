@@ -33,7 +33,12 @@ object WidgetUpdater {
     private const val MAXIMUM_SIZES = 2
     private const val MAXIMUM_LIVE_TEXTS = 6
     private const val MAXIMUM_GIFS = 2
-    private const val SWING_FRAMES = 16
+    private const val MINIMUM_SWING_FRAMES = 16
+    private const val MAXIMUM_SWING_FRAMES = 64
+    /** A swing frame stays on screen at least this long, about 20 frames a second as on Windows and Linux. */
+    private const val SWING_FRAME_MILLISECONDS = 50.0
+    /** The farthest a swinging view moves between two frames, in widget points. */
+    private const val SWING_STEP_POINTS = 2.0
     private const val SPIN_FRAMES = 36
     private const val SPIN_BUDGET_BYTES = 2L * 1024 * 1024
     /** All GIF frames of one widget size together; part of the Android 17 widget bitmap budget. */
@@ -288,9 +293,10 @@ object WidgetUpdater {
         flipper.setViewLayoutWidth(R.id.widget_swing, boxWidth, TypedValue.COMPLEX_UNIT_DIP)
         flipper.setViewLayoutHeight(R.id.widget_swing, boxHeight, TypedValue.COMPLEX_UNIT_DIP)
         // One full swing (there and back) takes twice the duration, as on iPhone.
-        flipper.setInt(R.id.widget_swing, "setFlipInterval", (2000f * duration / SWING_FRAMES).toInt().coerceAtLeast(40))
-        for (index in 0 until SWING_FRAMES) {
-            val offset = (kotlin.math.sin(index.toDouble() / SWING_FRAMES * 2.0 * Math.PI) * distance).toFloat()
+        val frames = swingFrames(duration.toDouble(), distance.toDouble())
+        flipper.setInt(R.id.widget_swing, "setFlipInterval", (2000f * duration / frames).toInt().coerceAtLeast(40))
+        for (index in 0 until frames) {
+            val offset = (kotlin.math.sin(index.toDouble() / frames * 2.0 * Math.PI) * distance).toFloat()
             val frame = RemoteViews(context.packageName, R.layout.widget_swing_frame)
             // Every frame shares one bitmap; only its position changes.
             frame.setImageViewBitmap(R.id.widget_swing_image, slot.bitmap)
@@ -301,6 +307,21 @@ object WidgetUpdater {
             flipper.addView(R.id.widget_swing, frame)
         }
         return flipper
+    }
+
+    /**
+     * How many frames one full swing gets. Enough that the view moves at most
+     * [SWING_STEP_POINTS] between frames, but no more than one frame every
+     * [SWING_FRAME_MILLISECONDS], between [MINIMUM_SWING_FRAMES] and
+     * [MAXIMUM_SWING_FRAMES]. Every frame shares one bitmap, so frames cost
+     * views, not memory.
+     */
+    internal fun swingFrames(duration: Double, distance: Double): Int {
+        val cycle = 2000.0 * (if (duration.isFinite() && duration > 0) duration else 1.0)
+        val reach = if (distance.isFinite()) kotlin.math.abs(distance) else 10.0
+        val bySpeed = kotlin.math.floor(cycle / SWING_FRAME_MILLISECONDS)
+        val byStep = kotlin.math.ceil(2.0 * Math.PI * reach / SWING_STEP_POINTS)
+        return kotlin.math.min(bySpeed, byStep).coerceIn(MINIMUM_SWING_FRAMES.toDouble(), MAXIMUM_SWING_FRAMES.toDouble()).toInt()
     }
 
     /**

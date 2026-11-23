@@ -8,9 +8,11 @@ What was run before handing this build to testers, and what was not.
 | --- | --- | --- | --- |
 | Unit tests | 549 | JVM | `cd Android && ./gradlew :core:testDebugUnitTest` |
 | Core device tests | 30 | see below | `Android/scripts/device-test.sh core` |
-| App device tests | 77 | see below | `Android/scripts/device-test.sh app` |
+| App device tests | 78 | see below | `Android/scripts/device-test.sh app` |
 
 For the lowercase GitHub link update (21 November 2026), all 554 JVM tests passed and both debug flavors built on an Apple silicon Mac. The Android 16 `SW_Release_API36` emulator passed all 30 core tests. The Play `.dev` app suite reported one failure in 77 tests when `StudioEditorCompletionTest` timed out waiting for the starter editor. That test passed on its targeted rerun. No physical device was used.
+
+Smoother swings (22 November 2026): a swing now gets 16 to 64 frames instead of a fixed 16, enough that the view moves at most two points between frames, with no frame shorter than 50 ms. On an Apple silicon Mac all 554 JVM tests passed and the debug build succeeded. On the Android 16 `SW_Release_API36` emulator the Play `.dev` app suite passed (78 tests, including the new `swingFramesFollowDistanceAndSpeed`; the live-model, push-wait and picked-folder tests skip as before). The core suite was not rerun, since `core` did not change. No widget was placed on a home screen to watch the motion, and no physical device was used.
 
 Every suite was run with the final code (build 6) on every device below. Build 7 has the same code plus the Firebase configuration and a test hook in `Push`; with it the JVM tests passed and the app suite passed on the Pixel 6 (60 tests, the two that need a key or a push wait skipped). Build 7 was not re-run on the emulators. What is left is in the [to-do list](TODO.md).
 
