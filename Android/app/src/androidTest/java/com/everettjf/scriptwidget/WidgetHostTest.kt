@@ -190,9 +190,21 @@ class WidgetHostTest {
         val source = """${'$'}render(<vstack frame="max"><text animation="swing">hello</text></vstack>)"""
         val live = children(inflate(place(install(source))), R.id.widget_dynamic)
         val flipper = live.filterIsInstance<android.widget.ViewFlipper>().single()
-        assertEquals(16, flipper.childCount)
+        // The default swing (one second, ten points) moves at most two points a frame.
+        assertEquals(32, flipper.childCount)
         val margins = (0 until flipper.childCount).map { ((flipper.getChildAt(it) as ViewGroup).getChildAt(0).layoutParams as FrameLayout.LayoutParams).leftMargin }
         assertTrue("the view moves: $margins", margins.toSet().size > 4)
+    }
+
+    @Test fun swingFramesFollowDistanceAndSpeed() {
+        // A slow, wide swing like the Aquarium's fish gets the most frames.
+        assertEquals(64, WidgetUpdater.swingFrames(20.0, 100.0))
+        // A short swing needs few; a fast one may not flip faster than every 50 ms.
+        assertEquals(16, WidgetUpdater.swingFrames(1.0, 2.0))
+        assertEquals(16, WidgetUpdater.swingFrames(0.1, 100.0))
+        assertEquals(20, WidgetUpdater.swingFrames(0.5, 100.0))
+        // Values the runtime should never send still give a bounded count.
+        assertEquals(32, WidgetUpdater.swingFrames(Double.NaN, Double.POSITIVE_INFINITY))
     }
 
     @Test fun pushRegistersPlacedPackagesAndAPushRedrawsOnlyTheNamedPackage() {
