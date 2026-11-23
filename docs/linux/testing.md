@@ -779,3 +779,13 @@ swift Tools/ScriptWidgetPreview/Scripts/contact-sheets.swift Resource/WidgetDemo
 - 真的睡眠（只跑过内核的测试模式）。
 - 第二块显示器只用虚拟显示器测过；在两块屏之间拖动没有测。
 - 后台服务、插件、管理窗口其余没跑的部分，见上面各节。
+
+## 2026-11-23，0.1.6 发布
+
+0.1.6 只换了 Animation Aquarium 模板（回到原来手工摆放的场景，摆动 50 到 100 点）和小写的仓库链接。两个压缩包都从提交 `bcf9903f` 打出。
+
+- 构建 0.1.6 时发现 `the_creatures_of_the_animation_aquarium_swing` 还按格子版的小幅度（最多 10 点）断言，模板恢复后失败；Linux CI 在模板改动时没有跑。测试改成：每只生物只沿一个方向动，幅度不超过它的摆动距离。
+- Mac（Apple 芯片，Homebrew ICU）：890 个测试通过。
+- 测试虚拟机（RiftVM，Omarchy 4.5，aarch64）：896 个测试通过；打出 aarch64 压缩包，在虚拟机上用 `install.sh` 覆盖安装 0.1.5，`scriptwidget doctor` 通过，后台服务在运行，`omarchy restart shell` 后 30 个小组件回到桌面（`grim` 截图）。
+- x86_64 压缩包由 "Linux release archive" 工作流在 Arch Linux 容器里打出，测试和解包检查通过。
+- 没做：这一版的 `PKGBUILD` 没有用 pacman 构建安装；x86_64 压缩包没有在真的 x86_64 电脑上跑过。
