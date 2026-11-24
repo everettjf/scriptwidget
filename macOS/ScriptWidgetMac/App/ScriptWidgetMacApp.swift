@@ -32,6 +32,8 @@ struct ScriptWidgetMacApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) var appDelegate;
 
     init() {
+        AppDelegate.openDesktopTool = { DesktopToolsWindow.shared.show($0) }
+        AppDelegate.hasFloatingPet = { DesktopToolsWindow.shared.hasFloatingPet }
         ScriptWidgetSystemServices.startLifecycle()
         #if DEBUG
         ScriptWidgetCutoverProcessProbe.runIfRequested()
@@ -69,6 +71,8 @@ struct ScriptWidgetMacApp: App {
             DataSourceLabCommands()
 
             CommandGroup(after: .newItem) {
+                Button("Desktop Tools…") { DesktopToolsWindow.shared.show(.launcher) }
+
                 Button("Generate Widget with AI...") {
                     NotificationCenter.default.post(name: AIGenerateWindowView.openRequestNotification, object: nil)
                 }.keyboardShortcut("n", modifiers: [.command, .shift])

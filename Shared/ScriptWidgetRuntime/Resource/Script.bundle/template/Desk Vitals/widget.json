@@ -1,0 +1,24 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.desk-vitals",
+  "name": "Desk Vitals",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge"
+  ],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "See battery charge, disk usage and installed memory at a glance.",
+  "category": "system",
+  "tags": [
+    "battery",
+    "storage",
+    "memory"
+  ],
+  "icon": "gauge.with.dots.needle.50percent"
+}

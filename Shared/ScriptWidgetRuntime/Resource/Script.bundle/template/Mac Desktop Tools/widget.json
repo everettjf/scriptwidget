@@ -1,0 +1,15 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.mac-desktop-tools",
+  "name": "Mac Desktop Tools",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": ["systemSmall", "systemMedium", "systemLarge", "systemExtraLarge"],
+  "permissions": [],
+  "networkDomains": [],
+  "description": "Open the Mac launcher, live system monitor, music controls, translation or appearance tools.",
+  "category": "productivity",
+  "tags": ["mac", "desktop", "launcher"],
+  "icon": "desktopcomputer"
+}

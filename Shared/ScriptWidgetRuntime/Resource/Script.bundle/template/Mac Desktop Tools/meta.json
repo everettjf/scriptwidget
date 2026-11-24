@@ -1,0 +1,8 @@
+{
+  "description": "Open the Mac launcher, live system monitor, music controls, translation or appearance tools.",
+  "category": "productivity",
+  "tags": ["mac", "desktop", "launcher"],
+  "difficulty": "beginner",
+  "icon": "desktopcomputer",
+  "featured": true
+}

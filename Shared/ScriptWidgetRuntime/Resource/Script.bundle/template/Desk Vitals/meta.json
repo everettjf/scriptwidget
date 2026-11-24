@@ -1,0 +1,12 @@
+{
+  "description": "See battery charge, disk usage and installed memory at a glance.",
+  "category": "system",
+  "tags": [
+    "battery",
+    "storage",
+    "memory"
+  ],
+  "difficulty": "beginner",
+  "icon": "gauge.with.dots.needle.50percent",
+  "featured": true
+}

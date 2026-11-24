@@ -24,6 +24,11 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 
 ## Unreleased
 
+### Mac
+
+- Add Desktop Tools with a picker-backed app and folder launcher, a live CPU and memory monitor with app rankings, local audio playback and player shortcuts, on-device translation, and an optional frosted window and floating pet.
+- Add Week Progress, Desk Vitals, Daily Focus Checklist, Daily Pause and Mac Desktop Tools templates.
+
 ### Android (in development, `android` branch)
 
 - Add an Android app that runs the same Package 2.0 widgets as iPhone, iPad and Mac: QuickJS-NG runtime with the shared execution kernel, the shared renderer painted to a bitmap, and small, medium and large home-screen widgets with tap actions, self-updating timers and light/dark variants.
