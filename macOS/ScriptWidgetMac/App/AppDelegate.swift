@@ -8,7 +8,36 @@
 import Foundation
 import AppKit
 
+enum DesktopToolDestination: String, CaseIterable, Identifiable {
+    case launcher, system, music, translation, appearance
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .launcher: "Launcher"
+        case .system: "System"
+        case .music: "Music"
+        case .translation: "Translate"
+        case .appearance: "Appearance"
+        }
+    }
+
+    init?(url: URL) {
+        guard let parts = URLComponents(url: url, resolvingAgainstBaseURL: false),
+              parts.scheme?.lowercased() == "scriptwidget",
+              parts.percentEncodedHost == "desktop-tools",
+              parts.user == nil, parts.password == nil, parts.port == nil,
+              parts.query == nil, parts.fragment == nil,
+              parts.percentEncodedPath.first == "/" else { return nil }
+        self.init(rawValue: String(parts.percentEncodedPath.dropFirst()))
+    }
+}
+
 class AppDelegate: NSObject, NSApplicationDelegate {
+    @MainActor static var openDesktopTool: (DesktopToolDestination) -> Void = { _ in }
+    @MainActor static var hasFloatingPet: () -> Bool = { false }
+
     var openWidgetURL: (URL) -> Bool = { url in
         NSWorkspace.shared.open(url)
     }
@@ -21,6 +50,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func application(_ application: NSApplication, open urls: [URL]) {
         for url in urls {
+            if let destination = DesktopToolDestination(url: url) {
+                Self.openDesktopTool(destination)
+                continue
+            }
             guard let scheme = url.scheme?.lowercased(),
                   scheme != kDeepLinkDefaultScheme,
                   scheme != "scriptwidget" else { continue }
@@ -48,6 +81,6 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
-        return true
+        !Self.hasFloatingPet()
     }
 }

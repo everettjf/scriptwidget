@@ -1,0 +1,82 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.daily-focus-checklist",
+  "name": "Daily Focus Checklist",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge"
+  ],
+  "permissions": [
+    "storage"
+  ],
+  "networkDomains": [],
+  "description": "Check off a customizable daily list whose progress is saved on this device.",
+  "category": "productivity",
+  "tags": [
+    "focus",
+    "checklist",
+    "daily"
+  ],
+  "icon": "checklist",
+  "minimumRuntimeVersion": "1.3",
+  "timeline": {
+    "dailyTimes": [
+      "00:00"
+    ]
+  },
+  "actions": [
+    {
+      "id": "toggleOne",
+      "title": "Toggle focus item 1",
+      "systemImage": "checklist",
+      "function": "toggleOne"
+    },
+    {
+      "id": "toggleTwo",
+      "title": "Toggle focus item 2",
+      "systemImage": "checklist",
+      "function": "toggleTwo"
+    },
+    {
+      "id": "toggleThree",
+      "title": "Toggle focus item 3",
+      "systemImage": "checklist",
+      "function": "toggleThree"
+    },
+    {
+      "id": "toggleFour",
+      "title": "Toggle focus item 4",
+      "systemImage": "checklist",
+      "function": "toggleFour"
+    },
+    {
+      "id": "toggleFive",
+      "title": "Toggle focus item 5",
+      "systemImage": "checklist",
+      "function": "toggleFive"
+    },
+    {
+      "id": "toggleSix",
+      "title": "Toggle focus item 6",
+      "systemImage": "checklist",
+      "function": "toggleSix"
+    },
+    {
+      "id": "toggleSeven",
+      "title": "Toggle focus item 7",
+      "systemImage": "checklist",
+      "function": "toggleSeven"
+    },
+    {
+      "id": "toggleEight",
+      "title": "Toggle focus item 8",
+      "systemImage": "checklist",
+      "function": "toggleEight"
+    }
+  ]
+}

@@ -312,6 +312,11 @@
 		984EB063C68BCF2CD8D4C953 /* FeedbackEmail.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */; };
 		F023E4E9A30D14FA0652EA6B /* FeedbackEmailButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */; };
 		A2A0000700000000000000B0 /* Localizable.stringsdict in Resources */ = {isa = PBXBuildFile; fileRef = A2A0000300000000000000B0 /* Localizable.stringsdict */; };
+		AA2611240200000000000001 /* DesktopToolsData.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2611240100000000000001 /* DesktopToolsData.swift */; };
+		AA2611240200000000000002 /* DesktopToolsWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2611240100000000000002 /* DesktopToolsWindow.swift */; };
+		AA2611240200000000000003 /* DesktopToolsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2611240100000000000003 /* DesktopToolsView.swift */; };
+		AA2611240200000000000004 /* DesktopAudioView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2611240100000000000004 /* DesktopAudioView.swift */; };
+		AA2611240200000000000005 /* DesktopTranslationView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA2611240100000000000005 /* DesktopTranslationView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -552,6 +557,11 @@
 		18E6B5136425D0E2910ED79F /* FeedbackEmail.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmail.swift"; sourceTree = SOURCE_ROOT; };
 		39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "../Shared/AppFeedback/FeedbackEmailButton.swift"; sourceTree = SOURCE_ROOT; };
 		A2A0000400000000000000B0 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.stringsdict; name = en; path = ../Shared/ScriptWidgetRuntime/Localizations/en.lproj/Localizable.stringsdict; sourceTree = SOURCE_ROOT; };
+		AA2611240100000000000001 /* DesktopToolsData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopToolsData.swift; sourceTree = "<group>"; };
+		AA2611240100000000000002 /* DesktopToolsWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopToolsWindow.swift; sourceTree = "<group>"; };
+		AA2611240100000000000003 /* DesktopToolsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopToolsView.swift; sourceTree = "<group>"; };
+		AA2611240100000000000004 /* DesktopAudioView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopAudioView.swift; sourceTree = "<group>"; };
+		AA2611240100000000000005 /* DesktopTranslationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesktopTranslationView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1061,6 +1071,7 @@
 				F29118BA2791D82300B860B0 /* Sidebar */,
 				F29118B72791D7C200B860B0 /* Store */,
 				F2911811279103B800B860B0 /* App */,
+				AA2611240300000000000001 /* Desktop */,
 				F29117D9279101DF00B860B0 /* Assets.xcassets */,
 				F246160D279CFAFF00C3D90F /* Info.plist */,
 				F29118D12792B0D200B860B0 /* StudioEditor.bundle */,
@@ -1202,6 +1213,18 @@
 				39713CBE64D43C6CD9FC8EAB /* FeedbackEmailButton.swift */,
 			);
 			name = Feedback;
+			sourceTree = "<group>";
+		};
+		AA2611240300000000000001 /* Desktop */ = {
+			isa = PBXGroup;
+			children = (
+				AA2611240100000000000001 /* DesktopToolsData.swift */,
+				AA2611240100000000000002 /* DesktopToolsWindow.swift */,
+				AA2611240100000000000003 /* DesktopToolsView.swift */,
+				AA2611240100000000000004 /* DesktopAudioView.swift */,
+				AA2611240100000000000005 /* DesktopTranslationView.swift */,
+			);
+			path = Desktop;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -1444,6 +1467,11 @@
 				D1995CCC29536BB800D1BD94 /* ScriptWidgetAttributeDebugModeModifier.swift in Sources */,
 				D1995CB629536BB800D1BD94 /* ScriptWidgetAttributeOpacityModifier.swift in Sources */,
 				D1995C9A29536BB800D1BD94 /* ScriptWidgetElementGradient.swift in Sources */,
+				AA2611240200000000000001 /* DesktopToolsData.swift in Sources */,
+				AA2611240200000000000002 /* DesktopToolsWindow.swift in Sources */,
+				AA2611240200000000000003 /* DesktopToolsView.swift in Sources */,
+				AA2611240200000000000004 /* DesktopAudioView.swift in Sources */,
+				AA2611240200000000000005 /* DesktopTranslationView.swift in Sources */,
 				F29118132791053100B860B0 /* AppDelegate.swift in Sources */,
 				D1995CCE29536BB800D1BD94 /* ScriptWidgetElementTagLink.swift in Sources */,
 				D1995CE229536BB800D1BD94 /* ScriptWidgetElementTagGrid.swift in Sources */,

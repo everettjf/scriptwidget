@@ -1,0 +1,12 @@
+{
+  "description": "See the current weekday and how far the week has progressed.",
+  "category": "time",
+  "tags": [
+    "week",
+    "date",
+    "progress"
+  ],
+  "difficulty": "beginner",
+  "icon": "calendar",
+  "featured": true
+}

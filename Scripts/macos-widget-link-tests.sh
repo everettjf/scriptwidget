@@ -7,6 +7,7 @@ trap 'rm -rf "$TEST_DIR"' EXIT
 
 swiftc -module-cache-path "$TEST_DIR/module-cache" \
   "$ROOT/macOS/ScriptWidgetMac/App/AppDelegate.swift" \
+  "$ROOT/macOS/ScriptWidgetMac/Desktop/DesktopToolsData.swift" \
   "$ROOT/Shared/ScriptWidgetRuntime/Widget/Runtime/DeepLinkDefine.swift" \
   "$ROOT/Tests/MacWidgetLinkTests/main.swift" \
   -o "$TEST_DIR/widget-link-tests"

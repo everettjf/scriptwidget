@@ -1,0 +1,12 @@
+{
+  "description": "Read a short rotating reflection offline or display a line of your own.",
+  "category": "fun",
+  "tags": [
+    "quote",
+    "offline",
+    "daily"
+  ],
+  "difficulty": "beginner",
+  "icon": "quote.bubble",
+  "featured": true
+}

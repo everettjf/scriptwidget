@@ -1,0 +1,12 @@
+{
+  "description": "Check off a customizable daily list whose progress is saved on this device.",
+  "category": "productivity",
+  "tags": [
+    "focus",
+    "checklist",
+    "daily"
+  ],
+  "difficulty": "beginner",
+  "icon": "checklist",
+  "featured": true
+}
