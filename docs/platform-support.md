@@ -5,7 +5,7 @@ What runs where. One Package 2.0 widget installs on every platform below; a feat
 | | iPhone and iPad | Mac | Android | Windows | Linux |
 | --- | --- | --- | --- | --- | --- |
 | Status | Released | Released | Released on GitHub Releases; Google Play closed test open to testers | Preview in the Microsoft Store and on GitHub Releases | Preview for Omarchy 4.5 on GitHub Releases |
-| System version | iOS 16 or later | macOS 26 or later | Android 13 or later | Windows 11 (21H2, build 22000) or later | Omarchy 4.5 (Arch Linux) |
+| System version | iOS / iPadOS 16 or later for the app, 18 or later for widgets | macOS 26 or later | Android 13 or later | Windows 11 (21H2, build 22000) or later | Omarchy 4.5 (Arch Linux) |
 | Widgets | WidgetKit | WidgetKit | App Widgets | Desktop widgets drawn by the app | Desktop widgets drawn by the app, shown by an Omarchy plugin |
 | JavaScript engine | JavaScriptCore | JavaScriptCore | QuickJS-NG | QuickJS-NG | QuickJS-NG |
 

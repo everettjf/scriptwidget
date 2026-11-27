@@ -48,7 +48,8 @@ Build widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript 
 - [Browser widget preview research](browser-widget-preview-research.md) — browser-first fast preview proposal, fidelity model, and staged validation plan.
 - [Browser preview engine](browser-preview-engine.md) — engine, renderer, measured JavaScriptCore and SwiftUI parity (iOS and macOS), sandbox isolation, and known differences. The macOS comparison app lives in `Tools/ScriptWidgetPreview`.
 - [Browser preview coverage](browser-preview-coverage.md) — generated per-tag and per-property support matrix.
-- [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS for the Android app (version 1.0.0).
+- [Mac Desktop Tools](five-minute-tutorial.md#mac-desktop-tools) — the launcher, system monitor, local music, translation and desktop appearance tools in the current source.
+- [ScriptWidget for Android](android/README.md) — architecture, build and test commands, and differences from iOS.
 - [Android distribution](android/distribution.md) — the Play and GitHub build flavors, signing, the release steps, and why IzzyOnDroid was not requested.
 - [Android test notes](android/testing.md) and [Android to-do](android/TODO.md) — what was tested on which devices, and what is left.
 - [Android UI review](android/ui-review.md) — the screen-by-screen review behind build 8 and what it changed.

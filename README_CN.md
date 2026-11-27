@@ -14,9 +14,11 @@
 
 </div>
 
+`main` 分支已加入 [Mac 桌面工具](docs/five-minute-tutorial.md#mac-desktop-tools)和新模板，尚待应用发行。未发布变更见[更新日志](CHANGELOG.md#unreleased)。
+
 ## 用你的 Agent 创作 — scriptwidget-creator
 
-**在 Claude Code 描述组件，让 Agent 生成、校验，并直接打开 Web Studio 查看效果。** 沿用自己的 Agent 和模型，安装[官方 Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip)到 `~/.claude/skills/scriptwidget-creator/`，使用 `/scriptwidget-creator` 调用。
+**在 Claude Code 描述组件，让 Agent 生成、校验，并直接打开 Web Studio 查看效果。** 沿用自己的 Agent 和模型，安装[官方 Skill](docs/agent-quickstart.md#install-the-skill)到 `~/.claude/skills/scriptwidget-creator/`，使用 `/scriptwidget-creator` 调用。
 
 ```sh
 brew install everettjf/tap/scriptwidget-cli
@@ -60,7 +62,7 @@ Windows 版和 Linux 版是预览版：[Windows](https://apps.microsoft.com/deta
 - Mac Studio 内置 CodeMirror 编辑器、补全、诊断、Console 和多尺寸预览。
 - 可用 OpenAI 兼容模型生成、运行、诊断并迭代 Widget；API Key 保存在 Keychain。
 - Widget & Skills Gallery 支持经过索引、大小、路径与 SHA-256 验证的一键安装和离线缓存。
-- 92 个内置模板（连同组件与 API 示例共 140 个）、版本化 Runtime API、Package 2.0 与 Skills 1.0 均有自动测试和发布门禁。
+- 内置模板、组件与 API 示例、版本化 Runtime API、Package 2.0 与 Skills 1.0 均有自动测试和发布门禁。
 
 ## 五分钟开始
 

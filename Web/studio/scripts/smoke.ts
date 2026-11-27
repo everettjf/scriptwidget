@@ -30,14 +30,17 @@ async function desktop(): Promise<void> {
     // what to do with it on every system, with a link to each app.
     await page.evaluate("Object.defineProperty(navigator, 'canShare', { value: undefined, configurable: true }); document.getElementById('install-package').click()");
     await page.waitFor("!!document.getElementById('install-dialog')");
-    const install = await page.evaluate<{ title: string; text: string; links: string[] }>("(() => { const dialog = document.getElementById('install-dialog'); return { title: dialog.querySelector('h2').textContent, text: dialog.textContent, links: [...dialog.querySelectorAll('a')].map((a) => a.textContent) }; })()");
+    const install = await page.evaluate<{ title: string; text: string; links: { title: string; href: string }[] }>("(() => { const dialog = document.getElementById('install-dialog'); return { title: dialog.querySelector('h2').textContent, text: dialog.textContent, links: [...dialog.querySelectorAll('a')].map((a) => ({ title: a.textContent, href: a.href })) }; })()");
     if (install.title !== "Install on your device") throw new Error(`install dialog title: ${install.title}`);
-    for (const system of ["iPhone and iPad", "Android", "Mac, Windows and Linux"]) if (!install.text.includes(`${system}:`)) throw new Error(`install dialog has no steps for ${system}`);
-    if (install.links.join(",") !== "iPhone and iPad,Mac,Android,Windows,Linux") throw new Error(`install dialog links: ${install.links}`);
+    for (const system of ["iPhone and iPad", "Android", "Mac", "Windows and Linux"]) if (!install.text.includes(`${system}:`)) throw new Error(`install dialog has no steps for ${system}`);
+    const [platformSupport, ...appLinks] = install.links;
+    if (platformSupport?.title !== "Check platform support" || !platformSupport.href.endsWith("/docs/platform-support.md")) throw new Error("install dialog has no platform support link");
+    if (appLinks.map((link) => link.title).join(",") !== "iPhone and iPad,Mac,Android,Windows,Linux") throw new Error(`install dialog links: ${JSON.stringify(appLinks)}`);
+    if (!install.text.includes("Edit Widgets") || !install.text.includes("iOS or iPadOS 18 or later")) throw new Error("install dialog does not give current Apple installation guidance");
     if (await page.evaluate<string>("document.getElementById('install-package').textContent") !== "Install on device") throw new Error("install button label");
     await page.evaluate("document.querySelector('#install-dialog button[data-slot=dialog-close], #install-dialog button').click()");
     await page.waitFor("!document.getElementById('install-dialog')");
-    console.log("install dialog: steps for every system and five app links");
+    console.log("install dialog: platform-specific steps, compatibility guidance and five app links");
     // Open a template.
     await page.evaluate("document.getElementById('open-templates').click()");
     await page.waitFor("document.querySelectorAll('.template-card').length > 50");

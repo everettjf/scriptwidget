@@ -4,7 +4,7 @@ The public JavaScript/JSX host contract is versioned independently from the app.
 
 ## Global API
 
-Version 1.4 adds `$reminders`, `$photos`, expanded Health summaries, `$services` and read-only playback snapshots (iPhone, iPad and Android) through [`$music`](music-api.md). [Connected Services](services-api.md) starts with authenticated GitHub profiles through native account approval; Web samples do not grant real access. The additive `backgroundMaterial` JSX property supplies bounded public SwiftUI frosted material with accessibility fallbacks; see [Visual effects](visual-effects.md). These additions remain under development in the unified release branch.
+Version 1.4 adds `$reminders`, `$photos`, expanded Health summaries, `$services` and read-only playback snapshots (iPhone, iPad and Android) through [`$music`](music-api.md). [Connected Services](services-api.md) starts with authenticated GitHub profiles through native account approval; Web samples do not grant real access. The additive `backgroundMaterial` JSX property supplies bounded public SwiftUI frosted material with accessibility fallbacks; see [Visual effects](visual-effects.md).
 
 Version 1.3 adds the read-only `$calendar` API, explicit `calendar` package permission and bounded queries/cache. See [Calendar API](calendar-api.md). This describes the current source contract; earlier uploaded builds do not contain these additions.
 

@@ -4,6 +4,7 @@ export const productLinks = {
   android: "https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true",
   windows: "https://apps.microsoft.com/detail/9MVR97B9C938",
   linux: "https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true",
+  platformSupport: "https://github.com/everettjf/scriptwidget/blob/main/docs/platform-support.md",
   website: "https://atomsprout.com/scriptwidget/",
   discord: "https://discord.gg/eGzEaP6TzR",
 } as const;

@@ -1,8 +1,8 @@
-# Google Play listing kit (ScriptWidget 1.1.0)
+# Google Play listing kit
 
-Everything needed to create the Play Console entry and an internal test release.
+Play Console configuration, closed testing status and listing materials.
 
-## Status (15 November 2026)
+## Recorded status (through 23 November 2026)
 
 - The app exists in Play Console under the AtomSprout developer account (verified): ScriptWidget, `com.atomsprout.scriptwidget`, English (United States), App, Free, category Tools.
 - Release 1 (1.0.0) is on the closed testing track "Closed testing - Alpha" and was sent to Google for review on 15 November 2026 together with the store listing and the App content declarations (15 changes). Managed publishing is off, so it went live for testers when it was approved. The review passed and the release is live; the opt-in link is <https://play.google.com/apps/testing/com.atomsprout.scriptwidget>.
@@ -12,7 +12,7 @@ Everything needed to create the Play Console entry and an internal test release.
 - Testers: the Google Group `atomsprout@googlegroups.com` ("Atomsprout Testers", https://groups.google.com/g/atomsprout, anyone can join). Feedback address: the GitHub issues page. Countries: all 177 offered plus rest of world.
 - App signing: Play signs with our existing key, the one that signs the GitHub APK (certificate SHA-256 `EF:47:46:02:E8:0C:B6:3C:5E:F3:9E:39:ED:A8:1E:B6:AE:9E:77:D2:7C:8D:13:C5:73:E2:AA:D4:BB:6C:1C:96`). Play Console generated its own key when the app was created; it was replaced before the first upload through "Export and upload a key from Java keystore" (the PEPK tool). The same key is the upload key. Google now holds a copy of the private key.
 - Automatic protection (the installer check) is on, the default. It was not changed. Whether it should stay on while an APK is also published on GitHub is still to be decided, under Protected with Play.
-- The bundle uploaded is `Android/app/build/outputs/bundle/playRelease/app-play-release.aab`, SHA-256 `6b0b644ce85c2a1ac6c310d6d8cb703553eec0da32cffadcc39b188f9d42532a`, built 14 November 2026. The commits after it changed documentation only.
+- The first bundle uploaded was `Android/app/build/outputs/bundle/playRelease/app-play-release.aab`, SHA-256 `6b0b644ce85c2a1ac6c310d6d8cb703553eec0da32cffadcc39b188f9d42532a`, built 14 November 2026.
 - The answers entered are the ones under "Answers used in the first Play Console setup", with these differences: testers are the Google Group alone; the Health apps declaration now also asks for a written use of each of the nine Health Connect permissions (entered, see the submission checklist); "Can users log in with accounts created outside the app" was answered No.
 - Not done: installing from Play on a device, internal testing (not used), tablet screenshots (not required so far), the production application (needs 12 testers opted in for 14 days).
 - Firebase: project `scriptwidget-77792`, owned by the `atomsprout@gmail.com` Google account, has the Android app `com.atomsprout.scriptwidget`. Gemini and Analytics are off. `Android/firebase.properties` (git-ignored) holds its values. The first project (`scriptwidget-8ac0e`, under another account) is no longer used.
@@ -40,7 +40,7 @@ Everything needed to create the Play Console entry and an internal test release.
 | App or game | App |
 | Free or paid | Free |
 | Category | Tools |
-| Version | 1.1.0 (version code 2) |
+| Prepared version | 1.1.2 (version code 4, upload pending in the record above) |
 | Minimum Android | 13 (API 33) |
 | Target API | 36 |
 | Contains ads | No |

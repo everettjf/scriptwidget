@@ -11,7 +11,7 @@ scriptwidget doctor --format json
 
 The CLI requires macOS 26 or later. Releases contain separate arm64 and x86_64 packages, signed with Developer ID and notarized by Apple. Native rendering needs a logged-in graphical session. The App continues to be installed and updated through the Mac App Store.
 
-Download the [authoring Skill](https://github.com/everettjf/scriptwidget/releases/download/cli-v0.2.0/scriptwidget-creator-0.2.0.zip), unzip it, and install the `scriptwidget-creator` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
+From [ScriptWidget CLI releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+CLI%22&expanded=true), download and unzip the newest `scriptwidget-creator` ZIP and install the `scriptwidget-creator` folder using your agent's Skill installation instructions. A matching copy ships with the CLI; `doctor` reports its local path. This is an external Coding Agent Skill, not the App's `.swskill` format. Do not automatically grant tools or system permissions because a Skill suggests them.
 
 For copy-to-folder Claude Code installation, browser preview and iPhone import, see the [Agent quick start](agent-quickstart.md).
 

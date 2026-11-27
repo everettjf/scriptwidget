@@ -55,7 +55,7 @@ Never place API secrets directly in a widget you plan to share. Treat imported p
 Create a widget from **Habit Heatmap** under New Widget. It starts with an empty
 history, rather than sample activity. Small and medium widgets track Read;
 large and extra-large widgets show Read, Run and Meditate. Tap **Check in** on a
-Home Screen widget to save today's completion (iOS 17+ / macOS 14+). A successful
+Home Screen widget or Mac desktop widget to save today's completion. ScriptWidget widgets require iOS / iPadOS 18 or macOS 26. A successful
 action requests a WidgetKit timeline reload; the system controls when it appears.
 Lock Screen accessories display the first habit's streak without a check-in button.
 The editor preview displays the saved state; previewing never creates a check-in.

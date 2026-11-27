@@ -3,7 +3,7 @@
 > **Home Screen motion (November 2026).** WidgetKit does not run `TimelineView` in a widget, so the public path below left every Home Screen clock and swing at rest. Inside the widget extension, clock hands, custom intervals and swings again use WidgetKit's clock-hand effect (`_ClockHandRotationEffect`), looked up by name in `ClockHandRotationEffect.swift` only. When a system release no longer has it, or a test or preview fixes the date, the public path is used. A swing is built from three of those rotations, as before October 2026. The effect is created by decoding JSON, and its format changed: from iOS 26 `period` is the seconds of one full turn and `anchor` is `[x, y]`; earlier systems took `{"custom": {"_0": n}}` and `{"x", "y"}`. The forms are tried newest first and the first that decodes is kept; a custom interval `n` is still half a turn, so it is sent as `2n` seconds. Verified moving on the Home Screen of an iPhone 11 on iOS 26.0.1 (November 22, 2026). macOS WidgetKit has the same effect in the same format, so the Mac widget extension uses it too; verified moving on a Mac desktop running macOS 27.2 (November 22, 2026). The apps' own previews, Reduce Motion and the Always On display are unchanged. `Scripts/validate-release.mjs` keeps the private name confined to that file and that file to the widget extension.
 
 
-Runtime 1.4's release candidate uses Foundation parsing (without the former SwiftyJSON dependency in this modifier), public SwiftUI `TimelineView`, `rotationEffect`, `offset` and ImageIO. It no longer resolves or decodes a private WidgetKit clock-hand modifier. No timer reruns JavaScript or re-queries personal data on animation ticks.
+The public preview and fallback paths use Foundation parsing, SwiftUI `TimelineView`, `rotationEffect`, `offset` and ImageIO. The separate widget-extension path uses the effect described above. Animation ticks do not rerun JavaScript or query personal data.
 
 | Context | Behavior |
 | --- | --- |
@@ -18,7 +18,7 @@ Apple documents [data-update animations in widgets](https://developer.apple.com/
 
 ## Compatibility and timing
 
-The Runtime 1.4 candidate keeps the same property/tag strings and Package/compiler ABI 1.0; scripts do not need rewriting. The implementation and browser semantics change from the previous experimental private path. Preview engine **0.18.0** records this change. No permanent-loop guarantee is carried forward, and this change is not evidence that an existing animation will run continuously on a Home Screen.
+The animation property and tag names and Package/compiler ABI 1.0 remain compatible. The preview engine introduced the public preview semantics in **0.18.0**. Continuous motion on an installed widget depends on WidgetKit and the system settings.
 
 - `clockSecond`, `clockMinute` (including the old `clockMiniute` alias) and `clockHour` use local wall-clock components in their configured timezone. Standard periods are 60, 3,600 and 43,200 seconds.
 - `clockCustom,n` and JSON `type:"clock"` retain signed **half-turn** intervals: a full turn takes `2 * abs(n)` seconds. Negative values reverse direction. Magnitudes below 0.25 seconds become 0.25 with the same sign. Nonfinite raw quick values do not start an animation; malformed/nonfinite JSON shows a generic error on iOS without logging source contents; unsupported or invalid Mac effects stay at rest.

@@ -29,21 +29,6 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - Add Desktop Tools with a picker-backed app and folder launcher, a live CPU and memory monitor with app rankings, local audio playback and player shortcuts, on-device translation, and an optional frosted window and floating pet.
 - Add Week Progress, Desk Vitals, Daily Focus Checklist, Daily Pause and Mac Desktop Tools templates.
 
-### Android (in development, `android` branch)
-
-- Add an Android app that runs the same Package 2.0 widgets as iPhone, iPad and Mac: QuickJS-NG runtime with the shared execution kernel, the shared renderer painted to a bitmap, and small, medium and large home-screen widgets with tap actions, self-updating timers and light/dark variants.
-- Add the library, the Studio editor, bundled templates, `.swt` import and export, Gallery, Skills, Data Source Plugins and AI generation with API-key providers to the Android app.
-- Capabilities without an Android implementation report `[unsupported_platform]` and are listed on the package page. See [ScriptWidget for Android](docs/android/README.md).
-- Verified on one device (Pixel 6, Android 17). Other vendors' launchers and background limits are untested; AI generation has not been run against a live provider.
-
-### Windows (preview)
-
-- Add a Windows 11 app that runs the same Package 2.0 widgets on the desktop: QuickJS-NG with the shared execution kernel, the shared renderer painted with Win2D, and small, medium, large and extra-large widgets in windows that sit on the desktop.
-- Add a tray icon, a management window with the library, the bundled templates, the code editor with a live preview, settings, and `.swt` import and export.
-- `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work; the other data APIs report `[unsupported_platform]`. See [ScriptWidget for Windows](docs/windows/README.md).
-- Add an installer for GitHub Releases (x64 and ARM64): it installs for the current user without administrator rights, updates over a running copy and removes itself from Installed apps. It is not signed, so Windows SmartScreen warns about it; there is no automatic update.
-- Automated tests and a scripted desktop check pass on one x64 PC and in CI on x64 and ARM64. The desktop behavior was first checked from window captures, the window order and posted input while the PC was locked, then on the unlocked desktop with the real Win+D key and real mouse input, which found and fixed two Show Desktop bugs and one in the bundled network templates. Signing out and in, a second display and an ARM64 PC are untried. See [the test notes](docs/windows/testing.md).
-
 ### Compatibility fixes
 
 - Allow confirmed deletion of late-synced or recreated unregistered widget folders without adopting their old records. Preserve confirmation-time directory identity, show deletion failures, and record diagnostic outcomes.
@@ -94,3 +79,24 @@ Notable user-visible changes are recorded here. ScriptWidget follows semantic ve
 - `fontWeight`, `fontDesign`, and the older `weight` property are now applied to text, dates, icons, labels, and images. They were documented and used by templates but previously ignored.
 - Widgets keep rendering on iPhone and iPad after iCloud evicts their script: the build-cache fallback found no cached copy on devices, where package paths go through the `/var` → `/private/var` symlink and an evicted file's path no longer matched its package root. Found by running the runtime tests on a physical iPad Air.
 - Added local build-cache fallback and proactive package caching for scripts evicted by iCloud. GitHub issue #6 remains open until the physical-iPhone offline acceptance matrix is complete.
+
+## Platform release history
+
+- **Android 1.1.2** is available as a FOSS APK on GitHub Releases. It improves swing animation and supports Android 13 or later. Google Play distribution is in closed testing. See the [Android release record](Android/play/listing.md).
+- **Windows 0.1.1 preview** is available in the Microsoft Store, with AI authoring, local model providers, Gallery and Skills. The GitHub installer preview is tracked separately. See the [Windows test and release notes](docs/windows/testing.md).
+- **Linux 0.1.6 preview** is available for Omarchy on GitHub Releases, with aarch64 and x86_64 archives and a package recipe. The release restores the original Animation Aquarium layout. See the [Linux test and release notes](docs/linux/testing.md).
+
+### Initial Android development
+
+- Add an Android app that runs the same Package 2.0 widgets as iPhone, iPad and Mac: QuickJS-NG runtime with the shared execution kernel, the shared renderer painted to a bitmap, and small, medium and large home-screen widgets with tap actions, self-updating timers and light/dark variants.
+- Add the library, the Studio editor, bundled templates, `.swt` import and export, Gallery, Skills, Data Source Plugins and AI generation with API-key providers to the Android app.
+- Capabilities without an Android implementation report `[unsupported_platform]` and are listed on the package page. See [ScriptWidget for Android](docs/android/README.md).
+- Verified on one device (Pixel 6, Android 17). Other vendors' launchers and background limits are untested; AI generation has not been run against a live provider.
+
+### Initial Windows preview
+
+- Add a Windows 11 app that runs the same Package 2.0 widgets on the desktop: QuickJS-NG with the shared execution kernel, the shared renderer painted with Win2D, and small, medium, large and extra-large widgets in windows that sit on the desktop.
+- Add a tray icon, a management window with the library, the bundled templates, the code editor with a live preview, settings, and `.swt` import and export.
+- `$device`, `$system`, `$storage`, `$file`, `fetch`, `$http`, `$xml`, `$dataSource` and `$weather` work; the other data APIs report `[unsupported_platform]`. See [ScriptWidget for Windows](docs/windows/README.md).
+- Add an installer for GitHub Releases (x64 and ARM64): it installs for the current user without administrator rights, updates over a running copy and removes itself from Installed apps. It is not signed, so Windows SmartScreen warns about it; there is no automatic update.
+- Automated tests and a scripted desktop check pass on one x64 PC and in CI on x64 and ARM64. The desktop behavior was first checked from window captures, the window order and posted input while the PC was locked, then on the unlocked desktop with the real Win+D key and real mouse input, which found and fixed two Show Desktop bugs and one in the bundled network templates. Signing out and in, a second display and an ARM64 PC are untried. See [the test notes](docs/windows/testing.md).

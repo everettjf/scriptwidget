@@ -1,12 +1,12 @@
 # Android to-do
 
-What is left before 1.0.0 (version code 1) is public on Google Play. On 15 November 2026 it was uploaded to the closed testing track and sent to Google for review; the review passed and the closed test is live for testers. The version was renumbered from 1.2.0 (build 8) on 14 November 2026, because the app starts again under a new developer account and package name; the earlier build numbers in these notes are that development history. Build 7 went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and the app was created again under the new, verified developer account on 15 November 2026. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
+What remains before a public Google Play rollout. On 15 November 2026 it was uploaded to the closed testing track and sent to Google for review; the review passed and the closed test is live for testers. The version was renumbered from 1.2.0 (build 8) on 14 November 2026, because the app starts again under a new developer account and package name; the earlier build numbers in these notes are that development history. Build 7 went to Google Play internal testing on 13 November 2026; that app was then deleted, the package name changed to `com.atomsprout.scriptwidget`, and the app was created again under the new, verified developer account on 15 November 2026. Tested and untested behavior is in the [test notes](testing.md); the Play Console state is in the [listing kit](../../Android/play/listing.md).
 
 ## Not verified yet
 
 | Item | What it needs |
 | --- | --- |
-| Install the internal test build from Google Play and place a widget | A device signed in to a tester's Google account. The Pixel 6 has no account, and its debug-signed app must be uninstalled first (this removes its widgets) |
+| Install the closed test build from Google Play and place a widget | A device signed in to a tester's Google account. The Pixel 6 has no account, and its debug-signed app must be uninstalled first (this removes its widgets) |
 | Push while the app is in the background or stopped, with a data-only message | A server that sends through the FCM API. That needs a service account key for the Firebase project `scriptwidget-77792`; creating one needs the owner's approval. Keep the key out of the repository |
 | A real registration endpoint receiving the device token | A push server reachable over HTTPS and a test package that declares it |
 | `$icloud` sync through a remote cloud provider | A cloud account on two Android devices and a shared folder picked in the app |
@@ -51,8 +51,8 @@ Scrolling lists, wallpaper colors and the automation entry point are done; see [
 - Sending broadcasts from a script to automation apps, after a separate security review.
 - Faster refresh with exact alarms or a foreground service, at a battery and permission cost.
 - Notification content as a data source, after a separate privacy review.
-- Wear OS tiles, and distributing an APK outside Google Play.
+- Wear OS tiles.
 
 ## Found while testing Windows
 
-- **Bundled templates without `widget.json` that use the network: fixed on 19 November 2026, not committed yet.** A copy of such a template (Daily Quote, Currency Pulse, Weather and six more) failed with "Network host is not declared in widget.json"; this was reproduced on the Pixel 6. As on Windows, the copy now gets a manifest that declares `network` and exactly the hosts named in its own script files (no wildcard, no `localhost`, no IP address; a template that names no host gets no permission). Like Windows, it also declares hosts that are only link targets, so the `link` example gets `www.baidu.com`, `www.bing.com`, `www.google.com` and `atomsprout.com`.
+- **Bundled templates without `widget.json` that use the network: fixed on 19 November 2026.** A copy of such a template (Daily Quote, Currency Pulse, Weather and six more) failed with "Network host is not declared in widget.json"; this was reproduced on the Pixel 6. As on Windows, the copy now gets a manifest that declares `network` and exactly the hosts named in its own script files (no wildcard, no `localhost`, no IP address; a template that names no host gets no permission). Like Windows, it also declares hosts that are only link targets, so the `link` example gets `www.baidu.com`, `www.bing.com`, `www.google.com` and `atomsprout.com`.

@@ -18,7 +18,7 @@ ScriptWidget은 Apache 2.0 라이선스로 공개된 위젯 제작 플랫폼입�
 
 Android 앱(Android 13 이상)은 [GitHub Releases의 APK](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true)로 받을 수 있습니다. Google Play에서는 비공개 테스트 중입니다. 참여하려면 [Atomsprout Testers 그룹](https://groups.google.com/g/atomsprout)에 가입하세요. [Android용 ScriptWidget](docs/android/README.md)을 참고하세요.
 
-Windows와 Linux 버전은 미리보기 버전입니다. [Windows](https://apps.microsoft.com/detail/9MVR97B9C938)은 Windows 11(21H2, 빌드 22000) 이상이 필요하며 [Windows용 ScriptWidget](docs/windows/README.md)을 참고하세요. Linux 버전은 현재 [Omarchy](https://omarchy.org) 4.5를 지원하고 아카이브는 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases)에 있으며 [Linux용 ScriptWidget](docs/linux/README.md)을 참고하세요. 둘 다 같은 위젯 패키지를 실행하지만 건강, 캘린더, 위치, 음악 같은 기기 데이터 API는 없습니다.
+Windows와 Linux 버전은 미리보기 버전입니다. [Windows](https://apps.microsoft.com/detail/9MVR97B9C938)은 Windows 11(21H2, 빌드 22000) 이상이 필요하며 [Windows용 ScriptWidget](docs/windows/README.md)을 참고하세요. Linux 버전은 현재 [Omarchy](https://omarchy.org) 4.5를 지원하고 아카이브는 [GitHub Releases](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true)에 있으며 [Linux용 ScriptWidget](docs/linux/README.md)을 참고하세요. 둘 다 같은 위젯 패키지를 실행하지만 건강, 캘린더, 위치, 음악 같은 기기 데이터 API는 없습니다.
 
 ### 플랫폼별 스크린샷
 

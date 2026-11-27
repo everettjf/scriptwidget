@@ -30,6 +30,8 @@ Saved changes appear on a subsequent widget refresh. The same project can sync t
 
 ## Mac desktop tools
 
+Desktop Tools are in the current Mac source and are listed under [Unreleased](../CHANGELOG.md#unreleased).
+
 ![Desktop Tools Music pane on macOS](images/mac-desktop-tools.png)
 
 Open **File → Desktop Tools…** in ScriptWidget. To reach it from the desktop, create a widget from the **Mac Desktop Tools** template and add it to the desktop using the steps above. A small widget opens one tool. Set its widget parameter to `launcher`, `system`, `music`, `translation` or `appearance`. Larger sizes show links to all five tools.

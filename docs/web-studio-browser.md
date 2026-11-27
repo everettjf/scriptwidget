@@ -20,7 +20,7 @@ the browser and previews them itself.
 - **New** starts a blank Package 2.0 project. **Import** opens a `.swt` or `.zip`;
   you can also drop a package anywhere on the page. Dropping a PNG, JPEG, WebP,
   or GIF adds it to the open project as an image.
-- **Gallery** lists the 78 bundled templates and the Gallery widgets with live
+- **Gallery** lists the bundled templates and the Gallery widgets with live
   previews. Filter by category or **Featured**, or search. Open one to preview
   it at every size it handles, read its files, copy code, and **Create a copy**:
   the copy becomes a new project saved in this browser, and the template stays

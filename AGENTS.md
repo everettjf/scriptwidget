@@ -10,7 +10,7 @@ ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit
 - `Shared/ScriptWidgetRuntime/Gallery/`: verified GitHub catalog, offline index cache, transactional installer, and shared UI.
 - `Shared/ScriptWidgetRuntime/Plugin/`: declarative Data Source Plugin 1.0 validation, import/export, request building, and `$dataSource` runtime.
 - `iOS/ScriptWidget`, `ScriptWidgetWidget`, `ScriptWidgetShare`: iPhone/iPad app, WidgetKit/Live Activity/Control Widget extension, and share extension.
-- `macOS/ScriptWidgetMac`, `ScriptWidgetMacWidget`: Studio app and macOS widget extension. Studio features live in `Editor/`, `AIGenerate/`, `Skills/`, `Plugin/`, and `Onboarding/`.
+- `macOS/ScriptWidgetMac`, `ScriptWidgetMacWidget`: Studio app and macOS widget extension. Studio features live in `Editor/`, `AIGenerate/`, `Skills/`, `Plugin/`, and `Onboarding/`. Native Desktop Tools live in `macOS/ScriptWidgetMac/Desktop/`. The Mac Desktop Tools widget routes to fixed app pages. Bookmarks, process data, translation text and player shortcuts stay in the Mac host.
 - `Editor/editorfe/`: Vite frontend with CodeMirror 6. Built files are copied into both platform `StudioEditor.bundle` directories.
 - `Web/preview-engine/`: browser preview engine (plain JavaScript with `.d.ts` types); `Web/studio/`: Web Studio, a React + strict TypeScript + shadcn/ui app published to GitHub Pages. Its `kernel.js` and `renderer.js` are also the Android, Windows and Linux runtime, so a change there affects the browser preview and all three together.
 - `Windows/`: the Windows 11 desktop app (preview). `native` builds `swcore.dll` from the QuickJS-NG sources under `Android/core/src/main/cpp/quickjs`; `src/ScriptWidget.Core` is a C# port of `Android/core` (engine wrapper, compiler, executor, packages, APIs, plugins, Win2D renderer); `src/ScriptWidget.App` is the always-running desktop host; `src/ScriptWidget.Studio` is the WinUI 3 management window; `src/ScriptWidget.Cli` is `swcli`. It runs the same shared JavaScript as Android, built by `Scripts/lib/shared-js.mjs`. `Windows/assets`, `Windows/native/out` and `Windows/artifacts` are generated; do not edit or commit them.
@@ -20,7 +20,7 @@ ScriptWidget lets users author native widgets with JavaScript and JSX: WidgetKit
 - `Gallery/`: curated Gallery 1.0 index, JSON Schema, widget seeds, and Skill seeds.
 - `docs/`: authoritative user and contributor documentation; `docs/android/` covers the Android app, its test notes and its to-do. The native JSX switch is the runtime authority; Studio completion metadata lives in `Editor/editorfe/src/scriptWidgetAPI.js`. Package contracts live in `Shared/ScriptWidgetRuntime/Resource/*.schema.json`.
 
-Widget packages live under `Scripts/<PackageName>/`. Package 2.0 uses `widget.json` plus a declared JS/JSX entry point (normally `main.jsx`) and optional nested source/resource files. `__Build/` is generated cache state, not authored source.
+Bundled Apple templates live under `Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/`, and Gallery packages live under `Gallery/widgets/`. The repository’s root `Scripts/` holds development and release tooling. Package 2.0 uses `widget.json` plus a declared JS/JSX entry point (normally `main.jsx`) and optional nested source/resource files. `__Build/` is generated cache state, not authored source.
 
 ## Build, Test, and Development Commands
 
@@ -81,7 +81,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 - Add deterministic tests for validator semantics, permission denial, archive hardening, path boundaries, cache fallback, and migrations. Security fixes need a regression test that fails before the fix.
 - Runtime/global/component changes should include execution tests, editor schema alignment, generated API docs, and representative template validation.
 - iCloud/cache work must cover primary reads, proactive caching, eviction fallback, nested imports, supported binary resources, and user-visible iCloud states. Do not claim physical-device coverage unless it was actually executed.
-- UI changes require the relevant iOS/macOS scheme build and screenshots when the visual result matters.
+- UI changes require the relevant iOS/macOS scheme build and screenshots when the visual result matters. Mac Desktop Tools changes need `sh Scripts/macos-widget-link-tests.sh` and the Mac app build. Verify launcher access, live sampling and widget handoff in a signed sandbox when those paths change.
 - Live Activity, Dynamic Island, Control Widget, app/widget shared-container, and extension-memory behavior need targeted smoke tests when touched.
 - Android changes need the JVM tests and the instrumented suites on a device or emulator; changes to `Web/preview-engine` need its own tests and the Android, Windows and Linux suites. Record what ran, on which device, in `docs/android/testing.md`, and keep `docs/android/TODO.md` current.
 
@@ -110,5 +110,7 @@ Treat scripts, imported ZIPs, Gallery content, Skills, plugin manifests, network
 ## Public website ownership
 
 Maintain and deploy functional Web Studio only from this repository at `https://asp.run/scriptwidget/studio/`. Product marketing, app downloads, support and original privacy policies remain at `https://atomsprout.com/scriptwidget/`. The Pages workflow must assemble the tested Studio build using `Scripts/build-web-site.mjs`; never rewrite Studio or sandbox HTML into Company redirects.
+
+The Pages entry source lives in `Web/entry/`. Treat the legacy marketing files under `site/` as reference material. Update the official product site in the Company repository and verify App Store availability before advertising merged Mac features there.
 
 The `/scriptwidget/` root is a simple entry page with links to Web Studio and the official Company product website. Do not auto-redirect it or publish old Company product redirect pages. Reuse the native App icon for the entry page, Studio header and browser favicon.

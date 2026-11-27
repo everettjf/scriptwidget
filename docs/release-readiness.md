@@ -93,10 +93,9 @@ The repository's Releases list holds five products, told apart by tag prefix: `v
 
 App Store text (What's New, description, promotional text, screenshots) names no other platform: App Review rejected 27.2.7 on 21 November 2026 under guideline 2.3.10 because its What's New mentioned Android. Describe the feature on Apple devices instead ("widgets with scrolling lists now show here too"). Review notes for App Review are not shown to users and may explain the cross-platform context.
 
-For the current A/B release, App Review is submitted manually by the user.
-`Scripts/release-apple.sh --testflight-only` increments the shared patch/build
-versions, runs the release gate, archives iOS/macOS and uploads both builds to
-TestFlight. It does not submit App Review with that option.
+For manual App Review, run `Scripts/release-apple.sh --testflight-only` to run the
+release gate, archive iOS and macOS, and upload both builds to TestFlight. The
+user submits App Review in App Store Connect.
 
 ```sh
 export APPLE_ID='developer@example.com'
@@ -107,11 +106,11 @@ export APPLE_TEAM_ID='ABCDE12345'
 ./Scripts/release-apple.sh --yes --testflight-only
 ```
 
-The helper always increments the project versions; inspect dry-run output before
-using it. The current prepared source is 27.1.3 (27013), so calling the helper
-would choose the next patch/build, rather than upload an existing 27013 archive.
-If the intended store version is already prepared, archive/export that exact
-source with Xcode and upload its artifacts without invoking this version bump.
+The helper increments the shared patch and build numbers by default. Pass
+`--same-version` to increment only the build number, and inspect `--dry-run`
+for the values from the current Xcode projects. To upload the exact prepared
+version and build without either increment, archive and export that source
+with Xcode and upload those artifacts.
 A signed Debug device build is not an App Store distribution archive.
 
 The Developer Team ID selects the signing team; Xcode still needs a valid local
