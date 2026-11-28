@@ -1,0 +1,26 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.weather-display",
+  "name": "Weather Display",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "api.open-meteo.com"
+  ],
+  "description": "Weather layout showcase with high / low temperature.",
+  "category": "weather",
+  "tags": [
+    "weather",
+    "layout"
+  ],
+  "icon": "cloud.rain.fill"
+}

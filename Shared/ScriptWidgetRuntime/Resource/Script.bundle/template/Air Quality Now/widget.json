@@ -1,0 +1,27 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.air-quality-now",
+  "name": "Air Quality Now",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "air-quality-api.open-meteo.com"
+  ],
+  "description": "Current air quality index with a color-coded badge.",
+  "category": "weather",
+  "tags": [
+    "aqi",
+    "air",
+    "network"
+  ],
+  "icon": "aqi.medium"
+}

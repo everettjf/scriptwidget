@@ -1,0 +1,27 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.new-episode-tracker",
+  "name": "New Episode Tracker",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "www.episodate.com",
+    "static.episodate.com"
+  ],
+  "description": "Countdown to your show's next episode.",
+  "category": "productivity",
+  "tags": [
+    "tv",
+    "countdown"
+  ],
+  "icon": "tv.fill"
+}

@@ -1,4 +1,5 @@
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
+import { sampleNetworkResponses } from "./sampleNetworkResponses.ts";
 
 // Preview data only. Kept with the browser draft, never in exported packages.
 export type MockValue = null | boolean | number | string | MockValue[] | { [key: string]: MockValue };
@@ -9,8 +10,6 @@ export const mockAPIs: MockAPI[] = dataAPICatalog;
 export const isObject = (value: unknown): value is MockObject => value !== null && typeof value === "object" && !Array.isArray(value);
 export function sampleFixtures(): MockObject {
   const now = Date.now(), start = Math.floor(now / 3600000) * 3600000;
-  const weather = {properties:{meta:{updated_at:new Date(start).toISOString(),units:{air_temperature:"celsius",relative_humidity:"%",wind_speed:"m/s"}},
-    timeseries:Array.from({length:24},(_,index)=>({time:new Date(start+index*3600000).toISOString(),data:{instant:{details:{air_temperature:21+index/4,relative_humidity:62,wind_speed:2}},next_1_hours:{summary:{symbol_code:"partlycloudy_day"}}}}))}};
   const dayStart = new Date(now); dayStart.setHours(0,0,0,0);
   const zone=Intl.DateTimeFormat().resolvedOptions().timeZone;
   const day=`${dayStart.getFullYear()}-${String(dayStart.getMonth()+1).padStart(2,"0")}-${String(dayStart.getDate()).padStart(2,"0")}`;
@@ -25,8 +24,7 @@ export function sampleFixtures(): MockObject {
   return {
     systemAccess: {permissions:["notifications","calendarWrite","maps","weather","alarms","documents","contacts","home"],contacts:["sample.contact"],home:["sample.light","scene-sample"]},
     api: Object.fromEntries(mockAPIs.filter((api) => api.id !== "$device.isdarkmode").map((api) => [api.id, { value: api.group === "health" && isObject(api.value) ? healthSample(api.id,api.value) : api.group === "weather" && isObject(api.value) ? {...api.value,fetchedAt:new Date(now).toISOString(),hours:Array.from({length:48},(_,i)=>({time:new Date(start+i*3600000).toISOString(),temperatureC:Math.round((21+Math.sin(i/5)*4)*10)/10,windMetersPerSecond:2,precipitationMM:0,condition:"partlycloudy_day"}))} : api.group === "photos" && api.id.endsWith(".items") ? {...api.value as MockObject,fetchedAt:new Date(now).toISOString()} : api.group === "reminders" && api.id.endsWith(".items") ? {...api.value as MockObject, fetchedAt: new Date(now).toISOString(), items: [{id:"sample.reminder",listID:"sample.reminders",title:"Read a chapter",due:new Date(dayStart.getTime()+16*3600000).toISOString(),hasTime:true,completed:false,completedAt:null,priority:0}]} : api.value }])),
-    fetch: [{url:"https://api.github.com/repos/everettjf/scriptwidget",method:"GET",status:200,body:JSON.stringify({full_name:"everettjf/scriptwidget",private:false,stargazers_count:1280,forks_count:96,open_issues_count:18}),headers:{"content-type":"application/json","cache-control":"public, max-age=3600"}}, { url: "https://api.example.com/data", method: "GET", body: '{"value":42}', status: 200, headers: {"content-type":"application/json"} },
-      {url:"https://api.met.no/weatherapi/locationforecast/2.0/compact?lat=37.33&lon=-122.01",method:"GET",status:200,body:JSON.stringify(weather),headers:{"content-type":"application/json",expires:new Date(now+3600000).toUTCString(),"last-modified":new Date(start).toUTCString()}}],
+    fetch: sampleNetworkResponses(now),
     storage: {}, icloud: { connected: true, available: true, documents: {} }, storageAtomicAvailable: true, dataSource: [], calendarSelection: null, remindersSelection: null, photosSelection: ["sample.photo", "sample.photo.2", "sample.photo.3", "sample.photo.4"], photosSnapshotPrepared: true,
   };
 }
@@ -122,7 +120,9 @@ export function addSampleMocks(text: string): string {
     if (item.id !== "$device.isdarkmode" && api[item.id] === undefined) api[item.id] = responseFor(data, item);
   }
   data.api = api;
-  data.fetch ??= sampleFixtures().fetch!;
+  const rules = Array.isArray(data.fetch) ? data.fetch : [];
+  const requests = new Set(rules.filter(isObject).map(rule => `${String(rule.method ?? "GET").toUpperCase()} ${rule.url}`));
+  data.fetch = [...rules, ...sampleNetworkResponses(Date.now()).filter(rule => !requests.has(`${rule.method} ${rule.url}`))];
   data.storage ??= {};
   data.storageAtomicAvailable ??= true;
   data.dataSource ??= [];

@@ -176,6 +176,32 @@ async function downloadedPackage(page: Page, trigger: () => Promise<void>) {
   return { manifest: imported.manifest, files: imported.files };
 }
 
+async function verifyNetworkTemplate(page: Page) {
+  await setScheme(page, "light");
+  await page.getByRole("button", { name: "Gallery", exact: true }).click();
+  const gallery = page.getByRole("dialog", { name: "Gallery" });
+  await gallery.locator("#template-search").fill("Air Quality Now");
+  const card = gallery.locator(".template-card").filter({ hasText: "Air Quality Now" });
+  const lightWidget = card.locator(".sw-widget");
+  await waitForWidgetScheme(lightWidget, "light");
+  await lightWidget.getByText(/AQI\s*42/).waitFor();
+  await card.click();
+  const detailWidget = gallery.locator("#template-detail .sw-widget");
+  await detailWidget.getByText(/AQI\s*42/).waitFor();
+  await setScheme(page, "dark");
+  await waitForWidgetScheme(detailWidget, "dark");
+  await detailWidget.getByText(/AQI\s*42/).waitFor();
+
+  await gallery.getByRole("button", { name: "Create a copy" }).click();
+  await gallery.waitFor({ state: "hidden" });
+  await rendered(page, "AQI 42");
+  const { manifest, files } = await downloadedPackage(page, () => page.locator("#export-package").click());
+  assert.equal(manifest.name, "Air Quality Now");
+  assert.deepEqual(manifest.permissions, ["network"]);
+  assert.deepEqual(manifest.networkDomains, ["air-quality-api.open-meteo.com"]);
+  assert.equal(Object.keys(files).some(path => /fixture|mock/i.test(path)), false);
+}
+
 async function verifyInactiveFileAndConfirmation(page: Page, name: string, original: string) {
   await page.setViewportSize({ width: 1440, height: 1000 });
   const sidebar = page.getByRole("complementary", { name: "Projects and files" });
@@ -468,7 +494,8 @@ async function exercise(page: Page, url: string, name: string) {
   assert.equal(await activeProject(page), helloProject);
   await rendered(page, "Built in JavaScript");
   await verifyInactiveFileAndConfirmation(page, name, original);
-  assert.deepEqual(remoteRequests, [], "Tutorial sample data must stay in the browser");
+  await verifyNetworkTemplate(page);
+  assert.deepEqual(remoteRequests, [], "Tutorial and Gallery sample data must stay in the browser");
   assert.deepEqual(errors, []);
 }
 
@@ -510,7 +537,7 @@ try {
         const page = await browser.newPage({ viewport: { width: 1440, height: 1000 }, locale: "en-US", timezoneId: "UTC", acceptDownloads: true, colorScheme: "dark", reducedMotion: "reduce" });
         page.setDefaultTimeout(timeout);
         await exercise(page, url, name);
-        console.log(`${name}: light and dark Studio, five lessons and iCloud, resume and recovery, keyboard, mobile, and package export passed.`);
+        console.log(`${name}: light and dark Studio, five lessons and iCloud, offline Gallery sample, resume and recovery, keyboard, mobile, and package export passed.`);
         if (name === "chromium") {
           const privatePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
           privatePage.setDefaultTimeout(timeout);

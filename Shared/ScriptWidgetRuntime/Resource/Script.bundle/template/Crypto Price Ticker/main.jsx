@@ -11,38 +11,50 @@
 
 // $getenv("widget-param") is the parameter set for this widget; "bitcoin" is used when it is
 // empty.
-const coin = ($getenv("widget-param") || "bitcoin").trim().toLowerCase();
+const coin = ($getenv("widget-param").trim() || "bitcoin").toLowerCase();
+const validCoin = /^[a-z0-9][a-z0-9_-]{0,79}$/.test(coin);
 // Read the data from CoinGecko.
 // Here fetch returns the response body as text, so it is parsed with JSON.parse.
-// This template has no widget.json. In a package that has one, fetch only works when
-// widget.json declares the "network" permission and lists this host in "networkDomains".
-const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd&include_24hr_change=true`;
-const result = await fetch(url);
-const data = JSON.parse(result);
-// The answer looks like { bitcoin: { usd: 64000, usd_24h_change: -1.2 } }.
-// An unknown coin id has no entry, so zeros are shown.
-const info = data[coin] || { usd: 0, usd_24h_change: 0 };
+// widget.json lists the exact allowed host. Validate the coin ID before building its query.
+let info;
+if (validCoin) {
+  const url = `https://api.coingecko.com/api/v3/simple/price?ids=${coin}&vs_currencies=usd&include_24hr_change=true`;
+  try {
+    const data = JSON.parse(await fetch(url))?.[coin];
+    if (Number.isFinite(data?.usd) && data.usd >= 0) info = data;
+  } catch {
+    // An unavailable quote is not a zero price.
+  }
+}
 
-const price = info.usd || 0;
-const change = info.usd_24h_change || 0;
+const change = info?.usd_24h_change;
 // Green for a rise and red for a fall; a rise also gets a "+" sign.
-const changeColor = change >= 0 ? "#22c55e" : "#ef4444";
-const changeLabel = change >= 0 ? "+" + change.toFixed(2) : change.toFixed(2);
+const changeColor = change >= 0 ? "#86efac" : "#fecaca";
+const changeLabel = Number.isFinite(change)
+  ? `${change >= 0 ? "+" : ""}${change.toFixed(2)}% 24h`
+  : null;
 
 // frame="max" makes the stack fill the whole widget.
 $render(
-  <vstack frame="max" background="#0f766e">
-    <text font="caption" color="#94a3b8">
+  <vstack frame="max" background="#115e59">
+    <text font="caption" color="#ccfbf1">
       Crypto Ticker
     </text>
     <text font="title2" color="#e2e8f0">
-      {coin.toUpperCase()}
+      {validCoin ? coin.toUpperCase() : "Invalid coin ID"}
     </text>
-    <text font="title3" color="#38bdf8">
-      ${price.toFixed(2)}
+    <text font={info ? "title3" : "caption"} color="#a5f3fc">
+      {info ? `$${info.usd.toFixed(2)}` : "Price unavailable"}
     </text>
-    <text font="caption" color={changeColor}>
-      {changeLabel}% 24h
-    </text>
+    {info && (
+      <text font="caption" color={changeLabel ? changeColor : "#ccfbf1"}>
+        {changeLabel ?? "24h change unavailable"}
+      </text>
+    )}
+    <link url="https://www.coingecko.com/en/api">
+      <text font="caption2" color="#ccfbf1">
+        Powered by CoinGecko
+      </text>
+    </link>
   </vstack>,
 );

@@ -1,0 +1,26 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.daily-quote",
+  "name": "Daily Quote",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "zenquotes.io"
+  ],
+  "description": "A rotating inspirational quote of the day.",
+  "category": "productivity",
+  "tags": [
+    "quote",
+    "inspiration"
+  ],
+  "icon": "quote.bubble.fill"
+}

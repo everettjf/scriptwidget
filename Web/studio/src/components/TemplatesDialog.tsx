@@ -158,7 +158,7 @@ export function TemplatesDialog({ open, onOpenChange, onChoose, appearance, init
       <DialogContent className="flex max-h-[calc(100vh-3rem)] flex-col sm:max-w-5xl">
         <DialogHeader>
           <DialogTitle>Gallery</DialogTitle>
-          <DialogDescription>Preview bundled templates and Gallery widgets at every size, read their source, and create your own copy.</DialogDescription>
+          <DialogDescription>Preview templates at each supported size, read their source, and create a copy. Previews use sample data for network requests and system services.</DialogDescription>
         </DialogHeader>
         {selected ? (
           <TemplateDetail template={selected} appearance={appearance} onBack={() => setSelected(null)} onCopy={() => onChoose(selected)} />

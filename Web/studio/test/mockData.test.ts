@@ -3,7 +3,7 @@ import fs from "node:fs";
 import test from "node:test";
 import { executePackageInNode } from "../../preview-engine/src/node.js";
 import { exportPackage, importPackage, newManifest } from "../../preview-engine/src/package/index.js";
-import { addSampleMocks, defaultFixtures, mockAPIs, parseMocks, permissionScenario, responseFor, setResponse } from "../src/mockData.ts";
+import { addSampleMocks, defaultFixtures, isObject, mockAPIs, parseMocks, permissionScenario, responseFor, setResponse } from "../src/mockData.ts";
 import type { WidgetManifest } from "../../preview-engine/src/types.js";
 import { createProject } from "../src/project.ts";
 import { dataAPICatalog } from "../../../Editor/editorfe/src/dataAPICatalog.js";
@@ -84,12 +84,23 @@ test("catalog Promise semantics hold before awaiting, including simulated failur
   }
 });
 
-test("per-method editing preserves custom rules, false, zero, and legacy data", () => {
-  const text = JSON.stringify({ fetch: [{ url: "https://example.com/custom", body: "custom" }], location: { latitude: 0, longitude: 0 }, health: false, custom: { keep: true }, api: { "$device.battery": { value: { level: 0, state: "charging" } } } });
+test("per-method editing adds missing network fixtures while preserving custom rules, false, zero, and legacy data", () => {
+  const quoteURL = "https://zenquotes.io/api/today";
+  const rules = [
+    { url: "https://example.com/custom", body: "custom" },
+    { url: quoteURL, method: "get", error: "Custom offline fixture" },
+    { url: "https://api.example.com/data", method: "POST", body: "custom POST" },
+  ];
+  const text = JSON.stringify({ fetch: rules, location: { latitude: 0, longitude: 0 }, health: false, custom: { keep: true }, api: { "$device.battery": { value: { level: 0, state: "charging" } } } });
   const added = parseMocks(addSampleMocks(text));
   const location = mockAPIs.find((item) => item.id === "$location.current")!;
   assert.deepEqual(responseFor(added, location).value, { latitude: 0, longitude: 0 });
-  assert.deepEqual(added.fetch, JSON.parse(text).fetch);
+  assert.ok(Array.isArray(added.fetch));
+  assert.deepEqual(added.fetch.slice(0, rules.length), rules);
+  const addedRules = added.fetch.filter(isObject);
+  assert.equal(addedRules.filter(rule => rule.url === quoteURL).length, 1);
+  assert.ok(addedRules.some(rule => rule.url === "https://api.example.com/data" && rule.method === "GET"));
+  assert.deepEqual(parseMocks(addSampleMocks(JSON.stringify(added))).fetch, added.fetch);
   assert.deepEqual(added.custom, { keep: true });
   const updated = parseMocks(setResponse(JSON.stringify(added), "$system.brightness", { value: 0 }));
   assert.deepEqual(updated.api && (updated.api as Record<string, unknown>)["$device.battery"], { value: { level: 0, state: "charging" } });

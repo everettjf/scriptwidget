@@ -1,0 +1,27 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.currency-pulse",
+  "name": "Currency Pulse",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "open.er-api.com"
+  ],
+  "description": "Exchange rates between fiat currencies.",
+  "category": "finance",
+  "tags": [
+    "currency",
+    "forex",
+    "network"
+  ],
+  "icon": "dollarsign.circle.fill"
+}

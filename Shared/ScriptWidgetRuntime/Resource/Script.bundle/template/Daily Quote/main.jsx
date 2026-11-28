@@ -9,26 +9,41 @@
 
 // Read the data.
 // Here fetch returns the response body as text, so it is parsed with JSON.parse.
-// This template has no widget.json. In a package that has one, fetch only works when
-// widget.json declares the "network" permission and lists this host in "networkDomains".
+// The network permission and this exact host are declared in widget.json.
 const url = "https://zenquotes.io/api/today";
-const result = await fetch(url);
-const data = JSON.parse(result);
-// The answer is a list with one quote: `q` is the text and `a` the author.
-// The fallback is used when the list is empty.
-const quote = data && data.length ? data[0] : { q: "Stay inspired", a: "ScriptWidget" };
+let quote;
+try {
+  const data = JSON.parse(await fetch(url));
+  // The answer is a list with one quote: `q` is the text and `a` the author.
+  if (
+    Array.isArray(data) &&
+    typeof data[0]?.q === "string" &&
+    data[0].q.trim() &&
+    typeof data[0].a === "string"
+  )
+    quote = data[0];
+} catch {
+  // Keep the widget readable while the service is unavailable.
+}
 
 // frame="max" makes the stack fill the whole widget.
 $render(
-  <vstack frame="max" background="#b45309">
+  <vstack frame="max" padding="8" background="#92400e">
     <text font="caption" color="#fde68a">
       Daily Quote
     </text>
     <text font="caption" color="#fff7ed">
-      "{quote.q}"
+      {quote ? `“${quote.q}”` : "Quote unavailable"}
     </text>
-    <text font="caption2" color="#fed7aa">
-      - {quote.a}
-    </text>
+    {quote?.a && (
+      <text font="caption2" color="#fed7aa">
+        — {quote.a}
+      </text>
+    )}
+    <link url="https://zenquotes.io/">
+      <text font="caption2" color="#fed7aa">
+        ZenQuotes API
+      </text>
+    </link>
   </vstack>,
 );

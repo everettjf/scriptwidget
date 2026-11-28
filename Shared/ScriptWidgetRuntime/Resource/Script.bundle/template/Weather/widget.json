@@ -1,0 +1,26 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.weather",
+  "name": "Weather",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "api.open-meteo.com"
+  ],
+  "description": "A classic weather widget with icon, temperature and condition.",
+  "category": "weather",
+  "tags": [
+    "weather",
+    "temperature"
+  ],
+  "icon": "cloud.sun.fill"
+}

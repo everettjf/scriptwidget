@@ -1,0 +1,27 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.crypto-price-ticker",
+  "name": "Crypto Price Ticker",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "api.coingecko.com"
+  ],
+  "description": "Live crypto prices with 24h change percentage.",
+  "category": "finance",
+  "tags": [
+    "crypto",
+    "price",
+    "network"
+  ],
+  "icon": "bitcoinsign.circle.fill"
+}

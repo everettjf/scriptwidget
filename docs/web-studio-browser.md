@@ -85,6 +85,12 @@ at the end of any lesson to take the package to the app.
 - The web preview never uses the network. `fetch` and `$http` read the
   **Mock Data** rules; system services use editable sample responses. Fixtures stay in
   the browser and are not exported.
+- Network templates in **Gallery** come with sample responses for their default
+  requests. If you change a city, symbol, or other parameter that changes the URL,
+  add a matching rule under **Mock Data → Network responses**. Install a package
+  with its declared network hosts to use the provider from your device.
+  For an older copy, compare its request URLs and `widget.json` with the current
+  Gallery template, then use **Add missing samples** to fill its mock rules.
 
 The browser preview is fast feedback, not a pixel-perfect WidgetKit render.
 On Windows and Linux the Studio uses the bundled Inter font in place of SF

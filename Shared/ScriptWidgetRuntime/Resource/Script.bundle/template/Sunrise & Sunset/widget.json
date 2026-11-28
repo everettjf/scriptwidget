@@ -1,0 +1,26 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.sunrise-sunset",
+  "name": "Sunrise & Sunset",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge"
+  ],
+  "permissions": [
+    "network"
+  ],
+  "networkDomains": [
+    "api.sunrise-sunset.org"
+  ],
+  "description": "Today's sunrise and sunset times for your location.",
+  "category": "weather",
+  "tags": [
+    "sun",
+    "location"
+  ],
+  "icon": "sun.horizon.fill"
+}
