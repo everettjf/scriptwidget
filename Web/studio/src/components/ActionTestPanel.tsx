@@ -2,15 +2,16 @@ import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { parseMocks } from "@/mockData.ts";
-import { executionFiles, packageReport, type Project } from "@/project.ts";
-import { sandbox } from "@/runtime.ts";
+import { packageReport, type Project } from "@/project.ts";
+import type { PreviewSettings } from "@/hooks/usePreview.ts";
+import { simulateWidgetAction } from "@/simulateAction.ts";
 
-export function ActionTestPanel({ project, onFixtures }: { project: Project; onFixtures(value: string): void }) {
+export function ActionTestPanel({ project, settings, onFixtures }: { project: Project; settings: PreviewSettings; onFixtures(value: string): void }) {
   const actions = packageReport(project).manifest?.actions ?? [];
   const [selected, setSelected] = useState("");
   const [running, setRunning] = useState(false);
   const [message, setMessage] = useState("");
-  const current = useRef(project); current.current = project;
+  const current = useRef({ project, settings }); current.current = { project, settings };
   const generation = useRef(0);
   useEffect(() => () => { generation.current += 1; }, [project.id]);
   const actionID = actions.some((action) => action.id === selected) ? selected : actions[0]?.id ?? "";
@@ -18,16 +19,18 @@ export function ActionTestPanel({ project, onFixtures }: { project: Project; onF
     const captured = project, token = ++generation.current;
     setRunning(true); setMessage("");
     try {
-      const result = await sandbox.execute({ files: executionFiles(captured.files), manifest: packageReport(captured).manifest,
-        fixtures: parseMocks(captured.fixtures), actionID, environments: { "widget-size": "action" } });
+      const result = await simulateWidgetAction(captured, actionID, settings);
       if (token !== generation.current) return;
-      if (current.current.id !== captured.id || current.current.files !== captured.files || current.current.fixtures !== captured.fixtures) {
+      const live = current.current;
+      if (live.project.id !== captured.id || live.project.files !== captured.files || live.project.fixtures !== captured.fixtures || live.settings.parameter !== settings.parameter || live.settings.appearance !== settings.appearance) {
         setMessage("The project changed. This simulation result was not applied."); return;
       }
       // Preserve uncertain/partial outcomes too, as real system writes can commit
       // before a later action error. These values remain preview-only.
-      if (result.mockState) onFixtures(JSON.stringify({ ...parseMocks(captured.fixtures), ...result.mockState }, null, 2));
-      setMessage(result.error ? result.error.message : "Simulated action completed. Preview data has been updated.");
+      if (result.fixtures !== undefined) onFixtures(result.fixtures);
+      setMessage(result.error ?? (result.usesICloud
+        ? "Simulated action completed. iCloud writes last for this run. To preview a saved document, set it in iCloud JSON."
+        : "Simulated action completed. Preview data has been updated."));
     } catch (error) { setMessage((error as Error).message); }
     finally { setRunning(false); }
   };

@@ -21,6 +21,10 @@ Website: <https://atomsprout.com/scriptwidget/>
 
 **Get it:** [iPhone and iPad](https://apps.apple.com/app/id1555600758?platform=iphone) · [Mac](https://apps.apple.com/app/id1555600758?platform=mac) · [Android (APK)](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Android%22&expanded=true) · [Windows preview (Microsoft Store)](https://apps.microsoft.com/detail/9MVR97B9C938) · [Linux preview for Omarchy (archive or PKGBUILD)](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) · [Web Studio in your browser](https://asp.run/scriptwidget/studio/)
 
+Open **Learn** in Web Studio for five hands-on tutorials, from Hello World and
+an event countdown to an interactive to-do list, a weather forecast, and a
+calendar agenda. [Read the Web Studio guide](docs/web-studio-browser.md#learn-by-building).
+
 ## Create with your Agent — scriptwidget-creator
 
 **Describe a widget in Claude Code. Generate it, validate it, and open it directly in Web Studio.** Use your own Agent and model with the [scriptwidget-creator Skill](docs/agent-quickstart.md#install-the-skill).
@@ -57,6 +61,8 @@ The Android app (Android 13 or later) is available as an [APK on GitHub Releases
 The Windows and Linux apps are previews: [Windows](https://apps.microsoft.com/detail/9MVR97B9C938) needs Windows 11 (21H2, build 22000) or later (see [ScriptWidget for Windows](docs/windows/README.md)), and [Linux](https://github.com/everettjf/scriptwidget/releases?q=%22ScriptWidget+for+Linux%22&expanded=true) is for [Omarchy](https://omarchy.org) 4.5 (see [ScriptWidget for Linux](docs/linux/README.md)). Both run the same widget packages. See [Platform support](docs/platform-support.md) for data and rendering differences.
 
 The source on `main` includes [Mac Desktop Tools](docs/five-minute-tutorial.md#mac-desktop-tools) and the new desktop templates. See the [changelog](CHANGELOG.md#unreleased) for changes awaiting an app release.
+
+[Build an interactive to-do widget](Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/To-do%20List%20iCloud/README.md) to learn local storage, button actions, and opt-in iCloud sync.
 
 ![ScriptWidget template gallery](Resource/WidgetDemoScreenshots/_contact-sheet-1.jpg)
 

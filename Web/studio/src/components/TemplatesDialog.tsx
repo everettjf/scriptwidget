@@ -6,13 +6,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { familyLabels, packageReport, previewFamilies, type Template } from "@/project.ts";
+import { loadTemplates } from "@/lib/templateCatalog.ts";
 import { renderTemplate, templateFiles } from "@/lib/templatePreview.ts";
-
-let catalog: Promise<Template[]> | null = null;
-const loadTemplates = () => {
-  catalog ??= fetch(new URL("./templates.json", document.baseURI)).then((response) => response.json()).then((json: { templates: Template[] }) => json.templates);
-  return catalog;
-};
 
 const categoryLabels: Record<string, string> = {
   starter: "Starter", time: "Time", weather: "Weather", system: "System", health: "Health",
@@ -144,7 +139,7 @@ export function TemplatesDialog({ open, onOpenChange, onChoose, initialQuery = "
     if (open) { setQuery(initialQuery); setCategory("all"); }
   }, [open, initialQuery]);
   useEffect(() => {
-    if (open && !templates) loadTemplates().then(setTemplates, () => { catalog = null; setTemplates([]); });
+    if (open && !templates) loadTemplates().then(setTemplates, () => setTemplates([]));
     if (!open) setSelected(null);
   }, [open, templates]);
 

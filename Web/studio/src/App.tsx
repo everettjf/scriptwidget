@@ -12,12 +12,14 @@ import { PreviewPane, type DetailTab } from "@/components/PreviewPane";
 import { Sidebar } from "@/components/Sidebar";
 import { TemplatesDialog } from "@/components/TemplatesDialog";
 import { TopBar } from "@/components/TopBar";
+import { TutorialCloudGuide, TutorialGuide, TutorialsDialog } from "@/components/TutorialGuide";
 import { WallpaperDialog } from "@/components/WallpaperDialog";
 import { isWallpaperTemplate } from "@/wallpaperConfiguration.ts";
 import { useColorScheme } from "@/hooks/useColorScheme.ts";
 import { useConfirm } from "@/hooks/useConfirm.tsx";
 import { usePreview, type PreviewSettings } from "@/hooks/usePreview.ts";
 import { useProjects } from "@/hooks/useProjects.ts";
+import { useTutorials } from "@/hooks/useTutorials.ts";
 import { downloadBytes } from "@/lib/download.ts";
 import { createProject, packageReport, previewFamilies, projectFromTemplate, type Template } from "@/project.ts";
 import { preferences } from "@/store.ts";
@@ -94,6 +96,7 @@ export function App() {
       return next;
     });
   }, []);
+  const tutorial = useTutorials(model, effective, preview, changeSettings);
 
   const onEdit = useCallback((file: string, text: string) => model.updateFiles({ [file]: text }), [model.updateFiles]);
 
@@ -179,14 +182,16 @@ export function App() {
         onExport={() => { const result = exportCurrent(); if (result) downloadBytes(result.bytes, result.fileName); }}
         onInstall={() => void install()}
         onValidate={() => setValidationOpen(true)}
+        onLearn={() => tutorial.setCatalogOpen(true)}
       />
       {model.createdStarter && !initialPreviewFragment && !starterDismissed && model.projects.length === 1 && project.name === "My First Widget" && (
         <section id="starter-guide" aria-labelledby="starter-heading" className="flex flex-wrap items-center gap-3 border-b bg-sky-50 px-4 py-3 text-slate-900">
           <div className="min-w-48 flex-1">
             <h1 id="starter-heading" className="text-sm font-semibold">Start with something you can see.</h1>
-            <p className="text-xs text-slate-600">Preview a built-in example, then create your own copy. Your draft stays here.</p>
+            <p className="text-xs text-slate-600">Build your first widget with a short tutorial, or open a ready-made example.</p>
           </div>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Starter examples">
+            <Button size="sm" onClick={() => void tutorial.selectLesson("hello-world")}>Build your first widget</Button>
             {["Habit Heatmap", "Countdown", "Reading Goal"].map((name) => (
               <Button key={name} variant="outline" size="sm" onClick={() => { setTemplateQuery(name); setTemplatesOpen(true); }}>{name}</Button>
             ))}
@@ -213,14 +218,30 @@ export function App() {
           onAddImage={() => imageInput.current?.click()}
           onWallpaper={isWallpaperTemplate(project.files) ? () => setWallpaperProject(project.id) : undefined}
         />
-        <EditorPane project={project} path={path} saveState={model.saveState} colorScheme={colorScheme} onChange={onEdit} />
+        <EditorPane project={project} path={path} saveState={model.saveState} colorScheme={colorScheme} onChange={onEdit}
+          onShowTutorial={tutorial.lesson ? () => { tutorial.setGuideOpen(true); document.getElementById("tutorial-heading")?.focus(); }
+            : project.tutorialCloudExample ? () => document.getElementById("tutorial-cloud-heading")?.focus() : undefined} />
         <PreviewPane
           project={project}
           className="max-[1100px]:col-span-full max-[1100px]:border-t max-[720px]:-order-1 max-[720px]:border-t-0"
           settings={effective} families={families} onSettings={changeSettings} preview={preview} report={report}
           fixtures={project.fixtures} onFixtures={model.setFixtures} tab={tab} onTab={setTab}
+          guide={tutorial.lesson && tutorial.progress ? (
+            <TutorialGuide key={project.id} lesson={tutorial.lesson} completed={tutorial.progress.completed.map(item => item.id)}
+              open={tutorial.progress.open} busy={tutorial.busy} status={tutorial.status} error={tutorial.error}
+              onOpenChange={tutorial.setGuideOpen} onLearn={() => tutorial.setCatalogOpen(true)}
+              onControl={(step) => void tutorial.runStep(step)} onEdit={tutorial.editStep} onInstall={() => void install()}
+              reloadReady={model.saveState === "saved"} onReload={() => window.location.reload()}
+              reloadSkipped={tutorial.progress.completed.some(item => item.skipped)}
+              onSkipReload={model.saveState === "unavailable" ? tutorial.skipReload : undefined}
+              onOpenCloudExample={tutorial.lesson.id === "interactive-todo" ? () => void tutorial.openCloudExample() : undefined} />
+          ) : project.tutorialCloudExample ? (
+            <TutorialCloudGuide onScenario={tutorial.setCloudPreset} onInstall={() => void install()} onReadSource={tutorial.readCloudTutorial} />
+          ) : undefined}
         />
       </main>
+      <TutorialsDialog open={tutorial.catalogOpen} onOpenChange={tutorial.setCatalogOpen} progress={tutorial.catalogProgress}
+        onSelect={(id) => void tutorial.selectLesson(id)} onRestart={(id) => void tutorial.selectLesson(id, true)} />
       <ValidationDialog open={validationOpen} onOpenChange={setValidationOpen}
         ready={previewIsCurrent(project, effective, preview)}
         onImport={() => importInput.current?.click()}

@@ -9,13 +9,18 @@ on:
       - 'Web/**'
       - 'site/**'
       - 'Editor/editorfe/src/**'
+      - 'Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/**'
       - 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**'
+      - 'Scripts/build-web-site.mjs'
       - '.github/workflows/web-browsers.yml'
   pull_request:
     paths:
       - 'Web/**'
       - 'site/**'
       - 'Editor/editorfe/src/**'
+      - 'Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/**'
+      - 'Shared/ScriptWidgetRuntime/Widget/Resource/support.bundle/**'
+      - 'Scripts/build-web-site.mjs'
       - '.github/workflows/web-browsers.yml'
   workflow_dispatch:
 
@@ -61,3 +66,7 @@ jobs:
       - name: Homepage code and preview across browsers
         working-directory: Web/studio
         run: node scripts/hero-browsers.ts chromium firefox webkit
+      - name: Assemble Pages and exercise Studio tutorials across browsers
+        run: |
+          node Scripts/build-web-site.mjs
+          node Web/studio/scripts/tutorials-smoke.ts chromium firefox webkit

@@ -1,0 +1,13 @@
+{
+  "description": "Add, check off and reopen sample tasks. Compare local saves, iCloud revisions and offline merges.",
+  "category": "productivity",
+  "tags": [
+    "todo",
+    "checklist",
+    "icloud",
+    "tutorial"
+  ],
+  "icon": "checklist",
+  "difficulty": "beginner",
+  "featured": true
+}

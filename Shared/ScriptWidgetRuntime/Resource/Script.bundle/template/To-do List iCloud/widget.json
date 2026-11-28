@@ -1,0 +1,79 @@
+{
+  "formatVersion": 2,
+  "id": "app.scriptwidget.template.todo-icloud",
+  "name": "To-do List iCloud",
+  "version": "1.0.0",
+  "runtimeVersion": "1.0",
+  "minimumRuntimeVersion": "1.5",
+  "entry": "main.jsx",
+  "supportedFamilies": [
+    "systemSmall",
+    "systemMedium",
+    "systemLarge",
+    "systemExtraLarge",
+    "systemExtraLargePortrait"
+  ],
+  "permissions": [
+    "icloud"
+  ],
+  "networkDomains": [],
+  "description": "Add, check off and reopen sample tasks. Compare local saves, iCloud revisions and offline merges.",
+  "category": "productivity",
+  "tags": [
+    "todo",
+    "checklist",
+    "icloud",
+    "tutorial"
+  ],
+  "icon": "checklist",
+  "actions": [
+    {
+      "id": "addPublish",
+      "title": "Add sample task",
+      "systemImage": "plus.circle",
+      "function": "addPublish"
+    },
+    {
+      "id": "finishOutline",
+      "title": "Complete Write an outline",
+      "systemImage": "checkmark.square",
+      "function": "finishOutline"
+    },
+    {
+      "id": "reopenOutline",
+      "title": "Reopen Write an outline",
+      "systemImage": "square",
+      "function": "reopenOutline"
+    },
+    {
+      "id": "finishReview",
+      "title": "Complete Review the draft",
+      "systemImage": "checkmark.square",
+      "function": "finishReview"
+    },
+    {
+      "id": "reopenReview",
+      "title": "Reopen Review the draft",
+      "systemImage": "square",
+      "function": "reopenReview"
+    },
+    {
+      "id": "finishPublish",
+      "title": "Complete Share the draft",
+      "systemImage": "checkmark.square",
+      "function": "finishPublish"
+    },
+    {
+      "id": "reopenPublish",
+      "title": "Reopen Share the draft",
+      "systemImage": "square",
+      "function": "reopenPublish"
+    },
+    {
+      "id": "syncTasks",
+      "title": "Sync the to-do list",
+      "systemImage": "arrow.triangle.2.circlepath",
+      "function": "syncTasks"
+    }
+  ]
+}

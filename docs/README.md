@@ -10,6 +10,7 @@ Build widgets for iPhone, iPad, Mac, Android, Windows and Linux with JavaScript 
 - [Web Studio in the browser](web-studio-browser.md) — design and preview in any desktop browser, then export a `.swt` for any ScriptWidget app.
 - [Platform support](platform-support.md) — which features and APIs work on iPhone and iPad, Mac, Android, Windows and Linux.
 - [Runtime API](runtime-api.md) — supported components, properties, globals, and limits.
+- [Build an interactive to-do widget](../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/To-do%20List%20iCloud/README.md) — local saves, iCloud sync, and declared button actions.
 - [Package storage](storage-api.md) — saved records, bounded compare-and-set updates, and contention handling.
 - [Reminders API](reminders-api.md) — selected-list reads, bounded windows and explicit user actions with write receipts.
 - [Calendar API](calendar-api.md) — real read-only events, package permission, bounded queries, and cache behavior.

@@ -41,6 +41,11 @@ jobs:
         run: npm ci && npm test && npm run build
       - name: Assemble functional Web Studio site
         run: node Scripts/build-web-site.mjs
+      - name: Install Chromium for the tutorial smoke test
+        working-directory: Web/studio
+        run: npx playwright install --with-deps chromium
+      - name: Verify Studio tutorials on the assembled Pages site
+        run: node Web/studio/scripts/tutorials-smoke.ts chromium
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with: { path: _site }

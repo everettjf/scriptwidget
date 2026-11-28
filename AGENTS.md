@@ -32,6 +32,7 @@ Bundled Apple templates live under `Shared/ScriptWidgetRuntime/Resource/Script.b
 - Editor setup: `cd Editor/editorfe && npm install`.
 - Editor development: `npm start`, `npm test`, `npm run build`, `npm run docs`.
 - Editor release: `npm run release`; this rebuilds and replaces both checked-in `StudioEditor.bundle` directories. Always include generated bundle changes when frontend source or API completions change.
+- Web Studio tutorials: `npm run build --prefix Web/studio`, `node Scripts/build-web-site.mjs`, then `node Web/studio/scripts/tutorials-smoke.ts chromium firefox webkit` with Playwright browsers installed. The Pages workflow runs the Chromium tutorial check before upload.
 - Metadata-only release checks: `node Scripts/validate-release.mjs` and `node Scripts/validate-doc-links.mjs`.
 - Android (not covered by `release-readiness.sh`): `node Android/scripts/build-shared-js.mjs` after changing `Web/preview-engine/src`, the support bundle or `Android/core/src/main/js`; `cd Android && ./gradlew :core:testDebugUnitTest :app:assembleDebug`; `sh Android/scripts/device-test.sh core` and `app` on a connected device or emulator; `./gradlew :app:bundlePlayRelease` for the Play bundle and `:app:assembleFossRelease` for the APK published on GitHub Releases. The app has two flavors: `play` contains Firebase Cloud Messaging, `foss` must contain no Google or other proprietary library.
 

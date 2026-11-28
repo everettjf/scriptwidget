@@ -16,11 +16,12 @@ interface EditorPaneProps {
   saveState: SaveState;
   colorScheme: "light" | "dark";
   onChange(path: string, text: string): void;
+  onShowTutorial?(): void;
 }
 
 /// CodeMirror for text files; binary resources show their size and, for
 /// images, a preview instead of being opened as text.
-export function EditorPane({ project, path, saveState, colorScheme, onChange }: EditorPaneProps) {
+export function EditorPane({ project, path, saveState, colorScheme, onChange, onShowTutorial }: EditorPaneProps) {
   const host = useRef<HTMLDivElement>(null);
   const editor = useRef<StudioEditor | null>(null);
   const changeHandler = useRef(onChange);
@@ -55,9 +56,10 @@ export function EditorPane({ project, path, saveState, colorScheme, onChange }: 
 
   return (
     <section className="isolate flex min-h-0 min-w-0 flex-col bg-card" aria-label="Editor">
-      <div className="flex items-center justify-between gap-3 border-b px-3 py-1.5 text-xs">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b px-3 py-1.5 text-xs">
         <span id="current-file" className="truncate font-medium">{path}</span>
         <span id="save-state" className="text-muted-foreground" aria-live="polite">{saveLabels[saveState]}</span>
+        {onShowTutorial && <button type="button" className="rounded-sm text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-ring min-[1101px]:hidden" onClick={onShowTutorial}>Back to tutorial</button>}
       </div>
       <div id="editor" ref={host} className={isText ? "min-h-0 flex-1 overflow-hidden" : "hidden"} tabIndex={-1} />
       {value instanceof Uint8Array && (

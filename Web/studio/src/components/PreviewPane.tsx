@@ -28,6 +28,7 @@ interface PreviewPaneProps {
   onFixtures(text: string): void;
   tab: DetailTab;
   onTab(tab: DetailTab): void;
+  guide?: ReactNode;
   className?: string;
 }
 
@@ -69,7 +70,7 @@ function Messages({ id, items, empty }: { id: string; items: Message[]; empty: s
 }
 
 /// Shows the rendered widget element, or the runtime error.
-function Stage({ output }: { output: PreviewOutput }) {
+function Stage({ output, guided }: { output: PreviewOutput; guided: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const element = host.current;
@@ -80,7 +81,7 @@ function Stage({ output }: { output: PreviewOutput }) {
     } else element.replaceChildren();
   }, [output]);
   return (
-    <div id="stage" className="grid min-h-[300px] place-items-center overflow-auto bg-stage px-3 py-6 max-[720px]:justify-items-start max-[720px]:p-4" aria-live="polite">
+    <div id="stage" className={cn("grid shrink-0 place-items-center overflow-auto bg-stage px-3 py-6 max-[720px]:justify-items-start max-[720px]:p-4", guided ? "min-h-[220px]" : "min-h-[300px]")} aria-live="polite">
       <div ref={host} className={output.kind === "widget" ? "contents" : "hidden"} />
       {output.kind === "unavailable" && (
         <div id="runtime-unavailable" role="alert" className="max-w-sm rounded-xl border bg-card p-4 text-sm">
@@ -134,12 +135,11 @@ function PackageSummary({ report }: { report: PackageReport }) {
   );
 }
 
-export function PreviewPane({ project, settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, className }: PreviewPaneProps) {
+export function PreviewPane({ project, settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, guide, className }: PreviewPaneProps) {
   let transitionDates: string[] = [];
   try { transitionDates = timelinePreview(report.manifest, settings.timelineDate).plan.entries.slice(1).map((entry) => entry.date); } catch { /* Package problems explain invalid schedules. */ }
   const errors = preview.problems.filter((item) => item.severity === "error").length;
-  return (
-    <section className={cn("flex min-h-0 min-w-0 flex-col overflow-auto bg-sidebar", className)} aria-label="Preview">
+  const controls = (
       <div className="flex flex-wrap gap-x-2.5 gap-y-2 border-b px-3 py-2.5">
         <Field id="profile" label="Device">
           <Choice id="profile" value={settings.profile} onChange={(profile) => onSettings({ profile })}
@@ -174,8 +174,17 @@ export function PreviewPane({ project, settings, families, onSettings, preview, 
             value={settings.parameter} onChange={(event) => onSettings({ parameter: event.target.value })} />
         </Field>
       </div>
-      <Stage output={preview.output} />
+  );
+  return (
+    <section className={cn("flex min-h-0 min-w-0 flex-col overflow-auto bg-sidebar", className)} aria-label="Preview">
+      {guide}
+      {!guide && controls}
+      <Stage output={preview.output} guided={!!guide} />
       <p id="preview-status" className="border-b px-3 py-2 text-xs text-muted-foreground">{statusText(preview.output)}</p>
+      {guide && <details className="shrink-0 border-b">
+        <summary className="cursor-pointer px-3 py-2 text-xs font-medium focus-visible:outline-2 focus-visible:outline-ring focus-visible:outline-offset-[-2px]">Preview settings</summary>
+        {controls}
+      </details>}
       <Tabs value={tab} onValueChange={(next) => onTab(next as DetailTab)} className="flex-1 gap-0">
         <TabsList className="mx-3 mt-2 h-8">
           <TabsTrigger value="problems" className="text-xs">
@@ -196,7 +205,7 @@ export function PreviewPane({ project, settings, families, onSettings, preview, 
           <PackageSummary report={report} />
         </TabsContent>
         <TabsContent forceMount value="fixtures" className="flex min-h-40 flex-col gap-2 bg-card px-3 py-2.5 data-[state=inactive]:hidden">
-          <ActionTestPanel key={project.id} project={project} onFixtures={onFixtures} />
+          <ActionTestPanel key={project.id} project={project} settings={settings} onFixtures={onFixtures} />
           <MockDataPanel fixtures={fixtures} onChange={onFixtures} />
         </TabsContent>
       </Tabs>

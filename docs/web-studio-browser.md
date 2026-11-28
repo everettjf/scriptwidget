@@ -15,6 +15,28 @@ This is different from [Web Studio on iPhone](web-studio.md), where the browser
 edits files that live on a paired iPhone. The browser Studio keeps projects in
 the browser and previews them itself.
 
+## Learn by building
+
+Choose **Build your first widget** when you arrive, or open **Learn** from the
+toolbar. Each lesson creates a separate editable draft. Close the guide to keep
+working, or return to **Learn** to resume or start a new copy.
+
+1. **Hello World** — edit `main.jsx`, render JSX, and see your text update.
+2. **Event Countdown** — set an event date and adapt the layout from Small to Medium.
+3. **Interactive To-Do** — bind a button action, save its state with `$storage`,
+   and reload Studio to check that the browser draft retained it. The optional
+   iCloud example teaches the same interaction with a shared JSON document.
+4. **Weather Forecast** — display hourly forecast data and handle a failed request.
+5. **Calendar Agenda** — declare Calendar access and display events, an empty
+   schedule, or a permission prompt.
+
+The guide verifies changes from the current preview. Weather, Calendar and
+iCloud exercises use sample data. The iCloud example includes presets and
+steps for connecting two Apple devices to the same store in ScriptWidget.
+Exporting a `.swt` includes the widget source and its manifest. The browser's
+lesson progress and sample data stay with its draft. Use **Install on device**
+at the end of any lesson to take the package to the app.
+
 ## Create and edit
 
 - **New** starts a blank Package 2.0 project. **Import** opens a `.swt` or `.zip`;
@@ -133,6 +155,16 @@ builds `dist/`, and `node scripts/smoke.ts` checks the built site in headless
 Chrome. Add shadcn components with `npx shadcn@latest add <name>`; they are
 copied into `src/components/ui` and import `cn` from `@/lib/utils`.
 
+From the repository root, assemble the production site and exercise the five
+lessons on its published subpath:
+
+```bash
+npm run build --prefix Web/studio
+npx --prefix Web/studio playwright install chromium firefox webkit
+node Scripts/build-web-site.mjs
+node Web/studio/scripts/tutorials-smoke.ts chromium firefox webkit
+```
+
 ## Privacy and security
 
 - Your code runs in a sandboxed frame with an opaque origin and no network
@@ -172,7 +204,10 @@ network permission and domain. This previews the response shape without testing
 a plugin's native installation, request mapping or authentication.
 
 Storage provides initial key/value pairs for each preview run; writes are
-visible in that run and reset on rerun. Edit project files to provide `$file`
+visible in that run and reset on rerun. **Run simulated action** saves supported
+local storage changes back into the draft's fixtures. The action uses the
+current **Parameter** and appearance. Simulated iCloud writes last for that
+run. Edit project files to provide `$file`
 inputs. Rendering, JSX, imports and XML parsing execute normally, `$getenv`
 uses the preview controls, and `$runtime` reports the actual preview contract.
 These computed APIs are not replaced with arbitrary return mocks.

@@ -4,6 +4,7 @@ export { defaultFixtures } from "./mockData.ts";
 import { decodeManifest, legacyManifest, newProjectFiles, validateManifest } from "../../preview-engine/src/package/index.js";
 import { deviceProfiles } from "../../preview-engine/src/render/profiles.js";
 import type { Issue, PackageFiles, WidgetFamilyName, WidgetManifest, WidgetSize } from "../../preview-engine/src/types.js";
+import type { TutorialProgress } from "./tutorialProgress.ts";
 
 export interface Project {
   id: string;
@@ -11,6 +12,8 @@ export interface Project {
   files: PackageFiles;
   /// Preview-only API mocks (JSON text); never exported.
   fixtures: string;
+  tutorial?: TutorialProgress;
+  tutorialCloudExample?: true;
   createdAt: number;
   updatedAt: number;
 }

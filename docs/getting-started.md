@@ -43,6 +43,7 @@ Save the script, add a ScriptWidget widget from the system widget gallery, and s
 
 ## 5. Next steps
 
+- Follow the [interactive to-do tutorial](../Shared/ScriptWidgetRuntime/Resource/Script.bundle/template/To-do%20List%20iCloud/README.md) to compare local saves, iCloud sync, and button actions.
 - Start from a bundled template for a proven layout.
 - Use **Generate with AI** for a complete first draft and **Copilot** for focused changes.
 - Combine Skills such as Responsive Layout and Accessible Design.

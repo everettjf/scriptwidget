@@ -21,6 +21,7 @@ export interface ProjectsModel {
   updateProjectFiles(id: string, expectedFiles: PackageFiles, changes: Record<string, string | Uint8Array | null>): boolean;
   rename(name: string): void;
   setFixtures(text: string): void;
+  updateTutorial(expected: Project, change: Pick<Project, "tutorial"> & { fixtures?: string }): boolean;
 }
 
 const byRecent = (a: Project, b: Project) => b.updatedAt - a.updatedAt;
@@ -119,9 +120,9 @@ export function useProjects(): ProjectsModel {
     return () => { window.removeEventListener("beforeunload", flush); document.removeEventListener("visibilitychange", onVisibility); };
   }, [persist]);
 
-  const edit = useCallback((change: (current: Project) => Project) => {
+  const edit = useCallback((change: (current: Project) => Project, saveNow = false) => {
     const current = latest.current;
-    if (!current || drafts.current.get(current.id) !== current) return;
+    if (!current || drafts.current.get(current.id) !== current) return false;
     dirty.current = true;
     const next = change(current);
     latest.current = next;
@@ -130,7 +131,9 @@ export function useProjects(): ProjectsModel {
     setProjects((list) => list.map((item) => item.id === next.id ? next : item));
     setProject(next);
     setSaveState(storage.persistent ? "editing" : "unavailable");
-  }, []);
+    if (saveNow) void persist(next);
+    return true;
+  }, [persist]);
 
   const addProject = useCallback(async (next: Project) => {
     const saved = await storage.save(next);
@@ -195,5 +198,11 @@ export function useProjects(): ProjectsModel {
 
   const setFixtures = useCallback((fixtures: string) => edit((current) => ({ ...current, fixtures })), [edit]);
 
-  return { ready, createdStarter, projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures };
+  const updateTutorial = useCallback((expected: Project, change: Pick<Project, "tutorial"> & { fixtures?: string }) => {
+    const current = latest.current;
+    if (!current || deletingProjects.current.has(current.id) || current.id !== expected.id || current.files !== expected.files || current.fixtures !== expected.fixtures || current.tutorial !== expected.tutorial) return false;
+    return edit((draft) => ({ ...draft, ...change }), true);
+  }, [edit]);
+
+  return { ready, createdStarter, projects, project, path, saveState, openProject, addProject, removeProject, openFile: setPath, updateFiles, updateProjectFiles, rename, setFixtures, updateTutorial };
 }

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Download, LayoutGrid, Plus, Smartphone, Upload } from "lucide-react";
+import { BookOpen, Download, LayoutGrid, Plus, Smartphone, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProductLinks } from "@/components/ProductLinks";
@@ -11,13 +11,14 @@ interface TopBarProps {
   onRename(name: string): void;
   onNew(): void;
   onTemplates(): void;
+  onLearn(): void;
   onImport(): void;
   onExport(): void;
   onInstall(): void;
   onValidate(): void;
 }
 
-export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, onImport, onExport, onInstall, onValidate }: TopBarProps) {
+export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, onLearn, onImport, onExport, onInstall, onValidate }: TopBarProps) {
   const [name, setName] = useState(projectName);
   // Show the stored name again when another project opens.
   useEffect(() => setName(projectName), [projectID, projectName]);
@@ -42,6 +43,7 @@ export function TopBar({ projectName, projectID, onRename, onNew, onTemplates, o
         />
       </label>
       <nav className="order-3 flex flex-wrap gap-1.5" aria-label="Project actions">
+        <Button id="open-tutorials" variant="outline" size="sm" onClick={onLearn}><BookOpen />Learn</Button>
         <Button id="open-validation" variant="outline" size="sm" onClick={onValidate}>Validate</Button>
         <Button id="new-project" variant="outline" size="sm" onClick={onNew}><Plus />New</Button>
         <Button id="open-templates" variant="outline" size="sm" onClick={onTemplates}><LayoutGrid />Gallery</Button>
