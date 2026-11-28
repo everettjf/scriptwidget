@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, Copy, CopyPlus, Search } from "lucide-react";
-import type { WidgetSize } from "../../../preview-engine/src/types.js";
+import type { Appearance, WidgetSize } from "../../../preview-engine/src/types.js";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,7 @@ const categoryLabel = (category: string) => categoryLabels[category] ?? category
 
 /// A live render of a template at one size, scaled to fit `maxWidth`.
 /// Renders when it scrolls into view.
-function LivePreview({ template, family, maxWidth, maxHeight, lazy = true }: { template: Template; family: WidgetSize; maxWidth: number; maxHeight: number; lazy?: boolean }) {
+function LivePreview({ template, family, appearance, maxWidth, maxHeight, lazy = true }: { template: Template; family: WidgetSize; appearance: Appearance; maxWidth: number; maxHeight: number; lazy?: boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(!lazy);
@@ -34,7 +34,7 @@ function LivePreview({ template, family, maxWidth, maxHeight, lazy = true }: { t
     if (!visible) return;
     let cancelled = false;
     setState(null);
-    renderTemplate(template, family).then((result) => {
+    renderTemplate(template, family, { appearance }).then((result) => {
       if (cancelled || !host.current) return;
       if (result.kind === "error") { host.current.replaceChildren(); setState({ error: result.message }); return; }
       result.element.classList.add("rounded-[18px]", "overflow-hidden", "shadow-sm", "ring-1", "ring-black/5", "dark:ring-white/10");
@@ -42,7 +42,7 @@ function LivePreview({ template, family, maxWidth, maxHeight, lazy = true }: { t
       setState({ width: result.width, height: result.height });
     });
     return () => { cancelled = true; };
-  }, [visible, template, family]);
+  }, [visible, template, family, appearance]);
 
   const scale = state && "width" in state ? Math.min(1, maxWidth / state.width, maxHeight / state.height) : 1;
   return (
@@ -55,11 +55,11 @@ function LivePreview({ template, family, maxWidth, maxHeight, lazy = true }: { t
   );
 }
 
-function TemplateCard({ template, onOpen }: { template: Template; onOpen(): void }) {
+function TemplateCard({ template, appearance, onOpen }: { template: Template; appearance: Appearance; onOpen(): void }) {
   return (
     <button type="button" onClick={onOpen}
       className="template-card group flex h-full w-full flex-col gap-2 rounded-xl border bg-sidebar p-3 text-left outline-none hover:border-primary/50 hover:bg-accent focus-visible:ring-[3px] focus-visible:ring-ring/50">
-      <LivePreview template={template} family="small" maxWidth={150} maxHeight={150} />
+      <LivePreview template={template} family="small" appearance={appearance} maxWidth={150} maxHeight={150} />
       <span className="truncate font-semibold">{template.name}</span>
       <span className="text-[11px] text-primary">{template.source === "gallery" ? "Gallery" : categoryLabel(template.category)}</span>
       <span className="line-clamp-2 text-xs text-muted-foreground">{template.description}</span>
@@ -69,7 +69,7 @@ function TemplateCard({ template, onOpen }: { template: Template; onOpen(): void
 
 /// One template: a live preview at every size it supports, its files as
 /// read-only source, and "Create a copy" to open it as a new local project.
-function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBack(): void; onCopy(): void }) {
+function TemplateDetail({ template, appearance, onBack, onCopy }: { template: Template; appearance: Appearance; onBack(): void; onCopy(): void }) {
   const files = templateFiles(template);
   const families = useMemo(() => previewFamilies(packageReport({ files }).manifest, "iphone-393"), [files]);
   const [family, setFamily] = useState<WidgetSize>(families.includes("medium") ? "medium" : families[0] ?? "small");
@@ -107,7 +107,7 @@ function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBa
             ))}
           </div>
           <div className="flex min-h-48 items-center justify-center rounded-xl bg-muted/50 p-4">
-            <LivePreview template={template} family={family} maxWidth={360} maxHeight={380} lazy={false} />
+            <LivePreview template={template} family={family} appearance={appearance} maxWidth={360} maxHeight={380} lazy={false} />
           </div>
           <p className="text-xs text-muted-foreground">The copy is saved in this browser. Templates stay unchanged, so you can make as many copies as you like.</p>
         </div>
@@ -130,7 +130,7 @@ function TemplateDetail({ template, onBack, onCopy }: { template: Template; onBa
   );
 }
 
-export function TemplatesDialog({ open, onOpenChange, onChoose, initialQuery = "" }: { initialQuery?: string; open: boolean; onOpenChange(open: boolean): void; onChoose(template: Template): void }) {
+export function TemplatesDialog({ open, onOpenChange, onChoose, appearance, initialQuery = "" }: { initialQuery?: string; open: boolean; appearance: Appearance; onOpenChange(open: boolean): void; onChoose(template: Template): void }) {
   const [templates, setTemplates] = useState<Template[] | null>(null);
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState<string>("all");
@@ -161,7 +161,7 @@ export function TemplatesDialog({ open, onOpenChange, onChoose, initialQuery = "
           <DialogDescription>Preview bundled templates and Gallery widgets at every size, read their source, and create your own copy.</DialogDescription>
         </DialogHeader>
         {selected ? (
-          <TemplateDetail template={selected} onBack={() => setSelected(null)} onCopy={() => onChoose(selected)} />
+          <TemplateDetail template={selected} appearance={appearance} onBack={() => setSelected(null)} onCopy={() => onChoose(selected)} />
         ) : (
           <>
             <div className="flex flex-col gap-2">
@@ -182,7 +182,7 @@ export function TemplatesDialog({ open, onOpenChange, onChoose, initialQuery = "
             <ul id="template-list" className="-mx-1 grid min-h-0 grid-cols-[repeat(auto-fill,minmax(176px,1fr))] gap-2.5 overflow-auto px-1 pb-1">
               {templates === null && <li className="text-sm text-muted-foreground">Loading templates…</li>}
               {templates !== null && visible.length === 0 && <li className="text-sm text-muted-foreground">No templates match. Try another word or category.</li>}
-              {visible.map((template) => <li key={template.id}><TemplateCard template={template} onOpen={() => setSelected(template)} /></li>)}
+              {visible.map((template) => <li key={template.id}><TemplateCard template={template} appearance={appearance} onOpen={() => setSelected(template)} /></li>)}
             </ul>
           </>
         )}

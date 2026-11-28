@@ -1,6 +1,6 @@
 import { useEffect, useRef, type ReactNode } from "react";
 import { deviceProfiles } from "../../../preview-engine/src/render/profiles.js";
-import type { Appearance, RenderingMode, WidgetSize } from "../../../preview-engine/src/types.js";
+import type { RenderingMode, WidgetSize } from "../../../preview-engine/src/types.js";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { timelinePreview, timelineInputValue } from "@/timelinePreview.ts";
@@ -13,7 +13,7 @@ import type { Project } from "@/project.ts";
 import { MockDataPanel } from "@/components/MockDataPanel";
 import { cn } from "@/lib/utils";
 import { familyLabels, type PackageReport } from "@/project.ts";
-import type { Message, PreviewOutput, PreviewSettings, PreviewState } from "@/hooks/usePreview.ts";
+import type { Message, PreviewAppearance, PreviewOutput, PreviewSettings, PreviewSettingsChange, PreviewState } from "@/hooks/usePreview.ts";
 
 export type DetailTab = "problems" | "console" | "package" | "fixtures";
 
@@ -21,7 +21,9 @@ interface PreviewPaneProps {
   project: Project;
   settings: PreviewSettings;
   families: WidgetSize[];
-  onSettings(change: Partial<PreviewSettings>): void;
+  onSettings(change: PreviewSettingsChange): void;
+  appearancePreference: PreviewAppearance;
+  onAppearancePreference(appearance: PreviewAppearance): void;
   preview: PreviewState;
   report: PackageReport;
   fixtures: string;
@@ -135,7 +137,7 @@ function PackageSummary({ report }: { report: PackageReport }) {
   );
 }
 
-export function PreviewPane({ project, settings, families, onSettings, preview, report, fixtures, onFixtures, tab, onTab, guide, className }: PreviewPaneProps) {
+export function PreviewPane({ project, settings, families, onSettings, appearancePreference, onAppearancePreference, preview, report, fixtures, onFixtures, tab, onTab, guide, className }: PreviewPaneProps) {
   let transitionDates: string[] = [];
   try { transitionDates = timelinePreview(report.manifest, settings.timelineDate).plan.entries.slice(1).map((entry) => entry.date); } catch { /* Package problems explain invalid schedules. */ }
   const errors = preview.problems.filter((item) => item.severity === "error").length;
@@ -150,8 +152,8 @@ export function PreviewPane({ project, settings, families, onSettings, preview, 
             options={families.map((family) => [family, familyLabels[family] ?? family])} />
         </Field>
         <Field id="appearance" label="Appearance">
-          <Choice<Appearance> id="appearance" value={settings.appearance} onChange={(appearance) => onSettings({ appearance })}
-            options={[["light", "Light"], ["dark", "Dark"]]} />
+          <Choice<PreviewAppearance> id="appearance" value={appearancePreference} onChange={onAppearancePreference}
+            options={[["system", "System"], ["light", "Light"], ["dark", "Dark"]]} />
         </Field>
         <Field id="rendering-mode" label="Mode">
           <Choice<RenderingMode> id="rendering-mode" value={settings.renderingMode} onChange={(renderingMode) => onSettings({ renderingMode })}

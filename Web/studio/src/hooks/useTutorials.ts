@@ -7,7 +7,7 @@ import { simulateWidgetAction } from "@/simulateAction.ts";
 import { activeLesson, nextTutorialStep, tutorialStepPassed } from "@/tutorialProgress.ts";
 import { createTutorialProject, tutorials, tutorialScenario, type TutorialId, type TutorialStep } from "@/tutorials.ts";
 import { previewIsCurrent } from "@/validationReport.ts";
-import type { PreviewSettings, PreviewState } from "@/hooks/usePreview.ts";
+import type { PreviewSettings, PreviewSettingsChange, PreviewState } from "@/hooks/usePreview.ts";
 import type { ProjectsModel } from "@/hooks/useProjects.ts";
 
 const session = globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`;
@@ -29,7 +29,7 @@ function cloudFixtures(text: string, preset: "empty" | "saved"): string {
   return JSON.stringify(fixtures, null, 2);
 }
 
-export function useTutorials(model: ProjectsModel, settings: PreviewSettings, preview: PreviewState, changeSettings: (value: Partial<PreviewSettings>) => void) {
+export function useTutorials(model: ProjectsModel, settings: PreviewSettings, preview: PreviewState, changeSettings: (value: PreviewSettingsChange) => void) {
   const { project, updateTutorial } = model;
   const progress = project?.tutorial;
   const lesson = activeLesson(progress);

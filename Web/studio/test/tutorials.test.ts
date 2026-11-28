@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { executePackageInNode } from "../../preview-engine/src/node.js";
 import { exportPackage, importPackage } from "../../preview-engine/src/package/index.js";
+import type { Appearance } from "../../preview-engine/src/types.js";
 import { parseMocks } from "../src/mockData.ts";
 import { packageReport, type Project } from "../src/project.ts";
 import { createTutorialProject, tutorials, tutorialScenario, tutorialSourceChanged } from "../src/tutorials.ts";
@@ -13,12 +14,13 @@ function edit(project: Project, file: string, from: string, to: string): Project
   return { ...project, files: { ...project.files, [file]: source.replace(from, to) } };
 }
 
-async function run(project: Project, options: { family?: "small" | "medium"; actionID?: string; date?: string } = {}) {
+async function run(project: Project, options: { family?: "small" | "medium"; actionID?: string; date?: string; appearance?: Appearance } = {}) {
   const report = packageReport(project);
   assert.ok(report.valid);
   const result = await executePackageInNode({
     files: project.files, manifest: report.manifest,
     fixtures: parseMocks(project.fixtures), actionID: options.actionID,
+    preview: { appearance: options.appearance ?? "light" },
     environments: {
       "widget-size": options.actionID ? "action" : options.family ?? "medium",
       ...(options.date ? { "timeline-date": options.date } : {}),
@@ -123,5 +125,75 @@ test("the Calendar exercise distinguishes undeclared, authorized, empty, and den
     const preview = await run({ ...authorized, fixtures: tutorialScenario("calendar-agenda", scenario) });
     assert.match(preview.tree, message);
     if (scenario !== "granted") assert.doesNotMatch(preview.tree, /Design review/);
+  }
+});
+
+interface ColorNode {
+  $element: string;
+  props: { background?: string; color?: string } | null;
+  children: Array<ColorNode | string | number>;
+}
+
+function luminance(hex: string): number {
+  assert.match(hex, /^#[0-9a-f]{6}$/i);
+  const channels = [1, 3, 5].map(offset => {
+    const srgb = Number.parseInt(hex.slice(offset, offset + 2), 16) / 255;
+    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * channels[0]! + 0.7152 * channels[1]! + 0.0722 * channels[2]!;
+}
+
+function checkWidgetContrast(node: ColorNode, background: string, label: string) {
+  const surface = node.props?.background ?? background;
+  if (node.$element === "text" || node.$element === "icon") {
+    const color = node.props?.color;
+    assert.ok(color, `${label} has no explicit ${node.$element} color`);
+    const foregroundLuminance = luminance(color);
+    const backgroundLuminance = luminance(surface);
+    const ratio = (Math.max(foregroundLuminance, backgroundLuminance) + 0.05) /
+      (Math.min(foregroundLuminance, backgroundLuminance) + 0.05);
+    assert.ok(ratio >= 4.5, `${label} contrasts ${color} against ${surface} at ${ratio.toFixed(2)}:1`);
+  }
+  for (const child of node.children ?? []) {
+    if (typeof child === "object" && child !== null) checkWidgetContrast(child, surface, label);
+  }
+}
+
+test("lesson widget text and icons keep contrast in light and dark previews", async () => {
+  const hello = createTutorialProject("hello-world");
+  const caption = tutorials.find(lesson => lesson.id === "hello-world")?.steps.find(step => step.id === "add-caption")?.code;
+  assert.ok(caption);
+  const todo = edit(createTutorialProject("interactive-todo"), "main.jsx", 'firstTaskAction = ""', 'firstTaskAction = "toggleOne"');
+  const checked = await run(todo, { actionID: "toggleOne" });
+  assert.ok(checked.mockState);
+  const weather = createTutorialProject("weather-forecast");
+  const calendar = createTutorialProject("calendar-agenda");
+  const authorized = edit(calendar, "widget.json", '"permissions": []', '"permissions": ["calendar"]');
+  const examples: Array<[string, Project]> = [
+    ["Hello World", edit(hello, "main.jsx", "</vstack>", `${caption}\n  </vstack>`)],
+    ["Event Countdown", createTutorialProject("event-countdown")],
+    ["Interactive To-Do, unchecked", todo],
+    ["Interactive To-Do, checked", { ...todo, fixtures: JSON.stringify(checked.mockState) }],
+    ...["sunny", "rain", "offline"].map((scenario): [string, Project] => [
+      `Weather Forecast, ${scenario}`, { ...weather, fixtures: tutorialScenario("weather-forecast", scenario) },
+    ]),
+    ["Calendar Agenda, undeclared", calendar],
+    ...["granted", "empty", "denied"].map((scenario): [string, Project] => [
+      `Calendar Agenda, ${scenario}`, { ...authorized, fixtures: tutorialScenario("calendar-agenda", scenario) },
+    ]),
+  ];
+  for (const [label, project] of examples) {
+    for (const family of ["small", "medium"] as const) {
+      const backgrounds: string[] = [];
+      for (const appearance of ["light", "dark"] as const) {
+        const { tree } = await run(project, { family, appearance });
+        const widget = JSON.parse(tree) as ColorNode;
+        const background = widget.props?.background;
+        assert.ok(background, `${label} has no ${appearance} background`);
+        checkWidgetContrast(widget, background, `${label}, ${family}, ${appearance}`);
+        backgrounds.push(background);
+      }
+      assert.ok(luminance(backgrounds[0]!) > luminance(backgrounds[1]!), `${label} should use a darker surface in dark mode`);
+    }
   }
 });

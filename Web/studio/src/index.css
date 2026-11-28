@@ -21,7 +21,7 @@
   --card-foreground: oklch(0.21 0.006 286);
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.21 0.006 286);
-  --primary: oklch(0.58 0.19 255);
+  --primary: oklch(0.51 0.18 255);
   --primary-foreground: oklch(0.99 0 0);
   --secondary: oklch(0.955 0.003 286);
   --secondary-foreground: oklch(0.21 0.006 286);
@@ -29,12 +29,13 @@
   --muted-foreground: oklch(0.5 0.01 286);
   --accent: oklch(0.94 0.012 255);
   --accent-foreground: oklch(0.21 0.006 286);
-  --destructive: oklch(0.58 0.22 27);
-  --success: oklch(0.55 0.15 150);
-  --warning: oklch(0.6 0.14 70);
+  --destructive: oklch(0.51 0.20 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  --success: oklch(0.51 0.15 150);
+  --warning: oklch(0.53 0.12 70);
   --border: oklch(0.9 0.004 286);
   --input: oklch(0.9 0.004 286);
-  --ring: oklch(0.58 0.19 255);
+  --ring: var(--primary);
   --stage: oklch(0.93 0.004 286);
   --sidebar: oklch(0.985 0.001 286);
 }
@@ -46,8 +47,8 @@
   --card-foreground: oklch(0.97 0.002 286);
   --popover: oklch(0.22 0.004 286);
   --popover-foreground: oklch(0.97 0.002 286);
-  --primary: oklch(0.64 0.19 255);
-  --primary-foreground: oklch(0.99 0 0);
+  --primary: oklch(0.72 0.16 255);
+  --primary-foreground: oklch(0.16 0.02 255);
   --secondary: oklch(0.27 0.005 286);
   --secondary-foreground: oklch(0.97 0.002 286);
   --muted: oklch(0.27 0.005 286);
@@ -55,11 +56,11 @@
   --accent: oklch(0.3 0.03 255);
   --accent-foreground: oklch(0.97 0.002 286);
   --destructive: oklch(0.7 0.19 22);
+  --destructive-foreground: oklch(0.16 0.02 22);
   --success: oklch(0.75 0.17 150);
   --warning: oklch(0.8 0.14 75);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.64 0.19 255);
   --stage: oklch(0.11 0.003 286);
   --sidebar: oklch(0.17 0.004 286);
 }
@@ -86,6 +87,7 @@
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-border: var(--border);
@@ -104,3 +106,5 @@
 /* CodeMirror fills its pane. */
 .cm-editor { height: 100%; }
 .cm-scroller { font-family: var(--font-mono); font-size: 13px; }
+#editor .cm-gutters, #editor .cm-foldPlaceholder { color: var(--muted-foreground); }
+#editor .sw-light-tag { color: #006842; }

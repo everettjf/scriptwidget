@@ -26,7 +26,7 @@ function Row({ current, label, icon, onOpen, onDelete, deleteLabel }: {
   current: boolean; label: string; icon?: React.ReactNode; onOpen(): void; onDelete?: () => void; deleteLabel: string;
 }) {
   return (
-    <li className="group flex items-center gap-0.5">
+    <li className="flex items-center gap-0.5">
       <button
         type="button" aria-current={current ? "true" : "false"} onClick={onOpen}
         className={cn(
@@ -38,7 +38,7 @@ function Row({ current, label, icon, onOpen, onDelete, deleteLabel }: {
         <span className="truncate">{label}</span>
       </button>
       {onDelete && (
-        <IconButton label={deleteLabel} className="size-7 text-muted-foreground opacity-60 group-hover:opacity-100" onClick={onDelete}>
+        <IconButton label={deleteLabel} className="size-7 text-muted-foreground" onClick={onDelete}>
           <Trash2 className="size-3.5" />
         </IconButton>
       )}

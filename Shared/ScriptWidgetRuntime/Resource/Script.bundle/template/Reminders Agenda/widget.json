@@ -2,7 +2,7 @@
   "formatVersion": 2,
   "id": "app.scriptwidget.template.reminders-agenda",
   "name": "Reminders Agenda",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "runtimeVersion": "1.0",
   "entry": "main.jsx",
   "supportedFamilies": [

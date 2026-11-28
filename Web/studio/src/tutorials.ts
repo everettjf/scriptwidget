@@ -54,7 +54,7 @@ export const tutorials: readonly TutorialLesson[] = [
       {
         id: "add-caption", title: "Add another line", file: "main.jsx",
         instruction: "Add a second text element just above </vstack>. A vertical stack places it beneath the greeting.",
-        code: '<text font="caption" color="#134e4a">Built in JavaScript</text>',
+        code: '<text font="caption" color={typeof ink === "string" ? ink : "#134e4a"}>Built in JavaScript</text>',
         hint: "Keep both text elements inside the same stack. After this step you can personalize both lines.",
         expected: { text: "Built in JavaScript", changedSource: true },
       },
@@ -191,14 +191,18 @@ export const tutorials: readonly TutorialLesson[] = [
 
 const sources: Record<TutorialId, string> = {
   "hello-world": `const name = "world";
+const dark = $device.isdarkmode();
+const background = dark ? "#102a26" : "#ecfdf5";
+const ink = dark ? "#d5faed" : "#134e4a";
+const accent = dark ? "#6ee7b7" : "#0f766e";
 
 // $render receives one JSX element. A vertical stack can hold several children.
 $render(
-  <vstack frame="max" spacing="6" padding="16" background="#ecfdf5">
-    <text font="headline" color="#134e4a">
+  <vstack frame="max" spacing="6" padding="16" background={background}>
+    <text font="headline" color={ink}>
       MY FIRST WIDGET
     </text>
-    <text font="title" color="#0f766e">
+    <text font="title" color={accent}>
       Hello, {name}!
     </text>
   </vstack>,
@@ -207,6 +211,11 @@ $render(
 
   "event-countdown": `const eventName = "My event";
 const targetDate = "2030-06-15";
+const dark = $device.isdarkmode();
+const background = dark ? "#1e1b3b" : "#eef2ff";
+const ink = dark ? "#f5f3ff" : "#1e1b4b";
+const secondary = dark ? "#c4b5fd" : "#3730a3";
+const accent = dark ? "#a5b4fc" : "#4338ca";
 
 // Compare days on the calendar, independent of the length of any single day.
 const now = new Date($getenv("timeline-date") || Date.now());
@@ -222,19 +231,19 @@ const count = !validDate
 
 const event = (
   <vstack alignment="leading" spacing="4">
-    <text font="caption2" color="#3730a3">
+    <text font="caption2" color={secondary}>
       COUNTDOWN
     </text>
-    <text font="headline" color="#1e1b4b">
+    <text font="headline" color={ink}>
       {eventName}
     </text>
-    <text font="caption" color="#3730a3">
+    <text font="caption" color={secondary}>
       {targetDate}
     </text>
   </vstack>
 );
 const counter = (
-  <text font="headline" color="#4338ca">
+  <text font="headline" color={accent}>
     {count}
   </text>
 );
@@ -242,14 +251,14 @@ const counter = (
 // Reuse the same elements and change the arrangement to fit each size.
 if ($getenv("widget-size") === "small") {
   $render(
-    <vstack frame="max" alignment="leading" spacing="10" padding="14" background="#eef2ff">
+    <vstack frame="max" alignment="leading" spacing="10" padding="14" background={background}>
       {event}
       {counter}
     </vstack>,
   );
 } else {
   $render(
-    <hstack frame="max" spacing="12" padding="16" background="#eef2ff">
+    <hstack frame="max" spacing="12" padding="16" background={background}>
       {event}
       <spacer />
       {counter}
@@ -283,12 +292,17 @@ function toggleOne() {
 
 const size = $getenv("widget-size");
 if (size !== "action" && size !== "function") {
+  const dark = $device.isdarkmode();
+  const background = dark ? "#102c24" : "#ecfdf5";
+  const ink = dark ? "#d1fae5" : "#064e3b";
+  const secondary = dark ? "#a7f3d0" : "#065f46";
+  const accent = dark ? "#6ee7b7" : "#047857";
   // Rendering reads saved progress. Only the action changes it.
   const done = $storage.getString(key) === "checked";
   const firstRow = (
     <hstack spacing="6">
-      <icon systemName={done ? "checkmark.square.fill" : "square"} size="13" color="#047857" />
-      <text font="caption" color="#064e3b">
+      <icon systemName={done ? "checkmark.square.fill" : "square"} size="13" color={accent} />
+      <text font="caption" color={ink}>
         {tasks[0]}
       </text>
     </hstack>
@@ -296,19 +310,19 @@ if (size !== "action" && size !== "function") {
   const visibleCount = size === "small" ? 3 : tasks.length;
 
   $render(
-    <vstack frame="max" alignment="leading" spacing="5" padding="12" background="#ecfdf5">
+    <vstack frame="max" alignment="leading" spacing="5" padding="12" background={background}>
       <hstack>
-        <text font="headline" color="#064e3b">
+        <text font="headline" color={ink}>
           To-do
         </text>
         <spacer />
-        <text font="caption" color="#047857">
+        <text font="caption" color={accent}>
           {(done ? 1 : 0) + "/" + tasks.length}
         </text>
       </hstack>
       {firstTaskAction ? <button actionID={firstTaskAction}>{firstRow}</button> : firstRow}
       {tasks.slice(1, visibleCount).map((task) => (
-        <text font="caption" color="#065f46">
+        <text font="caption" color={secondary}>
           {task}
         </text>
       ))}
@@ -319,6 +333,11 @@ if (size !== "action" && size !== "function") {
 
   "weather-forecast": `// Fetch a forecast for a fixed place. Widget permissions are in widget.json.
 const place = { latitude: 37.33, longitude: -122.01, hours: 6 };
+const dark = $device.isdarkmode();
+const background = dark ? "#10253d" : "#eff6ff";
+const ink = dark ? "#dbeafe" : "#172554";
+const secondary = dark ? "#bfdbfe" : "#1e40af";
+const accent = dark ? "#93c5fd" : "#1d4ed8";
 
 function appearance(condition) {
   if (condition?.includes("rain")) return { title: "Rain", icon: "cloud.rain.fill" };
@@ -336,13 +355,13 @@ try {
   const headline = title + " · " + Math.round(current.temperatureC) + "°C";
 
   $render(
-    <vstack frame="max" alignment="leading" spacing="5" padding="12" background="#eff6ff">
-      <text font="caption" color="#1e40af">
+    <vstack frame="max" alignment="leading" spacing="5" padding="12" background={background}>
+      <text font="caption" color={secondary}>
         CUPERTINO FORECAST
       </text>
       <hstack spacing="6">
-        <icon systemName={icon} size="16" color="#1d4ed8" />
-        <text font="headline" color="#172554">
+        <icon systemName={icon} size="16" color={accent} />
+        <text font="headline" color={ink}>
           {headline}
         </text>
       </hstack>
@@ -352,18 +371,18 @@ try {
           minute: "2-digit",
         });
         return (
-          <text font="caption" color="#1e40af">
+          <text font="caption" color={secondary}>
             {time + " · " + Math.round(hour.temperatureC) + "°C"}
           </text>
         );
       })}
       {forecast.isStale && (
-        <text font="caption2" color="#1e40af">
+        <text font="caption2" color={secondary}>
           Cached forecast
         </text>
       )}
       <link url={forecast.attribution.url}>
-        <text font="caption2" color="#1e40af">
+        <text font="caption2" color={secondary}>
           {forecast.attribution.text}
         </text>
       </link>
@@ -372,9 +391,9 @@ try {
 } catch (error) {
   console.log(String(error));
   $render(
-    <vstack frame="max" spacing="6" padding="12" background="#eff6ff">
-      <icon systemName="cloud" size="22" color="#1d4ed8" />
-      <text font="headline" color="#172554">
+    <vstack frame="max" spacing="6" padding="12" background={background}>
+      <icon systemName="cloud" size="22" color={accent} />
+      <text font="headline" color={ink}>
         Forecast unavailable
       </text>
     </vstack>,
@@ -383,6 +402,11 @@ try {
 `,
 
   "calendar-agenda": `// Calendar is a read-only data source in this widget. The app manages access.
+const dark = $device.isdarkmode();
+const background = dark ? "#2b1740" : "#faf5ff";
+const ink = dark ? "#f3e8ff" : "#3b0764";
+const secondary = dark ? "#e9d5ff" : "#6b21a8";
+const accent = dark ? "#d8b4fe" : "#7e22ce";
 let events = [];
 let message = "";
 
@@ -404,10 +428,10 @@ if (!$calendar.isAvailable()) {
 }
 
 $render(
-  <vstack frame="max" alignment="leading" spacing="7" padding="14" background="#faf5ff">
+  <vstack frame="max" alignment="leading" spacing="7" padding="14" background={background}>
     <hstack spacing="5">
-      <icon systemName="calendar" size="14" color="#7e22ce" />
-      <text font="caption" color="#6b21a8">
+      <icon systemName="calendar" size="14" color={accent} />
+      <text font="caption" color={secondary}>
         TODAY'S AGENDA
       </text>
     </hstack>
@@ -420,17 +444,17 @@ $render(
           });
       return (
         <vstack alignment="leading" spacing="1">
-          <text font="headline" color="#3b0764">
+          <text font="headline" color={ink}>
             {event.title}
           </text>
-          <text font="caption2" color="#6b21a8">
+          <text font="caption2" color={secondary}>
             {time}
           </text>
         </vstack>
       );
     })}
     {message && (
-      <text font="headline" color="#3b0764">
+      <text font="headline" color={ink}>
         {message}
       </text>
     )}

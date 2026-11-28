@@ -20,7 +20,7 @@ export function ValidationDialog({ open, onOpenChange, onCreate, onImport, onRep
           <DialogDescription>Paste JSX or open a .swt package. Code runs in this browser with mock data. The preview is an approximation; Mac native validation is available through the CLI.</DialogDescription>
         </DialogHeader>
         <label className="grid gap-2 text-sm" htmlFor="validation-source">JSX code
-          <textarea id="validation-source" rows={8} className="w-full rounded-md border bg-background p-3 font-mono text-xs" spellCheck={false} value={source} onChange={event => setSource(event.target.value)} placeholder="$render(<text>Hello</text>);" />
+          <textarea id="validation-source" rows={8} className="w-full rounded-md border bg-background p-3 font-mono text-xs placeholder:text-muted-foreground" spellCheck={false} value={source} onChange={event => setSource(event.target.value)} placeholder="$render(<text>Hello</text>);" />
         </label>
         <div className="flex flex-wrap gap-2">
           <Button id="validate-pasted-code" disabled={!source.trim()} onClick={() => { onCreate(source); setSource(""); onOpenChange(false); }}>Preview a new copy</Button>

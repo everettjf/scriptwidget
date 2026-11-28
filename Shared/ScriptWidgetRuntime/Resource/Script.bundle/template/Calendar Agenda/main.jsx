@@ -13,7 +13,7 @@ const size = $getenv("widget-size");
 const accessory = size.startsWith("accessory");
 const dark = $device.isdarkmode();
 const foreground = accessory ? "primary" : dark ? "#f3f4f6" : "#172033";
-const secondary = accessory ? "secondary" : dark ? "#9ca3af" : "#68758b";
+const secondary = accessory ? "secondary" : dark ? "#9ca3af" : "#5f6c81";
 const background = accessory ? "clear" : dark ? "#131b2a" : "#f4f7fc";
 const accent = accessory ? "primary" : "#5274d9";
 const small = size === "small" || size === "systemSmall";

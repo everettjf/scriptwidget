@@ -15,9 +15,8 @@ import { TopBar } from "@/components/TopBar";
 import { TutorialCloudGuide, TutorialGuide, TutorialsDialog } from "@/components/TutorialGuide";
 import { WallpaperDialog } from "@/components/WallpaperDialog";
 import { isWallpaperTemplate } from "@/wallpaperConfiguration.ts";
-import { useColorScheme } from "@/hooks/useColorScheme.ts";
 import { useConfirm } from "@/hooks/useConfirm.tsx";
-import { usePreview, type PreviewSettings } from "@/hooks/usePreview.ts";
+import { usePreview, type PreviewAppearance, type PreviewSettings, type PreviewSettingsChange } from "@/hooks/usePreview.ts";
 import { useProjects } from "@/hooks/useProjects.ts";
 import { useTutorials } from "@/hooks/useTutorials.ts";
 import { downloadBytes } from "@/lib/download.ts";
@@ -29,11 +28,10 @@ import { consumePreviewFragment, importPreviewFragment } from '@/previewHandoff.
 const initialPreviewFragment = consumePreviewFragment(window.location, window.history);
 const maximumImageBytes = 8 * 1024 * 1024;
 
-function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
+function initialSettings(): Omit<PreviewSettings, "appearance"> {
   return {
     profile: preferences.read("profile", "iphone-393"),
     family: preferences.read<WidgetSize>("family", "medium"),
-    appearance: preferences.read("appearance", colorScheme),
     renderingMode: "fullColor",
     parameter: "",
     timelineDate: "",
@@ -42,8 +40,7 @@ function initialSettings(colorScheme: "light" | "dark"): PreviewSettings {
   };
 }
 
-export function App() {
-  const colorScheme = useColorScheme();
+export function App({ colorScheme }: { colorScheme: "light" | "dark" }) {
   const model = useProjects();
   const { project, path } = model;
   const previewLinkConsumed = useRef(false);
@@ -69,7 +66,11 @@ export function App() {
     window.addEventListener('hashchange', onHashChange);
     return () => window.removeEventListener('hashchange', onHashChange);
   }, [model.ready, model.addProject]);
-  const [settings, setSettings] = useState(() => initialSettings(colorScheme));
+  const [settings, setSettings] = useState(initialSettings);
+  const [appearancePreference, setAppearancePreference] = useState<PreviewAppearance>(() => {
+    const saved = preferences.read<unknown>("appearance", "system");
+    return saved === "light" || saved === "dark" ? saved : "system";
+  });
   const [tab, setTab] = useState<DetailTab>("problems");
   const [templatesOpen, setTemplatesOpen] = useState(false);
   const [templateQuery, setTemplateQuery] = useState("");
@@ -86,13 +87,14 @@ export function App() {
   const families = useMemo(() => previewFamilies(report?.manifest, settings.profile), [report, settings.profile]);
   // Keep the chosen size when the device or manifest supports it.
   const family: WidgetSize = families.includes(settings.family) ? settings.family : families.includes("medium") ? "medium" : families[0] ?? "medium";
-  const effective = useMemo(() => ({ ...settings, family }), [settings, family]);
+  const appearance = appearancePreference === "system" ? colorScheme : appearancePreference;
+  const effective = useMemo(() => ({ ...settings, family, appearance }), [settings, family, appearance]);
   const preview = usePreview(project, effective);
 
-  const changeSettings = useCallback((change: Partial<PreviewSettings>) => {
+  const changeSettings = useCallback((change: PreviewSettingsChange) => {
     setSettings((current) => {
       const next = { ...current, ...change };
-      for (const key of ["profile", "family", "appearance"] as const) if (key in change) preferences.write(key, next[key]);
+      for (const key of ["profile", "family"] as const) if (key in change) preferences.write(key, next[key]);
       return next;
     });
   }, []);
@@ -185,10 +187,10 @@ export function App() {
         onLearn={() => tutorial.setCatalogOpen(true)}
       />
       {model.createdStarter && !initialPreviewFragment && !starterDismissed && model.projects.length === 1 && project.name === "My First Widget" && (
-        <section id="starter-guide" aria-labelledby="starter-heading" className="flex flex-wrap items-center gap-3 border-b bg-sky-50 px-4 py-3 text-slate-900">
+        <section id="starter-guide" aria-labelledby="starter-heading" className="flex flex-wrap items-center gap-3 border-b bg-accent px-4 py-3 text-accent-foreground">
           <div className="min-w-48 flex-1">
             <h1 id="starter-heading" className="text-sm font-semibold">Start with something you can see.</h1>
-            <p className="text-xs text-slate-600">Build your first widget with a short tutorial, or open a ready-made example.</p>
+            <p className="text-xs text-muted-foreground">Build your first widget with a short tutorial, or open a ready-made example.</p>
           </div>
           <div className="flex flex-wrap gap-2" role="group" aria-label="Starter examples">
             <Button size="sm" onClick={() => void tutorial.selectLesson("hello-world")}>Build your first widget</Button>
@@ -225,6 +227,7 @@ export function App() {
           project={project}
           className="max-[1100px]:col-span-full max-[1100px]:border-t max-[720px]:-order-1 max-[720px]:border-t-0"
           settings={effective} families={families} onSettings={changeSettings} preview={preview} report={report}
+          appearancePreference={appearancePreference} onAppearancePreference={(value) => { setAppearancePreference(value); preferences.write("appearance", value); }}
           fixtures={project.fixtures} onFixtures={model.setFixtures} tab={tab} onTab={setTab}
           guide={tutorial.lesson && tutorial.progress ? (
             <TutorialGuide key={project.id} lesson={tutorial.lesson} completed={tutorial.progress.completed.map(item => item.id)}
@@ -248,7 +251,7 @@ export function App() {
         onCreate={source => void model.addProject(createProject("Pasted Widget", { ...newProjectFiles("Pasted Widget"), "main.jsx": source }))}
         onReport={() => void validationReport(project, effective, preview).then(value => downloadBytes(new TextEncoder().encode(JSON.stringify(value, null, 2)), "validation-report.json")).catch(error => toast.error((error as Error).message))}
       />
-      <TemplatesDialog initialQuery={templateQuery} open={templatesOpen} onOpenChange={setTemplatesOpen}
+      <TemplatesDialog initialQuery={templateQuery} open={templatesOpen} onOpenChange={setTemplatesOpen} appearance={appearance}
         onChoose={(template: Template) => {
           setTemplatesOpen(false);
           setStarterDismissed(true);

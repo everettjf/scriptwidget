@@ -34,7 +34,7 @@ export function useConfirm(): [(options: ConfirmOptions) => Promise<boolean>, Re
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel>Cancel</AlertDialogCancel>
-          <AlertDialogAction className={options?.destructive ? "bg-destructive text-white hover:bg-destructive/90" : undefined} onClick={() => finish(true)}>
+          <AlertDialogAction variant={options?.destructive ? "destructive" : "default"} onClick={() => finish(true)}>
             {options?.action}
           </AlertDialogAction>
         </AlertDialogFooter>

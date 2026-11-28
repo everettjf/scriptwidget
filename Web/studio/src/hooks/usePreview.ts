@@ -17,6 +17,9 @@ export interface PreviewSettings {
   reduceMotion: boolean;
 }
 
+export type PreviewAppearance = Appearance | "system";
+export type PreviewSettingsChange = Partial<Omit<PreviewSettings, "appearance">>;
+
 export interface Message {
   code?: string;
   severity: Severity;

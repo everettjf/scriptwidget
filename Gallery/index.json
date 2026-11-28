@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T09:54:14.416Z",
+  "generatedAt": "2026-11-28T05:30:32.313Z",
   "items": [
     {
       "author": "ScriptWidget Community",
@@ -919,7 +919,7 @@
         {
           "bytes": 9809,
           "path": "main.jsx",
-          "sha256": "b58fb007d9da1bae91f27c64c3654f97f69824edf0d31afae9554f324efea027",
+          "sha256": "8e8f63881d2130a38bcf5ea2fa98ef392b19438a0aac395fbf378008d47a6016",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/main.jsx"
         },
         {
@@ -931,7 +931,7 @@
         {
           "bytes": 1220,
           "path": "widget.json",
-          "sha256": "36b50810badb50d44c13268ce7a2441b59d41157d4094cf7e0e9b1cdb5806a90",
+          "sha256": "89550eda1989b5fc948b00841b1ec984e746baf28a033520255929f44b4fb30c",
           "url": "https://raw.githubusercontent.com/everettjf/scriptwidget/main/Gallery/widgets/reminders-agenda/widget.json"
         }
       ],
@@ -946,7 +946,7 @@
       "tags": [
         "productivity"
       ],
-      "version": "1.0.0"
+      "version": "1.0.1"
     },
     {
       "author": "ScriptWidget",
